@@ -52,7 +52,7 @@
   modeButton?.addEventListener('click',()=>setTimeout(syncModeMenu,0)); syncModeMenu();
   document.addEventListener('keydown',e=>{if(/^F(?:[1-9]|1[0-2])$/.test(e.key))e.stopImmediatePropagation();},true);
   const clearButton=document.querySelector('#clearButton');
-  const syncClearLabel=()=>{if(clearButton)clearButton.textContent=window.justCalculated?'AC':'C';};
+  const syncClearLabel=()=>{if(clearButton)clearButton.textContent=justCalculated?'AC':'C';};
   if(clearButton)new MutationObserver(syncClearLabel).observe(clearButton,{childList:true,subtree:true,characterData:true});
   syncClearLabel();
   function explainExpression(input,result){
@@ -67,7 +67,7 @@
     return steps.length?{formula:pretty(input),steps,result:fmtLocal(result)}:null;
   }
   document.querySelector('#howButton')?.addEventListener('click',()=>{
-    const data=explainExpression(window.lastExpression,window.lastResult); if(!data)return;
+    const data=explainExpression(lastExpression,lastResult); if(!data)return;
     document.querySelector('#howTitle').textContent=lang==='el'?'Πώς υπολογίστηκε':'How was this calculated?';
     document.querySelector('#howContent').innerHTML=`<div class="how-step"><div class="how-formula">${esc(data.formula)}</div>${data.steps.map((s,i)=>`<div class="how-line"><span>${i+1}</span><div><strong>${esc(s.title)}</strong><br>${esc(s.text)}</div></div>`).join('')}<div class="how-result">= ${esc(data.result)}</div><div class="how-note">${lang==='el'?'Οι πολλαπλασιασμοί και οι διαιρέσεις υπολογίζονται πριν από τις προσθέσεις και τις αφαιρέσεις.':'Multiplication and division are evaluated before addition and subtraction.'}</div></div>`;
   },false);
