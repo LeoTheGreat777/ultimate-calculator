@@ -7,25 +7,71 @@
 <meta name="description" content="Ultimate Calculator">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="styles.css?v=0.3.4">
+<link rel="stylesheet" href="styles.css?v=0.3.6">
 <title>Ultimate Calculator</title>
 </head>
 <body>
 <main class="app-shell">
-<header class="topbar"><h1>Ultimate Calculator <span id="version" class="version">v0.3.4</span></h1><div class="top-actions"><button id="langButton" class="language-button" type="button">ΕΛ</button><button id="themeButton" class="icon-button" type="button" aria-label="Toggle theme">☾</button></div></header>
+<header class="topbar"><h1>Ultimate Calculator <span id="version" class="version">v0.3.6</span></h1><div class="top-actions"><button id="langButton" class="language-button" type="button">ΕΛ</button><button id="themeButton" class="icon-button" type="button" aria-label="Toggle theme">☾</button></div></header>
 <section id="calculatorCard" class="calculator-card">
-<div class="calculator-toolbar"><button id="historyButton" class="toolbar-button history-top" type="button"><span class="toolbar-icon">◷</span><span id="historyButtonText">Ιστορικό</span></button><div class="mode-control"><button id="modeButton" class="toolbar-button mode-top" type="button" aria-haspopup="menu" aria-expanded="false"><span id="modeIcon" class="toolbar-icon">▦</span><span id="modeLabel">Υπολογισμός</span><span class="mode-chevron">⌄</span></button><div id="modeMenu" class="mode-menu hidden" role="menu"></div></div></div>
+<div class="calculator-toolbar"><button id="historyButton" class="toolbar-button history-top" type="button"><span class="toolbar-icon">◷</span><span id="historyButtonText">Ιστορικό</span></button><div class="mode-control"><button id="modeButton" class="toolbar-button mode-top" type="button" aria-haspopup="menu" aria-expanded="false"><span id="modeIcon" class="toolbar-icon">▦</span><span id="modeLabel">Υπολογισμός</span><span class="mode-chevron" aria-hidden="true">⌄</span></button><div id="modeMenu" class="mode-menu hidden" role="menu"></div></div></div>
 <div id="calculatorDisplay" class="display-wrap"><div class="expression-row"><div id="expression" class="expression" aria-live="polite"></div><button id="howButton" class="how-button hidden" type="button" aria-label="How was this calculated?">?</button></div><div id="result" class="result" aria-live="polite"></div></div>
 <div id="toolPanel" class="tool-panel hidden"></div>
-<div id="keypad" class="keypad"><button class="key utility" data-action="backspace" type="button" aria-label="Delete">⌫</button><button id="clearButton" class="key utility" data-action="clear" type="button">AC</button><button class="key utility" data-value="%" type="button">%</button><button class="key operator" data-value="/" type="button">÷</button><button class="key" data-value="7" type="button">7</button><button class="key" data-value="8" type="button">8</button><button class="key" data-value="9" type="button">9</button><button class="key operator" data-value="*" type="button">×</button><button class="key" data-value="4" type="button">4</button><button class="key" data-value="5" type="button">5</button><button class="key" data-value="6" type="button">6</button><button class="key operator" data-value="-" type="button">−</button><button class="key" data-value="1" type="button">1</button><button class="key" data-value="2" type="button">2</button><button class="key" data-value="3" type="button">3</button><button class="key operator" data-value="+" type="button">+</button><button class="key wide" data-value="0" type="button">0</button><button class="key" data-value="." type="button">.</button><button class="key equals" data-action="equals" type="button">=</button></div>
+<div id="keypad" class="keypad"><button class="key utility" data-action="backspace" type="button" aria-label="Delete">⌫</button><button id="clearButton" class="key utility" data-action="clear" type="button">C</button><button class="key utility" data-value="%" type="button">%</button><button class="key operator" data-value="/" type="button">÷</button><button class="key" data-value="7" type="button">7</button><button class="key" data-value="8" type="button">8</button><button class="key" data-value="9" type="button">9</button><button class="key operator" data-value="*" type="button">×</button><button class="key" data-value="4" type="button">4</button><button class="key" data-value="5" type="button">5</button><button class="key" data-value="6" type="button">6</button><button class="key operator" data-value="-" type="button">−</button><button class="key" data-value="1" type="button">1</button><button class="key" data-value="2" type="button">2</button><button class="key" data-value="3" type="button">3</button><button class="key operator" data-value="+" type="button">+</button><button class="key wide" data-value="0" type="button">0</button><button class="key" data-value="." type="button">.</button><button class="key equals" data-action="equals" type="button">=</button></div>
 <div class="bottom-actions"><button id="copyButton" class="secondary-button" type="button">Αντιγραφή αποτελέσματος</button></div>
 </section>
-<p id="hint" class="hint">Πληκτρολόγησε μια πράξη για να ξεκινήσεις.</p><footer class="app-footer">Ultimate Calculator <span id="footerVersion">v0.3.4</span><br><span id="createdBy">Δημιουργήθηκε από Leonidas Kampaxis</span></footer>
+<p id="hint" class="hint">Πληκτρολόγησε μια πράξη για να ξεκινήσεις.</p><footer class="app-footer">Ultimate Calculator <span id="footerVersion">v0.3.6</span><br><span id="createdBy">Δημιουργήθηκε από Leonidas Kampaxis</span></footer>
 </main>
 <div id="historyBackdrop" class="sheet-backdrop hidden"></div>
 <section id="historyPanel" class="history-panel hidden" aria-label="History"><div class="sheet-handle" aria-hidden="true"></div><div class="section-heading"><h2 id="historyTitle">Ιστορικό</h2><div id="historyClearWrap" class="history-clear-wrap"><button id="clearHistory" class="text-button" type="button">Διαγραφή όλων</button><div id="historyConfirm" class="history-confirm hidden" role="group"><span id="historyConfirmText"></span><button id="historyConfirmYes" class="danger-inline" type="button">Διαγραφή</button></div></div></div><div id="historyList" class="history-list"></div></section>
 <div id="howModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="howTitle"><div class="modal-card how-modal-card"><div class="section-heading"><h2 id="howTitle">Πώς υπολογίστηκε</h2><button id="closeHow" class="modal-close" type="button" aria-label="Close">×</button></div><div id="howContent" class="how-content"></div></div></div>
-<script src="app.js?v=0.3.4"></script>
-<script src="history-interaction.js?v=0.3.5"></script>
+<script src="app.js?v=0.3.6"></script>
+<script src="history-interaction.js?v=0.3.6"></script>
+<script>
+(() => {
+  const style = document.createElement('style');
+  style.textContent = `
+    .mode-chevron { display:none !important; }
+    .mode-menu { top:42px !important; transform-origin:top right; opacity:0; transform:translateY(-7px) scaleY(.92); pointer-events:none; transition:opacity .18s ease, transform .2s cubic-bezier(.2,.8,.2,1); overflow:hidden; }
+    .mode-menu:not(.hidden) { opacity:1; transform:translateY(0) scaleY(1); pointer-events:auto; }
+    .mode-menu .mode-item.active { display:none !important; }
+    .mode-item-icon,.toolbar-icon { color:var(--accent2) !important; }
+    .mode-item { min-height:42px; }
+    .mode-top { transition:background .18s ease, transform .08s ease; }
+    .mode-control:has(.mode-menu:not(.hidden)) .mode-top { background:var(--key); }
+    .how-button { right:0; bottom:calc(100% + 7px); }
+    .how-line strong { font-weight:750; }
+    .how-note { color:var(--muted); font-size:13px; line-height:1.45; margin-top:10px; }
+  `;
+  document.head.appendChild(style);
+  if (window.ICONS) window.ICONS.fuel = '⛽︎';
+  const modeMenu = document.querySelector('#modeMenu'), modeLabel = document.querySelector('#modeLabel'), modeButton = document.querySelector('#modeButton');
+  const syncModeMenu = () => { if (!modeMenu) return; const current=(modeLabel?.textContent||'').trim(); modeMenu.querySelectorAll('.mode-item').forEach(item=>{const label=item.querySelector('.mode-item-label')?.textContent?.trim(); item.classList.toggle('active',label===current);}); };
+  if (modeMenu) new MutationObserver(syncModeMenu).observe(modeMenu,{childList:true,subtree:true});
+  if (modeLabel) new MutationObserver(syncModeMenu).observe(modeLabel,{childList:true,characterData:true,subtree:true});
+  modeButton?.addEventListener('click',()=>setTimeout(syncModeMenu,0)); syncModeMenu();
+  document.addEventListener('keydown',e=>{if(/^F(?:[1-9]|1[0-2])$/.test(e.key))e.stopImmediatePropagation();},true);
+  const clearButton=document.querySelector('#clearButton');
+  const syncClearLabel=()=>{if(clearButton)clearButton.textContent=window.justCalculated?'AC':'C';};
+  if(clearButton)new MutationObserver(syncClearLabel).observe(clearButton,{childList:true,subtree:true,characterData:true});
+  syncClearLabel();
+  function explainExpression(input,result){
+    const source=String(input||'').replace(/×/g,'*').replace(/÷/g,'/'),tokens=source.match(/\d+(?:\.\d+)?%?|[+\-*/]/g)||[];
+    if(tokens.length<3)return null;
+    const prettyOp=op=>({'*':'×','/':'÷','+':'+','-':'−'})[op]||op, valueOf=s=>Number(String(s).replace('%',''));
+    const fmtLocal=n=>new Intl.NumberFormat(lang==='el'?'el-GR':'en-US',{maximumFractionDigits:10}).format(Number(n));
+    const calcPair=(a,op,b)=>{const av=valueOf(a),bv=valueOf(b);if(op==='*')return av*(String(b).includes('%')?bv/100:bv);if(op==='/')return av/(String(b).includes('%')?bv/100:bv);const rhs=String(b).includes('%')?av*bv/100:bv;return op==='+'?av+rhs:av-rhs;};
+    let working=tokens.slice(),steps=[],i=1;
+    while(i<working.length-1){if(working[i]==='*'||working[i]==='/'){const a=working[i-1],op=working[i],b=working[i+1],v=calcPair(a,op,b);steps.push({title:lang==='el'?'Πρώτα':'First',text:`${a} ${prettyOp(op)} ${b} = ${fmtLocal(v)}`});working.splice(i-1,3,String(v));i=Math.max(1,i-2);}else i+=2;}
+    i=1;while(i<working.length-1){const a=working[i-1],op=working[i],b=working[i+1],v=calcPair(a,op,b);steps.push({title:lang==='el'?'Έπειτα':'Then',text:`${a} ${prettyOp(op)} ${b} = ${fmtLocal(v)}`});working.splice(i-1,3,String(v));}
+    return steps.length?{formula:pretty(input),steps,result:fmtLocal(result)}:null;
+  }
+  document.querySelector('#howButton')?.addEventListener('click',()=>{
+    const data=explainExpression(window.lastExpression,window.lastResult); if(!data)return;
+    document.querySelector('#howTitle').textContent=lang==='el'?'Πώς υπολογίστηκε':'How was this calculated?';
+    document.querySelector('#howContent').innerHTML=`<div class="how-step"><div class="how-formula">${esc(data.formula)}</div>${data.steps.map((s,i)=>`<div class="how-line"><span>${i+1}</span><div><strong>${esc(s.title)}</strong><br>${esc(s.text)}</div></div>`).join('')}<div class="how-result">= ${esc(data.result)}</div><div class="how-note">${lang==='el'?'Οι πολλαπλασιασμοί και οι διαιρέσεις υπολογίζονται πριν από τις προσθέσεις και τις αφαιρέσεις.':'Multiplication and division are evaluated before addition and subtraction.'}</div></div>`;
+  },false);
+})();
+</script>
 </body>
 </html>
