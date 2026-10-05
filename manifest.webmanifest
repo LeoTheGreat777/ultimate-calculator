@@ -1,0 +1,13 @@
+{
+  "name": "Ultimate Calculator",
+  "short_name": "Calculator",
+  "description": "A universal everyday calculator for arithmetic, percentages, money, fuel, energy, VAT, units and more.",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#070a0f",
+  "theme_color": "#0b0f14",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
