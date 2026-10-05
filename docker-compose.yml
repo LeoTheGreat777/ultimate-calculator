@@ -1,6 +1,6 @@
 services:
   ultimate-calculator:
-    build: .
+    image: ghcr.io/leothegreat777/ultimate-calculator:latest
     container_name: ultimate-calculator
     ports:
       - "48123:80"
