@@ -1,0 +1,7 @@
+services:
+  ultimate-calculator:
+    build: .
+    container_name: ultimate-calculator
+    ports:
+      - "48123:80"
+    restart: unless-stopped
