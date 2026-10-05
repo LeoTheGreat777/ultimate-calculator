@@ -1,32 +1,27 @@
 <!doctype html>
 <html lang="el">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-  <meta name="theme-color" content="#0b0f14" />
-  <meta name="description" content="Ultimate Calculator — a calculator that gives you the answer and can show you how it was calculated." />
-  <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="icon" href="icon.svg" type="image/svg+xml" />
-  <link rel="stylesheet" href="styles.css?v=0.2.5" />
-  <link rel="stylesheet" href="v025-overrides.css?v=0.2.5" />
-  <title>Ultimate Calculator</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#0b0f14" />
+<meta name="description" content="Ultimate Calculator — a calculator that gives you the answer and can show you how it was calculated." />
+<link rel="manifest" href="manifest.webmanifest" /><link rel="icon" href="icon.svg" type="image/svg+xml" />
+<link rel="stylesheet" href="styles.css?v=0.2.6" /><link rel="stylesheet" href="v025-overrides.css?v=0.2.6" />
+<title>Ultimate Calculator</title>
 </head>
 <body>
 <main class="app-shell">
-  <header class="topbar"><div><h1>Ultimate Calculator <span class="version">v0.2.5</span></h1></div><div class="top-actions"><button id="langButton" class="language-button">ΕΛ</button><button id="accountButton" class="account-button">Σύνδεση</button><button id="themeButton" class="icon-button" aria-label="Toggle theme">☾</button></div></header>
-  <section class="calculator-card">
-    <div id="calculatorDisplay" class="display-wrap"><div id="expression" class="expression"></div><div id="result" class="result">0</div><button id="howButton" class="how-button hidden" type="button">Πώς;</button></div>
-    <div class="quick-tabs" role="tablist"><button class="tab active" data-mode="calc">Υπολογισμός</button><button class="tab" data-mode="fuel">Καύσιμα</button><button class="tab" data-mode="energy">Ενέργεια</button><button class="tab" data-mode="vat">ΦΠΑ</button><button class="tab" data-mode="units">Μονάδες</button></div>
-    <div id="toolPanel" class="tool-panel hidden"></div>
-    <div id="keypad" class="keypad"><button class="key utility" data-action="backspace">⌫</button><button id="clearKey" class="key utility" data-action="clear">C</button><button class="key utility" data-value="%">%</button><button class="key operator" data-value="/">÷</button><button class="key" data-value="7">7</button><button class="key" data-value="8">8</button><button class="key" data-value="9">9</button><button class="key operator" data-value="*">×</button><button class="key" data-value="4">4</button><button class="key" data-value="5">5</button><button class="key" data-value="6">6</button><button class="key operator" data-value="-">−</button><button class="key" data-value="1">1</button><button class="key" data-value="2">2</button><button class="key" data-value="3">3</button><button class="key operator" data-value="+">+</button><button class="key wide" data-value="0">0</button><button class="key" data-value=".">.</button><button class="key equals" data-action="equals">=</button></div>
-    <div class="bottom-actions"><button id="historyButton" class="secondary-button">Ιστορικό</button><button id="copyButton" class="secondary-button">Αντιγραφή αποτελέσματος</button></div>
-  </section>
-  <section id="howPanel" class="how-panel hidden"><div class="section-heading"><h2 id="howTitle">Πώς υπολογίστηκε</h2><button id="closeHow" class="text-button">Κλείσιμο</button></div><div id="howContent" class="how-content"></div></section>
-  <section id="historyPanel" class="history-panel hidden"><div class="section-heading"><h2 id="historyTitle">Ιστορικό</h2><button id="clearHistory" class="text-button">Διαγραφή όλων</button></div><div id="historyList" class="history-list"></div></section>
-  <p id="hint" class="hint">Δοκίμασε 20 + 25% ή άνοιξε ένα εργαλείο.</p><footer class="app-footer">Ultimate Calculator <span>v0.2.5</span><br><span>Created by Leonidas Kampaxis</span></footer>
+<header class="topbar"><div><h1>Ultimate Calculator <span id="version" class="version">v0.2.6</span></h1></div><div class="top-actions"><button id="langButton" class="language-button" aria-label="Change language">ΕΛ</button><button id="themeButton" class="icon-button" aria-label="Toggle theme">☾</button></div></header>
+<section class="calculator-card">
+<div id="calculatorDisplay" class="display-wrap"><div id="expression" class="expression"></div><div id="result" class="result">0</div><button id="howButton" class="how-button hidden" type="button">Πώς;</button></div>
+<div class="quick-tabs" role="tablist"><button class="tab active" data-mode="calc">Υπολογισμός</button><button class="tab" data-mode="fuel">Καύσιμα</button><button class="tab" data-mode="energy">Ενέργεια</button><button class="tab" data-mode="vat">ΦΠΑ</button><button class="tab" data-mode="units">Μονάδες</button></div>
+<div id="toolPanel" class="tool-panel hidden"></div>
+<div id="keypad" class="keypad"><button class="key utility" data-action="backspace">⌫</button><button id="clearButton" class="key utility" data-action="clear">AC</button><button class="key utility" data-value="%">%</button><button class="key operator" data-value="/">÷</button><button class="key" data-value="7">7</button><button class="key" data-value="8">8</button><button class="key" data-value="9">9</button><button class="key operator" data-value="*">×</button><button class="key" data-value="4">4</button><button class="key" data-value="5">5</button><button class="key" data-value="6">6</button><button class="key operator" data-value="-">−</button><button class="key" data-value="1">1</button><button class="key" data-value="2">2</button><button class="key" data-value="3">3</button><button class="key operator" data-value="+">+</button><button class="key wide" data-value="0">0</button><button class="key" data-value=".">.</button><button class="key equals" data-action="equals">=</button></div>
+<div class="bottom-actions"><button id="historyButton" class="secondary-button">Ιστορικό</button><button id="copyButton" class="secondary-button">Αντιγραφή αποτελέσματος</button></div>
+</section>
+<section id="howPanel" class="how-panel hidden"><div class="section-heading"><h2 id="howTitle">Πώς υπολογίστηκε</h2><button id="closeHow" class="text-button">Κλείσιμο</button></div><div id="howContent" class="how-content"></div></section>
+<section id="historyPanel" class="history-panel hidden"><div class="section-heading"><h2 id="historyTitle">Ιστορικό</h2><button id="clearHistory" class="text-button">Διαγραφή όλων</button></div><div id="historyList" class="history-list"></div></section>
+<p id="hint" class="hint">Δοκίμασε 20 + 25% ή άνοιξε ένα εργαλείο.</p><footer class="app-footer">Ultimate Calculator <span id="footerVersion">v0.2.6</span><br><span>Created by Leonidas Kampaxis</span></footer>
 </main>
-<div id="authModal" class="modal hidden" role="dialog" aria-modal="true"><div class="modal-card"><div class="section-heading"><h2 id="authTitle">Σύνδεση</h2><button id="closeAuth" class="text-button">Κλείσιμο</button></div><div id="authIntro" class="auth-intro"></div><div id="authChoice" class="auth-choice"><strong id="authModeLabel"></strong><button id="authModeSwitch" class="auth-mode-switch" type="button"></button></div><form id="authForm" novalidate><label class="auth-label"><span id="usernameLabel">Όνομα χρήστη</span><input id="authUsername" autocomplete="username" autocapitalize="none" spellcheck="false" required minlength="3"></label><label id="passwordField" class="auth-label password-field hidden"><span id="passwordLabel">Κωδικός</span><input id="authPassword" type="password" autocomplete="current-password" minlength="8"></label><div id="passwordHint" class="password-hint hidden"></div><button class="tool-action" type="submit" id="authSubmit">Συνέχεια</button></form><p id="authMessage" class="auth-message"></p></div></div>
-<div id="accountModal" class="modal hidden" role="dialog" aria-modal="true"><div class="modal-card account-card"><div class="section-heading"><h2 id="accountTitle">Λογαριασμός</h2><button id="closeAccount" class="text-button">Κλείσιμο</button></div><p id="accountUser" class="account-user"></p><button id="signOutButton" class="danger-button">Αποσύνδεση</button></div></div>
-<script src="app-v025.js?v=0.2.5"></script>
-</body>
-</html>
+<script src="app-v026.js?v=0.2.6"></script>
+</body></html>
