@@ -1,4 +1,8 @@
 (() => {
+  const VERSION = '0.3.4';
+  document.querySelector('#version')?.replaceChildren(document.createTextNode(`v${VERSION}`));
+  document.querySelector('#footerVersion')?.replaceChildren(document.createTextNode(`v${VERSION}`));
+
   const panel = document.querySelector('#historyPanel');
   const handle = document.querySelector('.sheet-handle');
   const heading = panel?.querySelector('.section-heading');
@@ -16,7 +20,6 @@
   let pointerId = null;
   let startY = 0;
   let lastY = 0;
-  let moved = false;
   let startExpanded = false;
   let startTime = 0;
 
@@ -41,7 +44,6 @@
       else panel.classList.add('expanded');
     } else {
       if (dy < -70 || (fastSwipe && dy < -20)) panel.classList.add('expanded');
-      else if (dy > 110 || (fastSwipe && dy > 45)) panel.classList.remove('expanded');
       else panel.classList.remove('expanded');
     }
 
@@ -54,7 +56,6 @@
     pointerId = e.pointerId;
     startY = lastY = e.clientY;
     startExpanded = panel.classList.contains('expanded');
-    moved = false;
     startTime = performance.now();
     panel.classList.add('dragging');
     e.currentTarget.setPointerCapture?.(e.pointerId);
@@ -64,7 +65,6 @@
     if (pointerId !== e.pointerId) return;
     const dy = e.clientY - startY;
     lastY = e.clientY;
-    if (Math.abs(dy) > 3) moved = true;
 
     const max = expandedDelta();
     let offset;
@@ -78,8 +78,7 @@
   }
 
   function onPointerUp(e) {
-    if (pointerId !== e.pointerId) return;
-    finishDrag(e.clientY);
+    if (pointerId === e.pointerId) finishDrag(e.clientY);
   }
 
   [handle, heading].forEach(el => {
@@ -91,8 +90,8 @@
     });
   });
 
-  // On desktop, the first upward wheel gesture expands the sheet. The same
-  // gesture is then passed into the history list so scrolling feels continuous.
+  // Desktop: the first upward wheel gesture expands the sheet, then the same
+  // gesture continues into the history list so it feels like one scroll.
   panel.addEventListener('wheel', e => {
     if (!panel.classList.contains('open')) return;
 
@@ -110,7 +109,6 @@
       return;
     }
 
-    // Once expanded, the wheel belongs to the history list.
     e.preventDefault();
     list.scrollTop += e.deltaY;
   }, { passive: false });
