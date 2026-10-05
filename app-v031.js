@@ -17,6 +17,10 @@
   .uc-mode-item:hover,.uc-mode-item.active{background:var(--card2)}
   .uc-mode-check{color:var(--accent2);font-size:16px}
   .quick-tabs{display:none!important}.bottom-actions{display:none!important}
+  /* Keep the ? out of the expression/result flow. It sits above the old calculation. */
+  .display-wrap .expression-row{position:relative;overflow:visible}
+  .display-wrap .how-button{position:absolute;right:0;bottom:calc(100% + 3px);z-index:2;flex:none;width:30px;height:30px;margin:0;border:1px solid var(--border);border-radius:50%;background:var(--card2);color:var(--accent2);font-size:16px;font-weight:750;cursor:pointer}
+  .display-wrap .how-button.hidden{display:none!important}
   .history-panel.uc-sheet{position:fixed;z-index:90;left:50%;bottom:0;transform:translate(-50%,100%);width:min(680px,100%);height:min(48dvh,520px);margin:0;border-radius:24px 24px 0 0;padding:15px 14px calc(18px + env(safe-area-inset-bottom));background:var(--card);box-shadow:0 -20px 70px rgba(0,0,0,.48);transition:transform .25s ease;overflow:hidden;display:flex;flex-direction:column}
   .history-panel.uc-sheet.uc-open{transform:translate(-50%,0)}
   .uc-sheet::before{content:'';width:38px;height:4px;border-radius:999px;background:var(--muted);opacity:.45;align-self:center;margin:-5px 0 10px}
