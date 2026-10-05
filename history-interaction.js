@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = '0.3.5';
+  const VERSION = '0.3.6';
   document.querySelector('#version')?.replaceChildren(document.createTextNode(`v${VERSION}`));
   document.querySelector('#footerVersion')?.replaceChildren(document.createTextNode(`v${VERSION}`));
 
@@ -9,8 +9,6 @@
   const list = document.querySelector('#historyList');
   if (!panel || !handle || !list) return;
 
-  // The app already has a small legacy touch handler. Block it only on the
-  // draggable header so the new pointer-driven sheet owns the gesture.
   [handle, heading].forEach(el => {
     el?.addEventListener('touchstart', e => e.stopImmediatePropagation(), {capture:true, passive:true});
     el?.addEventListener('touchmove', e => e.stopImmediatePropagation(), {capture:true, passive:true});
@@ -57,29 +55,17 @@
   let lastTime = 0;
   let velocityY = 0;
   let startHeight = 0;
-  let startExpanded = false;
   let moved = false;
 
-  function currentHeight() {
-    return panel.getBoundingClientRect().height;
-  }
-
-  function setHeight(height) {
-    panel.style.height = `${height}px`;
-  }
-
-  function clearInlineGeometry() {
-    panel.style.height = '';
-    panel.style.transform = '';
-  }
+  function currentHeight() { return panel.getBoundingClientRect().height; }
+  function setHeight(height) { panel.style.height = `${height}px`; }
+  function clearInlineGeometry() { panel.style.height = ''; panel.style.transform = ''; }
 
   function snap(expanded) {
     panel.classList.toggle('expanded', expanded);
     panel.style.transform = '';
     panel.style.height = expanded ? `${expandedHeight()}px` : `${collapsedHeight()}px`;
-    requestAnimationFrame(() => {
-      panel.style.height = '';
-    });
+    requestAnimationFrame(() => { panel.style.height = ''; });
   }
 
   function closeSheet() {
@@ -91,7 +77,6 @@
 
   function finishDrag(y) {
     if (pointerId === null) return;
-
     const dy = y - startY;
     const downwardVelocity = Math.max(0, velocityY);
     const upwardVelocity = Math.max(0, -velocityY);
@@ -99,7 +84,6 @@
     const expanded = expandedHeight();
     const height = currentHeight();
     const dismissByFling = downwardVelocity > 0.9 && Math.abs(dy) > 24;
-
     panel.classList.remove('dragging');
     pointerId = null;
 
@@ -115,13 +99,9 @@
     }
 
     let targetExpanded;
-    if (upwardVelocity > 0.9 && dy < -24) {
-      targetExpanded = true;
-    } else if (downwardVelocity > 0.9 && dy > 24) {
-      targetExpanded = false;
-    } else {
-      targetExpanded = height > (collapsed + expanded) / 2;
-    }
+    if (upwardVelocity > 0.9 && dy < -24) targetExpanded = true;
+    else if (downwardVelocity > 0.9 && dy > 24) targetExpanded = false;
+    else targetExpanded = height > (collapsed + expanded) / 2;
 
     snap(targetExpanded);
     if (targetExpanded) list.scrollTop = 0;
@@ -130,13 +110,11 @@
 
   function onPointerDown(e) {
     if (!panel.classList.contains('open') || e.button > 0 || pointerId !== null) return;
-
     pointerId = e.pointerId;
     startY = lastY = e.clientY;
     lastTime = performance.now();
     velocityY = 0;
     startHeight = currentHeight();
-    startExpanded = panel.classList.contains('expanded');
     moved = false;
     panel.classList.add('dragging');
     e.currentTarget.setPointerCapture?.(e.pointerId);
@@ -144,7 +122,6 @@
 
   function onPointerMove(e) {
     if (pointerId !== e.pointerId) return;
-
     const now = performance.now();
     const dy = e.clientY - startY;
     const dt = Math.max(1, now - lastTime);
@@ -153,78 +130,47 @@
     lastTime = now;
     if (Math.abs(dy) > 3) moved = true;
 
-    const min = collapsedHeight();
-    const max = expandedHeight();
+    const min = collapsedHeight(), max = expandedHeight();
     const height = clamp(startHeight - dy, min, max);
     const atMin = startHeight - dy < min;
     const atMax = startHeight - dy > max;
-
     setHeight(height);
-
-    // Once the sheet reaches its collapsed detent, extra downward motion
-    // follows the pointer as a real dismiss gesture instead of stopping dead.
-    if (atMin && dy > 0) {
-      panel.style.transform = `translate(-50%, ${Math.min(220, dy - (startHeight - min))}px)`;
-    } else if (atMax && dy < 0) {
-      panel.style.transform = 'translate(-50%, 0)';
-    } else {
-      panel.style.transform = 'translate(-50%, 0)';
-    }
-
+    if (atMin && dy > 0) panel.style.transform = `translate(-50%, ${Math.min(220, dy - (startHeight - min))}px)`;
+    else panel.style.transform = 'translate(-50%, 0)';
     e.preventDefault();
   }
 
-  function onPointerUp(e) {
-    if (pointerId === e.pointerId) finishDrag(e.clientY);
-  }
+  function onPointerUp(e) { if (pointerId === e.pointerId) finishDrag(e.clientY); }
 
   [handle, heading].forEach(el => {
     el?.addEventListener('pointerdown', onPointerDown);
     el?.addEventListener('pointermove', onPointerMove);
     el?.addEventListener('pointerup', onPointerUp);
-    el?.addEventListener('pointercancel', e => {
-      if (pointerId === e.pointerId) finishDrag(e.clientY);
-    });
+    el?.addEventListener('pointercancel', e => { if (pointerId === e.pointerId) finishDrag(e.clientY); });
   });
 
-  // Mouse wheel behaves like the same physical sheet: wheel up grows it until
-  // expanded, then the remaining motion scrolls history. Wheel down first
-  // returns history to its top, then shrinks/dismisses the sheet.
   panel.addEventListener('wheel', e => {
     if (!panel.classList.contains('open')) return;
-
-    const min = collapsedHeight();
-    const max = expandedHeight();
-    const height = currentHeight();
-
+    const min = collapsedHeight(), max = expandedHeight(), height = currentHeight();
     if (e.deltaY < 0 && height < max - 1) {
       e.preventDefault();
       const next = Math.min(max, height - e.deltaY);
       setHeight(next);
-      if (next >= max - 1) {
-        panel.classList.add('expanded');
-        requestAnimationFrame(() => { panel.style.height = ''; });
-      }
+      if (next >= max - 1) { panel.classList.add('expanded'); requestAnimationFrame(() => { panel.style.height = ''; }); }
       return;
     }
-
     if (e.deltaY > 0 && list.scrollTop > 0) {
       e.preventDefault();
       list.scrollTop += e.deltaY;
       return;
     }
-
     if (e.deltaY > 0 && height > min + 1) {
       e.preventDefault();
       const next = Math.max(min, height - e.deltaY);
       setHeight(next);
-      if (next <= min + 1) {
-        panel.classList.remove('expanded');
-        requestAnimationFrame(() => { panel.style.height = ''; });
-      }
+      if (next <= min + 1) { panel.classList.remove('expanded'); requestAnimationFrame(() => { panel.style.height = ''; }); }
       return;
     }
-
     if (e.deltaY < 0) {
       e.preventDefault();
       list.scrollTop = Math.max(0, list.scrollTop + e.deltaY);
@@ -238,8 +184,6 @@
     scrollTimer = setTimeout(() => list.classList.remove('is-scrolling'), 550);
   }, { passive: true });
 
-  // app.js owns opening/closing. Keep our inline drag geometry from leaking
-  // into the next opening and keep the sheet in sync with those class changes.
   const observer = new MutationObserver(() => {
     if (pointerId !== null) return;
     if (!panel.classList.contains('open')) {
