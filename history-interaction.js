@@ -1,79 +1,176 @@
 (() => {
-  const VERSION = '0.3.4';
+  const VERSION = '0.3.5';
   document.querySelector('#version')?.replaceChildren(document.createTextNode(`v${VERSION}`));
   document.querySelector('#footerVersion')?.replaceChildren(document.createTextNode(`v${VERSION}`));
 
   const panel = document.querySelector('#historyPanel');
-  const handle = document.querySelector('.sheet-handle');
+  const handle = panel?.querySelector('.sheet-handle');
   const heading = panel?.querySelector('.section-heading');
   const list = document.querySelector('#historyList');
   if (!panel || !handle || !list) return;
 
+  // The app already has a small legacy touch handler. Block it only on the
+  // draggable header so the new pointer-driven sheet owns the gesture.
+  [handle, heading].forEach(el => {
+    el?.addEventListener('touchstart', e => e.stopImmediatePropagation(), {capture:true, passive:true});
+    el?.addEventListener('touchmove', e => e.stopImmediatePropagation(), {capture:true, passive:true});
+    el?.addEventListener('touchend', e => e.stopImmediatePropagation(), {capture:true, passive:true});
+    el?.addEventListener('touchcancel', e => e.stopImmediatePropagation(), {capture:true, passive:true});
+  });
+
   const style = document.createElement('style');
   style.textContent = `
+    #historyPanel {
+      will-change: height, transform;
+      transform: translate(-50%, 100%);
+      transition: transform .26s cubic-bezier(.22,.61,.36,1), height .26s cubic-bezier(.22,.61,.36,1);
+      overscroll-behavior: contain;
+    }
+    #historyPanel.open { transform: translate(-50%, 0); }
     #historyPanel.dragging { transition: none !important; }
-    #historyPanel .sheet-handle, #historyPanel .section-heading { touch-action: none; cursor: grab; }
-    #historyPanel.dragging .sheet-handle, #historyPanel.dragging .section-heading { cursor: grabbing; }
+    #historyPanel .sheet-handle,
+    #historyPanel .section-heading {
+      touch-action: none;
+      cursor: grab;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    #historyPanel.dragging .sheet-handle,
+    #historyPanel.dragging .section-heading { cursor: grabbing; }
+    #historyPanel.dragging .history-list { pointer-events: none; }
+    #historyPanel.expanded { height: min(92dvh, 780px); }
+    @media (max-width: 480px) {
+      #historyPanel.expanded { height: 100dvh; border-radius: 20px 20px 0 0; }
+    }
   `;
   document.head.appendChild(style);
+
+  const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+  const collapsedHeight = () => Math.min(window.innerHeight * 0.42, 470);
+  const expandedHeight = () => window.innerWidth <= 480
+    ? window.innerHeight
+    : Math.min(window.innerHeight * 0.92, 780);
 
   let pointerId = null;
   let startY = 0;
   let lastY = 0;
+  let lastTime = 0;
+  let velocityY = 0;
+  let startHeight = 0;
   let startExpanded = false;
-  let startTime = 0;
+  let moved = false;
 
-  const expandedDelta = () => Math.max(180, Math.min(window.innerHeight * 0.55, 520));
+  function currentHeight() {
+    return panel.getBoundingClientRect().height;
+  }
 
-  function resetTransform() {
+  function setHeight(height) {
+    panel.style.height = `${height}px`;
+  }
+
+  function clearInlineGeometry() {
+    panel.style.height = '';
     panel.style.transform = '';
+  }
+
+  function snap(expanded) {
+    panel.classList.toggle('expanded', expanded);
+    panel.style.transform = '';
+    panel.style.height = expanded ? `${expandedHeight()}px` : `${collapsedHeight()}px`;
+    requestAnimationFrame(() => {
+      panel.style.height = '';
+    });
+  }
+
+  function closeSheet() {
+    panel.classList.remove('expanded', 'open', 'dragging');
+    panel.style.height = '';
+    panel.style.transform = '';
+    list.scrollTop = 0;
   }
 
   function finishDrag(y) {
     if (pointerId === null) return;
+
     const dy = y - startY;
-    const distance = Math.abs(dy);
-    const velocity = Math.abs(y - lastY) / Math.max(1, performance.now() - startTime);
-    const fastSwipe = velocity > 0.7 && distance > 20;
+    const downwardVelocity = Math.max(0, velocityY);
+    const upwardVelocity = Math.max(0, -velocityY);
+    const collapsed = collapsedHeight();
+    const expanded = expandedHeight();
+    const height = currentHeight();
+    const dismissByFling = downwardVelocity > 0.9 && Math.abs(dy) > 24;
 
     panel.classList.remove('dragging');
-    resetTransform();
+    pointerId = null;
 
-    if (startExpanded) {
-      if (dy > 70 || (fastSwipe && dy > 20)) panel.classList.remove('expanded');
-      else panel.classList.add('expanded');
-    } else {
-      if (dy < -70 || (fastSwipe && dy < -20)) panel.classList.add('expanded');
-      else panel.classList.remove('expanded');
+    if (dismissByFling || dy > 130) {
+      closeSheet();
+      document.querySelector('#historyBackdrop')?.classList.remove('open');
+      setTimeout(() => {
+        if (!panel.classList.contains('open')) panel.classList.add('hidden');
+        const backdrop = document.querySelector('#historyBackdrop');
+        if (backdrop && !backdrop.classList.contains('open')) backdrop.classList.add('hidden');
+      }, 260);
+      return;
     }
 
-    if (panel.classList.contains('expanded')) list.scrollTop = 0;
-    pointerId = null;
+    let targetExpanded;
+    if (upwardVelocity > 0.9 && dy < -24) {
+      targetExpanded = true;
+    } else if (downwardVelocity > 0.9 && dy > 24) {
+      targetExpanded = false;
+    } else {
+      targetExpanded = height > (collapsed + expanded) / 2;
+    }
+
+    snap(targetExpanded);
+    if (targetExpanded) list.scrollTop = 0;
+    moved = false;
   }
 
   function onPointerDown(e) {
-    if (!panel.classList.contains('open') || e.button > 0) return;
+    if (!panel.classList.contains('open') || e.button > 0 || pointerId !== null) return;
+
     pointerId = e.pointerId;
     startY = lastY = e.clientY;
+    lastTime = performance.now();
+    velocityY = 0;
+    startHeight = currentHeight();
     startExpanded = panel.classList.contains('expanded');
-    startTime = performance.now();
+    moved = false;
     panel.classList.add('dragging');
     e.currentTarget.setPointerCapture?.(e.pointerId);
   }
 
   function onPointerMove(e) {
     if (pointerId !== e.pointerId) return;
-    const dy = e.clientY - startY;
-    lastY = e.clientY;
 
-    const max = expandedDelta();
-    let offset;
-    if (startExpanded) {
-      offset = Math.max(0, Math.min(max, dy));
+    const now = performance.now();
+    const dy = e.clientY - startY;
+    const dt = Math.max(1, now - lastTime);
+    velocityY = (e.clientY - lastY) / dt;
+    lastY = e.clientY;
+    lastTime = now;
+    if (Math.abs(dy) > 3) moved = true;
+
+    const min = collapsedHeight();
+    const max = expandedHeight();
+    const height = clamp(startHeight - dy, min, max);
+    const atMin = startHeight - dy < min;
+    const atMax = startHeight - dy > max;
+
+    setHeight(height);
+
+    // Once the sheet reaches its collapsed detent, extra downward motion
+    // follows the pointer as a real dismiss gesture instead of stopping dead.
+    if (atMin && dy > 0) {
+      panel.style.transform = `translate(-50%, ${Math.min(220, dy - (startHeight - min))}px)`;
+    } else if (atMax && dy < 0) {
+      panel.style.transform = 'translate(-50%, 0)';
     } else {
-      offset = Math.max(-max, Math.min(0, dy));
+      panel.style.transform = 'translate(-50%, 0)';
     }
-    panel.style.transform = `translate(-50%, ${offset}px)`;
+
     e.preventDefault();
   }
 
@@ -90,30 +187,75 @@
     });
   });
 
-  // Desktop: the first upward wheel gesture expands the sheet, then the same
-  // gesture continues into the history list so it feels like one scroll.
+  // Mouse wheel behaves like the same physical sheet: wheel up grows it until
+  // expanded, then the remaining motion scrolls history. Wheel down first
+  // returns history to its top, then shrinks/dismisses the sheet.
   panel.addEventListener('wheel', e => {
     if (!panel.classList.contains('open')) return;
 
-    if (!panel.classList.contains('expanded')) {
-      if (e.deltaY >= 0) {
-        e.preventDefault();
-        return;
-      }
+    const min = collapsedHeight();
+    const max = expandedHeight();
+    const height = currentHeight();
+
+    if (e.deltaY < 0 && height < max - 1) {
       e.preventDefault();
-      panel.classList.add('expanded');
-      list.scrollTop = 0;
-      requestAnimationFrame(() => {
-        list.scrollTop = Math.max(0, list.scrollTop + e.deltaY);
-      });
+      const next = Math.min(max, height - e.deltaY);
+      setHeight(next);
+      if (next >= max - 1) {
+        panel.classList.add('expanded');
+        requestAnimationFrame(() => { panel.style.height = ''; });
+      }
       return;
     }
 
-    e.preventDefault();
-    list.scrollTop += e.deltaY;
+    if (e.deltaY > 0 && list.scrollTop > 0) {
+      e.preventDefault();
+      list.scrollTop += e.deltaY;
+      return;
+    }
+
+    if (e.deltaY > 0 && height > min + 1) {
+      e.preventDefault();
+      const next = Math.max(min, height - e.deltaY);
+      setHeight(next);
+      if (next <= min + 1) {
+        panel.classList.remove('expanded');
+        requestAnimationFrame(() => { panel.style.height = ''; });
+      }
+      return;
+    }
+
+    if (e.deltaY < 0) {
+      e.preventDefault();
+      list.scrollTop = Math.max(0, list.scrollTop + e.deltaY);
+    }
   }, { passive: false });
 
+  let scrollTimer;
+  list.addEventListener('scroll', () => {
+    list.classList.add('is-scrolling');
+    clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(() => list.classList.remove('is-scrolling'), 550);
+  }, { passive: true });
+
+  // app.js owns opening/closing. Keep our inline drag geometry from leaking
+  // into the next opening and keep the sheet in sync with those class changes.
+  const observer = new MutationObserver(() => {
+    if (pointerId !== null) return;
+    if (!panel.classList.contains('open')) {
+      clearInlineGeometry();
+      list.scrollTop = 0;
+      return;
+    }
+    if (!panel.classList.contains('expanded')) {
+      panel.style.height = '';
+      panel.style.transform = '';
+    }
+  });
+  observer.observe(panel, {attributes:true, attributeFilter:['class']});
+
   window.addEventListener('resize', () => {
-    if (panel.classList.contains('dragging')) resetTransform();
+    if (pointerId !== null) return;
+    if (panel.classList.contains('expanded')) panel.style.height = '';
   });
 })();
