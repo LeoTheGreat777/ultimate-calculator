@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0f14" />
+  <meta name="description" content="A universal everyday calculator for numbers, percentages, money, fuel, energy, VAT, units and more." />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="styles.css" />
+  <title>Ultimate Calculator</title>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">EVERYDAY CALCULATOR</div>
+        <h1>Ultimate Calculator</h1>
+      </div>
+      <button id="themeButton" class="icon-button" aria-label="Toggle theme" title="Toggle theme">☾</button>
+    </header>
+
+    <section class="calculator-card">
+      <div class="display-wrap">
+        <div id="expression" class="expression" aria-live="polite"></div>
+        <div id="result" class="result" aria-live="polite">0</div>
+      </div>
+
+      <div class="quick-tabs" role="tablist" aria-label="Calculator modes">
+        <button class="tab active" data-mode="calc">Calc</button>
+        <button class="tab" data-mode="fuel">Fuel</button>
+        <button class="tab" data-mode="energy">Energy</button>
+        <button class="tab" data-mode="vat">VAT</button>
+        <button class="tab" data-mode="units">Units</button>
+      </div>
+
+      <div id="toolPanel" class="tool-panel hidden"></div>
+
+      <div id="keypad" class="keypad">
+        <button class="key utility" data-action="clear">AC</button>
+        <button class="key utility" data-action="backspace">⌫</button>
+        <button class="key utility" data-value="%">%</button>
+        <button class="key operator" data-value="/">÷</button>
+
+        <button class="key" data-value="7">7</button>
+        <button class="key" data-value="8">8</button>
+        <button class="key" data-value="9">9</button>
+        <button class="key operator" data-value="*">×</button>
+
+        <button class="key" data-value="4">4</button>
+        <button class="key" data-value="5">5</button>
+        <button class="key" data-value="6">6</button>
+        <button class="key operator" data-value="-">−</button>
+
+        <button class="key" data-value="1">1</button>
+        <button class="key" data-value="2">2</button>
+        <button class="key" data-value="3">3</button>
+        <button class="key operator" data-value="+">+</button>
+
+        <button class="key wide" data-value="0">0</button>
+        <button class="key" data-value=".">.</button>
+        <button class="key equals" data-action="equals">=</button>
+      </div>
+
+      <div class="bottom-actions">
+        <button id="historyButton" class="secondary-button">History</button>
+        <button id="copyButton" class="secondary-button">Copy result</button>
+      </div>
+    </section>
+
+    <section id="historyPanel" class="history-panel hidden">
+      <div class="section-heading">
+        <h2>History</h2>
+        <button id="clearHistory" class="text-button">Clear</button>
+      </div>
+      <div id="historyList" class="history-list"></div>
+    </section>
+
+    <p class="hint">Try <strong>20 + 25%</strong>, <strong>80 - 15%</strong>, or <strong>12.99 / 0.75 kg</strong> in the tools.</p>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
