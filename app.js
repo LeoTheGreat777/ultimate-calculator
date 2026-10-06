@@ -436,7 +436,7 @@ function toolKeyInput(key){
      if(unitReplaceOnNextKey){value='';unitReplaceOnNextKey=false}
      if(key==='.'||key===','){
        const tail=value.split(/[+*/-]/).pop();
-       if(!tail.includes('.'))value+=value?' .'.trim(): '0.';
+       if(!tail.includes('.'))value+=value&&/[+*/-]$/.test(value)?'0.':value?'.':'0.';
      }else if(key==='-'){
        if(value==='')value='-';
        else if(/[+*/-]$/.test(value)){
