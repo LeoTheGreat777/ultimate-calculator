@@ -11,6 +11,7 @@ en:{calc:'Calculator',fuel:'Fuel',energy:'Energy',vat:'VAT',units:'Units',how:'H
 const ICONS={calc:'▦',fuel:'⛽',energy:'ϟ',vat:'%',units:'↔'};
 const t=k=>T[lang][k]??T.en[k]??k;
 const fmt=n=>Number.isFinite(Number(n))?new Intl.NumberFormat(lang==='el'?'el-GR':'en-US',{maximumFractionDigits:10}).format(Number(n)):'Error';
+const formatInputDisplay=s=>{const text=pretty(String(s||''));return text.length>22?text.replace(/(\d)(?=(\d{3})+(?!\d))/g,'$1,'):text};
 const pretty=s=>String(s).replace(/\*/g,'×').replace(/\//g,'÷');
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -28,13 +29,32 @@ function evalExpr(input){
  function additive(){let left=mult();while(tokens[pos]&&['+','-'].includes(tokens[pos].type)){const op=tokens[pos++].type,right=mult(),rv=right.percent?left.value*right.value/100:right.value;left={value:op==='+'?left.value+rv:left.value-rv,percent:false}}return left}
  const out=additive();if(pos!==tokens.length||!Number.isFinite(out.value))throw Error();return out.value
 }
-function percentExplanation(input,result){
- const m=String(input).match(/^(-?\d+(?:\.\d+)?)\s*([+-])\s*(\d+(?:\.\d+)?)%$/);if(!m)return null;
- const base=Number(m[1]),rate=Number(m[3]),part=base*rate/100,total=m[2]==='+'?base+part:base-part;
- const steps=lang==='el'
-   ? [`Υπολόγισε το ${fmt(rate)}% του ${fmt(base)}: ${fmt(base)} × ${fmt(rate)} ÷ 100 = ${fmt(part)}`,m[2]==='+'?`Πρόσθεσε το ${fmt(part)} στο ${fmt(base)}: ${fmt(base)} + ${fmt(part)} = ${fmt(total)}`:`Αφαίρεσε το ${fmt(part)} από το ${fmt(base)}: ${fmt(base)} − ${fmt(part)} = ${fmt(total)}`]
-   : [`Calculate ${fmt(rate)}% of ${fmt(base)}: ${fmt(base)} × ${fmt(rate)} ÷ 100 = ${fmt(part)}`,m[2]==='+'?`Add ${fmt(part)} to ${fmt(base)}: ${fmt(base)} + ${fmt(part)} = ${fmt(total)}`:`Subtract ${fmt(part)} from ${fmt(base)}: ${fmt(base)} − ${fmt(part)} = ${fmt(total)}`];
- return{formula:pretty(input),steps,result:fmt(result)}
+function explanationForExpression(input,result){
+ const source=String(input).replace(/×/g,'*').replace(/÷/g,'/').replace(/,/g,'.').replace(/\s+/g,'');
+ let tokens;try{tokens=tokenize(source)}catch{return null}
+ let pos=0;
+ const primary=()=>{if(tokens[pos]?.type==='('){pos++;const child=additive();if(tokens[pos]?.type!==')')throw Error();pos++;return{type:'group',child}}const x=tokens[pos++];if(!x||x.type!=='number')throw Error();return{type:'number',value:x.value,percent:x.percent,raw:x.value+(x.percent?'%':'')}};
+ const mult=()=>{let left=primary();while(tokens[pos]&&['*','/'].includes(tokens[pos].type)){const op=tokens[pos++].type;left={type:'op',op,left,right:primary()}}return left};
+ const additive=()=>{let left=mult();while(tokens[pos]&&['+','-'].includes(tokens[pos].type)){const op=tokens[pos++].type;left={type:'op',op,left,right:mult()}}return left};
+ let tree;try{tree=additive();if(pos!==tokens.length)throw Error()}catch{return null}
+ const renderNode=n=>n.type==='number'?n.raw:n.type==='group'?'('+renderNode(n.child)+')':renderNode(n.left)+n.op+renderNode(n.right);
+ const show=n=>Number.isFinite(Number(n))?fmt(n):String(n);
+ const steps=[];
+ const walk=n=>{
+  if(n.type==='number')return n.value;
+  if(n.type==='group')return walk(n.child);
+  const l=walk(n.left),r=walk(n.right),percent=n.right.type==='number'&&n.right.percent;
+  const rv=percent&&['+','-'].includes(n.op)?l*r/100:percent?r/100:r;
+  const v=n.op==='+'?l+rv:n.op==='-'?l-rv:n.op==='*'?l*rv:l/rv;
+  const op=({'+':'+','-':'−','*':'×','/':'÷'})[n.op];
+  if(percent&&['+','-'].includes(n.op)){
+   steps.push(lang==='el'?show(l)+' × '+show(r)+' ÷ 100 = '+show(rv)+' (το '+show(r)+'% του '+show(l)+')':show(l)+' × '+show(r)+' ÷ 100 = '+show(rv)+' ('+show(r)+'% of '+show(l)+')');
+   steps.push(show(l)+' '+op+' '+show(rv)+' = '+show(v));
+  }else steps.push(pretty(renderNode(n.left))+' '+op+' '+pretty(renderNode(n.right))+' = '+show(v));
+  return v;
+ };
+ try{walk(tree)}catch{return null}
+ return{formula:pretty(input),steps,result:show(result)};
 }
 function resetHow(){howData=null;$('#howButton')?.classList.add('hidden')}
 function applyTheme(){
@@ -51,11 +71,11 @@ function toggleTheme(){
 }
 function render(){
  if(mode!=='calc')return;
- const display=justCalculated?fmt(lastResult):(pretty(expression+current)||'');
+ const display=justCalculated?fmt(lastResult):(formatInputDisplay(expression+current)||'');
  $('#calculatorDisplay').classList.remove('tool-display','tool-empty');
  $('#calculatorDisplay').classList.toggle('calculated',justCalculated);
  $('#expression').textContent=justCalculated?pretty(lastExpression):'';
- $('#result').textContent=display;
+ $('#result').textContent=display;requestAnimationFrame(()=>{const r=$('#result');if(r)r.scrollLeft=r.scrollWidth});
  $('#clearButton').textContent=justCalculated?'AC':'C';
  $('#howButton').classList.toggle('hidden',!howData)
 }
@@ -89,7 +109,7 @@ function percent(){resetHow();if(!current||currentIsPercent)return;current+='%';
 function parseLastOperation(full){const m=String(full).match(/^(.*?)([+\-×÷])(-?\d+(?:[.,]\d+)?%?)$/);return m?{op:m[2],rhs:m[3]}:null}
 function repeatEquals(){
  if(!justCalculated||!lastOperation)return false;
- try{const rhs=lastOperation.rhs,base=String(lastResult),full=base+lastOperation.op+rhs,value=evalExpr(full);lastExpression=full;lastResult=value;justCalculated=true;howData=percentExplanation(full,value)||{formula:pretty(full),steps:[`${pretty(full)} = ${fmt(value)}`],result:fmt(value)};saveHistory({expression:full,result:value,how:howData});render();return true}catch{return false}
+ try{const rhs=lastOperation.rhs,base=String(lastResult),full=base+lastOperation.op+rhs,value=evalExpr(full);lastExpression=full;lastResult=value;justCalculated=true;howData=explanationForExpression(full,value)||{formula:pretty(full),steps:[`${pretty(full)} = ${fmt(value)}`],result:fmt(value)};saveHistory({expression:full,result:value,how:howData});render();return true}catch{return false}
 }
 function equals(){
  if(justCalculated&&repeatEquals())return;
