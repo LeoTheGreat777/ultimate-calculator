@@ -1,4 +1,4 @@
-const VERSION='0.4.109';
+const VERSION='0.4.110';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -314,11 +314,6 @@ function renderUnitsDisplay(){
      unitSource=side;
      unitReplaceOnNextKey=true;
      updateUnitsDisplay();
-     if(isMobileDevice()){
-       $('#calculatorCard').classList.add('unit-keypad-open');
-       $('#keypad').className='keypad';
-       renderCalcKeypad();
-     }
    };
    input.addEventListener('click',activate);
    row?.addEventListener('click',e=>{
@@ -516,17 +511,14 @@ function renderTool(){
  const calc=mode==='calc';
  const card=$('#calculatorCard');
  const modeLabel=$('#modeLabel');if(modeLabel)modeLabel.textContent=modeText(mode);
- card.classList.toggle('mobile-tool',!calc&&isMobileDevice());
+ card.classList.toggle('mobile-tool',!calc&&isMobileDevice()&&mode!=='units');
  card.classList.remove('unit-keypad-open');
  if(mode==='units'){
    $('#calculatorCard').classList.add('tool-mode');
    $('#toolPanel').classList.add('hidden');
    $('#calculatorDisplay').classList.remove('hidden');
    renderUnitsDisplay();
-   if(isMobileDevice()){
-     $('#keypad').className='hidden';
-     $('#keypad').innerHTML='';
-   }else renderCalcKeypad();
+   renderCalcKeypad();
    return;
  }
  restoreCalculatorDisplay();
