@@ -1,4 +1,4 @@
-const VERSION='0.4.46';
+const VERSION='0.4.47';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function readLanguage(){
@@ -205,54 +205,64 @@ function isMobileDevice(){
 function renderUnitsDisplay(){
  const d=$('#calculatorDisplay');
  d.className='display-wrap unit-display';
- d.innerHTML='<div class="unit-display-toolbar"><select id="unitCategory" class="conversion-category">'+Object.keys(units).map(x=>'<option value="'+x+'">'+esc(t(x))+'</option>').join('')+'</select><button id="unitSwap" class="conversion-swap" type="button" aria-label="Swap units">⇄</button></div><div class="unit-rows"><div class="unit-row" data-unit-row="from"><input id="unitValueFrom" class="unit-value" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="" aria-label="'+esc(t('from'))+'"><select id="unitFrom" class="unit-unit"></select></div><div class="unit-row" data-unit-row="to"><input id="unitValueTo" class="unit-value" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="" aria-label="'+esc(t('to'))+'"><select id="unitTo" class="unit-unit"></select></div></div>';
+ d.innerHTML='<div class="unit-display-toolbar"><select id="unitCategory" class="conversion-category"><option value="length">'+esc(t('length'))+'</option><option value="mass">'+esc(t('mass'))+'</option><option value="volume">'+esc(t('volume'))+'</option><option value="data">'+esc(t('data'))+'</option></select><button id="unitSwap" class="conversion-swap" type="button" aria-label="Swap units">⇄</button></div><div class="unit-rows"><div class="unit-row" data-unit-row="from"><input id="unitValueFrom" class="unit-value" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" aria-label="'+esc(t('from'))+'"><select id="unitFrom" class="unit-unit"></select></div><div class="unit-row" data-unit-row="to"><input id="unitValueTo" class="unit-value" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" aria-label="'+esc(t('to'))+'"><select id="unitTo" class="unit-unit"></select></div></div>';
  const cat=$('#unitCategory');
  cat.value=window._unitCategory||'length';
- populateUnits(false);
- $('#unitValueFrom,#unitValueTo').forEach(input=>{
+ populateUnits(true);
+
+ const bindInput=input=>{
+   const side=input.id==='unitValueFrom'?'from':'to';
+   input.dataset.unitInput=side;
    input.readOnly=false;
    input.setAttribute('inputmode','decimal');
-   input.dataset.unitInput=input.id==='unitValueFrom'?'from':'to';
    input.addEventListener('focus',()=>{
-     unitActiveInput=input.dataset.unitInput;
-     unitSource=unitActiveInput;
+     unitActiveInput=side;
+     unitSource=side;
      unitReplaceOnNextKey=true;
      if(!isMobileDevice())requestAnimationFrame(()=>input.select());
    });
    input.addEventListener('click',()=>{
-     unitActiveInput=input.dataset.unitInput;
-     unitSource=unitActiveInput;
+     unitActiveInput=side;
+     unitSource=side;
      unitReplaceOnNextKey=true;
    });
    input.addEventListener('input',()=>{
-     unitActiveInput=input.dataset.unitInput;
-     unitSource=unitActiveInput;
+     unitActiveInput=side;
+     unitSource=side;
      unitReplaceOnNextKey=false;
-     unitExpressions[unitActiveInput]=input.value;
-     convertUnitExpression(unitActiveInput);
+     unitExpressions[side]=input.value;
+     convertUnitExpression(side);
    });
- });
+ };
+ bindInput($('#unitValueFrom'));
+ bindInput($('#unitValueTo'));
+
  cat.addEventListener('change',()=>{
    window._unitCategory=cat.value||'length';
-   unitExpressions={from:'',to:''};
+   unitExpressions={from:'0',to:'0'};
    unitActiveInput='from';
    unitSource='from';
    unitReplaceOnNextKey=true;
-   populateUnits(false);
+   populateUnits(true);
    updateUnitsDisplay();
  });
- $('#unitFrom,#unitTo').forEach(select=>select.addEventListener('change',()=>{
+
+ const handleUnitChange=select=>{
    const changed=select.id==='unitFrom'?'from':'to';
-   const source=unitExpressions.from?.trim()?'from':unitExpressions.to?.trim()?'to':changed;
+   const source=unitExpressions[unitSource]?.trim()?unitSource:unitExpressions[changed]?.trim()?changed:(unitExpressions.from?.trim()?'from':unitExpressions.to?.trim()?'to':changed);
    unitSource=source;
    unitActiveInput=source;
    unitReplaceOnNextKey=false;
    convertUnitExpression(source);
- }));
+ };
+ $('#unitFrom').addEventListener('change',()=>handleUnitChange($('#unitFrom')));
+ $('#unitTo').addEventListener('change',()=>handleUnitChange($('#unitTo')));
+
  $('#unitSwap').addEventListener('click',()=>{
    const a=$('#unitFrom'),b=$('#unitTo');
    [a.value,b.value]=[b.value,a.value];
-   [unitExpressions.from,unitExpressions.to]=[unitExpressions.to,unitExpressions.from];
+   const from=unitExpressions.from,to=unitExpressions.to;
+   unitExpressions={from:to,to:from};
    unitSource=unitSource==='from'?'to':'from';
    unitActiveInput=unitSource;
    unitReplaceOnNextKey=false;
@@ -263,22 +273,31 @@ function renderUnitsDisplay(){
 function updateUnitsDisplay(){
  const from=$('#unitValueFrom'),to=$('#unitValueTo');
  if(!from||!to)return;
- from.value=unitExpressions.from||'';to.value=unitExpressions.to||'';
+ from.value=unitExpressions.from??'';
+ to.value=unitExpressions.to??'';
  $('.unit-row').forEach(row=>row.classList.toggle('active',row.dataset.unitRow===unitActiveInput));
- const clear=$('#clearButton');if(clear)clear.textContent=(unitExpressions.from||unitExpressions.to)?'C':'AC';
 }
 function convertUnitExpression(source='from'){
  const cc=$('#unitCategory')?.value,fu=$('#unitFrom')?.value,tu=$('#unitTo')?.value;
  if(!cc||!fu||!tu)return;
- const expr=unitExpressions[source]||'';
- if(!expr.trim()){unitExpressions[source]='';unitExpressions[source==='from'?'to':'from']='';updateUnitsDisplay();return}
+ const expr=String(unitExpressions[source]??'').trim();
+ if(!expr){
+   unitExpressions[source]='';
+   unitExpressions[source==='from'?'to':'from']='';
+   updateUnitsDisplay();
+   return;
+ }
  const value=unitEvaluate(expr);
- if(value===null){unitExpressions[source==='from'?'to':'from']='';updateUnitsDisplay();return}
+ if(value===null){
+   unitExpressions[source==='from'?'to':'from']='';
+   updateUnitsDisplay();
+   return;
+ }
  const out=source==='from'?value*units[cc][fu]/units[cc][tu]:value*units[cc][tu]/units[cc][fu];
  unitExpressions[source==='from'?'to':'from']=unitValueFormat(out);
  updateUnitsDisplay();
 }
-window._runUnits=()=>convertUnitExpression(unitActiveInput);
+window._runUnits=()=>convertUnitExpression(unitSource||unitActiveInput||'from');
 const FIELD_EXAMPLES={fuelD:'250',fuelC:'7.2',fuelP:'1.85',energyP:'100',energyH:'8',energyD:'30',energyR:'0.20',amount:'100',vatRate:'24%',value:'10'};
 const TOOL_DEFAULTS={fuelD:250,fuelC:7.2,fuelP:1.85,energyP:100,energyH:8,energyD:30,energyR:0.20,amount:100,vatRate:24,value:10};
 let vatAction='add';
