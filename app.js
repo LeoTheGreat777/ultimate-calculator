@@ -1,5 +1,5 @@
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
-const VERSION='0.4.6';
+const VERSION='0.4.7';
 let lang=localStorage.getItem('uc-lang')==='en'?'en':'el';
 let theme=localStorage.getItem('uc-theme')==='light'?'light':localStorage.getItem('uc-theme')==='dark'?'dark':'auto';
 let mode='calc',expression='',current='',currentIsPercent=false,justCalculated=false,lastExpression='',lastResult=null,howData=null,lastOperation=null,historyClearConfirm=false,toolResult=null,toolActiveInput=null;
@@ -93,11 +93,12 @@ function render(){
  });
 }
 function renderToolDisplay(){
- const d=$('#calculatorDisplay');d.classList.add('tool-display');d.classList.remove('calculated','tool-empty');
- $('#expression').textContent=toolResult?.detail??'';
- $('#howButton').classList.toggle('hidden',!toolResult?.how);
- $('#result').textContent=toolResult?.main??'';$('#result').classList.toggle('long-value',String(toolResult?.main??'').length>18);
- if(!toolResult)d.classList.add('tool-empty')
+ const result=$('#toolResult'),detail=$('#toolResultDetail'),how=$('#toolHow');
+ if(!result)return;
+ result.textContent=toolResult?.main??t('toolReady');
+ result.classList.toggle('placeholder',!toolResult);
+ detail.textContent=toolResult?.detail??'';
+ how?.classList.toggle('hidden',!toolResult?.how);
 }
 function clearAll(){expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null;lastOperation=null;resetHow();render()}
 function clearCurrent(){resetHow();if(current){current='';currentIsPercent=false;render();return}clearAll()}
@@ -151,12 +152,42 @@ const field=(id,label)=>`<label class="tool-field"><span>${esc(label)}</span><in
 function setToolResult(main,detail='',how=null){toolResult={main,detail,how};howData=how;renderToolDisplay()}
 function populateUnits(){const cat=$('#unitCategory');if(!cat)return;const keys=Object.keys(units[cat.value]);$('#unitFrom').innerHTML=keys.map(x=>`<option value="${x}">${x}</option>`).join('');$('#unitTo').innerHTML=keys.map(x=>`<option value="${x}">${x}</option>`).join('')}
 function bindTools(){
- const fuelGo=$('#fuelGo');fuelGo?.addEventListener('click',()=>{const d=toolNumber('fuelD'),c=toolNumber('fuelC'),p=toolNumber('fuelP');if([d,c,p].some(x=>!Number.isFinite(x))||d===0)return;const used=d*c/100,cost=used*p;setToolResult(`${fmt(cost)} €`,`${t('fuelResult')}: ${fmt(used)} L · ${t('costKm')}: ${fmt(cost/d)} €/km`)});
- const energyGo=$('#energyGo');energyGo?.addEventListener('click',()=>{const p=toolNumber('energyP'),h=toolNumber('energyH'),d=toolNumber('energyD'),r=toolNumber('energyR');if([p,h,d,r].some(x=>!Number.isFinite(x)))return;const kwh=p/1000*h*d,cost=kwh*r;setToolResult(`${fmt(cost)} €`,`${t('energyResult')}: ${fmt(kwh)} kWh`)});
- const vat=add=>{const a=toolNumber('amount'),r=toolNumber('vatRate');if(!Number.isFinite(a)||!Number.isFinite(r))return;const total=add?a*(1+r/100):a/(1+r/100),tax=add?total-a:a-total;setToolResult(`${fmt(total)} €`,`${t('vatAmount')}: ${fmt(Math.abs(tax))} €`)};
+ const fuelGo=$('#fuelGo');fuelGo?.addEventListener('click',()=>{
+  const d=toolNumber('fuelD'),c=toolNumber('fuelC'),p=toolNumber('fuelP');if([d,c,p].some(x=>!Number.isFinite(x))||d===0)return;
+  const used=d*c/100,cost=used*p;
+  const how={formula:`${fmt(d)} km × ${fmt(c)} L/100 km × ${fmt(p)} €/L`,steps:[
+   {title:lang==='el'?'Υπολόγισε τα λίτρα':'Calculate fuel used',text:`${fmt(d)} × ${fmt(c)} ÷ 100 = ${fmt(used)} L`},
+   {title:lang==='el'?'Υπολόγισε το κόστος':'Calculate cost',text:`${fmt(used)} L × ${fmt(p)} €/L = ${fmt(cost)} €`},
+   {title:lang==='el'?'Κόστος ανά km':'Cost per km',text:`${fmt(cost)} € ÷ ${fmt(d)} km = ${fmt(cost/d)} €/km`}],result:`${fmt(cost)} €`};
+  setToolResult(`${fmt(cost)} €`,`${t('fuelResult')}: ${fmt(used)} L · ${t('costKm')}: ${fmt(cost/d)} €/km`,how)
+ });
+ const energyGo=$('#energyGo');energyGo?.addEventListener('click',()=>{
+  const p=toolNumber('energyP'),hh=toolNumber('energyH'),d=toolNumber('energyD'),r=toolNumber('energyR');if([p,hh,d,r].some(x=>!Number.isFinite(x)))return;
+  const kwh=p/1000*hh*d,cost=kwh*r;
+  const how={formula:`${fmt(p)} W ÷ 1000 × ${fmt(hh)} h/day × ${fmt(d)} days`,steps:[
+   {title:lang==='el'?'Μετέτρεψε W σε kW':'Convert W to kW',text:`${fmt(p)} W ÷ 1000 = ${fmt(p/1000)} kW`},
+   {title:lang==='el'?'Υπολόγισε την ενέργεια':'Calculate energy',text:`${fmt(p/1000)} kW × ${fmt(hh)} × ${fmt(d)} = ${fmt(kwh)} kWh`},
+   {title:lang==='el'?'Υπολόγισε το κόστος':'Calculate cost',text:`${fmt(kwh)} kWh × ${fmt(r)} €/kWh = ${fmt(cost)} €`}],result:`${fmt(cost)} €`};
+  setToolResult(`${fmt(cost)} €`,`${t('energyResult')}: ${fmt(kwh)} kWh`,how)
+ });
+ const vat=add=>{
+  const aa=toolNumber('amount'),r=toolNumber('vatRate');if(!Number.isFinite(aa)||!Number.isFinite(r))return;
+  const total=add?aa*(1+r/100):aa/(1+r/100),tax=add?total-aa:aa-total;
+  const how={formula:add?`${fmt(aa)} € + ${fmt(r)}% VAT`:`${fmt(aa)} € with ${fmt(r)}% VAT`,steps:add?[
+   {title:lang==='el'?'Υπολόγισε τον ΦΠΑ':'Calculate VAT',text:`${fmt(aa)} × ${fmt(r)} ÷ 100 = ${fmt(tax)} €`},
+   {title:lang==='el'?'Πρόσθεσε τον ΦΠΑ':'Add VAT',text:`${fmt(aa)} + ${fmt(tax)} = ${fmt(total)} €`}]:[
+   {title:lang==='el'?'Αφαίρεσε τον ΦΠΑ':'Remove VAT',text:`${fmt(aa)} ÷ (1 + ${fmt(r)} ÷ 100) = ${fmt(total)} €`},
+   {title:lang==='el'?'Ποσό ΦΠΑ':'VAT amount',text:`${fmt(aa)} - ${fmt(total)} = ${fmt(Math.abs(tax))} €`}],result:`${fmt(total)} €`};
+  setToolResult(`${fmt(total)} €`,`${t('vatAmount')}: ${fmt(Math.abs(tax))} €`,how)
+ };
  $('#addVat')?.addEventListener('click',()=>vat(true));$('#removeVat')?.addEventListener('click',()=>vat(false));
  $('#unitCategory')?.addEventListener('change',populateUnits);
- $('#convert')?.addEventListener('click',()=>{const v=toolNumber('value'),c=$('#unitCategory').value,f=$('#unitFrom').value,to=$('#unitTo').value;if(!Number.isFinite(v))return;setToolResult(`${fmt(v*units[c][f]/units[c][to])} ${esc(to)}`)})
+ $('#convert')?.addEventListener('click',()=>{
+  const v=toolNumber('value'),cc=$('#unitCategory').value,ff=$('#unitFrom').value,to=$('#unitTo').value;if(!Number.isFinite(v))return;
+  const out=v*units[cc][ff]/units[cc][to];
+  const how={formula:`${fmt(v)} ${ff} → ${to}`,steps:[{title:lang==='el'?'Μετέτρεψε την τιμή':'Convert the value',text:`${fmt(v)} × ${fmt(units[cc][ff])} ÷ ${fmt(units[cc][to])} = ${fmt(out)} ${to}`}],result:`${fmt(out)} ${to}`};
+  setToolResult(`${fmt(out)} ${to}`,`${t('toolUnit')}: ${fmt(out)} ${to}`,how)
+ });
 }
 function modeIcon(m){return ICONS[m]||''}
 function renderTool(){
@@ -164,17 +195,21 @@ function renderTool(){
  $('#keypad').classList.remove('hidden');
  $('#calculatorCard').classList.toggle('tool-mode',!calc);
  $('#toolPanel').classList.toggle('hidden',calc);
+ $('#calculatorDisplay').classList.toggle('hidden',!calc);
  if(calc){render();return}
  let html='';
  if(mode==='fuel')html=`<div class="tool-grid">${field('fuelD',t('fuelD'))}${field('fuelC',t('fuelC'))}${field('fuelP',t('fuelP'))}</div><button class="tool-action" id="fuelGo" type="button">${t('fuelGo')}</button>`;
  if(mode==='energy')html=`<div class="tool-grid">${field('energyP',t('energyP'))}${field('energyH',t('energyH'))}${field('energyD',t('energyD'))}${field('energyR',t('energyR'))}</div><button class="tool-action" id="energyGo" type="button">${t('energyGo')}</button>`;
  if(mode==='vat')html=`<div class="tool-grid">${field('amount',t('amount'))}${field('vatRate',t('vatRate'))}</div><div class="tool-grid tool-actions-row"><button class="tool-action" id="addVat" type="button">${t('addVat')}</button><button class="tool-action" id="removeVat" type="button">${t('removeVat')}</button></div>`;
  if(mode==='units')html=`<div class="tool-grid">${field('value',t('value'))}<label class="tool-field"><span>${t('category')}</span><select id="unitCategory"><option value="length">${t('length')}</option><option value="mass">${t('mass')}</option><option value="volume">${t('volume')}</option><option value="data">${t('data')}</option></select></label><label class="tool-field"><span>${t('from')}</span><select id="unitFrom"></select></label><label class="tool-field"><span>${t('to')}</span><select id="unitTo"></select></label></div><button class="tool-action" id="convert" type="button">${t('convert')}</button>`;
+ const resultBlock=`<div class="tool-result"><div id="toolResult" class="tool-result-main placeholder">${t('toolReady')}</div><div id="toolResultDetail" class="tool-result-detail"></div><button id="toolHow" class="tool-how hidden" type="button">${t('how')}</button></div>`;
+ html+=resultBlock;
  $('#toolPanel').innerHTML=html;
  toolActiveInput=null;
  if(mode==='units')populateUnits();
  bindTools();
- renderToolDisplay()
+ renderToolDisplay();
+ $('#toolHow')?.addEventListener('click',showHow);
 }
 function setMode(next){mode=next;expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null;lastOperation=null;toolResult=null;resetHow();renderTool();syncModeButton()}
 function applyLanguage(){
@@ -206,8 +241,11 @@ function historyClick(e){
  if(del){localStorage.setItem('uc-history',JSON.stringify(historyItems().filter(x=>String(x.id)!==del.dataset.delete)));renderHistory();return}
  if(item){const x=historyItems().find(x=>String(x.id)===item.dataset.history);if(!x)return;closeHistory();setMode('calc');lastExpression=x.expression;lastResult=ratFromString(String(x.result));justCalculated=true;expression='';current='';currentIsPercent=false;howData=x.how||null;lastOperation=parseLastOperation(x.expression);render();syncModeButton()}
 }
-function copyResult(){const value=justCalculated?ratToDecimal(lastResult,24):(current||expression);if(value===''||!navigator.clipboard)return;navigator.clipboard.writeText(String(value)).then(()=>{const b=$('#copyButton');b.textContent=t('copied');setTimeout(()=>b.textContent=t('copy'),900)}).catch(()=>{})}
-
+function copyResult(){
+ const value=mode==='calc'?(justCalculated?ratToDecimal(lastResult,24):(current||expression)):(toolResult?.main??'');
+ if(value===''||value===t('toolReady')||!navigator.clipboard)return;
+ navigator.clipboard.writeText(String(value)).then(()=>{const b=$('#copyButton');b.textContent=t('copied');setTimeout(()=>b.textContent=t('copy'),900)}).catch(()=>{})
+}
 function toolKeyInput(key){
  const input=toolActiveInput&&toolActiveInput.matches('#toolPanel input')?toolActiveInput:$('#toolPanel input');
  if(!input)return false;
@@ -217,7 +255,7 @@ function toolKeyInput(key){
  else if(key==='backspace')value=value.slice(0,-1);
  else if(key==='.')value.includes('.')?value:value+'.';
  else if(key==='-')value=value.startsWith('-')?value.slice(1):'-'+value;
- else if(/^\\d$/.test(key))value+=key;
+ else if(/^\d$/.test(key))value+=key;
  else return false;
  input.value=value;
  input.dispatchEvent(new Event('input',{bubbles:true}));
@@ -232,7 +270,7 @@ $('#keypad').addEventListener('click',e=>{
  const a=b.dataset.action,v=b.dataset.value;
  if(mode!=='calc'){
    if(a==='equals'){runActiveTool();return}
-   if(a==='clear'||a==='backspace'||v==='.'||/^\\d$/.test(v||'')){toolKeyInput(a==='clear'?'clear':a==='backspace'?'backspace':v);return}
+   if(a==='clear'||a==='backspace'||v==='.'||/^\d$/.test(v||'')){toolKeyInput(a==='clear'?'clear':a==='backspace'?'backspace':v);return}
    if(v==='-' ){toolKeyInput('-');return}
    return;
  }
