@@ -1,4 +1,4 @@
-const VERSION='0.4.83';
+const VERSION='0.4.84';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -124,8 +124,25 @@ function explanationForExpression(input,result){
  let tree;try{tree=additive();if(pos!==tokens.length)throw Error()}catch{return null}
  const renderNode=n=>n.type==='number'?n.raw:n.type==='group'?'('+renderNode(n.child)+')':renderNode(n.left)+n.op+renderNode(n.right);
  const steps=[];
- const walk=n=>{if(n.type==='number')return n.value;if(n.type==='group')return walk(n.child);const l=walk(n.left),r=walk(n.right),percent=n.right.type==='number'&&n.right.percent;const rv=percent&&['+','-'].includes(n.op)?ratMul(l,r):r;const v=n.op==='+'?ratAdd(l,rv):n.op==='-'?ratSub(l,rv):n.op==='*'?ratMul(l,rv):ratDiv(l,rv);const op=({'+':'+','-':'−','*':'×','/':'÷'})[n.op];if(percent&&['+','-'].includes(n.op)){const pct=ratDiv(r,ratFromString('0.01'));steps.push({title:lang==='el'?'Υπολόγισε το ποσοστό':'Calculate the percentage',text:formatRat(l)+' × '+formatRat(pct)+' ÷ 100 = '+formatRat(rv)});steps.push({title:lang==='el'?'Έπειτα':'Then',text:formatRat(l)+' '+op+' '+formatRat(rv)+' = '+formatRat(v)});}else steps.push({title:lang==='el'?'Υπολόγισε':'Calculate',text:formatExpressionDisplay(renderNode(n.left))+' '+op+' '+formatExpressionDisplay(renderNode(n.right))+' = '+formatRat(v)});return v};
- try{walk(tree)}catch{return null}return{formula:formatExpressionDisplay(input),steps,result:formatRat(result)}
+ const walk=n=>{
+   if(n.type==='number')return n.value;
+   if(n.type==='group')return walk(n.child);
+   const l=walk(n.left),r=walk(n.right),percent=n.right.type==='number'&&n.right.percent;
+   const rv=percent&&['+','-'].includes(n.op)?ratMul(l,r):r;
+   const v=n.op==='+'?ratAdd(l,rv):n.op==='-'?ratSub(l,rv):n.op==='*'?ratMul(l,rv):ratDiv(l,rv);
+   const op=({'+':'+','-':'−','*':'×','/':'÷'})[n.op];
+   if(percent&&['+','-'].includes(n.op)){
+     const pct=ratDiv(r,ratFromString('0.01'));
+     steps.push({title:lang==='el'?'Υπολόγισε το ποσοστό':'Calculate the percentage',text:formatRat(l)+' × '+formatRat(pct)+' ÷ 100 = '+formatRat(rv)});
+     steps.push({title:lang==='el'?'Έπειτα':'Then',text:formatRat(l)+' '+op+' '+formatRat(rv)+' = '+formatRat(v)});
+   }else{
+     const title=lang==='el'?(steps.length===0?'Πρώτα':n===tree?'Τέλος':'Στη συνέχεια'):(steps.length===0?'First':n===tree?'Finally':'Next');
+     steps.push({title,text:formatRat(l)+' '+op+' '+formatRat(rv)+' = '+formatRat(v)});
+   }
+   return v;
+ };
+ try{walk(tree)}catch{return null}
+ return{formula:formatExpressionDisplay(input),steps,result:formatRat(result)}
 }
 
 function resetHow(){howData=null;calcHowData=null;$('#howButton')?.classList.add('hidden')}
