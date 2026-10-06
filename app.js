@@ -1,4 +1,4 @@
-const VERSION='0.4.82';
+const VERSION='0.4.83';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -286,29 +286,22 @@ function renderUnitsDisplay(){
 
  const bindInput=input=>{
    const side=input.id==='unitValueFrom'?'from':'to';
+   const row=input.closest('.unit-row');
    input.dataset.unitInput=side;
-   input.readOnly=false;
-   input.setAttribute('inputmode','decimal');
-   input.addEventListener('focus',()=>{
-     unitActiveInput=side;
-     unitSource=side;
-     unitReplaceOnNextKey=true;
-     requestAnimationFrame(()=>input.select());
-     updateUnitsDisplay();
-   });
-   input.addEventListener('click',()=>{
+   input.readOnly=true;
+   input.setAttribute('inputmode','none');
+   input.setAttribute('aria-readonly','true');
+   input.addEventListener('focus',()=>input.blur());
+   const activate=()=>{
      unitActiveInput=side;
      unitSource=side;
      unitReplaceOnNextKey=true;
      updateUnitsDisplay();
-   });
-   input.addEventListener('input',()=>{
-     unitActiveInput=side;
-     unitSource=side;
-     const value=normalizeUnitExpression(input.value);
-     unitReplaceOnNextKey=false;
-     unitExpressions[side]=value||'0';
-     convertUnitExpression(side);
+   };
+   input.addEventListener('click',activate);
+   row?.addEventListener('click',e=>{
+     if(e.target.closest('select'))return;
+     activate();
    });
  };
  bindInput($('#unitValueFrom'));
