@@ -1,14 +1,13 @@
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function readLanguage(){
- const cookie=(document.cookie.match(/(?:^|; )uc-lang=([^;]+)/)||[])[1]||'';
  let stored='';
  try{stored=localStorage.getItem('uc-lang')||''}catch{}
- return cookie==='en'||cookie==='el'?cookie:stored==='en'||stored==='el'?stored:'el';
+ return stored==='en'||stored==='el'?stored:'el';
 }
 let lang=readLanguage();
 let theme=localStorage.getItem('uc-theme')==='light'?'light':localStorage.getItem('uc-theme')==='dark'?'dark':'auto';
-let mode='calc',expression='',current='',currentIsPercent=false,justCalculated=false,lastExpression='',lastResult=null,howData=null,lastOperation=null,historyClearConfirm=false,toolResult=null,toolActiveInput=null,resultCompact=false;
+let mode='calc',expression='',current='',currentIsPercent=false,justCalculated=false,lastExpression='',lastResult=null,howData=null,lastOperation=null,historyClearConfirm=false,toolResult=null,toolActiveInput=null,resultCompact=false,unitActiveInput='from',unitExpressions={from:'',to:''};
 localStorage.removeItem('uc-mode');
 
 const T={
@@ -188,6 +187,54 @@ function saveHistory(item){const list=historyItems();const stored={...item,resul
 function renderHistory(){const list=historyItems();$('#historyList').innerHTML=list.length?list.map(x=>`<div class="history-item"><button class="history-main" data-history="${x.id}" type="button"><div class="history-expression">${esc(pretty(x.expression))}</div><div class="history-result">${esc(fmt(x.result&&typeof x.result==='string'?ratFromString(x.result):x.result))}</div></button><button class="history-delete" data-delete="${x.id}" type="button" aria-label="${esc(t('delete'))}">×</button></div>`).join(''):`<div class="empty">${esc(t('none'))}</div>`}
 
 const units={length:{mm:.001,cm:.01,m:1,km:1000,in:.0254,ft:.3048,yd:.9144,mi:1609.344},mass:{mg:.000001,g:.001,kg:1,oz:.028349523125,lb:.45359237},volume:{ml:.001,l:1,tsp:.00492892159,tbsp:.0147867648,cup:.2365882365,gal:3.785411784},data:{B:1,KB:1024,MB:1048576,GB:1099511627776}};
+function unitEvaluate(expr){
+ const raw=String(expr??'').trim().replace(/,/g,'.').replace(/×/g,'*').replace(/÷/g,'/');
+ if(!raw||/[+\\-*/.]$/.test(raw)||!/^[0-9+\\-*/().\\s]+$/.test(raw))return null;
+ try{return ratToNumber(evalExpr(raw))}catch{return null}
+}
+function unitValueFormat(n){
+ if(!Number.isFinite(n))return '';
+ const abs=Math.abs(n);
+ const max=abs!==0&&abs<1?Math.min(15,Math.max(6,Math.ceil(-Math.log10(abs))+6)):Math.min(12,Math.max(2,String(Math.trunc(abs)).length<7?6:4));
+ return new Intl.NumberFormat(lang==='el'?'el-GR':'en-US',{maximumFractionDigits:max,useGrouping:false}).format(n);
+}
+function renderUnitsDisplay(){
+ const d=$('#calculatorDisplay');
+ d.className='display-wrap unit-display';
+ d.innerHTML='<div class="unit-display-toolbar"><select id="unitCategory" class="conversion-category">'+Object.keys(units).map(x=>'<option value="'+x+'">'+esc(t(x))+'</option>').join('')+'</select><button id="unitSwap" class="conversion-swap" type="button" aria-label="Swap units">⇄</button></div><div class="unit-rows"><div class="unit-row" data-unit-row="from"><input id="unitValueFrom" class="unit-value" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="" aria-label="'+esc(t('from'))+'"><select id="unitFrom" class="unit-unit"></select></div><div class="unit-row" data-unit-row="to"><input id="unitValueTo" class="unit-value" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="" aria-label="'+esc(t('to'))+'"><select id="unitTo" class="unit-unit"></select></div></div>';
+ const cat=$('#unitCategory');
+ cat.value=cat.dataset.value||cat.value||'length';
+ populateUnits();
+ cat.value='length';
+ if(window._unitCategory)cat.value=window._unitCategory;
+ const touchDevice=matchMedia('(hover:none) and (pointer:coarse)').matches || 'ontouchstart' in window;
+ $('#unitValueFrom,#unitValueTo').forEach(input=>{input.readOnly=touchDevice;input.setAttribute('inputmode',touchDevice?'none':'decimal');input.dataset.unitInput=input.id==='unitValueFrom'?'from':'to'});
+ $('#unitValueFrom,#unitValueTo').forEach(input=>input.addEventListener('focus',()=>{unitActiveInput=input.dataset.unitInput}));
+ $('#unitValueFrom,#unitValueTo').forEach(input=>input.addEventListener('input',()=>{unitActiveInput=input.dataset.unitInput;unitExpressions[unitActiveInput]=input.value;convertUnitExpression(unitActiveInput)}));
+ $('#unitFrom,#unitTo').forEach(select=>select.addEventListener('change',()=>{unitActiveInput=select.id==='unitFrom'?'from':'to';convertUnitExpression(unitActiveInput)}));
+ cat.addEventListener('change',()=>{window._unitCategory=cat.value;unitExpressions={from:'',to:''};unitActiveInput='from';updateUnitsDisplay()});
+ $('#unitSwap').addEventListener('click',()=>{const a=$('#unitFrom'),b=$('#unitTo');[a.value,b.value]=[b.value,a.value];[unitExpressions.from,unitExpressions.to]=[unitExpressions.to,unitExpressions.from];unitActiveInput=unitExpressions.from?'from':'to';convertUnitExpression(unitActiveInput)});
+ updateUnitsDisplay();
+}
+function updateUnitsDisplay(){
+ const from=$('#unitValueFrom'),to=$('#unitValueTo');
+ if(!from||!to)return;
+ from.value=unitExpressions.from||'';to.value=unitExpressions.to||'';
+ $('.unit-row').forEach(row=>row.classList.toggle('active',row.dataset.unitRow===unitActiveInput));
+ const clear=$('#clearButton');if(clear)clear.textContent=(unitExpressions.from||unitExpressions.to)?'C':'AC';
+}
+function convertUnitExpression(source='from'){
+ const cc=$('#unitCategory')?.value,fu=$('#unitFrom')?.value,tu=$('#unitTo')?.value;
+ if(!cc||!fu||!tu)return;
+ const expr=unitExpressions[source]||'';
+ if(!expr.trim()){unitExpressions[source]='';unitExpressions[source==='from'?'to':'from']='';updateUnitsDisplay();return}
+ const value=unitEvaluate(expr);
+ if(value===null){updateUnitsDisplay();return}
+ const out=source==='from'?value*units[cc][fu]/units[cc][tu]:value*units[cc][tu]/units[cc][fu];
+ unitExpressions[source==='from'?'to':'from']=unitValueFormat(out);
+ updateUnitsDisplay();
+}
+window._runUnits=()=>convertUnitExpression(unitActiveInput);
 const FIELD_EXAMPLES={fuelD:'250',fuelC:'7.2',fuelP:'1.85',energyP:'100',energyH:'8',energyD:'30',energyR:'0.20',amount:'100',vatRate:'24%',value:'10'};
 const TOOL_DEFAULTS={fuelD:250,fuelC:7.2,fuelP:1.85,energyP:100,energyH:8,energyD:30,energyR:0.20,amount:100,vatRate:24,value:10};
 let vatAction='add';
@@ -280,6 +327,14 @@ function renderToolKeypad(){
 }
 function renderTool(){
  const calc=mode==='calc';
+ if(mode==='units'){
+   $('#calculatorCard').classList.add('tool-mode');
+   $('#toolPanel').classList.add('hidden');
+   $('#calculatorDisplay').classList.remove('hidden');
+   renderUnitsDisplay();
+   renderCalcKeypad();
+   return;
+ }
  $('#calculatorCard').classList.toggle('tool-mode',!calc);
  $('#toolPanel').classList.toggle('hidden',calc);
  $('#calculatorDisplay').classList.toggle('tool-display',!calc);
@@ -289,27 +344,17 @@ function renderTool(){
  if(mode==='fuel')html='<div class="tool-grid">'+field('fuelD',t('fuelD'))+field('fuelC',t('fuelC'))+field('fuelP',t('fuelP'))+'</div>';
  if(mode==='energy')html='<div class="tool-grid">'+field('energyP',t('energyP'))+field('energyH',t('energyH'))+field('energyD',t('energyD'))+field('energyR',t('energyR'))+'</div>';
  if(mode==='vat')html='<div class="tool-grid">'+field('amount',t('amount'))+field('vatRate',t('vatRate'))+'</div><div class="vat-toggle" role="group"><button type="button" data-vat-mode="add">'+esc(t('addVat'))+'</button><button type="button" data-vat-mode="remove">'+esc(t('removeVat'))+'</button></div>';
- if(mode==='units'){
-   const category='length',keys=Object.keys(units[category]);
-   html='<div class="conversion-toolbar"><select id="unitCategory" class="conversion-category">'+Object.keys(units).map(x=>'<option value="'+x+'">'+esc(t(x))+'</option>').join('')+'</select><button id="unitSwap" class="conversion-swap" type="button" aria-label="Swap units">⇄</button></div><div class="conversion-boxes"><label class="conversion-box"><span class="conversion-label">'+esc(t('from'))+'</span><div class="conversion-input-row"><input id="unitValueFrom" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="0" data-tool-input="true"><select id="unitFrom" class="conversion-unit">'+unitOptions(category,keys[0])+'</select></div></label><label class="conversion-box"><span class="conversion-label">'+esc(t('to'))+'</span><div class="conversion-input-row"><input id="unitValueTo" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="0" readonly aria-readonly="true"><select id="unitTo" class="conversion-unit">'+unitOptions(category,keys[1])+'</select></div></label></div>';
- }
+ if(mode==='units')html='';
  $('#toolPanel').innerHTML=html;
  renderToolKeypad();
  toolActiveInput=null;
  const touchDevice=matchMedia('(hover:none) and (pointer:coarse)').matches || 'ontouchstart' in window;
  $('#toolPanel input[data-tool-input]').forEach(input=>{input.readOnly=touchDevice;input.setAttribute('inputmode',touchDevice?'none':'decimal');if(touchDevice)input.setAttribute('readonly','readonly');else input.removeAttribute('readonly')});
- if(mode==='units')populateUnits();
  bindTools();
  renderVatToggle();
- if(mode==='units')$('#unitSwap')?.addEventListener('click',()=>{
-   const from=$('#unitFrom'),to=$('#unitTo'),a=$('#unitValueFrom'),b=$('#unitValueTo');
-   if(!from||!to||!a||!b)return;
-   [from.value,to.value]=[to.value,from.value];
-   if(a.value)window._runUnits?.();
- });
  renderToolDisplay();
 }
-function setMode(next){resultCompact=false;mode=next;expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null;lastOperation=null;toolResult=null;resetHow();const label=$('#modeLabel'),icon=$('#modeIcon');if(label)label.textContent=t(mode);if(icon)icon.textContent=modeIcon(mode);renderTool();syncModeButton();}
+function setMode(next){resultCompact=false;mode=next;expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null;lastOperation=null;toolResult=null;resetHow();if(next==='units'){unitExpressions={from:'',to:''};unitActiveInput='from';window._unitCategory=window._unitCategory||'length';}const label=$('#modeLabel'),icon=$('#modeIcon');if(label)label.textContent=t(mode);if(icon)icon.textContent=modeIcon(mode);renderTool();syncModeButton();}
 function applyLanguage(){
  document.documentElement.lang=lang;$('#langButton').textContent=lang==='el'?'ΕΛ':'EN';$('#historyButtonText').textContent=t('history');$('#copyButton').textContent=t('copy');const hint=$('#hint');if(hint)hint.textContent=t('hint');$('#createdBy').textContent=`${t('created')} Leonidas Kampaxis`;$('#historyTitle').textContent=t('history');$('#clearHistory').textContent=t('clear');
  if(mode==='calc'&&justCalculated&&lastExpression&&lastResult!==null)howData=explanationForExpression(lastExpression,lastResult)||howData;
@@ -380,6 +425,18 @@ function copyResult(){
  navigator.clipboard.writeText(String(value)).then(()=>{const b=$('#copyButton');b.textContent=t('copied');setTimeout(()=>b.textContent=t('copy'),900)}).catch(()=>{})
 }
 function toolKeyInput(key){
+ if(mode==='units'){
+   const side=unitActiveInput||'from';
+   let value=unitExpressions[side]||'';
+   if(key==='clear'){unitExpressions={from:'',to:''};unitActiveInput='from';updateUnitsDisplay();return true}
+   if(key==='backspace')value=value.slice(0,-1);
+   else if(key==='.'||key===',')value.includes('.')?value:value+'.';
+   else if(key==='-')value=value.startsWith('-')?value.slice(1):'-'+value;
+   else if(/^[0-9]$/.test(key))value+=key;
+   else if(['+','*','/'].includes(key))value+=key;
+   else return false;
+   unitExpressions[side]=value;convertUnitExpression(side);return true;
+ }
  const input=toolActiveInput&&toolActiveInput.matches('#toolPanel input')?toolActiveInput:$('#toolPanel input');
  if(!input)return false;
  input.focus();
@@ -404,6 +461,11 @@ $('#keypad').addEventListener('click',e=>{
  const b=e.target.closest('button');if(!b)return;
  const a=b.dataset.action,v=b.dataset.value;
  if(mode!=='calc'){
+   if(mode==='units'){
+     if(a==='clear'||a==='backspace'||v==='.'||/^\d$/.test(v||'')||['+','-','*','/'].includes(v||'')){toolKeyInput(a==='clear'?'clear':a==='backspace'?'backspace':v==='/'?'/':v);return}
+     if(a==='equals')window._runUnits?.();
+     return;
+   }
    if(a==='clear'||a==='backspace'||v==='.'||/^\d$/.test(v||'')){toolKeyInput(a==='clear'?'clear':a==='backspace'?'backspace':v);return}
    if(v==='-'){toolKeyInput('-');return}
    return;
@@ -451,7 +513,7 @@ $('#toolPanel').addEventListener('input',e=>{
  if(mode==='fuel')window._runFuel?.();
  else if(mode==='energy')window._runEnergy?.();
  else if(mode==='vat')window._runVat?.(vatAction==='add');
- else if(mode==='units'&&input.id==='unitValueFrom')window._runUnits?.();
+ else if(mode==='units'){unitActiveInput=input.id==='unitValueFrom'?'from':'to';unitExpressions[unitActiveInput]=input.value;convertUnitExpression(unitActiveInput)}
 });
 $('#howButton').addEventListener('click',showHow);$('#closeHow').addEventListener('click',closeHow);$('#howModal').addEventListener('click',e=>{if(e.target.id==='howModal')closeHow()});
 $('#historyButton').addEventListener('click',openHistory);$('#historyBackdrop').addEventListener('click',closeHistory);$('#historyList').addEventListener('click',historyClick);$('#copyButton').addEventListener('click',copyResult);
@@ -469,7 +531,7 @@ window.addEventListener('keydown',e=>{
  if(e.ctrlKey||e.metaKey||e.altKey)return;
  if(e.key==='Backspace'||e.code==='Backspace'){e.preventDefault();if(mode==='calc')backspace();else toolKeyInput('backspace');return;}
  if(e.key===','){e.preventDefault();if(mode==='calc')digit('.');else if(document.activeElement?.matches('#toolPanel input')){const input=document.activeElement;if(!input.value.includes('.')){const pos=input.selectionStart??input.value.length;input.setRangeText('.',pos,pos,'end')}}else toolKeyInput('.');return}
- if(mode!=='calc'&&document.activeElement?.matches('#toolPanel input')){
+ if(mode==='units'&&document.activeElement?.matches('#unitValueFrom,#unitValueTo')){
    if(e.key==='Escape'){e.preventDefault();document.activeElement.value='';document.activeElement.dispatchEvent(new Event('input',{bubbles:true}));return}
    return;
  }
