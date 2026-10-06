@@ -31,8 +31,10 @@ function formatGroupedNumber(raw){
  const sign=s.startsWith('-')?'-':'';
  const body=sign?s.slice(1):s;
  const [whole,frac]=body.split('.');
- const grouped=whole.replace(/\\B(?=(\\d{3})+(?!\\d))/g,lang==='el'?'.':',');
- return sign+grouped+(frac!==undefined?'.'+frac:'');
+ const isGreek=lang==='el';
+ const grouped=whole.replace(/\\B(?=(\\d{3})+(?!\\d))/g,isGreek?'.':',');
+ const decimal=isGreek?',':'.';
+ return sign+grouped+(frac!==undefined?decimal+frac:'');
 }
 function formatInputDisplay(s){
  return pretty(String(s)).replace(/\\d+(?:\\.\\d*)?/g,m=>formatGroupedNumber(m));
