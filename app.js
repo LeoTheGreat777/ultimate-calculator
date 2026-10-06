@@ -432,11 +432,24 @@ function toolKeyInput(key){
    let value=unitExpressions[side]||'';
    if(key==='clear'){unitExpressions={from:'',to:''};unitActiveInput='from';unitSource='from';unitReplaceOnNextKey=false;updateUnitsDisplay();return true}
    if(key==='backspace'){unitReplaceOnNextKey=false;value=value.slice(0,-1)}
-   else {if(unitReplaceOnNextKey){value='';unitReplaceOnNextKey=false}if(key==='.'||key===',')value.includes('.')?value:value+'.';
-   else if(key==='-')value=value.startsWith('-')?value.slice(1):'-'+value;
-   else if(/^[0-9]$/.test(key))value+=key;
-   else if(['+','*','/'].includes(key))value+=key;
-   else return false;}
+   else{
+     if(unitReplaceOnNextKey){value='';unitReplaceOnNextKey=false}
+     if(key==='.'||key===','){
+       const tail=value.split(/[+*/-]/).pop();
+       if(!tail.includes('.'))value+=value?' .'.trim(): '0.';
+     }else if(key==='-'){
+       if(value==='')value='-';
+       else if(/[+*/-]$/.test(value)){
+         if(value.endsWith('-'))value=value.slice(0,-1);
+         else value=value.slice(0,-1)+'-';
+       }else value+='-';
+     }else if(/^[0-9]$/.test(key))value+=key;
+     else if(['+','*','/'].includes(key)){
+       if(!value)return false;
+       if(/[+*/-]$/.test(value))value=value.slice(0,-1)+key;
+       else value+=key;
+     }else return false;
+   }
    unitExpressions[side]=value;unitSource=side;convertUnitExpression(side);return true;
  }
  const input=toolActiveInput&&toolActiveInput.matches('#toolPanel input')?toolActiveInput:$('#toolPanel input');
