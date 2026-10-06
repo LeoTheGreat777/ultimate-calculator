@@ -189,7 +189,7 @@ function renderHistory(){const list=historyItems();$('#historyList').innerHTML=l
 const units={length:{mm:.001,cm:.01,m:1,km:1000,in:.0254,ft:.3048,yd:.9144,mi:1609.344},mass:{mg:.000001,g:.001,kg:1,oz:.028349523125,lb:.45359237},volume:{ml:.001,l:1,tsp:.00492892159,tbsp:.0147867648,cup:.2365882365,gal:3.785411784},data:{B:1,KB:1024,MB:1048576,GB:1099511627776}};
 function unitEvaluate(expr){
  const raw=String(expr??'').trim().replace(/,/g,'.').replace(/×/g,'*').replace(/÷/g,'/');
- if(!raw||/[+\\-*/.]$/.test(raw)||!/^[0-9+\\-*/().\\s]+$/.test(raw))return null;
+ if(!raw||/[-+*/.]$/.test(raw)||!/^[0-9+\\-*/().\\s]+$/.test(raw))return null;
  try{return ratToNumber(evalExpr(raw))}catch{return null}
 }
 function unitValueFormat(n){
