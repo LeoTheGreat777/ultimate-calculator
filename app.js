@@ -1,7 +1,12 @@
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-const savedLang=localStorage.getItem('uc-lang')||((document.cookie.match(/(?:^|; )uc-lang=([^;]+)/)||[])[1]||'');
-let lang=savedLang==='en'?'en':'el';
+function readLanguage(){
+ const cookie=(document.cookie.match(/(?:^|; )uc-lang=([^;]+)/)||[])[1]||'';
+ let stored='';
+ try{stored=localStorage.getItem('uc-lang')||''}catch{}
+ return cookie==='en'||cookie==='el'?cookie:stored==='en'||stored==='el'?stored:'el';
+}
+let lang=readLanguage();
 let theme=localStorage.getItem('uc-theme')==='light'?'light':localStorage.getItem('uc-theme')==='dark'?'dark':'auto';
 let mode='calc',expression='',current='',currentIsPercent=false,justCalculated=false,lastExpression='',lastResult=null,howData=null,lastOperation=null,historyClearConfirm=false,toolResult=null,toolActiveInput=null,resultCompact=false;
 localStorage.removeItem('uc-mode');
@@ -426,7 +431,7 @@ $('#historyButton').addEventListener('click',openHistory);$('#historyBackdrop').
 $('#langButton').addEventListener('click',()=>{
  lang=lang==='el'?'en':'el';
  try{localStorage.setItem('uc-lang',lang)}catch{}
-document.cookie='uc-lang='+lang+'; path=/; max-age=31536000; SameSite=Lax';
+ document.cookie='uc-lang='+lang+'; path=/; max-age=31536000; SameSite=Lax';
  applyLanguage();
 });
 $('#themeButton').addEventListener('click',toggleTheme);
