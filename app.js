@@ -479,7 +479,7 @@ function renderCalcKeypad(){
 function renderToolKeypad(){
  $('#keypad').className='tool-keypad';
  $('#keypad').innerHTML=
-   '<button class="tool-key tool-utility" data-action="backspace" type="button" aria-label="'+esc(t('deleteKey'))+'">⌫</button><button class="tool-key tool-utility tool-key-wide-utility" data-action="clear" type="button">C</button>'+
+   '<button class="tool-key tool-utility" data-action="backspace" type="button" aria-label="'+esc(t('deleteKey'))+'">⌫</button><button class="tool-key tool-utility" data-action="clear" type="button">C</button><button class="tool-key tool-utility" data-action="clear-all" type="button">AC</button>'+
    '<button class="tool-key" data-value="7" type="button">7</button><button class="tool-key" data-value="8" type="button">8</button><button class="tool-key" data-value="9" type="button">9</button>'+
    '<button class="tool-key" data-value="4" type="button">4</button><button class="tool-key" data-value="5" type="button">5</button><button class="tool-key" data-value="6" type="button">6</button>'+
    '<button class="tool-key" data-value="1" type="button">1</button><button class="tool-key" data-value="2" type="button">2</button><button class="tool-key" data-value="3" type="button">3</button>'+
@@ -632,6 +632,16 @@ function copyResult(){
  if(value===''||value===t('toolReady')||!navigator.clipboard)return;
  navigator.clipboard.writeText(String(value)).then(()=>{const b=$('#copyButton');b.textContent=t('copied');setTimeout(()=>b.textContent=t('copy'),900)}).catch(()=>{})
 }
+function clearToolFields(){
+ if(!toolState[mode])return;
+ const inputs=toolState[mode].inputs||{};
+ Object.keys(inputs).forEach(key=>inputs[key]='');
+ toolActiveInput=null;
+ $('#toolPanel input[data-tool-input]').forEach(input=>input.value='');
+ toolResult=null;
+ howData=null;
+ renderToolDisplay();
+}
 function toolKeyInput(key){
  if(mode==='units'){
    const side=unitActiveInput||'from';
@@ -681,6 +691,7 @@ function runActiveTool(){
 $('#keypad').addEventListener('click',e=>{
  const b=e.target.closest('button');if(!b)return;
  const a=b.dataset.action,v=b.dataset.value;
+ if(mode!=='calc'&&a==='clear-all'){clearToolFields();return;}
  if(mode!=='calc'){
    if(mode==='units'){
      if(a==='clear'||a==='backspace'||v==='.'||/^\d$/.test(v||'')||['+','-','*','/'].includes(v||'')){toolKeyInput(a==='clear'?'clear':a==='backspace'?'backspace':v==='/'?'/':v);return}
