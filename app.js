@@ -1,5 +1,5 @@
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
-const VERSION='0.4.23';
+const VERSION='0.4.24';
 let lang=localStorage.getItem('uc-lang')==='en'?'en':'el';
 let theme=localStorage.getItem('uc-theme')==='light'?'light':localStorage.getItem('uc-theme')==='dark'?'dark':'auto';
 let mode='calc',expression='',current='',currentIsPercent=false,justCalculated=false,lastExpression='',lastResult=null,howData=null,lastOperation=null,historyClearConfirm=false,toolResult=null,toolActiveInput=null,resultCompact=false;
@@ -326,14 +326,22 @@ function syncModeButton(){
  requestAnimationFrame(()=>{if(label)label.textContent=t(mode);if(icon)icon.textContent=modeIcon(mode)})
 }
 function toggleModeMenu(){
- const menu=$('#modeMenu');if(!menu)return;
- const open=menu.classList.contains('hidden');
- if(open)renderModeMenu();
- menu.classList.toggle('hidden',!open);
+ const menu=$('#modeMenu'),control=$('.mode-control');if(!menu||!control)return;
+ const open=!control.classList.contains('mode-open');
+ if(open){
+   renderModeMenu();
+   menu.classList.remove('hidden');
+   requestAnimationFrame(()=>control.classList.add('mode-open'));
+ }else{
+   control.classList.remove('mode-open');
+   setTimeout(()=>{if(!control.classList.contains('mode-open'))menu.classList.add('hidden')},220);
+ }
  $('#modeButton').setAttribute('aria-expanded',String(open));
 }
 function closeModeMenu(){
- const menu=$('#modeMenu');if(menu)menu.classList.add('hidden');
+ const menu=$('#modeMenu'),control=$('.mode-control');
+ if(control)control.classList.remove('mode-open');
+ if(menu)menu.classList.add('hidden');
  $('#modeButton')?.setAttribute('aria-expanded','false');
 }
 
@@ -400,7 +408,16 @@ $('#toolPanel').addEventListener('focusin',e=>{if(e.target.matches('input'))tool
 $('#toolPanel').addEventListener('input',e=>{
  if(!e.target.matches('input'))return;
  const input=e.target;
- if(input.value.includes(',')){const pos=input.selectionStart;input.value=input.value.replace(/,/g,'.');if(typeof pos==='number')input.setSelectionRange(Math.min(pos,input.value.length),Math.min(pos,input.value.length))}
+ let value=input.value.replace(/,/g,'.').replace(/[^0-9.-]/g,'');
+ if(value.startsWith('-'))value='-'+value.slice(1).replace(/-/g,'');
+ else value=value.replace(/-/g,'');
+ const firstDot=value.indexOf('.');
+ if(firstDot!==-1)value=value.slice(0,firstDot+1)+value.slice(firstDot+1).replace(/\./g,'');
+ if(value!==input.value){
+   const pos=input.selectionStart??value.length;
+   input.value=value;
+   input.setSelectionRange(Math.min(pos,value.length),Math.min(pos,value.length));
+ }
 });
 $('#howButton').addEventListener('click',showHow);$('#closeHow').addEventListener('click',closeHow);$('#howModal').addEventListener('click',e=>{if(e.target.id==='howModal')closeHow()});
 $('#historyButton').addEventListener('click',openHistory);$('#historyBackdrop').addEventListener('click',closeHistory);$('#historyList').addEventListener('click',historyClick);$('#copyButton').addEventListener('click',copyResult);
