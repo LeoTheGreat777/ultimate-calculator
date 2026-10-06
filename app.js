@@ -82,7 +82,7 @@ function render(){
 function renderToolDisplay(){
  const d=$('#calculatorDisplay');d.classList.add('tool-display');d.classList.remove('calculated','tool-empty');
  $('#expression').textContent=toolResult?.detail??'';
- $('#howButton').classList.add('hidden');
+ $('#howButton').classList.toggle('hidden',!toolResult?.how);
  $('#result').textContent=toolResult?.main??'';
  if(!toolResult)d.classList.add('tool-empty')
 }
@@ -125,7 +125,16 @@ function renderHistory(){const list=historyItems();$('#historyList').innerHTML=l
 
 const units={length:{mm:1,cm:.01,m:1,km:1000,in:.0254,ft:.3048,yd:.9144,mi:1609.344},mass:{mg:.000001,g:.001,kg:1,oz:.028349523125,lb:.45359237},volume:{ml:.001,l:1,tsp:.00492892159,tbsp:.0147867648,cup:.2365882365,gal:3.785411784},data:{B:1,KB:1024,MB:1048576,GB:1073741824,TB:1099511627776}};
 const field=(id,label)=>`<label class="tool-field"><span>${esc(label)}</span><input id="${id}" type="number" step="any" inputmode="decimal"></label>`;
-function setToolResult(main,detail=''){toolResult={main,detail};renderToolDisplay()}
+function setToolResult(main,detail='',how=null){toolResult={main,detail,how};howData=how;renderToolDisplay()}
+function populateUnits(){const cat=$('#unitCategory');if(!cat)return;const keys=Object.keys(units[cat.value]);$('#unitFrom').innerHTML=keys.map(x=>`<option value="${x}">${x}</option>`).join('');$('#unitTo').innerHTML=keys.map(x=>`<option value="${x}">${x}</option>`).join('')}
+function bindTools(){
+ const fuelGo=$('#fuelGo');fuelGo?.addEventListener('click',()=>{const d=+$('#fuelD').value,c=+$('#fuelC').value,p=+$('#fuelP').value;if([d,c,p].some(x=>!Number.isFinite(x))||d===0)return;const used=d*c/100,cost=used*p,perKm=cost/d;const how={formula:t('fuelGo'),steps:[`Fuel used: ${fmt(d)} km × ${fmt(c)} ÷ 100 = ${fmt(used)} L`,`Cost: ${fmt(used)} L × ${fmt(p)} €/L = ${fmt(cost)} €`,`Cost per km: ${fmt(cost)} € ÷ ${fmt(d)} km = ${fmt(perKm)} €/km`],result:fmt(cost)};if(lang==='el')how.steps=[`Καύσιμο: ${fmt(d)} km × ${fmt(c)} ÷ 100 = ${fmt(used)} L`,`Κόστος: ${fmt(used)} L × ${fmt(p)} €/L = ${fmt(cost)} €`,`Κόστος ανά km: ${fmt(cost)} € ÷ ${fmt(d)} km = ${fmt(perKm)} €/km`];setToolResult(`${fmt(cost)} €`,`${t('fuelResult')}: ${fmt(used)} L · ${t('costKm')}: ${fmt(perKm)} €/km`,how)});
+ const energyGo=$('#energyGo');energyGo?.addEventListener('click',()=>{const p=+$('#energyP').value,h=+$('#energyH').value,d=+$('#energyD').value,r=+$('#energyR').value;if([p,h,d,r].some(x=>!Number.isFinite(x)))return;const kw=p/1000,kwh=kw*h*d,cost=kwh*r;const how={formula:t('energyGo'),steps:[`Power: ${fmt(p)} W ÷ 1000 = ${fmt(kw)} kW`,`Energy: ${fmt(kw)} kW × ${fmt(h)} h × ${fmt(d)} days = ${fmt(kwh)} kWh`,`Cost: ${fmt(kwh)} kWh × ${fmt(r)} €/kWh = ${fmt(cost)} €`],result:fmt(cost)};if(lang==='el')how.steps=[`Ισχύς: ${fmt(p)} W ÷ 1000 = ${fmt(kw)} kW`,`Ενέργεια: ${fmt(kw)} kW × ${fmt(h)} ώρες × ${fmt(d)} ημέρες = ${fmt(kwh)} kWh`,`Κόστος: ${fmt(kwh)} kWh × ${fmt(r)} €/kWh = ${fmt(cost)} €`];setToolResult(`${fmt(cost)} €`,`${t('energyResult')}: ${fmt(kwh)} kWh`,how)});
+ const vat=add=>{const a=+$('#amount').value,r=+$('#vatRate').value;if(!Number.isFinite(a)||!Number.isFinite(r))return;const total=add?a*(1+r/100):a/(1+r/100),tax=add?total-a:a-total;const how=add?{formula:t('addVat'),steps:[`${fmt(a)} × ${fmt(r)} ÷ 100 = ${fmt(tax)} €`,`Final: ${fmt(a)} + ${fmt(tax)} = ${fmt(total)} €`],result:fmt(total)}:{formula:t('removeVat'),steps:[`Without VAT: ${fmt(a)} ÷ (1 + ${fmt(r)} ÷ 100) = ${fmt(total)} €`,`VAT included: ${fmt(a)} − ${fmt(total)} = ${fmt(Math.abs(tax))} €`],result:fmt(total)};if(lang==='el'){how.steps=add?[`${fmt(a)} × ${fmt(r)} ÷ 100 = ${fmt(tax)} €`,`Τελικό ποσό: ${fmt(a)} + ${fmt(tax)} = ${fmt(total)} €`]:[`Χωρίς ΦΠΑ: ${fmt(a)} ÷ (1 + ${fmt(r)} ÷ 100) = ${fmt(total)} €`,`ΦΠΑ που περιλαμβάνεται: ${fmt(a)} − ${fmt(total)} = ${fmt(Math.abs(tax))} €`]};setToolResult(`${fmt(total)} €`,`${t('vatAmount')}: ${fmt(Math.abs(tax))} €`,how)};
+ $('#addVat')?.addEventListener('click',()=>vat(true));$('#removeVat')?.addEventListener('click',()=>vat(false));
+ $('#unitCategory')?.addEventListener('change',populateUnits);
+ $('#convert')?.addEventListener('click',()=>{const v=+$('#value').value,c=$('#unitCategory').value,f=$('#unitFrom').value,to=$('#unitTo').value;if(!Number.isFinite(v))return;const factor=units[c][f]/units[c][to],out=v*factor;const how={formula:t('convert'),steps:[`1 ${f} = ${fmt(factor)} ${to}`,`${fmt(v)} ${f} × ${fmt(factor)} = ${fmt(out)} ${to}`],result:`${fmt(out)} ${to}`};setToolResult(`${fmt(out)} ${to}`,`${fmt(v)} ${f} → ${fmt(out)} ${to}`,how)});
+}
 function populateUnits(){const cat=$('#unitCategory');if(!cat)return;const keys=Object.keys(units[cat.value]);$('#unitFrom').innerHTML=keys.map(x=>`<option value="${x}">${x}</option>`).join('');$('#unitTo').innerHTML=keys.map(x=>`<option value="${x}">${x}</option>`).join('')}
 function bindTools(){
  const fuelGo=$('#fuelGo');fuelGo?.addEventListener('click',()=>{const d=+$('#fuelD').value,c=+$('#fuelC').value,p=+$('#fuelP').value;if([d,c,p].some(x=>!Number.isFinite(x))||d===0)return;const used=d*c/100,cost=used*p;setToolResult(`${fmt(cost)} €`,`${t('fuelResult')}: ${fmt(used)} L · ${t('costKm')}: ${fmt(cost/d)} €/km`)});
