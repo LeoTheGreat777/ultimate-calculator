@@ -54,7 +54,7 @@ function formatGroupedNumber(raw){
  const sign=s.startsWith('-')?'-':'';
  const body=sign?s.slice(1):s;
  const [whole,frac]=body.split('.');
- const grouped=whole.replace(/\\B(?=(\\d{3})+(?!\\d))/g,'.');
+ const grouped=whole.replace(/\B(?=(\d{3})+(?!\d))/g,'.');
  const decimal=',';
  return sign+grouped+(frac!==undefined?decimal+frac:'');
 }
@@ -654,10 +654,14 @@ $('#toolPanel').addEventListener('input',e=>{
 });
 $('#howButton').addEventListener('click',showHow);$('#closeHow').addEventListener('click',closeHow);$('#howModal').addEventListener('click',e=>{if(e.target.id==='howModal')closeHow()});
 $('#historyButton').addEventListener('click',openHistory);$('#historyBackdrop').addEventListener('click',closeHistory);$('#historyList').addEventListener('click',historyClick);$('#copyButton').addEventListener('click',copyResult);
-$('#langButton').addEventListener('click',()=>{
+$('#langButton').addEventListener('click',e=>{
+ e.preventDefault();
+ e.stopPropagation();
  lang=lang==='el'?'en':'el';
  try{localStorage.setItem('uc-lang',lang)}catch{}
+ document.documentElement.lang=lang;
  applyLanguage();
+ $('#langButton').textContent=lang==='el'?'ΕΛ':'EN';
 });
 $('#themeButton').addEventListener('click',toggleTheme);
 $('#modeButton').addEventListener('click',e=>{e.stopPropagation();toggleModeMenu()});
