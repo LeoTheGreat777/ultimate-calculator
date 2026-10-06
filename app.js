@@ -1,4 +1,4 @@
-const VERSION='0.4.93';
+const VERSION='0.4.94';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -275,7 +275,7 @@ function normalizeUnitExpression(expr){
 }
 function unitEvaluate(expr){
  const raw=normalizeUnitExpression(expr);
- if(!raw||/[-+*/.]$/.test(raw)||!/^[0-9+*/().\s-]+$/.test(raw))return null;
+ if(!raw||/[-+*/.]$/.test(raw)||!/^[0-9+*/().\s%-]+$/.test(raw))return null;
  try{return evalExpr(raw)}catch{return null}
 }
 function unitFactor(value){
@@ -406,7 +406,21 @@ function convertUnitExpression(source='from'){
  unitExpressions[source==='from'?'to':'from']=unitValueFormat(out);
  updateUnitsDisplay();
 }
+function equalsUnits(){
+ const source=unitSource||unitActiveInput||'from';
+ const other=source==='from'?'to':'from';
+ const expr=String(unitExpressions[source]??'').trim();
+ const value=unitEvaluate(expr);
+ if(value===null)return;
+ const cc=$('#unitCategory')?.value,fu=$('#unitFrom')?.value,tu=$('#unitTo')?.value;
+ if(!cc||!fu||!tu)return;
+ unitExpressions[source]=unitValueFormat(value);
+ unitExpressions[other]=unitValueFormat(source==='from'?unitConvertValue(cc,value,fu,tu):unitConvertValue(cc,value,tu,fu));
+ unitReplaceOnNextKey=true;
+ updateUnitsDisplay();
+}
 window._runUnits=()=>convertUnitExpression(unitSource||unitActiveInput||'from');
+window._equalsUnits=equalsUnits;
 const FIELD_EXAMPLES={fuelD:'250',fuelC:'7,2',fuelP:'1,85',energyP:'100',energyH:'8',energyD:'30',energyR:'0,20',amount:'100',vatRate:'24%',value:'10'};
 const TOOL_DEFAULTS={fuelD:250,fuelC:7.2,fuelP:1.85,energyP:100,energyH:8,energyD:30,energyR:0.20,amount:100,vatRate:24,value:10};
 let vatAction='add';
@@ -706,7 +720,7 @@ $('#keypad').addEventListener('click',e=>{
  if(mode!=='calc'){
    if(mode==='units'){
      if(a==='clear'||a==='backspace'||v==='.'||v==='%'||/^\d$/.test(v||'')||['+','-','*','/'].includes(v||'')){toolKeyInput(a==='clear'?'clear':a==='backspace'?'backspace':v==='/'?'/':v);return}
-     if(a==='equals')window._runUnits?.();
+     if(a==='equals')window._equalsUnits?.();
      return;
    }
    if(a==='clear'||a==='backspace'||v==='.'||/^\d$/.test(v||'')){toolKeyInput(a==='clear'?'clear':a==='backspace'?'backspace':v);return}
