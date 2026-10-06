@@ -1,4 +1,4 @@
-const VERSION='0.4.73';
+const VERSION='0.4.76';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -42,14 +42,14 @@ function readLanguage(){
 }
 let lang=readLanguage();
 let theme=localStorage.getItem('uc-theme')==='light'?'light':localStorage.getItem('uc-theme')==='dark'?'dark':'auto';
-let mode='calc',expression='',current='',currentIsPercent=false,justCalculated=false,lastExpression='',lastResult=null,howData=null,lastOperation=null,historyClearConfirm=false,toolResult=null,toolActiveInput=null,resultCompact=false,unitActiveInput='from',unitSource='from',unitReplaceOnNextKey=false,unitExpressions={from:'',to:''},toolState={fuel:{inputs:{},result:null},energy:{inputs:{},result:null},vat:{inputs:{},result:null}};
+let mode='calc',expression='',current='',currentIsPercent=false,justCalculated=false,lastExpression='',lastResult=null,howData=null,calcHowData=null,lastOperation=null,historyClearConfirm=false,toolResult=null,toolActiveInput=null,resultCompact=false,unitActiveInput='from',unitSource='from',unitReplaceOnNextKey=false,unitExpressions={from:'',to:''},toolState={fuel:{inputs:{},result:null},energy:{inputs:{},result:null},vat:{inputs:{},result:null}};
 localStorage.removeItem('uc-mode');
 
 const T={
 el:{calc:'Αριθμομηχανή',fuel:'Καύσιμα',energy:'Ενέργεια',vat:'ΦΠΑ',units:'Μονάδες',how:'Πώς υπολογίστηκε',history:'Ιστορικό',copy:'Αντιγραφή αποτελέσματος',copied:'Αντιγράφηκε',clear:'Διαγραφή όλων',confirm:'Διαγραφή όλου του ιστορικού;',confirmYes:'Διαγραφή',none:'Δεν υπάρχουν υπολογισμοί ακόμη.',hint:'Πληκτρολόγησε μια πράξη για να ξεκινήσεις.',delete:'Διαγραφή',created:'Δημιουργήθηκε από',fuelD:'Απόσταση (km)',fuelC:'Κατανάλωση (L/100 km)',fuelP:'Τιμή καυσίμου / L',fuelGo:'Υπολογισμός κόστους καυσίμου',fuelUsed:'Καύσιμο που χρησιμοποιήθηκε',costKm:'Κόστος ανά km',energyP:'Ισχύς (W)',energyH:'Ώρες / ημέρα',energyD:'Ημέρες',energyR:'Τιμή / kWh',energyGo:'Υπολογισμός κόστους ρεύματος',energyUsed:'Ενέργεια',amount:'Ποσό',vatRate:'ΦΠΑ %',addVat:'Πρόσθεσε ΦΠΑ',removeVat:'Αφαίρεσε ΦΠΑ',vatAmount:'Ποσό ΦΠΑ',value:'Τιμή',category:'Κατηγορία',from:'Από',to:'Σε',convert:'Μετατροπή',length:'Μήκος',area:'Εμβαδόν',mass:'Μάζα',volume:'Όγκος',speed:'Ταχύτητα',time:'Χρόνος',data:'Δεδομένα',energy:'Ενέργεια',power:'Ισχύς',pressure:'Πίεση',angle:'Γωνία',temperature:'Θερμοκρασία',unit_mm:'Χιλιοστό',unit_cm:'Εκατοστό',unit_m:'Μέτρο',unit_km:'Χιλιόμετρο',unit_in:'Ίντσα',unit_ft:'Πόδι',unit_yd:'Γιάρδα',unit_mi:'Μίλι',unit_nmi:'Ναυτικό μίλι',unit_bit:'Bit',unit_b:'Bit',unit_kbit:'Kilobit',unit_Mbit:'Megabit',unit_Gbit:'Gigabit',unit_Tbit:'Terabit',unit_B:'Byte',unit_kB:'Kilobyte',unit_MB:'Megabyte',unit_GB:'Gigabyte',unit_TB:'Terabyte',unit_KiB:'Kibibyte',unit_MiB:'Mebibyte',unit_GiB:'Gibibyte',unit_TiB:'Tebibyte',unit_kg:'Κιλά',unit_l:'Λίτρο',unit_ml:'Milliliter',unit_mps:'m/s',unit_kmh:'km/h',unit_mph:'mph',unit_knot:'Κόμβος',unit_J:'Joule',unit_kJ:'Kilojoule',unit_Wh:'Watt-ώρα',unit_kWh:'Kilowatt-ώρα',unit_cal:'cal',unit_kcal:'kcal',unit_W:'Watt',unit_kW:'Kilowatt',unit_MW:'Megawatt',unit_hp:'Ιπποδύναμη',unit_Pa:'Pascal',unit_kPa:'Kilopascal',unit_bar:'Bar',unit_psi:'PSI',unit_atm:'Ατμόσφαιρα',unit_deg:'Μοίρα',unit_rad:'Ακτίνιο',unit_grad:'Grad',unit_C:'Κελσίου',unit_F:'Φαρενάιτ',unit_K:'Kelvin',toolReady:'Το αποτέλεσμα θα εμφανιστεί εδώ',toolFuel:'Κόστος καυσίμου',toolEnergy:'Κόστος ρεύματος',toolVat:'Τελικό ποσό',toolUnit:'Αποτέλεσμα',fuelResult:'Καύσιμο που χρησιμοποιήθηκε',energyResult:'Ενέργεια',clearConfirm:'Διαγραφή;',close:'Κλείσιμο',swap:'Εναλλαγή μονάδων',deleteKey:'Διαγραφή',themeLight:'Εναλλαγή σε φωτεινό θέμα',themeDark:'Εναλλαγή σε σκοτεινό θέμα'},
 en:{calc:'Calculator',fuel:'Fuel',energy:'Energy',vat:'VAT',units:'Units',how:'How was this calculated?',history:'History',copy:'Copy result',copied:'Copied',clear:'Clear all',confirm:'Delete all calculation history?',confirmYes:'Delete',none:'No calculations yet.',hint:'Enter a calculation to get started.',delete:'Delete',created:'Created by',fuelD:'Distance (km)',fuelC:'Consumption (L/100 km)',fuelP:'Fuel price / L',fuelGo:'Calculate fuel cost',fuelUsed:'Fuel used',costKm:'Cost per km',energyP:'Power (W)',energyH:'Hours / day',energyD:'Days',energyR:'Price / kWh',energyGo:'Calculate electricity cost',energyUsed:'Energy',amount:'Amount',vatRate:'VAT %',addVat:'Add VAT',removeVat:'Remove VAT',vatAmount:'VAT amount',value:'Value',category:'Category',from:'From',to:'To',convert:'Convert',length:'Length',area:'Area',mass:'Mass',volume:'Volume',speed:'Speed',time:'Time',data:'Data',energy:'Energy',power:'Power',pressure:'Pressure',angle:'Angle',temperature:'Temperature',unit_mm:'Millimeter',unit_cm:'Centimeter',unit_m:'Meter',unit_km:'Kilometer',unit_in:'Inch',unit_ft:'Foot',unit_yd:'Yard',unit_mi:'Statute mile',unit_nmi:'Nautical mile',unit_bit:'Bit',unit_b:'Bit',unit_kbit:'Kilobit',unit_Mbit:'Megabit',unit_Gbit:'Gigabit',unit_Tbit:'Terabit',unit_B:'Byte',unit_kB:'Kilobyte',unit_MB:'Megabyte',unit_GB:'Gigabyte',unit_TB:'Terabyte',unit_KiB:'Kibibyte',unit_MiB:'Mebibyte',unit_GiB:'Gibibyte',unit_TiB:'Tebibyte',unit_kg:'Kilogram',unit_l:'Liter',unit_ml:'Milliliter',unit_mps:'m/s',unit_kmh:'km/h',unit_mph:'mph',unit_knot:'Knot',unit_J:'Joule',unit_kJ:'Kilojoule',unit_Wh:'Watt-hour',unit_kWh:'Kilowatt-hour',unit_cal:'cal',unit_kcal:'kcal',unit_W:'Watt',unit_kW:'Kilowatt',unit_MW:'Megawatt',unit_hp:'Horsepower',unit_Pa:'Pascal',unit_kPa:'Kilopascal',unit_bar:'Bar',unit_psi:'PSI',unit_atm:'Atmosphere',unit_deg:'Degree',unit_rad:'Radian',unit_grad:'Grad',unit_C:'Celsius',unit_F:'Fahrenheit',unit_K:'Kelvin',toolReady:'The result will appear here',toolFuel:'Fuel cost',toolEnergy:'Electricity cost',toolVat:'Final amount',toolUnit:'Result',fuelResult:'Fuel used',energyResult:'Energy',clearConfirm:'Delete?',close:'Close',swap:'Swap units',deleteKey:'Delete',themeLight:'Switch to light mode',themeDark:'Switch to dark mode'}
 };
-const ICONS={calc:'▦',fuel:'⛽',energy:'ϟ',vat:'%',units:'↔'};const MODE_TRANSLATIONS={calc:['Αριθμομηχανή','Calculator'],fuel:['Καύσιμα','Fuel'],energy:['Ενέργεια','Energy'],vat:['ΦΠΑ','VAT'],units:['Μονάδες','Units']};
+const ICONS={calc:'▦',fuel:'⛽︎',energy:'ϟ',vat:'%',units:'↔'};const MODE_TRANSLATIONS={calc:['Αριθμομηχανή','Calculator'],fuel:['Καύσιμα','Fuel'],energy:['Ενέργεια','Energy'],vat:['ΦΠΑ','VAT'],units:['Μονάδες','Units']};
 const TOOL_LABEL_KEYS={fuel:['fuelD','fuelC','fuelP'],energy:['energyP','energyH','energyD','energyR'],vat:['amount','vatRate']};
 const modeText=m=>MODE_TRANSLATIONS[m]?.[lang==='el'?0:1]||t(m);
 
@@ -128,7 +128,7 @@ function explanationForExpression(input,result){
  try{walk(tree)}catch{return null}return{formula:formatExpressionDisplay(input),steps,result:formatRat(result)}
 }
 
-function resetHow(){howData=null;$('#howButton')?.classList.add('hidden')}
+function resetHow(){howData=null;calcHowData=null;$('#howButton')?.classList.add('hidden')}
 function applyTheme(){
  document.body.classList.toggle('light',theme==='light');
  document.documentElement.classList.toggle('force-dark',theme==='dark');
@@ -229,7 +229,7 @@ function percent(){resetHow();if(!current||currentIsPercent)return;current+='%';
 function parseLastOperation(full){const m=String(full).match(/^(.*?)([+\-×÷])(-?\d+(?:[.,]\d+)?%?)$/);return m?{op:m[2],rhs:m[3]}:null}
 function repeatEquals(){
  if(!justCalculated||!lastOperation)return false;
- try{const rhs=lastOperation.rhs,base=ratToDecimal(lastResult,24),full=base+lastOperation.op+rhs,value=evalExpr(full);lastExpression=full;lastResult=value;justCalculated=true;howData=explanationForExpression(full,value)||{formula:pretty(full),steps:[`${pretty(full)} = ${fmt(value)}`],result:fmt(value)};saveHistory({expression:full,result:value,how:howData});render();return true}catch{return false}
+ try{const rhs=lastOperation.rhs,base=ratToDecimal(lastResult,24),full=base+lastOperation.op+rhs,value=evalExpr(full);lastExpression=full;lastResult=value;justCalculated=true;howData=explanationForExpression(full,value)||{formula:pretty(full),steps:[`${pretty(full)} = ${fmt(value)}`],result:fmt(value)};calcHowData=howData;saveHistory({expression:full,result:value,how:howData});render();return true}catch{return false}
 }
 function equals(){
  if(justCalculated&&repeatEquals())return;
@@ -488,7 +488,7 @@ function renderTool(){
 
 
 }
-function setMode(next){resultCompact=false;mode=next;howData=null;vatAction='add';if(next!=='calc')toolState[next]={inputs:{},result:null};toolResult=null;if(next==='vat')toolState.vat.inputs.vatRate='24';if(next==='units'){unitExpressions={from:'0',to:'0'};unitActiveInput='from';unitSource='from';unitReplaceOnNextKey=true;window._unitCategory=window._unitCategory||'length';}const label=$('#modeLabel'),icon=$('#modeIcon');if(label)label.textContent=modeText(mode);if(icon)icon.textContent=modeIcon(mode);renderTool();if(next==='vat')window._runVat?.(true);if(next!=='calc'&&next!=='vat')renderToolDisplay();syncModeButton();}
+function setMode(next){resultCompact=false;if(mode==='calc')calcHowData=howData;mode=next;howData=next==='calc'?calcHowData:null;vatAction='add';if(next!=='calc')toolState[next]={inputs:{},result:null};toolResult=null;if(next==='vat')toolState.vat.inputs.vatRate='24';if(next==='units'){unitExpressions={from:'0',to:'0'};unitActiveInput='from';unitSource='from';unitReplaceOnNextKey=true;window._unitCategory=window._unitCategory||'length';}const label=$('#modeLabel'),icon=$('#modeIcon');if(label)label.textContent=modeText(mode);if(icon)icon.textContent=modeIcon(mode);renderTool();if(next==='vat')window._runVat?.(true);if(next!=='calc'&&next!=='vat')renderToolDisplay();syncModeButton();}
 function applyLanguage(){
  lang=readLanguage();
  const savedInputs={};
@@ -507,7 +507,7 @@ function applyLanguage(){
  const created=$('#createdBy');if(created)created.textContent=t('created')+' Leonidas Kampaxis';
  const historyTitle=$('#historyTitle');if(historyTitle)historyTitle.textContent=t('history');
  const clearHistory=$('#clearHistory');if(clearHistory)clearHistory.textContent=t('clear');
- if(mode==='calc'&&justCalculated&&lastExpression&&lastResult!==null)howData=explanationForExpression(lastExpression,lastResult)||howData;
+ if(mode==='calc'&&justCalculated&&lastExpression&&lastResult!==null){howData=explanationForExpression(lastExpression,lastResult)||howData;calcHowData=howData;}
  renderTool();
  Object.entries(savedInputs).forEach(([id,value])=>{
    if(toolState[mode])toolState[mode].inputs[id]=value;
@@ -579,7 +579,7 @@ function deleteAllHistory(){localStorage.removeItem('uc-history');historyClearCo
 function historyClick(e){
  const del=e.target.closest('[data-delete]'),item=e.target.closest('[data-history]');
  if(del){localStorage.setItem('uc-history',JSON.stringify(historyItems().filter(x=>String(x.id)!==del.dataset.delete)));renderHistory();return}
- if(item){const x=historyItems().find(x=>String(x.id)===item.dataset.history);if(!x)return;closeHistory();setMode('calc');lastExpression=x.expression;lastResult=ratFromString(String(x.result));justCalculated=true;expression='';current='';currentIsPercent=false;howData=x.how||null;lastOperation=parseLastOperation(x.expression);render();syncModeButton()}
+ if(item){const x=historyItems().find(x=>String(x.id)===item.dataset.history);if(!x)return;closeHistory();setMode('calc');lastExpression=x.expression;lastResult=ratFromString(String(x.result));justCalculated=true;expression='';current='';currentIsPercent=false;howData=x.how||null;calcHowData=howData;lastOperation=parseLastOperation(x.expression);render();syncModeButton()}
 }
 function copyResult(){
  const value=mode==='calc'?(justCalculated?fmt(lastResult):(current||expression)):(toolResult?.main??'');
