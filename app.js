@@ -671,7 +671,8 @@ function toolKeyInput(key){
    if(key==='clear'){unitExpressions={from:'0',to:'0'};unitActiveInput='from';unitSource='from';unitReplaceOnNextKey=true;updateUnitsDisplay();return true}
    if(key==='backspace'){unitReplaceOnNextKey=false;value=value.slice(0,-1)||'0'}
    else{
-     if(unitReplaceOnNextKey){value='';unitReplaceOnNextKey=false}
+     if(unitReplaceOnNextKey&&['+','-','*','/'].includes(key))unitReplaceOnNextKey=false;
+     else if(unitReplaceOnNextKey&&key!=='%'){value='';unitReplaceOnNextKey=false}
      if(key==='.'||key===','){
        const tail=value.split(/[+*/-]/).pop();
        if(!tail.includes('.'))value+=value&&/[+*/-]$/.test(value)?'0.':value?'.':'0.';
