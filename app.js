@@ -271,7 +271,7 @@ function renderToolKeypad(){
    :{fuel:'Calculate',energy:'Calculate',units:'Convert',add:'Add VAT',remove:'Remove VAT'};
  const calcButton=mode==='vat'
    ?'<button class="tool-key tool-action-key" data-tool-action="addVat" type="button">'+labels.add+'</button><button class="tool-key tool-action-key" data-tool-action="removeVat" type="button">'+labels.remove+'</button>'
-   :'<button class="tool-key tool-action-key tool-key-wide" data-tool-action="calculate" type="button">'+(mode==='fuel'?labels.fuel:mode==='energy'?labels.energy:labels.units)+'</button>';
+   :'<button class="tool-key tool-action-key tool-key-full" data-tool-action="calculate" type="button">'+(mode==='fuel'?labels.fuel:mode==='energy'?labels.energy:labels.units)+'</button>';
  $('#keypad').className='tool-keypad';
  $('#keypad').innerHTML=calcButton+
    '<button class="tool-key tool-utility" data-action="backspace" type="button" aria-label="Delete">⌫</button><button class="tool-key tool-utility" data-action="clear" type="button">C</button><button class="tool-key" data-value="-" type="button">−</button>'+
