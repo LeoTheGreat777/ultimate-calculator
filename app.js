@@ -1,4 +1,4 @@
-const VERSION='0.4.47';
+const VERSION='0.4.48';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function readLanguage(){
@@ -187,7 +187,7 @@ function historyItems(){try{return JSON.parse(localStorage.getItem('uc-history')
 function saveHistory(item){const list=historyItems();const stored={...item,result:item.result&&typeof item.result==='object'&&'n'in item.result?ratToDecimal(item.result,24):String(item.result)};list.unshift({id:Date.now()+Math.random(),...stored});localStorage.setItem('uc-history',JSON.stringify(list.slice(0,100)));renderHistory()}
 function renderHistory(){const list=historyItems();$('#historyList').innerHTML=list.length?list.map(x=>`<div class="history-item"><button class="history-main" data-history="${x.id}" type="button"><div class="history-expression">${esc(pretty(x.expression))}</div><div class="history-result">${esc(fmt(x.result&&typeof x.result==='string'?ratFromString(x.result):x.result))}</div></button><button class="history-delete" data-delete="${x.id}" type="button" aria-label="${esc(t('delete'))}">×</button></div>`).join(''):`<div class="empty">${esc(t('none'))}</div>`}
 
-const units={length:{mm:.001,cm:.01,m:1,km:1000,in:.0254,ft:.3048,yd:.9144,mi:1609.344},mass:{mg:.000001,g:.001,kg:1,oz:.028349523125,lb:.45359237},volume:{ml:.001,l:1,tsp:.00492892159,tbsp:.0147867648,cup:.2365882365,gal:3.785411784},data:{B:1,KB:1024,MB:1048576,GB:1099511627776}};
+const units={length:{mm:.001,cm:.01,m:1,km:1000,in:.0254,ft:.3048,yd:.9144,mi:1609.344},area:{'mm²':.000001,'cm²':.0001,'m²':1,'km²':1000000,'in²':.00064516,'ft²':.09290304,acre:4046.8564224,ha:10000},mass:{mg:.000001,g:.001,kg:1,oz:.028349523125,lb:.45359237,t:1000},volume:{ml:.001,l:1,'m³':1000,tsp:.00492892159,tbsp:.0147867648,cup:.2365882365,gal:3.785411784,qt:.946352946,pt:.473176473},speed:{'m/s':1,'km/h':.2777777778,mph:.44704,knot:.5144444444},time:{ms:.001,s:1,min:60,h:3600,day:86400,week:604800},data:{B:1,KB:1024,MB:1048576,GB:1073741824,TB:1099511627776},energy:{J:1,kJ:1000,Wh:3600,kWh:3600000,cal:4.184,kcal:4184},power:{W:1,kW:1000,MW:1000000,hp:745.6998716},pressure:{Pa:1,kPa:1000,bar:100000,psi:6894.757293,atm:101325},angle:{deg:1,rad:57.2957795131,grad:.9},temperature:{'°C':1,'°F':1,K:1}};
 function unitEvaluate(expr){
  const raw=String(expr??'').trim().replace(/,/g,'.').replace(/×/g,'*').replace(/÷/g,'/');
  if(!raw||/[-+*/.]$/.test(raw)||!/^[0-9+*/().\s-]+$/.test(raw))return null;
@@ -277,6 +277,14 @@ function updateUnitsDisplay(){
  to.value=unitExpressions.to??'';
  $('.unit-row').forEach(row=>row.classList.toggle('active',row.dataset.unitRow===unitActiveInput));
 }
+function unitConvertValue(category,value,from,to){
+ if(category==='temperature'){
+   const c=from==='°C'?value:from==='°F'?(value-32)*5/9:value-273.15;
+   return to==='°C'?c:to==='°F'?c*9/5+32:c+273.15;
+ }
+ if(category==='angle')return value*units.angle[from]/units.angle[to];
+ return value*units[category][from]/units[category][to];
+}
 function convertUnitExpression(source='from'){
  const cc=$('#unitCategory')?.value,fu=$('#unitFrom')?.value,tu=$('#unitTo')?.value;
  if(!cc||!fu||!tu)return;
@@ -293,7 +301,7 @@ function convertUnitExpression(source='from'){
    updateUnitsDisplay();
    return;
  }
- const out=source==='from'?value*units[cc][fu]/units[cc][tu]:value*units[cc][tu]/units[cc][fu];
+ const out=source==='from'?unitConvertValue(cc,value,fu,tu):unitConvertValue(cc,value,tu,fu);
  unitExpressions[source==='from'?'to':'from']=unitValueFormat(out);
  updateUnitsDisplay();
 }
@@ -374,6 +382,15 @@ function renderToolKeypad(){
    '<button class="tool-key" data-value="1" type="button">1</button><button class="tool-key" data-value="2" type="button">2</button><button class="tool-key" data-value="3" type="button">3</button>'+
    '<button class="tool-key tool-key-wide" data-value="0" type="button">0</button><button class="tool-key" data-value="." type="button">.</button>';
 }
+function restoreCalculatorDisplay(){
+ const d=$('#calculatorDisplay');
+ if(!d||!d.querySelector('#expression')||!d.querySelector('#result')){
+   d.className='display-wrap';
+   d.innerHTML='<div class="expression-row"><div id="expression" class="expression" aria-live="polite"></div><button id="howButton" class="how-button hidden" type="button" aria-label="How was this calculated?">?</button></div><div id="result" class="result" aria-live="polite">0</div>';
+   $('#howButton').addEventListener('click',showHow);
+ }
+ d.classList.remove('unit-display');
+}
 function renderTool(){
  const calc=mode==='calc';
  if(mode==='units'){
@@ -381,29 +398,37 @@ function renderTool(){
    $('#toolPanel').classList.add('hidden');
    $('#calculatorDisplay').classList.remove('hidden');
    renderUnitsDisplay();
-   if(isMobileDevice()){
-     $('#keypad').className='hidden';
-     $('#keypad').innerHTML='';
-   }else{
-     renderCalcKeypad();
-   }
+   $('#keypad').className=isMobileDevice()?'hidden':'keypad';
+   if(isMobileDevice())$('#keypad').innerHTML='';else renderCalcKeypad();
    return;
  }
+ restoreCalculatorDisplay();
  $('#calculatorCard').classList.toggle('tool-mode',!calc);
  $('#toolPanel').classList.toggle('hidden',calc);
  $('#calculatorDisplay').classList.toggle('tool-display',!calc);
  $('#calculatorDisplay').classList.remove('hidden');
- if(calc){renderCalcKeypad();render();return}
+ if(calc){
+   renderCalcKeypad();
+   render();
+   return;
+ }
  let html='';
  if(mode==='fuel')html='<div class="tool-grid">'+field('fuelD',t('fuelD'))+field('fuelC',t('fuelC'))+field('fuelP',t('fuelP'))+'</div>';
  if(mode==='energy')html='<div class="tool-grid">'+field('energyP',t('energyP'))+field('energyH',t('energyH'))+field('energyD',t('energyD'))+field('energyR',t('energyR'))+'</div>';
  if(mode==='vat')html='<div class="tool-grid">'+field('amount',t('amount'))+field('vatRate',t('vatRate'))+'</div><div class="vat-toggle" role="group"><button type="button" data-vat-mode="add">'+esc(t('addVat'))+'</button><button type="button" data-vat-mode="remove">'+esc(t('removeVat'))+'</button></div>';
- if(mode==='units')html='';
  $('#toolPanel').innerHTML=html;
- renderToolKeypad();
  toolActiveInput=null;
- const touchDevice=matchMedia('(hover:none) and (pointer:coarse)').matches || 'ontouchstart' in window;
- $('#toolPanel input[data-tool-input]').forEach(input=>{input.readOnly=touchDevice;input.setAttribute('inputmode',touchDevice?'none':'decimal');if(touchDevice)input.setAttribute('readonly','readonly');else input.removeAttribute('readonly')});
+ if(isMobileDevice()){
+   $('#keypad').className='hidden';
+   $('#keypad').innerHTML='';
+ }else{
+   renderToolKeypad();
+ }
+ $('#toolPanel input[data-tool-input]').forEach(input=>{
+   input.readOnly=false;
+   input.removeAttribute('readonly');
+   input.setAttribute('inputmode','decimal');
+ });
  bindTools();
  renderVatToggle();
  renderToolDisplay();
