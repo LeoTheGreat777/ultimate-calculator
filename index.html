@@ -51,10 +51,6 @@
   if (modeLabel) new MutationObserver(syncModeMenu).observe(modeLabel,{childList:true,characterData:true,subtree:true});
   modeButton?.addEventListener('click',()=>setTimeout(syncModeMenu,0)); syncModeMenu();
   document.addEventListener('keydown',e=>{if(/^F(?:[1-9]|1[0-2])$/.test(e.key))e.stopImmediatePropagation();},true);
-  const clearButton=document.querySelector('#clearButton');
-  const syncClearLabel=()=>{if(clearButton)clearButton.textContent=justCalculated?'AC':'C';};
-  if(clearButton)new MutationObserver(syncClearLabel).observe(clearButton,{childList:true,subtree:true,characterData:true});
-  syncClearLabel();
   function explainExpression(input,result){
     const source=String(input||'').replace(/×/g,'*').replace(/÷/g,'/'),tokens=source.match(/\d+(?:\.\d+)?%?|[+\-*/]/g)||[];
     if(tokens.length<3)return null;
