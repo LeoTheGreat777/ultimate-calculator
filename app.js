@@ -2,9 +2,9 @@ const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function readLanguage(){
  let stored='';
- try{stored=localStorage.getItem('uc-lang')||''}catch{}
+ try{stored=(document.cookie.match(/(?:^|; )uc-lang=(en|el)(?:;|$)/)||[])[1]||''}catch{}
  if(stored!=='en'&&stored!=='el'){
-  try{stored=(document.cookie.match(/(?:^|; )uc-lang=(en|el)(?:;|$)/)||[])[1]||''}catch{}
+  try{stored=localStorage.getItem('uc-lang')||''}catch{}
  }
  return stored==='en'||stored==='el'?stored:'el';
 }
