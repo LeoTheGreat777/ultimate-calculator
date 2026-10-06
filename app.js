@@ -301,7 +301,9 @@ function renderTool(){
 }
 function setMode(next){resultCompact=false;mode=next;expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null;lastOperation=null;toolResult=null;resetHow();const label=$('#modeLabel'),icon=$('#modeIcon');if(label)label.textContent=t(mode);if(icon)icon.textContent=modeIcon(mode);renderTool();syncModeButton();}
 function applyLanguage(){
- document.documentElement.lang=lang;$('#langButton').textContent=lang==='el'?'ΕΛ':'EN';$('#historyButtonText').textContent=t('history');$('#copyButton').textContent=t('copy');const hint=$('#hint');if(hint)hint.textContent=t('hint');$('#createdBy').textContent=`${t('created')} Leonidas Kampaxis`;$('#historyTitle').textContent=t('history');$('#clearHistory').textContent=t('clear');renderTool();renderHistory();renderModeMenu();syncModeButton();render()
+ document.documentElement.lang=lang;$('#langButton').textContent=lang==='el'?'ΕΛ':'EN';$('#historyButtonText').textContent=t('history');$('#copyButton').textContent=t('copy');const hint=$('#hint');if(hint)hint.textContent=t('hint');$('#createdBy').textContent=`${t('created')} Leonidas Kampaxis`;$('#historyTitle').textContent=t('history');$('#clearHistory').textContent=t('clear');
+ if(mode==='calc'&&justCalculated&&lastExpression&&lastResult!==null)howData=explanationForExpression(lastExpression,lastResult)||howData;
+ renderTool();renderHistory();renderModeMenu();syncModeButton();render()
 }
 const MODE_LABELS=['calc','fuel','energy','vat','units'];
 function renderModeMenu(){
@@ -453,6 +455,12 @@ window.addEventListener('keydown',e=>{
  else if(e.key==='%')percent();
  else if(e.key==='Enter'||e.key==='='){e.preventDefault();equals()}
  else if(e.key==='Backspace'){e.preventDefault();backspace()}
- else if(e.key==='Escape'){e.preventDefault();clearAll()}
+ else if(e.key==='Escape'){
+   e.preventDefault();
+   if(!$('#howModal').classList.contains('hidden')){closeHow();return}
+   if(!$('#historyPanel').classList.contains('hidden')){closeHistory();return}
+   if($('.mode-control')?.classList.contains('mode-open')){closeModeMenu();return}
+   clearAll();
+ }
 });
 $('#footerVersion').textContent=`v${VERSION}`;renderHistory();renderTool();renderModeMenu();syncModeButton();setupHistorySheet();applyLanguage();applyTheme();window.addEventListener('pageshow',e=>{if(e.persisted&&mode!=='calc')setMode('calc')});
