@@ -1,7 +1,5 @@
 (() => {
-  const VERSION = '0.3.7';
-  document.querySelector('#version')?.replaceChildren(document.createTextNode(`v${VERSION}`));
-  document.querySelector('#footerVersion')?.replaceChildren(document.createTextNode(`v${VERSION}`));
+  // Version is owned by app.js; this interaction layer must never overwrite it.
 
   const panel = document.querySelector('#historyPanel');
   const handle = panel?.querySelector('.sheet-handle');
