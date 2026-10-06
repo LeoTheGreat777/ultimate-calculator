@@ -1,5 +1,5 @@
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
-const VERSION='0.4.10';
+const VERSION='0.4.11';
 let lang=localStorage.getItem('uc-lang')==='en'?'en':'el';
 let theme=localStorage.getItem('uc-theme')==='light'?'light':localStorage.getItem('uc-theme')==='dark'?'dark':'auto';
 let mode='calc',expression='',current='',currentIsPercent=false,justCalculated=false,lastExpression='',lastResult=null,howData=null,lastOperation=null,historyClearConfirm=false,toolResult=null,toolActiveInput=null;
@@ -81,6 +81,7 @@ function render(){
  exprEl.classList.remove('near-limit');
  $('#result').textContent=display;
  $('#result').classList.toggle('long-value',String(display).length>18);
+ $('#result').classList.remove('near-limit');
  const hasEntry=Boolean(raw);
  $('#clearButton').textContent=justCalculated||!hasEntry?'AC':'C';
  $('#howButton').classList.toggle('hidden',!howData);
@@ -90,7 +91,17 @@ function render(){
      exprEl.classList.toggle('near-limit',overflowing);
      if(overflowing)exprEl.scrollLeft=exprEl.scrollWidth;
    }
-   const r=$('#result');if(r)r.scrollLeft=r.scrollWidth;
+   const r=$('#result');
+   if(r&&!justCalculated){
+     const nearEdge=r.scrollWidth>r.clientWidth*0.82;
+     r.classList.toggle('near-limit',nearEdge);
+     requestAnimationFrame(()=>{
+       const stillOverflowing=r.scrollWidth>r.clientWidth+4;
+       if(stillOverflowing)r.scrollLeft=r.scrollWidth;
+     });
+   }else if(r){
+     r.scrollLeft=r.scrollWidth;
+   }
  });
 }
 function renderToolDisplay(){
