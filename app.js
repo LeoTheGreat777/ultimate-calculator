@@ -1,4 +1,4 @@
-const VERSION='0.4.78';
+const VERSION='0.4.79';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -244,9 +244,20 @@ function saveHistory(item){const list=historyItems();const stored={...item,resul
 function renderHistory(){const list=historyItems();$('#historyList').innerHTML=list.length?list.map(x=>`<div class="history-item"><button class="history-main" data-history="${x.id}" type="button"><div class="history-expression">${esc(pretty(x.expression))}</div><div class="history-result">${esc(fmt(x.result&&typeof x.result==='string'?ratFromString(x.result):x.result))}</div></button><button class="history-delete" data-delete="${x.id}" type="button" aria-label="${esc(t('delete'))}">×</button></div>`).join(''):`<div class="empty">${esc(t('none'))}</div>`}
 
 const units={length:{mm:.001,cm:.01,m:1,km:1000,in:.0254,ft:.3048,yd:.9144,mi:1609.344,nmi:1852},area:{'mm²':.000001,'cm²':.0001,'m²':1,'km²':1000000,'in²':.00064516,'ft²':.09290304,acre:4046.8564224,ha:10000},mass:{mg:.000001,g:.001,kg:1,oz:.028349523125,lb:.45359237,t:1000},volume:{ml:.001,l:1,'m³':1000,tsp:.00492892159,tbsp:.0147867648,cup:.2365882365,gal:3.785411784,qt:.946352946,pt:.473176473},speed:{'m/s':1,'km/h':.2777777778,mph:.44704,knot:.5144444444},time:{ms:.001,s:1,min:60,h:3600,day:86400,week:604800},data:{bit:1,b:1,kbit:1000,Mbit:1000000,Gbit:1000000000,Tbit:1000000000000,B:8,kB:8000,MB:8000000,GB:8000000000,TB:8000000000000,KiB:8192,MiB:8388608,GiB:8589934592,TiB:8796093022208},energy:{J:1,kJ:1000,Wh:3600,kWh:3600000,cal:4.184,kcal:4184},power:{W:1,kW:1000,MW:1000000,hp:745.6998716},pressure:{Pa:1,kPa:1000,bar:100000,psi:6894.757293,atm:101325},angle:{deg:1,rad:57.2957795131,grad:.9},temperature:{'°C':1,'°F':1,K:1}};
+function normalizeUnitExpression(expr){
+ return String(expr??'').trim().replace(/×/g,'*').replace(/÷/g,'/').replace(/-?\d[\d.,]*/g,m=>{
+  const sign=m.startsWith('-')?'-':'';
+  let token=sign?m.slice(1):m;
+  if(token.includes(','))token=token.replace(/\./g,'').replace(',','.');
+  else if(/^\d{1,3}(?:\.\d{3})+$/.test(token))token=token.replace(/\./g,'');
+  const parts=token.split('.');
+  parts[0]=(parts[0]||'0').replace(/^0+(?=\d)/,'');
+  if(parts[0]==='')parts[0]='0';
+  return sign+parts.join('.');
+ });
+}
 function unitEvaluate(expr){
- let raw=String(expr??'').trim().replace(/×/g,'*').replace(/÷/g,'/');
- if(raw.includes(','))raw=raw.replace(/\./g,'').replace(/,/g,'.');
+ const raw=normalizeUnitExpression(expr);
  if(!raw||/[-+*/.]$/.test(raw)||!/^[0-9+*/().\s-]+$/.test(raw))return null;
  try{return ratToNumber(evalExpr(raw))}catch{return null}
 }
@@ -276,18 +287,21 @@ function renderUnitsDisplay(){
      unitActiveInput=side;
      unitSource=side;
      unitReplaceOnNextKey=true;
-     if(!isMobileDevice())requestAnimationFrame(()=>input.select());
+     requestAnimationFrame(()=>input.select());
+     updateUnitsDisplay();
    });
    input.addEventListener('click',()=>{
      unitActiveInput=side;
      unitSource=side;
      unitReplaceOnNextKey=true;
+     updateUnitsDisplay();
    });
    input.addEventListener('input',()=>{
      unitActiveInput=side;
      unitSource=side;
+     const value=normalizeUnitExpression(input.value);
      unitReplaceOnNextKey=false;
-     unitExpressions[side]=input.value;
+     unitExpressions[side]=value||'0';
      convertUnitExpression(side);
    });
  };
@@ -330,9 +344,17 @@ function renderUnitsDisplay(){
 function updateUnitsDisplay(){
  const from=$('#unitValueFrom'),to=$('#unitValueTo');
  if(!from||!to)return;
- from.value=unitExpressions.from??'';
- to.value=unitExpressions.to??'';
- $('.unit-row').forEach(row=>row.classList.toggle('active',row.dataset.unitRow===unitActiveInput));
+ from.value=formatInputDisplay(unitExpressions.from??'');
+ to.value=formatInputDisplay(unitExpressions.to??'');
+ $('.unit-row').forEach(row=>{
+   const active=row.dataset.unitRow===unitActiveInput;
+   row.classList.toggle('active',active);
+   const input=row.querySelector('.unit-value');
+   if(input){
+     input.style.color=active?'var(--text)':'var(--muted)';
+     input.style.opacity=active?'1':'.48';
+   }
+ });
 }
 function unitConvertValue(category,value,from,to){
  if(category==='temperature'){
