@@ -1,4 +1,4 @@
-const VERSION='0.4.57';
+const VERSION='0.4.58';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function readLanguage(){
@@ -441,9 +441,10 @@ function renderTool(){
    else if(mode==='vat')window._runVat?.(vatAction==='add');
  };
  $('#toolPanel input[data-tool-input]').forEach(input=>{
-   input.addEventListener('input',runLiveTool);
-   input.addEventListener('change',runLiveTool);
-   input.addEventListener('keyup',runLiveTool);
+   input.oninput=runLiveTool;
+   input.onchange=runLiveTool;
+   input.onkeyup=runLiveTool;
+   input.onblur=runLiveTool;
  });
 }
 function setMode(next){resultCompact=false;mode=next;expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null;lastOperation=null;toolResult=null;resetHow();vatAction='add';if(next==='units'){unitExpressions={from:'',to:''};unitActiveInput='from';window._unitCategory=window._unitCategory||'length';}const label=$('#modeLabel'),icon=$('#modeIcon');if(label)label.textContent=t(mode);if(icon)icon.textContent=modeIcon(mode);renderTool();syncModeButton();}
