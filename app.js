@@ -1,5 +1,5 @@
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
-const VERSION='0.4.4';
+const VERSION='0.4.5';
 let lang=localStorage.getItem('uc-lang')==='en'?'en':'el';
 let theme=localStorage.getItem('uc-theme')==='light'?'light':localStorage.getItem('uc-theme')==='dark'?'dark':'auto';
 let mode='calc',expression='',current='',currentIsPercent=false,justCalculated=false,lastExpression='',lastResult=null,howData=null,lastOperation=null,historyClearConfirm=false,toolResult=null,toolActiveInput=null;
@@ -102,10 +102,8 @@ function renderToolDisplay(){
 function clearAll(){expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null;lastOperation=null;resetHow();render()}
 function clearCurrent(){resetHow();if(current){current='';currentIsPercent=false;render();return}clearAll()}
 function clearButtonAction(){
- if(justCalculated){
-   if(howData){resetHow();render();return}
-   clearAll();return;
- }
+ if(justCalculated){clearAll();return}
+
  if(current){clearCurrent();return}
  if(expression){clearAll();return}
  clearAll();
@@ -146,7 +144,9 @@ function saveHistory(item){const list=historyItems();const stored={...item,resul
 function renderHistory(){const list=historyItems();$('#historyList').innerHTML=list.length?list.map(x=>`<div class="history-item"><button class="history-main" data-history="${x.id}" type="button"><div class="history-expression">${esc(pretty(x.expression))}</div><div class="history-result">${esc(fmt(x.result&&typeof x.result==='string'?ratFromString(x.result):x.result))}</div></button><button class="history-delete" data-delete="${x.id}" type="button" aria-label="${esc(t('delete'))}">×</button></div>`).join(''):`<div class="empty">${esc(t('none'))}</div>`}
 
 const units={length:{mm:1,cm:.01,m:1,km:1000,in:.0254,ft:.3048,yd:.9144,mi:1609.344},mass:{mg:.000001,g:.001,kg:1,oz:.028349523125,lb:.45359237},volume:{ml:.001,l:1,tsp:.00492892159,tbsp:.0147867648,cup:.2365882365,gal:3.785411784},data:{B:1,KB:1024,MB:1048576,GB:1073741824,TB:1099511627776}};
-const FIELD_EXAMPLES={fuelD:'250',fuelC:'7.2',fuelP:'1.85',energyP:'100',energyH:'8',energyD:'30',energyR:'0.20',amount:'100',vatRate:'24',value:'10'};
+const FIELD_EXAMPLES={fuelD:'250',fuelC:'7.2',fuelP:'1.85',energyP:'100',energyH:'8',energyD:'30',energyR:'0.20',amount:'100',vatRate:'24%',value:'10'};
+const TOOL_DEFAULTS={fuelD:250,fuelC:7.2,fuelP:1.85,energyP:100,energyH:8,energyD:30,energyR:0.20,amount:100,vatRate:24,value:10};
+const toolNumber=id=>{const raw=$(`#${id}`)?.value.trim();return raw===''?Number(TOOL_DEFAULTS[id]):Number(raw)};
 const field=(id,label)=>`<label class="tool-field"><span>${esc(label)}</span><input id="${id}" type="number" step="any" inputmode="decimal" placeholder="${FIELD_EXAMPLES[id]||''}"></label>`;
 const toolKeypad=()=>`<div class="tool-keypad" aria-label="Numeric keypad">
  <button type="button" data-tool-key="1">1</button><button type="button" data-tool-key="2">2</button><button type="button" data-tool-key="3">3</button><button type="button" data-tool-key="backspace">⌫</button>
@@ -172,12 +172,12 @@ function handleToolKey(key){
 function setToolResult(main,detail='',how=null){toolResult={main,detail,how};howData=how;renderToolDisplay()}
 function populateUnits(){const cat=$('#unitCategory');if(!cat)return;const keys=Object.keys(units[cat.value]);$('#unitFrom').innerHTML=keys.map(x=>`<option value="${x}">${x}</option>`).join('');$('#unitTo').innerHTML=keys.map(x=>`<option value="${x}">${x}</option>`).join('')}
 function bindTools(){
- const fuelGo=$('#fuelGo');fuelGo?.addEventListener('click',()=>{const d=+$('#fuelD').value,c=+$('#fuelC').value,p=+$('#fuelP').value;if([d,c,p].some(x=>!Number.isFinite(x))||d===0)return;const used=d*c/100,cost=used*p;setToolResult(`${fmt(cost)} €`,`${t('fuelResult')}: ${fmt(used)} L · ${t('costKm')}: ${fmt(cost/d)} €/km`)});
- const energyGo=$('#energyGo');energyGo?.addEventListener('click',()=>{const p=+$('#energyP').value,h=+$('#energyH').value,d=+$('#energyD').value,r=+$('#energyR').value;if([p,h,d,r].some(x=>!Number.isFinite(x)))return;const kwh=p/1000*h*d,cost=kwh*r;setToolResult(`${fmt(cost)} €`,`${t('energyResult')}: ${fmt(kwh)} kWh`)});
- const vat=add=>{const a=+$('#amount').value,r=+$('#vatRate').value;if(!Number.isFinite(a)||!Number.isFinite(r))return;const total=add?a*(1+r/100):a/(1+r/100),tax=add?total-a:a-total;setToolResult(`${fmt(total)} €`,`${t('vatAmount')}: ${fmt(Math.abs(tax))} €`)};
+ const fuelGo=$('#fuelGo');fuelGo?.addEventListener('click',()=>{const d=toolNumber('fuelD'),c=toolNumber('fuelC'),p=toolNumber('fuelP');if([d,c,p].some(x=>!Number.isFinite(x))||d===0)return;const used=d*c/100,cost=used*p;setToolResult(`${fmt(cost)} €`,`${t('fuelResult')}: ${fmt(used)} L · ${t('costKm')}: ${fmt(cost/d)} €/km`)});
+ const energyGo=$('#energyGo');energyGo?.addEventListener('click',()=>{const p=toolNumber('energyP'),h=toolNumber('energyH'),d=toolNumber('energyD'),r=toolNumber('energyR');if([p,h,d,r].some(x=>!Number.isFinite(x)))return;const kwh=p/1000*h*d,cost=kwh*r;setToolResult(`${fmt(cost)} €`,`${t('energyResult')}: ${fmt(kwh)} kWh`)});
+ const vat=add=>{const a=toolNumber('amount'),r=toolNumber('vatRate');if(!Number.isFinite(a)||!Number.isFinite(r))return;const total=add?a*(1+r/100):a/(1+r/100),tax=add?total-a:a-total;setToolResult(`${fmt(total)} €`,`${t('vatAmount')}: ${fmt(Math.abs(tax))} €`)};
  $('#addVat')?.addEventListener('click',()=>vat(true));$('#removeVat')?.addEventListener('click',()=>vat(false));
  $('#unitCategory')?.addEventListener('change',populateUnits);
- $('#convert')?.addEventListener('click',()=>{const v=+$('#value').value,c=$('#unitCategory').value,f=$('#unitFrom').value,to=$('#unitTo').value;if(!Number.isFinite(v))return;setToolResult(`${fmt(v*units[c][f]/units[c][to])} ${esc(to)}`)})
+ $('#convert')?.addEventListener('click',()=>{const v=toolNumber('value'),c=$('#unitCategory').value,f=$('#unitFrom').value,to=$('#unitTo').value;if(!Number.isFinite(v))return;setToolResult(`${fmt(v*units[c][f]/units[c][to])} ${esc(to)}`)})
 }
 function modeIcon(m){return ICONS[m]||''}
 function renderTool(){
