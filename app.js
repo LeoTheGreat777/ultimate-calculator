@@ -1,5 +1,5 @@
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
-const VERSION='0.4.24';
+const VERSION='0.4.25';
 let lang=localStorage.getItem('uc-lang')==='en'?'en':'el';
 let theme=localStorage.getItem('uc-theme')==='light'?'light':localStorage.getItem('uc-theme')==='dark'?'dark':'auto';
 let mode='calc',expression='',current='',currentIsPercent=false,justCalculated=false,lastExpression='',lastResult=null,howData=null,lastOperation=null,historyClearConfirm=false,toolResult=null,toolActiveInput=null,resultCompact=false;
@@ -303,7 +303,7 @@ function renderTool(){
  renderToolDisplay();
 
 }
-function setMode(next){resultCompact=false;mode=next;expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null;lastOperation=null;toolResult=null;resetHow();renderTool();syncModeButton()}
+function setMode(next){resultCompact=false;mode=next;expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null;lastOperation=null;toolResult=null;resetHow();const label=$('#modeLabel'),icon=$('#modeIcon');if(label)label.textContent=t(mode);if(icon)icon.textContent=modeIcon(mode);renderTool();syncModeButton();}
 function applyLanguage(){
  document.documentElement.lang=lang;$('#langButton').textContent=lang==='el'?'ΕΛ':'EN';$('#historyButtonText').textContent=t('history');$('#copyButton').textContent=t('copy');$('#hint').textContent=t('hint');$('#createdBy').textContent=`${t('created')} Leonidas Kampaxis`;$('#historyTitle').textContent=t('history');$('#clearHistory').textContent=t('clear');renderTool();renderHistory();renderModeMenu();syncModeButton();render()
 }
@@ -405,6 +405,15 @@ $('#keypad').addEventListener('click',e=>{
  if(a==='clear')clearButtonAction();else if(a==='backspace')backspace();else if(a==='equals')equals();else if(v==='%')percent();else if(/[+\-*/]/.test(v||''))operator(v==='*'?'×':v==='/'?'÷':v);else if(v)digit(v)
 });
 $('#toolPanel').addEventListener('focusin',e=>{if(e.target.matches('input'))toolActiveInput=e.target});
+$('#toolPanel').addEventListener('beforeinput',e=>{
+ if(!e.target.matches('input')||e.inputType?.startsWith('delete'))return;
+ if(e.data&&!/^[0-9.,-]+$/.test(e.data))e.preventDefault();
+});
+$('#toolPanel').addEventListener('keydown',e=>{
+ if(!e.target.matches('input'))return;
+ if(e.ctrlKey||e.metaKey||e.altKey)return;
+ if(!/^[0-9.,-]$/.test(e.key)&&!['Backspace','Delete','ArrowLeft','ArrowRight','Home','End','Tab','Enter','Escape'].includes(e.key))e.preventDefault();
+});
 $('#toolPanel').addEventListener('input',e=>{
  if(!e.target.matches('input'))return;
  const input=e.target;
