@@ -286,7 +286,7 @@ function bindTools(){
  openMenu(toButton,toMenu);
  const convertUnits=()=>{
   const v=toolNumber('value'),cc=catButton?.dataset.value,ff=fromButton?.dataset.value,to=toButton?.dataset.value;
-  if(!Number.isFinite(v)||!cc||!ff||!to||!units[cc]?.[ff]===undefined||!units[cc]?.[to]===undefined)return;
+  if(!Number.isFinite(v)||!cc||!ff||!to||units[cc]?.[ff]===undefined||units[cc]?.[to]===undefined)return;
   const out=v*units[cc][ff]/units[cc][to];
   const how={formula:`${fmt(v)} ${ff} → ${to}`,steps:[{title:lang==='el'?'Μετέτρεψε την τιμή':'Convert the value',text:`${fmt(v)} × ${fmt(units[cc][ff])} ÷ ${fmt(units[cc][to])} = ${fmt(out)} ${to}`}],result:`${fmt(out)} ${to}`};
   setToolResult(`${fmt(out)} ${to}`,`${t('toolUnit')}: ${fmt(out)} ${to}`,how)
