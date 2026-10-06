@@ -1,4 +1,4 @@
-const VERSION='0.4.77';
+const VERSION='0.4.78';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -591,8 +591,8 @@ function toolKeyInput(key){
  if(mode==='units'){
    const side=unitActiveInput||'from';
    let value=unitExpressions[side]||'';
-   if(key==='clear'){unitExpressions={from:'',to:''};unitActiveInput='from';unitSource='from';unitReplaceOnNextKey=false;updateUnitsDisplay();return true}
-   if(key==='backspace'){unitReplaceOnNextKey=false;value=value.slice(0,-1)}
+   if(key==='clear'){unitExpressions={from:'0',to:'0'};unitActiveInput='from';unitSource='from';unitReplaceOnNextKey=true;updateUnitsDisplay();return true}
+   if(key==='backspace'){unitReplaceOnNextKey=false;value=value.slice(0,-1)||'0'}
    else{
      if(unitReplaceOnNextKey){value='';unitReplaceOnNextKey=false}
      if(key==='.'||key===','){
@@ -618,7 +618,7 @@ function toolKeyInput(key){
  input.focus();
  let value=input.value;
  if(key==='clear')value='';
- else if(key==='backspace')value=value.slice(0,-1);
+ else if(key==='backspace')value=value.slice(0,-1)||'0';
  else if(key==='.'||key===',')value.includes('.')?value:value+'.';
  else if(key==='-')value=value.startsWith('-')?value.slice(1):'-'+value;
  else if(/^\d$/.test(key))value+=key;
