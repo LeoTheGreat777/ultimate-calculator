@@ -58,6 +58,7 @@ function resetHow(){howData=null;$('#howButton')?.classList.add('hidden')}
 function applyTheme(){
  document.body.classList.toggle('light',theme==='light');
  document.documentElement.classList.toggle('force-dark',theme==='dark');
+ document.documentElement.classList.toggle('force-light',theme==='light');
  const b=$('#themeButton');
  if(b){const dark=theme==='dark'||(theme==='auto'&&!matchMedia('(prefers-color-scheme: light)').matches);b.textContent=dark?'☾':'☀';b.setAttribute('aria-label',dark?'Switch to light mode':'Switch to dark mode')}
 }
