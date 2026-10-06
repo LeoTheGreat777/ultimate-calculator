@@ -59,7 +59,7 @@ function formatGroupedNumber(raw){
  return sign+grouped+(frac!==undefined?decimal+frac:'');
 }
 function formatInputDisplay(s){
- return pretty(String(s)).replace(/\\d+(?:\\.\\d*)?/g,m=>formatGroupedNumber(m));
+ return pretty(String(s)).replace(/\d+(?:\.\d*)?/g,m=>formatGroupedNumber(m));
 }
 
 function tokenize(input){
