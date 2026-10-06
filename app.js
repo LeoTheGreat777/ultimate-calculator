@@ -1,4 +1,4 @@
-const VERSION='0.4.51';
+const VERSION='0.4.52';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function readLanguage(){
@@ -568,13 +568,12 @@ $('#keypad').addEventListener('click',e=>{
  }
  if(a==='clear')clearButtonAction();else if(a==='backspace')backspace();else if(a==='equals')equals();else if(v==='%')percent();else if(/[+\-*/]/.test(v||''))operator(v==='*'?'×':v==='/'?'÷':v);else if(v)digit(v)
 });
-$('#toolPanel').addEventListener('change',e=>{
-
- if(e.target.matches('[data-vat-mode]')){
-   vatAction=e.target.dataset.vatMode==='remove'?'remove':'add';
-   renderVatToggle();
-   window._runVat?.(vatAction==='add');
- }
+$('#toolPanel').addEventListener('click',e=>{
+ const button=e.target.closest('[data-vat-mode]');
+ if(!button)return;
+ vatAction=button.dataset.vatMode==='remove'?'remove':'add';
+ renderVatToggle();
+ window._runVat?.(vatAction==='add');
 });
 $('#toolPanel').addEventListener('focusin',e=>{if(e.target.matches('input'))toolActiveInput=e.target});
 $('#toolPanel').addEventListener('beforeinput',e=>{
