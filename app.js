@@ -1,4 +1,4 @@
-const VERSION='0.4.70';
+const VERSION='0.4.71';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -494,7 +494,7 @@ function applyLanguage(){
  const savedInputs={};
  if(mode!=='calc'&&mode!=='units')$('#toolPanel input[data-tool-input]').forEach(input=>savedInputs[input.id]=input.value);
  document.documentElement.lang=lang;
- $('#langButton').textContent=lang==='el'?'EN':'ΕΛ';
+ $('#langButton').textContent=lang==='el'?'ΕΛ':'EN';
  $('#copyButton').textContent=t('copy');
  $('#historyButtonText').textContent=t('history');
  $('#howTitle').textContent=t('how');
@@ -700,7 +700,8 @@ $('#langButton').addEventListener('click',e=>{
  e.stopPropagation();
  lang=lang==='el'?'en':'el';
  try{localStorage.setItem('uc-lang',lang)}catch{}
- applyLanguage();
+ saveReloadState();
+ window.location.reload();
 });
 $('#themeButton').addEventListener('click',toggleTheme);
 $('#modeButton').addEventListener('click',e=>{e.stopPropagation();toggleModeMenu()});
