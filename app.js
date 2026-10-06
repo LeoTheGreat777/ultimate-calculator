@@ -184,25 +184,18 @@ function renderHistory(){const list=historyItems();$('#historyList').innerHTML=l
 const units={length:{mm:.001,cm:.01,m:1,km:1000,in:.0254,ft:.3048,yd:.9144,mi:1609.344},mass:{mg:.000001,g:.001,kg:1,oz:.028349523125,lb:.45359237},volume:{ml:.001,l:1,tsp:.00492892159,tbsp:.0147867648,cup:.2365882365,gal:3.785411784},data:{B:1,KB:1024,MB:1048576,GB:1073741824,TB:1099511627776}};
 const FIELD_EXAMPLES={fuelD:'250',fuelC:'7.2',fuelP:'1.85',energyP:'100',energyH:'8',energyD:'30',energyR:'0.20',amount:'100',vatRate:'24%',value:'10'};
 const TOOL_DEFAULTS={fuelD:250,fuelC:7.2,fuelP:1.85,energyP:100,energyH:8,energyD:30,energyR:0.20,amount:100,vatRate:24,value:10};
+const unitOptions=(category,selected)=>Object.keys(units[category]||{}).map(x=>'<option value="'+x+'"'+(x===selected?' selected':'')+'>'+x+'</option>').join('');
 const toolNumber=id=>{const raw=($(`#${id}`)?.value??'').trim().replace(',','.');return raw===''?Number(TOOL_DEFAULTS[id]):Number(raw)};
 const field=(id,label)=>`<label class="tool-field"><span>${esc(label)}</span><input id="${id}" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="${FIELD_EXAMPLES[id]||''}" data-tool-input="true"></label>`;
 function setToolResult(main,detail='',how=null){toolResult={main,detail,how};howData=how;renderToolDisplay()}
 function populateUnits(){
- const cat=$('#unitCategory');
- const from=$('#unitFrom');
- const to=$('#unitTo');
+ const cat=$('#unitCategory'),from=$('#unitFrom'),to=$('#unitTo');
  if(!cat||!from||!to)return;
- const categories=Object.keys(units);
- const currentCategory=cat.value||'length';
- cat.innerHTML=categories.map(x=>'<option value="'+x+'">'+esc(t(x))+'</option>').join('');
- cat.value=categories.includes(currentCategory)?currentCategory:'length';
- const category=cat.value;
- const keys=Object.keys(units[cat.value]||{});
+ const category=cat.value||'length';
+ const keys=Object.keys(units[category]||{});
  const oldFrom=from.value,oldTo=to.value;
- from.innerHTML=keys.map(x=>'<option value="'+x+'">'+x+'</option>').join('');
- to.innerHTML=keys.map(x=>'<option value="'+x+'">'+x+'</option>').join('');
- from.value=keys.includes(oldFrom)?oldFrom:(keys[0]||'');
- to.value=keys.includes(oldTo)?oldTo:(keys[1]||keys[0]||'');
+ from.innerHTML=unitOptions(category,keys.includes(oldFrom)?oldFrom:keys[0]);
+ to.innerHTML=unitOptions(category,keys.includes(oldTo)?oldTo:(keys[1]||keys[0]));
 }
 function closeUnitMenus(except=null){
  $$('.unit-select-menu').forEach(menu=>{
@@ -284,7 +277,11 @@ function renderTool(){
  if(mode==='fuel')html=`<div class="tool-grid">${field('fuelD',t('fuelD'))}${field('fuelC',t('fuelC'))}${field('fuelP',t('fuelP'))}</div>`;
  if(mode==='energy')html=`<div class="tool-grid">${field('energyP',t('energyP'))}${field('energyH',t('energyH'))}${field('energyD',t('energyD'))}${field('energyR',t('energyR'))}</div>`;
  if(mode==='vat')html=`<div class="tool-grid">${field('amount',t('amount'))}${field('vatRate',t('vatRate'))}</div>`;
- if(mode==='units')html=`<div class="tool-grid">${field('value',t('value'))}<label class="tool-field"><span>${t('category')}</span><select id="unitCategory" class="tool-select"></select></label><label class="tool-field"><span>${t('from')}</span><select id="unitFrom" class="tool-select"></select></label><label class="tool-field"><span>${t('to')}</span><select id="unitTo" class="tool-select"></select></label></div>`;
+ if(mode==='units'){
+ const category='length';
+ const keys=Object.keys(units[category]);
+ html=`<div class="tool-grid">${field('value',t('value'))}<label class="tool-field"><span>${t('category')}</span><select id="unitCategory" class="tool-select">${Object.keys(units).map(x=>'<option value="'+x+'">'+esc(t(x))+'</option>').join('')}</select></label><label class="tool-field"><span>${t('from')}</span><select id="unitFrom" class="tool-select">${unitOptions(category,keys[0])}</select></label><label class="tool-field"><span>${t('to')}</span><select id="unitTo" class="tool-select">${unitOptions(category,keys[1])}</select></label></div>`;
+}
 
  $('#toolPanel').innerHTML=html;
  renderToolKeypad();
