@@ -1,4 +1,4 @@
-const VERSION='0.4.63';
+const VERSION='0.4.64';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function readLanguage(){
@@ -645,4 +645,4 @@ window.addEventListener('keydown',e=>{
    clearAll();
  }
 });
-window.__UC_VERSION=VERSION;$('#footerVersion').textContent=`v${VERSION}`;renderHistory();renderTool();renderModeMenu();syncModeButton();setupHistorySheet();applyLanguage();applyTheme();window.addEventListener('pageshow',e=>{if(e.persisted&&mode!=='calc')setMode('calc')});
+window.__UC_VERSION=VERSION;$('#footerVersion').textContent=`v${VERSION}`;bindTools();renderHistory();renderTool();renderModeMenu();syncModeButton();setupHistorySheet();applyLanguage();applyTheme();window.addEventListener('pageshow',e=>{if(e.persisted&&mode!=='calc')setMode('calc')});
