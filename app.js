@@ -1,4 +1,4 @@
-const VERSION='0.4.122';
+const VERSION='0.4.123';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -110,7 +110,7 @@ function tokenize(input){
 }
 function evalExpr(input){
  const tokens=tokenize(input);let pos=0;
- function primary(){const tok=tokens[pos++];if(!tok)throw Error('INCOMPLETE');if(tok.type==='('){const v=additive();if(!tokens[pos]||tokens[pos].type!==')')throw Error('PAREN');pos++;return{value:v,percent:false}}if(tok.type==='number')return{value:tok.value,percent:tok.percent};throw Error('SYNTAX')}
+ function primary(){const tok=tokens[pos++];if(!tok)throw Error('INCOMPLETE');if(tok.type==='+'||tok.type==='-'){const v=primary();return{value:tok.type==='-'?ratMul(ratFromString('-1'),v.value):v.value,percent:false}}if(tok.type==='('){const v=additive();if(!tokens[pos]||tokens[pos].type!==')')throw Error('PAREN');pos++;return{value:v,percent:false}}if(tok.type==='number')return{value:tok.value,percent:tok.percent};throw Error('SYNTAX')}
  function mult(){let left=primary();while(tokens[pos]&&['*','/'].includes(tokens[pos].type)){const op=tokens[pos++].type,right=primary();left={value:op==='*'?ratMul(left.value,right.value):ratDiv(left.value,right.value),percent:false}}return left}
  function additive(){let left=mult();while(tokens[pos]&&['+','-'].includes(tokens[pos].type)){const op=tokens[pos++].type,right=mult();const rv=right.percent?ratMul(left.value,right.value):right.value;left={value:op==='+'?ratAdd(left.value,rv):ratSub(left.value,rv),percent:false}}return left}
  const out=additive();if(pos!==tokens.length)throw Error('SYNTAX');return out.value
@@ -237,7 +237,7 @@ function digit(v){
 function operator(op){
  resetHow();
  if(justCalculated){expression=ratToDecimal(lastResult,18);current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null}
- if(!current&&!expression)return;
+ if(!current&&!expression){if(op==='-'){current='-';render()}return;}
  if(current){expression+=current;current='';currentIsPercent=false}
  if(/[+\-×÷]$/.test(expression))expression=expression.slice(0,-1)+op;else expression+=op;
  render()
@@ -260,13 +260,15 @@ function historyItems(){try{return JSON.parse(localStorage.getItem('uc-history')
 function saveHistory(item){const list=historyItems();const stored={...item,result:item.result&&typeof item.result==='object'&&'n'in item.result?ratToDecimal(item.result,24):String(item.result)};list.unshift({id:Date.now()+Math.random(),...stored});localStorage.setItem('uc-history',JSON.stringify(list.slice(0,100)));renderHistory()}
 function renderHistory(){const list=historyItems();$('#historyList').innerHTML=list.length?list.map(x=>`<div class="history-item"><button class="history-main" data-history="${x.id}" type="button"><div class="history-expression">${esc(pretty(x.expression))}</div><div class="history-result">${esc(fmt(x.result&&typeof x.result==='string'?ratFromString(x.result):x.result))}</div></button><button class="history-delete" data-delete="${x.id}" type="button" aria-label="${esc(t('delete'))}">×</button></div>`).join(''):`<div class="empty">${esc(t('none'))}</div>`}
 
-const units={length:{mm:.001,cm:.01,m:1,km:1000,in:.0254,ft:.3048,yd:.9144,mi:1609.344,nmi:1852},area:{'mm²':.000001,'cm²':.0001,'m²':1,'km²':1000000,'in²':.00064516,'ft²':.09290304,acre:4046.8564224,ha:10000},mass:{mg:.000001,g:.001,kg:1,oz:.028349523125,lb:.45359237,t:1000},volume:{ml:.001,l:1,'m³':1000,tsp:.00492892159,tbsp:.0147867648,cup:.2365882365,gal:3.785411784,qt:.946352946,pt:.473176473},speed:{'m/s':1,'km/h':.2777777778,mph:.44704,knot:.5144444444},time:{ms:.001,s:1,min:60,h:3600,day:86400,week:604800},data:{bit:1,b:1,kbit:1000,Mbit:1000000,Gbit:1000000000,Tbit:1000000000000,B:8,kB:8000,MB:8000000,GB:8000000000,TB:8000000000000,KiB:8192,MiB:8388608,GiB:8589934592,TiB:8796093022208},energy:{J:1,kJ:1000,Wh:3600,kWh:3600000,cal:4.184,kcal:4184},power:{W:1,kW:1000,MW:1000000,hp:745.6998716},pressure:{Pa:1,kPa:1000,bar:100000,psi:6894.757293,atm:101325},angle:{deg:1,rad:57.2957795131,grad:.9},temperature:{'°C':1,'°F':1,K:1}};
+const units={length:{mm:'0.001',cm:'0.01',m:'1',km:'1000',in:'0.0254',ft:'0.3048',yd:'0.9144',mi:'1609.344',nmi:'1852'},area:{'mm²':'0.000001','cm²':'0.0001','m²':'1','km²':'1000000','in²':'0.00064516','ft²':'0.09290304',acre:'4046.8564224',ha:'10000'},mass:{mg:'0.000001',g:'0.001',kg:'1',oz:'0.028349523125',lb:'0.45359237',t:'1000'},volume:{ml:'0.001',l:'1','m³':'1000',tsp:'0.00492892159375',tbsp:'0.01478676478125',cup:'0.2365882365',gal:'3.785411784',qt:'0.946352946',pt:'0.473176473'},speed:{'m/s':'1','km/h':'0.27777777777777777778',mph:'0.44704',knot:'0.51444444444444444444'},time:{ms:'0.001',s:'1',min:'60',h:'3600',day:'86400',week:'604800'},data:{bit:'1',b:'1',kbit:'1000',Mbit:'1000000',Gbit:'1000000000',Tbit:'1000000000000',B:'8',kB:'8000',MB:'8000000',GB:'8000000000',TB:'8000000000000',KiB:'8192',MiB:'8388608',GiB:'8589934592',TiB:'8796093022208'},energy:{J:'1',kJ:'1000',Wh:'3600',kWh:'3600000',cal:'4.184',kcal:'4184'},power:{W:'1',kW:'1000',MW:'1000000',hp:'745.69987158227022'},pressure:{Pa:'1',kPa:'1000',bar:'100000',psi:'6894.757293168',atm:'101325'},angle:{deg:'1',rad:'57.2957795130823208768',grad:'0.9'},temperature:{'°C':'1','°F':'1',K:'1'}};
 function normalizeUnitExpression(expr){
  return String(expr??'').trim().replace(/×/g,'*').replace(/÷/g,'/').replace(/-?\d[\d.,]*/g,m=>{
   const sign=m.startsWith('-')?'-':'';
   let token=sign?m.slice(1):m;
-  if(token.includes(','))token=token.replace(/\./g,'').replace(',','.');
-  else if(/^\d{1,3}(?:\.\d{3})+$/.test(token))token=token.replace(/\./g,'');
+  if(token.includes(',')){
+   const parts=token.split(',');
+   token=parts.slice(0,-1).join('').replace(/\./g,'')+'.'+parts.at(-1);
+  }
   const parts=token.split('.');
   parts[0]=(parts[0]||'0').replace(/^0+(?=\d)/,'');
   if(parts[0]==='')parts[0]='0';
@@ -283,7 +285,7 @@ function unitFactor(value){
 }
 function unitValueFormat(value){
  if(!value||typeof value!=='object'||!('n'in value&&'d'in value))return '';
- return ratToDecimal(value,18);
+ return ratToDecimal(value,24);
 }
 function formatUnitDisplayValue(value){
  const s=String(value??'').trim();
