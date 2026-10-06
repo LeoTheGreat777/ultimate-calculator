@@ -246,7 +246,7 @@ function bindTools(){
  window._runVat=vat;
  populateUnits();
  const convertUnits=()=>{
-  const v=toolNumber('value'),cc=catButton?.dataset.value,ff=fromButton?.dataset.value,to=toButton?.dataset.value;
+  const v=toolNumber('value'),cc=$('#unitCategoryButton')?.dataset.value,ff=$('#unitFromButton')?.dataset.value,to=$('#unitToButton')?.dataset.value;
   if(!Number.isFinite(v)||!cc||!ff||!to||units[cc]?.[ff]===undefined||units[cc]?.[to]===undefined)return;
   const out=v*units[cc][ff]/units[cc][to];
   const how={formula:`${fmt(v)} ${ff} → ${to}`,steps:[{title:lang==='el'?'Μετέτρεψε την τιμή':'Convert the value',text:`${fmt(v)} × ${fmt(units[cc][ff])} ÷ ${fmt(units[cc][to])} = ${fmt(out)} ${to}`}],result:`${fmt(out)} ${to}`};
