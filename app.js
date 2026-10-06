@@ -2,9 +2,9 @@ const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function readLanguage(){
  let stored='';
- try{stored=(document.cookie.match(/(?:^|; )uc-lang=(en|el)(?:;|$)/)||[])[1]||''}catch{}
+ try{stored=localStorage.getItem('uc-lang')||''}catch{}
  if(stored!=='en'&&stored!=='el'){
-  try{stored=localStorage.getItem('uc-lang')||''}catch{}
+  try{stored=(document.cookie.match(/(?:^|; )uc-lang=(en|el)(?:;|$)/)||[])[1]||''}catch{}
  }
  return stored==='en'||stored==='el'?stored:'el';
 }
@@ -358,7 +358,7 @@ function renderTool(){
 }
 function setMode(next){resultCompact=false;mode=next;expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null;lastOperation=null;toolResult=null;resetHow();if(next==='units'){unitExpressions={from:'',to:''};unitActiveInput='from';window._unitCategory=window._unitCategory||'length';}const label=$('#modeLabel'),icon=$('#modeIcon');if(label)label.textContent=t(mode);if(icon)icon.textContent=modeIcon(mode);renderTool();syncModeButton();}
 function applyLanguage(){
- document.documentElement.lang=lang;$('#langButton').textContent=lang==='el'?'ΕΛ':'EN';$('#historyButtonText').textContent=t('history');$('#copyButton').textContent=t('copy');const hint=$('#hint');if(hint)hint.textContent=t('hint');$('#createdBy').textContent=`${t('created')} Leonidas Kampaxis`;$('#historyTitle').textContent=t('history');$('#clearHistory').textContent=t('clear');
+ document.documentElement.lang=lang;$('#langButton').textContent=lang==='el'?'EN':'ΕΛ';$('#historyButtonText').textContent=t('history');$('#copyButton').textContent=t('copy');const hint=$('#hint');if(hint)hint.textContent=t('hint');$('#createdBy').textContent=`${t('created')} Leonidas Kampaxis`;$('#historyTitle').textContent=t('history');$('#clearHistory').textContent=t('clear');
  if(mode==='calc'&&justCalculated&&lastExpression&&lastResult!==null)howData=explanationForExpression(lastExpression,lastResult)||howData;
  renderTool();renderHistory();renderModeMenu();syncModeButton();render()
 }
