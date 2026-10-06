@@ -1,5 +1,5 @@
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
-const VERSION='0.4.30';
+const VERSION='0.4.31';
 let lang=localStorage.getItem('uc-lang')==='en'?'en':'el';
 let theme=localStorage.getItem('uc-theme')==='light'?'light':localStorage.getItem('uc-theme')==='dark'?'dark':'auto';
 let mode='calc',expression='',current='',currentIsPercent=false,justCalculated=false,lastExpression='',lastResult=null,howData=null,lastOperation=null,historyClearConfirm=false,toolResult=null,toolActiveInput=null,resultCompact=false;
@@ -189,21 +189,28 @@ const toolNumber=id=>{const raw=($(`#${id}`)?.value??'').trim().replace(',','.')
 const field=(id,label)=>`<label class="tool-field"><span>${esc(label)}</span><input id="${id}" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="${FIELD_EXAMPLES[id]||''}" data-tool-input="true"></label>`;
 function setToolResult(main,detail='',how=null){toolResult={main,detail,how};howData=how;renderToolDisplay()}
 function populateUnits(){
- const cat=$('#unitCategoryButton');if(!cat)return;
+ const cat=$('#unitCategoryButton');
+ if(!cat)return;
  const category=cat.dataset.value;
  const keys=Object.keys(units[category]||{});
- const from=$('#unitFromButton'),to=$('#unitToButton'),fromMenu=$('#unitFromMenu'),toMenu=$('#unitToMenu');
+ const from=$('#unitFromButton'),to=$('#unitToButton');
+ const fromMenu=$('#unitFromMenu'),toMenu=$('#unitToMenu');
  const set=(button,menu,current,fallback)=>{
    if(!button||!menu)return;
    const value=keys.includes(current)?current:fallback;
    button.dataset.value=value;
-   button.querySelector('.unit-select-value').textContent=value;
+   const label=button.querySelector('.unit-select-value');
+   if(label)label.textContent=value;
    menu.innerHTML=keys.map(x=>`<button class="unit-choice${x===value?' active':''}" type="button" data-unit="${x}">${x}</button>`).join('');
  };
  set(from,fromMenu,from?.dataset.value,keys[0]);
  set(to,toMenu,to?.dataset.value,keys[1]||keys[0]);
 }
-function closeUnitMenus(){$('.unit-select-menu').forEach(m=>m.classList.add('hidden'))}
+function closeUnitMenus(except=null){
+ $$('.unit-select-menu').forEach(menu=>{
+   if(menu!==except)menu.classList.add('hidden');
+ });
+}
 function bindTools(){
  const fuelCalculate=()=>{
   const d=toolNumber('fuelD'),c=toolNumber('fuelC'),p=toolNumber('fuelP');if([d,c,p].some(x=>!Number.isFinite(x))||d===0)return;
@@ -239,20 +246,47 @@ function bindTools(){
  window._runVat=vat;
  const categoryLabels={length:t('length'),mass:t('mass'),volume:t('volume'),data:t('data')};
  const catButton=$('#unitCategoryButton'),catMenu=$('#unitCategoryMenu');
+ const fromButton=$('#unitFromButton'),fromMenu=$('#unitFromMenu');
+ const toButton=$('#unitToButton'),toMenu=$('#unitToMenu');
+ const openMenu=(button,menu)=>{
+   if(!button||!menu)return;
+   button.addEventListener('click',e=>{
+     e.preventDefault();
+     e.stopPropagation();
+     const wasOpen=!menu.classList.contains('hidden');
+     closeUnitMenus();
+     if(!wasOpen)menu.classList.remove('hidden');
+   });
+   menu.addEventListener('click',e=>{
+     const choice=e.target.closest('.unit-choice');
+     if(!choice)return;
+     e.preventDefault();
+     e.stopPropagation();
+     if(choice.dataset.category){
+       catButton.dataset.value=choice.dataset.category;
+       catButton.querySelector('.unit-select-value').textContent=choice.textContent;
+       closeUnitMenus();
+       populateUnits();
+       return;
+     }
+     if(choice.dataset.unit){
+       button.dataset.value=choice.dataset.unit;
+       button.querySelector('.unit-select-value').textContent=choice.dataset.unit;
+       closeUnitMenus();
+       populateUnits();
+     }
+   });
+ };
  if(catButton&&catMenu){
-   catMenu.innerHTML=Object.keys(categoryLabels).map(k=>`<button class="unit-choice" type="button" data-category="${k}">${categoryLabels[k]}</button>`).join('');
-   catMenu.addEventListener('click',e=>{const b=e.target.closest('[data-category]');if(!b)return;catButton.dataset.value=b.dataset.category;catButton.querySelector('.unit-select-value').textContent=b.textContent;catMenu.classList.add('hidden');populateUnits();});
-   catButton.addEventListener('click',()=>{closeUnitMenus();catMenu.classList.toggle('hidden')});
+   catMenu.innerHTML=Object.entries(categoryLabels).map(([key,label])=>`<button class="unit-choice" type="button" data-category="${key}">${label}</button>`).join('');
+   openMenu(catButton,catMenu);
  }
  populateUnits();
- const fromButton=$('#unitFromButton'),toButton=$('#unitToButton');
- const bindUnitButton=(button,menu)=>{
-   button?.addEventListener('click',()=>{closeUnitMenus();menu.classList.toggle('hidden')});
-   menu?.addEventListener('click',e=>{const b=e.target.closest('[data-unit]');if(!b)return;button.dataset.value=b.dataset.unit;button.querySelector('.unit-select-value').textContent=b.dataset.unit;menu.classList.add('hidden');populateUnits();});
- };
- bindUnitButton(fromButton,$('#unitFromMenu'));bindUnitButton(toButton,$('#unitToMenu'));
+ openMenu(fromButton,fromMenu);
+ openMenu(toButton,toMenu);
  const convertUnits=()=>{
-  const v=toolNumber('value'),cc=catButton?.dataset.value,ff=fromButton?.dataset.value,to=toButton?.dataset.value;if(!Number.isFinite(v)||!cc||!ff||!to)return;
+  const v=toolNumber('value'),cc=catButton?.dataset.value,ff=fromButton?.dataset.value,to=toButton?.dataset.value;
+  if(!Number.isFinite(v)||!cc||!ff||!to||!units[cc]?.[ff]===undefined||!units[cc]?.[to]===undefined)return;
   const out=v*units[cc][ff]/units[cc][to];
   const how={formula:`${fmt(v)} ${ff} → ${to}`,steps:[{title:lang==='el'?'Μετέτρεψε την τιμή':'Convert the value',text:`${fmt(v)} × ${fmt(units[cc][ff])} ÷ ${fmt(units[cc][to])} = ${fmt(out)} ${to}`}],result:`${fmt(out)} ${to}`};
   setToolResult(`${fmt(out)} ${to}`,`${t('toolUnit')}: ${fmt(out)} ${to}`,how)
