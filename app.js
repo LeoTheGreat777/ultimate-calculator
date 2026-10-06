@@ -3,9 +3,6 @@ const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'
 function readLanguage(){
  let stored='';
  try{stored=localStorage.getItem('uc-lang')||''}catch{}
- if(stored!=='en'&&stored!=='el'){
-  try{stored=(document.cookie.match(/(?:^|; )uc-lang=(en|el)(?:;|$)/)||[])[1]||''}catch{}
- }
  return stored==='en'||stored==='el'?stored:'el';
 }
 let lang=readLanguage();
@@ -213,9 +210,25 @@ function renderUnitsDisplay(){
  $('#unitValueFrom,#unitValueTo').forEach(input=>input.addEventListener('focus',()=>{unitActiveInput=input.dataset.unitInput;unitReplaceOnNextKey=true;if(!input.readOnly)requestAnimationFrame(()=>input.select())}));
  $('#unitValueFrom,#unitValueTo').forEach(input=>input.addEventListener('click',()=>{unitActiveInput=input.dataset.unitInput;unitReplaceOnNextKey=true}));
  $('#unitValueFrom,#unitValueTo').forEach(input=>input.addEventListener('input',()=>{unitActiveInput=input.dataset.unitInput;unitSource=unitActiveInput;unitReplaceOnNextKey=false;unitExpressions[unitActiveInput]=input.value;convertUnitExpression(unitActiveInput)}));
- $('#unitFrom,#unitTo').forEach(select=>select.addEventListener('change',()=>{unitActiveInput=select.id==='unitFrom'?'from':'to';convertUnitExpression(unitSource)}));
- cat.addEventListener('change',()=>{window._unitCategory=cat.value;unitExpressions={from:'',to:''};unitActiveInput='from';unitSource='from';unitReplaceOnNextKey=false;populateUnits();updateUnitsDisplay()});
- $('#unitSwap').addEventListener('click',()=>{const a=$('#unitFrom'),b=$('#unitTo');[a.value,b.value]=[b.value,a.value];[unitExpressions.from,unitExpressions.to]=[unitExpressions.to,unitExpressions.from];unitSource=unitSource==='from'?'to':'from';unitActiveInput=unitSource;unitReplaceOnNextKey=false;convertUnitExpression(unitSource)});
+ $('#unitFrom,#unitTo').forEach(select=>select.addEventListener('change',()=>{convertUnitExpression(unitSource)}));
+ cat.addEventListener('change',()=>{
+   window._unitCategory=cat.value;
+   unitExpressions={from:'',to:''};
+   unitActiveInput='from';
+   unitSource='from';
+   unitReplaceOnNextKey=false;
+   populateUnits();
+   updateUnitsDisplay();
+ });
+ $('#unitSwap').addEventListener('click',()=>{
+   const a=$('#unitFrom'),b=$('#unitTo');
+   [a.value,b.value]=[b.value,a.value];
+   [unitExpressions.from,unitExpressions.to]=[unitExpressions.to,unitExpressions.from];
+   unitSource=unitSource==='from'?'to':'from';
+   unitActiveInput=unitSource;
+   unitReplaceOnNextKey=false;
+   convertUnitExpression(unitSource);
+ });
  updateUnitsDisplay();
 }
 function updateUnitsDisplay(){
@@ -251,9 +264,8 @@ function populateUnits(){
  if(!cat||!from||!to)return;
  const category=cat.value||'length';
  const keys=Object.keys(units[category]||{});
- const oldFrom=from.value,oldTo=to.value;
- from.innerHTML=unitOptions(category,keys.includes(oldFrom)?oldFrom:keys[0]);
- to.innerHTML=unitOptions(category,keys.includes(oldTo)?oldTo:(keys[1]||keys[0]));
+ from.innerHTML=unitOptions(category,keys[0]);
+ to.innerHTML=unitOptions(category,keys[1]||keys[0]);
 }
 function closeUnitMenus(except=null){$$('.unit-select-menu').forEach(menu=>{if(menu!==except)menu.classList.add('hidden')})}
 function liveUnitFormat(n){
@@ -297,20 +309,6 @@ function bindTools(){
   setToolResult(fmt(total)+' €',t('vatAmount')+': '+fmt(Math.abs(tax))+' €',how)
  };
  window._runVat=vat;
- const convertUnits=()=>{
-  const cc=$('#unitCategory')?.value,ff=$('#unitFrom')?.value,to=$('#unitTo')?.value;
-  const from=$('#unitValueFrom'),target=$('#unitValueTo');
-  if(!cc||!ff||!to||!from||!target)return;
-  const raw=from.value.trim().replace(',','.');
-  if(raw===''){target.value='';setToolResult('','',null);return}
-  const v=Number(raw);
-  if(!Number.isFinite(v)||units[cc]?.[ff]===undefined||units[cc]?.[to]===undefined)return;
-  const out=v*units[cc][ff]/units[cc][to];
-  target.value=liveUnitFormat(out);
-  const how={formula:liveUnitFormat(v)+' '+ff+' → '+to,steps:[{title:lang==='el'?'Μετέτρεψε την τιμή':'Convert the value',text:liveUnitFormat(v)+' '+ff+' = '+liveUnitFormat(out)+' '+to}],result:liveUnitFormat(out)+' '+to};
-  setToolResult(liveUnitFormat(out)+' '+to,t('toolUnit')+': '+liveUnitFormat(out)+' '+to,how)
- };
- window._runUnits=convertUnits;
  populateUnits();
 }
 function modeIcon(m){return ICONS[m]||''}
@@ -358,7 +356,7 @@ function renderTool(){
 }
 function setMode(next){resultCompact=false;mode=next;expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null;lastOperation=null;toolResult=null;resetHow();if(next==='units'){unitExpressions={from:'',to:''};unitActiveInput='from';window._unitCategory=window._unitCategory||'length';}const label=$('#modeLabel'),icon=$('#modeIcon');if(label)label.textContent=t(mode);if(icon)icon.textContent=modeIcon(mode);renderTool();syncModeButton();}
 function applyLanguage(){
- document.documentElement.lang=lang;$('#langButton').textContent=lang==='el'?'EN':'ΕΛ';$('#historyButtonText').textContent=t('history');$('#copyButton').textContent=t('copy');const hint=$('#hint');if(hint)hint.textContent=t('hint');$('#createdBy').textContent=`${t('created')} Leonidas Kampaxis`;$('#historyTitle').textContent=t('history');$('#clearHistory').textContent=t('clear');
+ document.documentElement.lang=lang;$('#langButton').textContent=lang==='el'?'ΕΛ':'EN';$('#historyButtonText').textContent=t('history');$('#copyButton').textContent=t('copy');const hint=$('#hint');if(hint)hint.textContent=t('hint');$('#createdBy').textContent=`${t('created')} Leonidas Kampaxis`;$('#historyTitle').textContent=t('history');$('#clearHistory').textContent=t('clear');
  if(mode==='calc'&&justCalculated&&lastExpression&&lastResult!==null)howData=explanationForExpression(lastExpression,lastResult)||howData;
  renderTool();renderHistory();renderModeMenu();syncModeButton();render()
 }
@@ -488,14 +486,7 @@ $('#keypad').addEventListener('click',e=>{
  if(a==='clear')clearButtonAction();else if(a==='backspace')backspace();else if(a==='equals')equals();else if(v==='%')percent();else if(/[+\-*/]/.test(v||''))operator(v==='*'?'×':v==='/'?'÷':v);else if(v)digit(v)
 });
 $('#toolPanel').addEventListener('change',e=>{
- if(e.target.matches('#unitCategory')){
-   populateUnits();
-   const from=$('#unitValueFrom'),to=$('#unitValueTo');
-   if(from)from.value='';
-   if(to)to.value='';
-   setToolResult('','',null);
- }
- if(e.target.matches('#unitFrom,#unitTo')&&mode==='units')window._runUnits?.();
+
  if(e.target.matches('[data-vat-mode]')){
    vatAction=e.target.dataset.vatMode==='remove'?'remove':'add';
    renderVatToggle();
@@ -535,7 +526,6 @@ $('#historyButton').addEventListener('click',openHistory);$('#historyBackdrop').
 $('#langButton').addEventListener('click',()=>{
  lang=lang==='el'?'en':'el';
  try{localStorage.setItem('uc-lang',lang)}catch{}
- try{document.cookie='uc-lang='+lang+'; path=/; max-age=31536000; SameSite=Lax'}catch{}
  applyLanguage();
 });
 $('#themeButton').addEventListener('click',toggleTheme);
