@@ -1,5 +1,5 @@
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
-const VERSION='0.4.5';
+const VERSION='0.4.6';
 let lang=localStorage.getItem('uc-lang')==='en'?'en':'el';
 let theme=localStorage.getItem('uc-theme')==='light'?'light':localStorage.getItem('uc-theme')==='dark'?'dark':'auto';
 let mode='calc',expression='',current='',currentIsPercent=false,justCalculated=false,lastExpression='',lastResult=null,howData=null,lastOperation=null,historyClearConfirm=false,toolResult=null,toolActiveInput=null;
@@ -148,27 +148,6 @@ const FIELD_EXAMPLES={fuelD:'250',fuelC:'7.2',fuelP:'1.85',energyP:'100',energyH
 const TOOL_DEFAULTS={fuelD:250,fuelC:7.2,fuelP:1.85,energyP:100,energyH:8,energyD:30,energyR:0.20,amount:100,vatRate:24,value:10};
 const toolNumber=id=>{const raw=$(`#${id}`)?.value.trim();return raw===''?Number(TOOL_DEFAULTS[id]):Number(raw)};
 const field=(id,label)=>`<label class="tool-field"><span>${esc(label)}</span><input id="${id}" type="number" step="any" inputmode="decimal" placeholder="${FIELD_EXAMPLES[id]||''}"></label>`;
-const toolKeypad=()=>`<div class="tool-keypad" aria-label="Numeric keypad">
- <button type="button" data-tool-key="1">1</button><button type="button" data-tool-key="2">2</button><button type="button" data-tool-key="3">3</button><button type="button" data-tool-key="backspace">⌫</button>
- <button type="button" data-tool-key="4">4</button><button type="button" data-tool-key="5">5</button><button type="button" data-tool-key="6">6</button><button type="button" data-tool-key="-">−</button>
- <button type="button" data-tool-key="7">7</button><button type="button" data-tool-key="8">8</button><button type="button" data-tool-key="9">9</button><button type="button" data-tool-key=".">.</button>
- <button type="button" data-tool-key="clear">C</button><button type="button" data-tool-key="0" class="tool-key-wide">0</button><button type="button" data-tool-key="enter">↵</button>
-</div>`;
-function handleToolKey(key){
- let input=toolActiveInput;
- if(!input || input.tagName!=='INPUT'){input=$('#toolPanel input');if(input)input.focus()}
- if(!input)return;
- let value=input.value;
- if(key==='clear')value='';
- else if(key==='backspace')value=value.slice(0,-1);
- else if(key==='.')value.includes('.')?value:value+'.';
- else if(key==='-')value=value.startsWith('-')?value.slice(1):'-'+value;
- else if(key==='enter'){input.dispatchEvent(new Event('change',{bubbles:true}));return}
- else value+=key;
- input.value=value;
- input.dispatchEvent(new Event('input',{bubbles:true}));
- input.focus();
-}
 function setToolResult(main,detail='',how=null){toolResult={main,detail,how};howData=how;renderToolDisplay()}
 function populateUnits(){const cat=$('#unitCategory');if(!cat)return;const keys=Object.keys(units[cat.value]);$('#unitFrom').innerHTML=keys.map(x=>`<option value="${x}">${x}</option>`).join('');$('#unitTo').innerHTML=keys.map(x=>`<option value="${x}">${x}</option>`).join('')}
 function bindTools(){
@@ -182,7 +161,7 @@ function bindTools(){
 function modeIcon(m){return ICONS[m]||''}
 function renderTool(){
  const calc=mode==='calc';
- $('#keypad').classList.toggle('hidden',!calc);
+ $('#keypad').classList.remove('hidden');
  $('#calculatorCard').classList.toggle('tool-mode',!calc);
  $('#toolPanel').classList.toggle('hidden',calc);
  if(calc){render();return}
@@ -191,7 +170,7 @@ function renderTool(){
  if(mode==='energy')html=`<div class="tool-grid">${field('energyP',t('energyP'))}${field('energyH',t('energyH'))}${field('energyD',t('energyD'))}${field('energyR',t('energyR'))}</div><button class="tool-action" id="energyGo" type="button">${t('energyGo')}</button>`;
  if(mode==='vat')html=`<div class="tool-grid">${field('amount',t('amount'))}${field('vatRate',t('vatRate'))}</div><div class="tool-grid tool-actions-row"><button class="tool-action" id="addVat" type="button">${t('addVat')}</button><button class="tool-action" id="removeVat" type="button">${t('removeVat')}</button></div>`;
  if(mode==='units')html=`<div class="tool-grid">${field('value',t('value'))}<label class="tool-field"><span>${t('category')}</span><select id="unitCategory"><option value="length">${t('length')}</option><option value="mass">${t('mass')}</option><option value="volume">${t('volume')}</option><option value="data">${t('data')}</option></select></label><label class="tool-field"><span>${t('from')}</span><select id="unitFrom"></select></label><label class="tool-field"><span>${t('to')}</span><select id="unitTo"></select></label></div><button class="tool-action" id="convert" type="button">${t('convert')}</button>`;
- $('#toolPanel').innerHTML=html+toolKeypad();
+ $('#toolPanel').innerHTML=html;
  toolActiveInput=null;
  if(mode==='units')populateUnits();
  bindTools();
@@ -229,9 +208,37 @@ function historyClick(e){
 }
 function copyResult(){const value=justCalculated?ratToDecimal(lastResult,24):(current||expression);if(value===''||!navigator.clipboard)return;navigator.clipboard.writeText(String(value)).then(()=>{const b=$('#copyButton');b.textContent=t('copied');setTimeout(()=>b.textContent=t('copy'),900)}).catch(()=>{})}
 
-$('#keypad').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const a=b.dataset.action,v=b.dataset.value;if(a==='clear')clearButtonAction();else if(a==='backspace')backspace();else if(a==='equals')equals();else if(v==='%')percent();else if(/[+\-*/]/.test(v||''))operator(v==='*'?'×':v==='/'?'÷':v);else if(v)digit(v)});
+function toolKeyInput(key){
+ const input=toolActiveInput&&toolActiveInput.matches('#toolPanel input')?toolActiveInput:$('#toolPanel input');
+ if(!input)return false;
+ input.focus();
+ let value=input.value;
+ if(key==='clear')value='';
+ else if(key==='backspace')value=value.slice(0,-1);
+ else if(key==='.')value.includes('.')?value:value+'.';
+ else if(key==='-')value=value.startsWith('-')?value.slice(1):'-'+value;
+ else if(/^\\d$/.test(key))value+=key;
+ else return false;
+ input.value=value;
+ input.dispatchEvent(new Event('input',{bubbles:true}));
+ return true;
+}
+function runActiveTool(){
+ const button=mode==='fuel'?$('#fuelGo'):mode==='energy'?$('#energyGo'):mode==='vat'?$('#addVat'):mode==='units'?$('#convert'):null;
+ button?.click();
+}
+$('#keypad').addEventListener('click',e=>{
+ const b=e.target.closest('button');if(!b)return;
+ const a=b.dataset.action,v=b.dataset.value;
+ if(mode!=='calc'){
+   if(a==='equals'){runActiveTool();return}
+   if(a==='clear'||a==='backspace'||v==='.'||/^\\d$/.test(v||'')){toolKeyInput(a==='clear'?'clear':a==='backspace'?'backspace':v);return}
+   if(v==='-' ){toolKeyInput('-');return}
+   return;
+ }
+ if(a==='clear')clearButtonAction();else if(a==='backspace')backspace();else if(a==='equals')equals();else if(v==='%')percent();else if(/[+\-*/]/.test(v||''))operator(v==='*'?'×':v==='/'?'÷':v);else if(v)digit(v)
+});
 $('#toolPanel').addEventListener('focusin',e=>{if(e.target.matches('input'))toolActiveInput=e.target});
-$('#toolPanel').addEventListener('click',e=>{const b=e.target.closest('[data-tool-key]');if(b)handleToolKey(b.dataset.toolKey)});
 $('#howButton').addEventListener('click',showHow);$('#closeHow').addEventListener('click',closeHow);$('#howModal').addEventListener('click',e=>{if(e.target.id==='howModal')closeHow()});
 $('#historyButton').addEventListener('click',openHistory);$('#historyBackdrop').addEventListener('click',closeHistory);$('#historyList').addEventListener('click',historyClick);$('#copyButton').addEventListener('click',copyResult);
 $('#langButton').addEventListener('click',()=>{lang=lang==='el'?'en':'el';localStorage.setItem('uc-lang',lang);applyLanguage()});
@@ -240,8 +247,17 @@ $('#modeButton').addEventListener('click',e=>{e.stopPropagation();toggleModeMenu
  document.addEventListener('click',e=>{if(!e.target.closest('#modeButton')&&!e.target.closest('#modeMenu'))closeModeMenu();if(historyClearConfirm&&!e.target.closest('#historyClearWrap'))clearHistoryConfirm()});
 $('#clearHistory').addEventListener('click',clearHistoryConfirm);$('#historyConfirmYes').addEventListener('click',deleteAllHistory);
 window.addEventListener('keydown',e=>{
- if(mode!=='calc'||/^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement?.tagName))return;
  if(e.ctrlKey||e.metaKey||e.altKey)return;
+ if(e.key===','){e.preventDefault();e.key='.';e.target?.dispatchEvent?.(new InputEvent('input',{bubbles:true,data:'.',inputType:'insertText'}));if(mode==='calc')digit('.');else toolKeyInput('.');return}
+ if(mode!=='calc'&&/^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement?.tagName)){
+   if(/^[0-9.]$/.test(e.key)||e.key==='-'||e.key==='Backspace'||e.key==='Escape'||e.key==='Enter'||e.key==='='){
+     if(e.key==='Enter'||e.key==='='){e.preventDefault();runActiveTool();return}
+     if(e.key==='Escape'){e.preventDefault();toolKeyInput('clear');return}
+     e.preventDefault();toolKeyInput(e.key);return
+   }
+   return;
+ }
+ if(mode!=='calc')return;
  if(/^[0-9]$/.test(e.key)||e.key==='.')digit(e.key);
  else if(['+','-','*','/'].includes(e.key))operator(e.key==='*'?'×':e.key==='/'?'÷':e.key);
  else if(e.key==='%')percent();
