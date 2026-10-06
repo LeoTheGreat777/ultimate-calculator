@@ -1,4 +1,5 @@
-const VERSION='0.4.66';
+const VERSION='0.4.67';
+const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function readLanguage(){
@@ -20,26 +21,41 @@ const t=k=>T[lang][k]??T.en[k]??k;
 const gcd=(a,b)=>{a=a<0n?-a:a;b=b<0n?-b:b;while(b){const t=a%b;a=b;b=t}return a};
 function rat(n,d=1n){if(d===0n)throw Error('DIV0');if(d<0n){n=-n;d=-d}const g=gcd(n,d);return{n:n/g,d:d/g}}
 const ratAdd=(a,b)=>rat(a.n*b.d+b.n*a.d,a.d*b.d),ratSub=(a,b)=>rat(a.n*b.d-b.n*a.d,a.d*b.d),ratMul=(a,b)=>rat(a.n*b.n,a.d*b.d),ratDiv=(a,b)=>{if(b.n===0n)throw Error('DIV0');return rat(a.n*b.d,a.d*b.n)};
-function ratFromString(s){s=String(s).replace(',','.');let sign=1n;if(s[0]==='-'){sign=-1n;s=s.slice(1)}const [whole,frac='']=s.split('.');const digits=(whole||'0')+(frac||'');const scale=10n**BigInt(frac.length);return rat(sign*BigInt(digits||'0'),scale)}
+function normalizeNumericInput(s){
+ s=String(s??'').trim().replace(/\s/g,'');
+ if(s.includes(','))s=s.replace(/\./g,'').replace(',', '.');
+ return s.replace(/[^0-9.\-]/g,'');
+}
+function formatNumericInput(s){
+ const raw=normalizeNumericInput(s);
+ if(raw===''||raw==='-'||raw==='. '||raw==='.')return raw;
+ const sign=raw.startsWith('-')?'-':'';
+ const body=sign?raw.slice(1):raw;
+ const parts=body.split('.');
+ const whole=parts[0]||'0';
+ const frac=parts.length>1?parts.slice(1).join(''):undefined;
+ const grouped=whole.replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+ return sign+grouped+(frac!==undefined?','+frac:'');
+}
+function ratFromString(s){s=normalizeNumericInput(s);let sign=1n;if(s[0]==='-'){sign=-1n;s=s.slice(1)}const [whole,frac='']=s.split('.');const digits=(whole||'0')+(frac||'');const scale=10n**BigInt(frac.length);return rat(sign*BigInt(digits||'0'),scale)}
 function ratPercent(a){return rat(a.n,a.d*100n)}
 function ratToDecimal(a,max=18){let sign=a.n<0n?'-':'';let n=a.n<0n?-a.n:a.n,d=a.d;const whole=n/d;let rem=n%d;if(rem===0n)return sign+whole.toString();let out='';for(let i=0;i<max&&rem;i++){rem*=10n;out+=String(rem/d);rem%=d}out=out.replace(/0+$/,'');return sign+whole.toString()+'.'+out}
 function ratToNumber(a){const s=ratToDecimal(a,18);return Number(s)}
 function formatRat(a,max=6){
  const s=ratToDecimal(a,max),num=Number(s);
- if(Number.isFinite(num)&&Math.abs(num)<1e15)return new Intl.NumberFormat(lang==='el'?'el-GR':'en-US',{maximumFractionDigits:max}).format(num);
+ if(Number.isFinite(num)&&Math.abs(num)<1e15)return new Intl.NumberFormat(NUMBER_LOCALE,{maximumFractionDigits:max}).format(num);
  const raw=s; if(raw.length<=24)return raw;
  const neg=raw[0]==='-';const body=neg?raw.slice(1):raw;const [w,f='']=body.split('.');const exp=(w==='0'?-(f.search(/[1-9]/)+1):w.length-1);if(exp>=15||exp<=-6){const digits=(w==='0'?f.replace(/^0+/,''):w+f).replace(/0+$/,'');const mant=digits.length>1?digits[0]+'.'+digits.slice(1,Math.min(16,digits.length)):digits;return (neg?'-':'')+mant+' × 10'+(exp>=0?'^'+exp:'^'+exp)}return raw;
 }
-const fmt=n=>n&&typeof n==='object'&&'n'in n?formatRat(n,6):Number.isFinite(Number(n))?new Intl.NumberFormat(lang==='el'?'el-GR':'en-US',{maximumFractionDigits:6}).format(Number(n)):'Error';
+const fmt=n=>n&&typeof n==='object'&&'n'in n?formatRat(n,6):Number.isFinite(Number(n))?new Intl.NumberFormat(NUMBER_LOCALE,{maximumFractionDigits:6}).format(Number(n)):'Error';
 const pretty=s=>String(s).replace(/\*/g,'×').replace(/\//g,'÷');
 function formatGroupedNumber(raw){
  const s=String(raw);
  const sign=s.startsWith('-')?'-':'';
  const body=sign?s.slice(1):s;
  const [whole,frac]=body.split('.');
- const isGreek=lang==='el';
- const grouped=whole.replace(/\\B(?=(\\d{3})+(?!\\d))/g,isGreek?'.':',');
- const decimal=isGreek?',':'.';
+ const grouped=whole.replace(/\\B(?=(\\d{3})+(?!\\d))/g,'.');
+ const decimal=',';
  return sign+grouped+(frac!==undefined?decimal+frac:'');
 }
 function formatInputDisplay(s){
@@ -197,7 +213,7 @@ function unitValueFormat(n){
  if(!Number.isFinite(n))return '';
  const abs=Math.abs(n);
  const max=abs!==0&&abs<1?Math.min(15,Math.max(6,Math.ceil(-Math.log10(abs))+6)):Math.min(12,Math.max(2,String(Math.trunc(abs)).length<7?6:4));
- return new Intl.NumberFormat(lang==='el'?'el-GR':'en-US',{maximumFractionDigits:max,useGrouping:true}).format(n);
+ return new Intl.NumberFormat(NUMBER_LOCALE,{maximumFractionDigits:max,useGrouping:true}).format(n);
 }
 function isMobileDevice(){
  return matchMedia('(pointer:coarse)').matches || /Android|iPhone|iPad|iPod|Windows Phone|Mobile/i.test(navigator.userAgent);
@@ -311,8 +327,8 @@ const TOOL_DEFAULTS={fuelD:250,fuelC:7.2,fuelP:1.85,energyP:100,energyH:8,energy
 let vatAction='add';
 const UNIT_LABELS={length:{mm:['Χιλιοστό','Millimeter'],cm:['Εκατοστό','Centimeter'],m:['Μέτρο','Meter'],km:['Χιλιόμετρο','Kilometer'],in:['Ίντσα','Inch'],ft:['Πόδι','Foot'],yd:['Γιάρδα','Yard'],mi:['Μίλι','Statute mile'],nmi:['Ναυτικό μίλι','Nautical mile']},area:{'mm²':['Τετρ. χιλιοστό','Square millimeter'],'cm²':['Τετρ. εκατοστό','Square centimeter'],'m²':['Τετρ. μέτρο','Square meter'],'km²':['Τετρ. χιλιόμετρο','Square kilometer'],'in²':['Τετρ. ίντσα','Square inch'],'ft²':['Τετρ. πόδι','Square foot'],acre:['Στρέμμα','Acre'],ha:['Εκτάριο','Hectare']},mass:{mg:['Χιλιοστόγραμμο','Milligram'],g:['Γραμμάριο','Gram'],kg:['Κιλιόγραμμο','Kilogram'],oz:['Ουγγιά','Ounce'],lb:['Λίβρα','Pound'],t:['Τόνος','Metric ton']},volume:{ml:['Χιλιοστόλιτρο','Milliliter'],l:['Λίτρο','Liter'],'m³':['Κυβικό μέτρο','Cubic meter'],tsp:['Κουταλάκι','Teaspoon'],tbsp:['Κουταλιά','Tablespoon'],cup:['Κούπα','Cup'],gal:['Γαλόνι','Gallon'],qt:['Quart','Quart'],pt:['Pint','Pint']},speed:{'m/s':['Μέτρα/δευτ.','Meters/second'],'km/h':['Χιλιόμετρα/ώρα','Kilometers/hour'],mph:['Μίλια/ώρα','Miles/hour'],knot:['Κόμβος','Knot']},time:{ms:['Millisec.','Millisecond'],s:['Δευτερόλεπτο','Second'],min:['Λεπτό','Minute'],h:['Ώρα','Hour'],day:['Ημέρα','Day'],week:['Εβδομάδα','Week']},data:{bit:['Bit','Bit'],b:['Bit','Bit'],kbit:['Κιλομπίτ','Kilobit'],Mbit:['Μεγαμπίτ','Megabit'],Gbit:['Γιγαμπίτ','Gigabit'],Tbit:['Τεραμπίτ','Terabit'],B:['Byte','Byte'],kB:['Κιλομπάιτ','Kilobyte'],MB:['Μεγαμπάιτ','Megabyte'],GB:['Γιγαμπάιτ','Gigabyte'],TB:['Τεραμπάιτ','Terabyte'],KiB:['Κιμπιμπάιτ','Kibibyte'],MiB:['Μεμπιμπάιτ','Mebibyte'],GiB:['Γκιμπιμπάιτ','Gibibyte'],TiB:['Τεμπιμπάιτ','Tebibyte']},energy:{J:['Τζάουλ','Joule'],kJ:['Κιλοτζάουλ','Kilojoule'],Wh:['Watt-ώρα','Watt-hour'],kWh:['Kilowatt-ώρα','Kilowatt-hour'],cal:['Θερμίδα','cal'],kcal:['Χιλιοθερμίδα','kcal']},power:{W:['Βατ','Watt'],kW:['Κιλοβάτ','Kilowatt'],MW:['Μεγαβάτ','Megawatt'],hp:['Ιπποδύναμη','Horsepower']},pressure:{Pa:['Πασκάλ','Pascal'],kPa:['Κιλοπασκάλ','Kilopascal'],bar:['Μπαρ','Bar'],psi:['PSI','PSI'],atm:['Ατμόσφαιρα','Atmosphere']},angle:{deg:['Μοίρα','Degree'],rad:['Ακτίνιο','Radian'],grad:['Γκραντ','Grad']},temperature:{'°C':['Κελσίου','Celsius'],'°F':['Φαρενάιτ','Fahrenheit'],K:['Kelvin','Kelvin']}};
 const unitOptions=(category,selected)=>Object.keys(units[category]||{}).map(x=>'<option value="'+x+'"'+(x===selected?' selected':'')+'>'+esc(UNIT_LABELS[category]?.[x]?.[lang==='el'?0:1]||x)+'</option>').join('');
-const toolNumber=id=>{const raw=($('#'+id)?.value??'').trim().replace(',','.');return raw===''?Number(TOOL_DEFAULTS[id]):Number(raw)};
-const liveToolNumber=id=>{const raw=($('#'+id)?.value??'').trim().replace(',','.');if(raw==='')return null;const n=Number(raw);return Number.isFinite(n)?n:null};
+const toolNumber=id=>{const raw=normalizeNumericInput($('#'+id)?.value??'');return raw===''?Number(TOOL_DEFAULTS[id]):Number(raw)};
+const liveToolNumber=id=>{const raw=normalizeNumericInput($('#'+id)?.value??'');if(raw==='')return null;const n=Number(raw);return Number.isFinite(n)?n:null};
 const field=(id,label)=>{const value=toolState[mode]?.inputs?.[id]??'';return '<label class="tool-field"><span>'+esc(label)+'</span><input id="'+id+'" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="'+esc(value)+'" placeholder="'+esc(String(FIELD_EXAMPLES[id]??''))+'" data-tool-input="true"></label>'};
 function setToolResult(main,detail='',how=null){toolResult={main,detail,how};if(toolState[mode])toolState[mode].result=toolResult;howData=how;renderToolDisplay();}
 function renderVatToggle(){ $$('#toolPanel [data-vat-mode]').forEach(b=>b.classList.toggle('active',b.dataset.vatMode===vatAction)); }
@@ -330,7 +346,7 @@ function liveUnitFormat(n){
  if(!Number.isFinite(n))return '';
  const abs=Math.abs(n);
  const max=Math.min(12,abs!==0&&abs<1?Math.max(6,Math.ceil(-Math.log10(abs))+6):6);
- return new Intl.NumberFormat(lang==='el'?'el-GR':'en-US',{maximumFractionDigits:max,useGrouping:false}).format(n);
+ return new Intl.NumberFormat(NUMBER_LOCALE,{maximumFractionDigits:max,useGrouping:false}).format(n);
 }
 function bindTools(){
  const fuelCalculate=()=>{
@@ -438,6 +454,10 @@ function applyLanguage(){
  document.documentElement.lang=lang;
  $('#langButton').textContent=lang==='el'?'ΕΛ':'EN';
  $('#copyButton').textContent=t('copy');
+ $('#historyButtonText').textContent=t('history');
+ $('#howTitle').textContent=t('how');
+ $('#howButton').setAttribute('aria-label',t('how'));
+ $('#historyPanel').setAttribute('aria-label',t('history'));
  const hint=$('#hint');if(hint)hint.textContent=t('hint');
  const created=$('#createdBy');if(created)created.textContent=t('created')+' Leonidas Kampaxis';
  const historyTitle=$('#historyTitle');if(historyTitle)historyTitle.textContent=t('history');
@@ -612,15 +632,16 @@ $('#toolPanel').addEventListener('input',e=>{
    return;
  }
  if(!input.matches('[data-tool-input]'))return;
- let value=input.value.replace(/,/g,'.').replace(/[^0-9.-]/g,'');
+ let value=normalizeNumericInput(input.value);
  if(value.startsWith('-'))value='-'+value.slice(1).replace(/-/g,'');
  else value=value.replace(/-/g,'');
  const firstDot=value.indexOf('.');
  if(firstDot!==-1)value=value.slice(0,firstDot+1)+value.slice(firstDot+1).replace(/\./g,'');
- if(value!==input.value){
-   const pos=input.selectionStart??value.length;
-   input.value=value;
-   input.setSelectionRange(Math.min(pos,value.length),Math.min(pos,value.length));
+ const formatted=formatNumericInput(value);
+ if(formatted!==input.value){
+   const pos=input.selectionStart??formatted.length;
+   input.value=formatted;
+   input.setSelectionRange(Math.min(pos,formatted.length),Math.min(pos,formatted.length));
  }
  if(toolState[mode])toolState[mode].inputs[input.id]=input.value;
  if(mode==='fuel')window._runFuel?.();
@@ -641,13 +662,13 @@ $('#clearHistory').addEventListener('click',clearHistoryConfirm);$('#historyConf
 window.addEventListener('keydown',e=>{
  if(e.ctrlKey||e.metaKey||e.altKey)return;
  if(e.key==='Backspace'||e.code==='Backspace'){e.preventDefault();if(mode==='calc')backspace();else toolKeyInput('backspace');return;}
- if(e.key===','){e.preventDefault();if(mode==='calc')digit('.');else if(document.activeElement?.matches('#toolPanel input')){const input=document.activeElement;if(!input.value.includes('.')){const pos=input.selectionStart??input.value.length;input.setRangeText('.',pos,pos,'end')}}else toolKeyInput('.');return}
+ if(e.key===','||e.key==='.'||e.key==='Decimal'){e.preventDefault();if(mode==='calc')digit('.');else if(document.activeElement?.matches('#toolPanel input')){const input=document.activeElement;const pos=input.selectionStart??input.value.length;input.setRangeText(',',pos,pos,'end');input.dispatchEvent(new Event('input',{bubbles:true}))}else toolKeyInput('.');return}
  if(mode==='units'&&document.activeElement?.matches('#unitValueFrom,#unitValueTo')){
    if(e.key==='Escape'){e.preventDefault();document.activeElement.value='';document.activeElement.dispatchEvent(new Event('input',{bubbles:true}));return}
    return;
  }
  if(mode!=='calc')return;
- if(/^[0-9]$/.test(e.key)||e.key==='.')digit(e.key);
+ if(/^[0-9]$/.test(e.key))digit(e.key);
  else if(['+','-','*','/'].includes(e.key))operator(e.key==='*'?'×':e.key==='/'?'÷':e.key);
  else if(e.key==='%')percent();
  else if(e.key==='Enter'||e.key==='='){e.preventDefault();equals()}
