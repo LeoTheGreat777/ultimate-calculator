@@ -248,7 +248,7 @@ $('#modeButton').addEventListener('click',e=>{e.stopPropagation();toggleModeMenu
 $('#clearHistory').addEventListener('click',clearHistoryConfirm);$('#historyConfirmYes').addEventListener('click',deleteAllHistory);
 window.addEventListener('keydown',e=>{
  if(e.ctrlKey||e.metaKey||e.altKey)return;
- if(e.key===','){e.preventDefault();e.key='.';e.target?.dispatchEvent?.(new InputEvent('input',{bubbles:true,data:'.',inputType:'insertText'}));if(mode==='calc')digit('.');else toolKeyInput('.');return}
+ if(e.key===','){e.preventDefault();if(mode==='calc')digit('.');else toolKeyInput('.');return}
  if(mode!=='calc'&&/^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement?.tagName)){
    if(/^[0-9.]$/.test(e.key)||e.key==='-'||e.key==='Backspace'||e.key==='Escape'||e.key==='Enter'||e.key==='='){
      if(e.key==='Enter'||e.key==='='){e.preventDefault();runActiveTool();return}
