@@ -446,7 +446,7 @@ function renderTool(){
    input.addEventListener('keyup',run,{passive:true});
  });
 }
-function setMode(next){resultCompact=false;mode=next;toolResult=null;howData=null;vatAction='add';if(next==='calc'){expression='';current='';currentIsPercent=false;justCalculated=false;lastOperation=null;}if(next==='units'){unitExpressions={from:'',to:''};unitActiveInput='from';unitSource='from';window._unitCategory=window._unitCategory||'length';}const label=$('#modeLabel'),icon=$('#modeIcon');if(label)label.textContent=t(mode);if(icon)icon.textContent=modeIcon(mode);renderTool();syncModeButton();}
+function setMode(next){resultCompact=false;mode=next;toolResult=null;howData=null;vatAction='add';if(next==='units'){unitExpressions={from:'',to:''};unitActiveInput='from';unitSource='from';window._unitCategory=window._unitCategory||'length';}const label=$('#modeLabel'),icon=$('#modeIcon');if(label)label.textContent=t(mode);if(icon)icon.textContent=modeIcon(mode);renderTool();syncModeButton();}
 function applyLanguage(){
  const savedInputs={};
  if(mode!=='calc'&&mode!=='units')$('#toolPanel input[data-tool-input]').forEach(input=>savedInputs[input.id]=input.value);
