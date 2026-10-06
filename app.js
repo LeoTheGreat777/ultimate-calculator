@@ -1,4 +1,4 @@
-const VERSION='0.4.90';
+const VERSION='0.4.91';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
