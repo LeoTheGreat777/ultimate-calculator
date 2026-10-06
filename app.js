@@ -1,4 +1,4 @@
-const VERSION='0.4.91';
+const VERSION='0.4.92';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -520,6 +520,7 @@ function renderTool(){
  if(mode==='fuel')html='<div class="tool-grid">'+field('fuelD',T[lang].fuelD)+field('fuelC',T[lang].fuelC)+field('fuelP',T[lang].fuelP)+'</div>';
  if(mode==='energy')html='<div class="tool-grid">'+field('energyP',T[lang].energyP)+field('energyH',T[lang].energyH)+field('energyD',T[lang].energyD)+field('energyR',T[lang].energyR)+'</div>';
  if(mode==='vat')html='<div class="tool-grid">'+field('amount',T[lang].amount)+field('vatRate',T[lang].vatRate)+'</div><div class="vat-toggle" role="group"><button type="button" data-vat-mode="add">'+esc(T[lang].addVat)+'</button><button type="button" data-vat-mode="remove">'+esc(T[lang].removeVat)+'</button></div>';
+ if(isMobileDevice())html+='<button class="mobile-tool-ac" type="button" data-mobile-action="clear-all">AC</button>';
  $('#toolPanel').innerHTML=html;
  toolActiveInput=null;
  renderVatToggle();
@@ -683,10 +684,10 @@ function toolKeyInput(key){
  input.focus();
  let value=input.value;
  if(key==='clear')value='';
- else if(key==='backspace')value=value.slice(0,-1)||'0';
+ else if(key==='backspace')value=value.slice(0,-1);
  else if(key==='.'||key===',')value.includes('.')?value:value+'.';
  else if(key==='-')value=value.startsWith('-')?value.slice(1):'-'+value;
- else if(/^\d$/.test(key))value+=key;
+ else if(/^\d$/.test(key))value=value==='0'?key:value+key;
  else return false;
  input.value=value;
  input.dispatchEvent(new Event('input',{bubbles:true}));
@@ -715,6 +716,8 @@ $('#keypad').addEventListener('click',e=>{
  if(a==='clear')clearButtonAction();else if(a==='backspace')backspace();else if(a==='equals')equals();else if(v==='%')percent();else if(/[+\-*/]/.test(v||''))operator(v==='*'?'×':v==='/'?'÷':v);else if(v)digit(v)
 });
 $('#toolPanel').addEventListener('click',e=>{
+ const clear=e.target.closest('[data-mobile-action="clear-all"]');
+ if(clear){clearToolFields();return}
  const button=e.target.closest('[data-vat-mode]');
  if(!button)return;
  vatAction=button.dataset.vatMode==='remove'?'remove':'add';
