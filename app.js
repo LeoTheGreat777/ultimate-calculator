@@ -1,4 +1,4 @@
-const VERSION='0.4.53';
+const VERSION='0.4.54';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function readLanguage(){
@@ -394,6 +394,7 @@ function restoreCalculatorDisplay(){
 }
 function renderTool(){
  const calc=mode==='calc';
+ $('#calculatorCard').classList.toggle('mobile-tool',!calc&&isMobileDevice());
  if(mode==='units'){
    $('#calculatorCard').classList.add('tool-mode');
    $('#toolPanel').classList.add('hidden');
