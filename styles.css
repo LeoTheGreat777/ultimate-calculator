@@ -42,3 +42,5 @@
 }
 
 @media (pointer:coarse){input,select,button{touch-action:manipulation}.history-list{touch-action:pan-y;overflow-y:auto}}
+
+.tool-key[data-value="%"]{display:none!important}
