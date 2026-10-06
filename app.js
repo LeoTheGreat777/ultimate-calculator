@@ -40,7 +40,7 @@ function render(){
  $('#calculatorDisplay').classList.toggle('calculated',justCalculated);
  $('#expression').textContent=justCalculated?pretty(lastExpression):'';
  $('#result').textContent=display;
- $('#clearButton').textContent=current?'C':'AC';
+ $('#clearButton').textContent=justCalculated?'AC':'C';
  $('#howButton').classList.toggle('hidden',!howData)
 }
 function renderToolDisplay(){
