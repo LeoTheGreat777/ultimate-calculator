@@ -1,4 +1,4 @@
-const VERSION='0.4.50';
+const VERSION='0.4.51';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function readLanguage(){
@@ -309,7 +309,8 @@ window._runUnits=()=>convertUnitExpression(unitSource||unitActiveInput||'from');
 const FIELD_EXAMPLES={fuelD:'250',fuelC:'7.2',fuelP:'1.85',energyP:'100',energyH:'8',energyD:'30',energyR:'0.20',amount:'100',vatRate:'24%',value:'10'};
 const TOOL_DEFAULTS={fuelD:250,fuelC:7.2,fuelP:1.85,energyP:100,energyH:8,energyD:30,energyR:0.20,amount:100,vatRate:24,value:10};
 let vatAction='add';
-const unitOptions=(category,selected)=>Object.keys(units[category]||{}).map(x=>'<option value="'+x+'"'+(x===selected?' selected':'')+'>'+x+'</option>').join('');
+const UNIT_LABELS={mi:'mi — Statute mile',nmi:'nmi — Nautical mile',in:'in — Inch',ft:'ft — Foot',yd:'yd — Yard',km:'km — Kilometer',m:'m — Meter',cm:'cm — Centimeter',mm:'mm — Millimeter',kB:'kB — Kilobyte',MB:'MB — Megabyte',GB:'GB — Gigabyte',TB:'TB — Terabyte',KiB:'KiB — Kibibyte',MiB:'MiB — Mebibyte',GiB:'GiB — Gibibyte',TiB:'TiB — Tebibyte',bit:'bit — Bit',B:'B — Byte'};
+const unitOptions=(category,selected)=>Object.keys(units[category]||{}).map(x=>'<option value="'+x+'"'+(x===selected?' selected':'')+'>'+esc(UNIT_LABELS[x]||x)+'</option>').join('');
 const toolNumber=id=>{const raw=($('#'+id)?.value??'').trim().replace(',','.');return raw===''?Number(TOOL_DEFAULTS[id]):Number(raw)};
 const liveToolNumber=id=>{const raw=($('#'+id)?.value??'').trim().replace(',','.');if(raw==='')return null;const n=Number(raw);return Number.isFinite(n)?n:null};
 const field=(id,label)=>'<label class="tool-field"><span>'+esc(label)+'</span><input id="'+id+'" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="'+esc(String(TOOL_DEFAULTS[id]??''))+'" data-tool-input="true"></label>';
