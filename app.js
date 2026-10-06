@@ -1,5 +1,5 @@
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
-const VERSION='0.4.27';
+const VERSION='0.4.28';
 let lang=localStorage.getItem('uc-lang')==='en'?'en':'el';
 let theme=localStorage.getItem('uc-theme')==='light'?'light':localStorage.getItem('uc-theme')==='dark'?'dark':'auto';
 let mode='calc',expression='',current='',currentIsPercent=false,justCalculated=false,lastExpression='',lastResult=null,howData=null,lastOperation=null,historyClearConfirm=false,toolResult=null,toolActiveInput=null,resultCompact=false;
@@ -319,25 +319,25 @@ function renderModeMenu(){
  }));
 }
 function syncModeButton(){
- const label=$('#modeLabel');if(label)label.textContent=t(mode);
- const icon=$('#modeIcon');if(icon)icon.textContent=modeIcon(mode);
- const button=$('#modeButton');if(button){button.dataset.mode=mode;button.setAttribute('aria-label',t(mode));}
+ const label=$('#modeLabel'),icon=$('#modeIcon'),button=$('#modeButton');
+ if(label)label.textContent=t(mode);
+ if(icon)icon.textContent=modeIcon(mode);
+ if(button){button.dataset.mode=mode;button.setAttribute('aria-label',t(mode));}
  renderModeMenu();
- requestAnimationFrame(()=>{if(label)label.textContent=t(mode);if(icon)icon.textContent=modeIcon(mode)})
 }
 function toggleModeMenu(){
- const menu=$('#modeMenu'),control=$('.mode-control');if(!menu||!control)return;
+ const menu=$('#modeMenu'),control=$('.mode-control'),button=$('#modeButton');
+ if(!menu||!control||!button)return;
  const open=!control.classList.contains('mode-open');
  if(open){
    renderModeMenu();
    menu.classList.remove('hidden');
    control.classList.add('mode-open');
-   requestAnimationFrame(()=>control.classList.add('mode-open'));
  }else{
    control.classList.remove('mode-open');
-   setTimeout(()=>{if(!control.classList.contains('mode-open'))menu.classList.add('hidden')},220);
+   menu.classList.add('hidden');
  }
- $('#modeButton').setAttribute('aria-expanded',String(open));
+ button.setAttribute('aria-expanded',String(open));
 }
 function closeModeMenu(){
  const menu=$('#modeMenu'),control=$('.mode-control');
