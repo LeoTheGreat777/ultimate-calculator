@@ -218,7 +218,7 @@ function bindTools(){
    {title:lang==='el'?'Ποσό ΦΠΑ':'VAT amount',text:`${fmt(aa)} - ${fmt(total)} = ${fmt(Math.abs(tax))} €`}],result:`${fmt(total)} €`};
   setToolResult(`${fmt(total)} €`,`${t('vatAmount')}: ${fmt(Math.abs(tax))} €`,how)
  };
- $('#addVat')?.addEventListener('click',()=>vat(true));$('#removeVat')?.addEventListener('click',()=>vat(false));
+ window._runVat=vat;
  $('#unitCategory')?.addEventListener('change',populateUnits);
  $('#convert')?.addEventListener('click',()=>{
   const v=toolNumber('value'),cc=$('#unitCategory').value,ff=$('#unitFrom').value,to=$('#unitTo').value;if(!Number.isFinite(v))return;
@@ -321,7 +321,8 @@ function toolKeyInput(key){
  return true;
 }
 function runActiveTool(){
- const button=mode==='fuel'?$('#fuelGo'):mode==='energy'?$('#energyGo'):mode==='vat'?$('#addVat'):mode==='units'?$('#convert'):null;
+ if(mode==='vat'){window._runVat?.(true);return}
+ const button=mode==='fuel'?$('#fuelGo'):mode==='energy'?$('#energyGo'):mode==='units'?$('#convert'):null;
  button?.click();
 }
 $('#keypad').addEventListener('click',e=>{
@@ -329,7 +330,7 @@ $('#keypad').addEventListener('click',e=>{
  const a=b.dataset.action,v=b.dataset.value;
  if(mode!=='calc'){
    const ta=b.dataset.toolAction;
-   if(ta){ if(ta==='addVat')$('#addVat')?.click(); else if(ta==='removeVat')$('#removeVat')?.click(); return; }
+   if(ta){ if(ta==='addVat')window._runVat?.(true); else if(ta==='removeVat')window._runVat?.(false); return; }
    if(a==='equals'){runActiveTool();return}
    if(a==='clear'||a==='backspace'||v==='.'||/^\d$/.test(v||'')){toolKeyInput(a==='clear'?'clear':a==='backspace'?'backspace':v);return}
    if(v==='-'){toolKeyInput('-');return}
