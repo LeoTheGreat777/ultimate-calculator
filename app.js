@@ -191,17 +191,22 @@ function setToolResult(main,detail='',how=null){toolResult={main,detail,how};how
 function populateUnits(){
  const cat=$('#unitCategoryButton');
  if(!cat)return;
+ const categories=Object.keys(units);
+ const categoryMenu=$('#unitCategoryMenu');
+ if(categoryMenu){
+  categoryMenu.innerHTML=categories.map(function(x){return '<button class="unit-choice'+(x===cat.dataset.value?' active':'')+'" type="button" data-category="'+x+'">'+esc(t(x))+'</button>'}).join('');
+ }
  const category=cat.dataset.value;
  const keys=Object.keys(units[category]||{});
  const from=$('#unitFromButton'),to=$('#unitToButton');
  const fromMenu=$('#unitFromMenu'),toMenu=$('#unitToMenu');
- const set=(button,menu,current,fallback)=>{
-   if(!button||!menu)return;
-   const value=keys.includes(current)?current:fallback;
-   button.dataset.value=value;
-   const label=button.querySelector('.unit-select-value');
-   if(label)label.textContent=value;
-   menu.innerHTML=keys.map(x=>`<button class="unit-choice${x===value?' active':''}" type="button" data-unit="${x}">${x}</button>`).join('');
+ const set=function(button,menu,current,fallback){
+  if(!button||!menu)return;
+  const value=keys.includes(current)?current:fallback;
+  button.dataset.value=value;
+  const label=button.querySelector('.unit-select-value');
+  if(label)label.textContent=value;
+  menu.innerHTML=keys.map(function(x){return '<button class="unit-choice'+(x===value?' active':'')+'" type="button" data-unit="'+x+'">'+x+'</button>'}).join('');
  };
  set(from,fromMenu,from?.dataset.value,keys[0]);
  set(to,toMenu,to?.dataset.value,keys[1]||keys[0]);
