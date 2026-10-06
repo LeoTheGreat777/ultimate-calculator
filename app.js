@@ -1,4 +1,4 @@
-const VERSION='0.4.92';
+const VERSION='0.4.93';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -740,7 +740,9 @@ $('#toolPanel').addEventListener('input',e=>{
  const input=e.target;
  const key=input.dataset.toolInput;
  if(!key)return;
- const raw=input.value;
+ let raw=input.value;
+ if(/^0\d/.test(raw))raw=raw.replace(/^0+(?=\d)/,'');
+ if(raw!==input.value)input.value=raw;
  toolState[mode]??={inputs:{},result:null};
  toolState[mode].inputs[key]=raw;
  runActiveTool();
