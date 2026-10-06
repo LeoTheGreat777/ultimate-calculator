@@ -248,20 +248,18 @@ function bindTools(){
   setToolResult(fmt(total)+' €',t('vatAmount')+': '+fmt(Math.abs(tax))+' €',how)
  };
  window._runVat=vat;
- const convertUnits=(source='unitValueFrom')=>{
+ const convertUnits=()=>{
   const cc=$('#unitCategory')?.value,ff=$('#unitFrom')?.value,to=$('#unitTo')?.value;
   const from=$('#unitValueFrom'),target=$('#unitValueTo');
   if(!cc||!ff||!to||!from||!target)return;
-  const sourceInput=source==='unitValueTo'?target:from,otherInput=source==='unitValueTo'?from:target;
-  const raw=sourceInput.value.trim().replace(',','.');
-  if(raw===''){otherInput.value='';setToolResult('','',null);return}
+  const raw=from.value.trim().replace(',','.');
+  if(raw===''){target.value='';setToolResult('','',null);return}
   const v=Number(raw);
   if(!Number.isFinite(v)||units[cc]?.[ff]===undefined||units[cc]?.[to]===undefined)return;
-  const out=source==='unitValueTo'?v*units[cc][to]/units[cc][ff]:v*units[cc][ff]/units[cc][to];
-  otherInput.value=liveUnitFormat(out);
-  const inputUnit=source==='unitValueTo'?to:ff,outputUnit=source==='unitValueTo'?ff:to;
-  const how={formula:liveUnitFormat(v)+' '+inputUnit+' → '+outputUnit,steps:[{title:lang==='el'?'Μετέτρεψε την τιμή':'Convert the value',text:liveUnitFormat(v)+' '+inputUnit+' = '+liveUnitFormat(out)+' '+outputUnit}],result:liveUnitFormat(out)+' '+outputUnit};
-  setToolResult(liveUnitFormat(out)+' '+outputUnit,t('toolUnit')+': '+liveUnitFormat(out)+' '+outputUnit,how)
+  const out=v*units[cc][ff]/units[cc][to];
+  target.value=liveUnitFormat(out);
+  const how={formula:liveUnitFormat(v)+' '+ff+' → '+to,steps:[{title:lang==='el'?'Μετέτρεψε την τιμή':'Convert the value',text:liveUnitFormat(v)+' '+ff+' = '+liveUnitFormat(out)+' '+to}],result:liveUnitFormat(out)+' '+to};
+  setToolResult(liveUnitFormat(out)+' '+to,t('toolUnit')+': '+liveUnitFormat(out)+' '+to,how)
  };
  window._runUnits=convertUnits;
  populateUnits();
@@ -293,7 +291,7 @@ function renderTool(){
  if(mode==='vat')html='<div class="tool-grid">'+field('amount',t('amount'))+field('vatRate',t('vatRate'))+'</div><div class="vat-toggle" role="group"><button type="button" data-vat-mode="add">'+esc(t('addVat'))+'</button><button type="button" data-vat-mode="remove">'+esc(t('removeVat'))+'</button></div>';
  if(mode==='units'){
    const category='length',keys=Object.keys(units[category]);
-   html='<div class="conversion-toolbar"><select id="unitCategory" class="conversion-category">'+Object.keys(units).map(x=>'<option value="'+x+'">'+esc(t(x))+'</option>').join('')+'</select><button id="unitSwap" class="conversion-swap" type="button" aria-label="Swap units">⇄</button></div><div class="conversion-boxes"><label class="conversion-box"><span class="conversion-label">'+esc(t('from'))+'</span><div class="conversion-input-row"><input id="unitValueFrom" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="0" data-tool-input="true"><select id="unitFrom" class="conversion-unit">'+unitOptions(category,keys[0])+'</select></div></label><label class="conversion-box"><span class="conversion-label">'+esc(t('to'))+'</span><div class="conversion-input-row"><input id="unitValueTo" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="0" data-tool-input="true"><select id="unitTo" class="conversion-unit">'+unitOptions(category,keys[1])+'</select></div></label></div>';
+   html='<div class="conversion-toolbar"><select id="unitCategory" class="conversion-category">'+Object.keys(units).map(x=>'<option value="'+x+'">'+esc(t(x))+'</option>').join('')+'</select><button id="unitSwap" class="conversion-swap" type="button" aria-label="Swap units">⇄</button></div><div class="conversion-boxes"><label class="conversion-box"><span class="conversion-label">'+esc(t('from'))+'</span><div class="conversion-input-row"><input id="unitValueFrom" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="0" data-tool-input="true"><select id="unitFrom" class="conversion-unit">'+unitOptions(category,keys[0])+'</select></div></label><label class="conversion-box"><span class="conversion-label">'+esc(t('to'))+'</span><div class="conversion-input-row"><input id="unitValueTo" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="0" readonly aria-readonly="true"><select id="unitTo" class="conversion-unit">'+unitOptions(category,keys[1])+'</select></div></label></div>';
  }
  $('#toolPanel').innerHTML=html;
  renderToolKeypad();
@@ -307,9 +305,7 @@ function renderTool(){
    const from=$('#unitFrom'),to=$('#unitTo'),a=$('#unitValueFrom'),b=$('#unitValueTo');
    if(!from||!to||!a||!b)return;
    [from.value,to.value]=[to.value,from.value];
-   [a.value,b.value]=[b.value,a.value];
-   if(a.value)window._runUnits?.('unitValueFrom');
-   else if(b.value)window._runUnits?.('unitValueTo');
+   if(a.value)window._runUnits?.();
  });
  renderToolDisplay();
 }
@@ -422,7 +418,7 @@ $('#toolPanel').addEventListener('change',e=>{
    if(to)to.value='';
    setToolResult('','',null);
  }
- if(e.target.matches('#unitFrom,#unitTo')&&mode==='units')window._runUnits?.(e.target.id==='unitTo'?'unitValueTo':'unitValueFrom');
+ if(e.target.matches('#unitFrom,#unitTo')&&mode==='units')window._runUnits?.();
  if(e.target.matches('[data-vat-mode]')){
    vatAction=e.target.dataset.vatMode==='remove'?'remove':'add';
    renderVatToggle();
@@ -455,7 +451,7 @@ $('#toolPanel').addEventListener('input',e=>{
  if(mode==='fuel')window._runFuel?.();
  else if(mode==='energy')window._runEnergy?.();
  else if(mode==='vat')window._runVat?.(vatAction==='add');
- else if(mode==='units')window._runUnits?.(input.id);
+ else if(mode==='units'&&input.id==='unitValueFrom')window._runUnits?.();
 });
 $('#howButton').addEventListener('click',showHow);$('#closeHow').addEventListener('click',closeHow);$('#howModal').addEventListener('click',e=>{if(e.target.id==='howModal')closeHow()});
 $('#historyButton').addEventListener('click',openHistory);$('#historyBackdrop').addEventListener('click',closeHistory);$('#historyList').addEventListener('click',historyClick);$('#copyButton').addEventListener('click',copyResult);
