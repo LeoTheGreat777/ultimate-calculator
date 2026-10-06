@@ -46,7 +46,10 @@ const T={
 el:{calc:'Αριθμομηχανή',fuel:'Καύσιμα',energy:'Ενέργεια',vat:'ΦΠΑ',units:'Μονάδες',how:'Πώς υπολογίστηκε',history:'Ιστορικό',copy:'Αντιγραφή αποτελέσματος',copied:'Αντιγράφηκε',clear:'Διαγραφή όλων',confirm:'Διαγραφή όλου του ιστορικού;',confirmYes:'Διαγραφή',none:'Δεν υπάρχουν υπολογισμοί ακόμη.',hint:'Πληκτρολόγησε μια πράξη για να ξεκινήσεις.',delete:'Διαγραφή',created:'Δημιουργήθηκε από',fuelD:'Απόσταση (km)',fuelC:'Κατανάλωση (L/100 km)',fuelP:'Τιμή καυσίμου / L',fuelGo:'Υπολογισμός κόστους καυσίμου',fuelUsed:'Καύσιμο που χρησιμοποιήθηκε',costKm:'Κόστος ανά km',energyP:'Ισχύς (W)',energyH:'Ώρες / ημέρα',energyD:'Ημέρες',energyR:'Τιμή / kWh',energyGo:'Υπολογισμός κόστους ρεύματος',energyUsed:'Ενέργεια',amount:'Ποσό',vatRate:'ΦΠΑ %',addVat:'Πρόσθεσε ΦΠΑ',removeVat:'Αφαίρεσε ΦΠΑ',vatAmount:'Ποσό ΦΠΑ',value:'Τιμή',category:'Κατηγορία',from:'Από',to:'Σε',convert:'Μετατροπή',length:'Μήκος',area:'Εμβαδόν',mass:'Μάζα',volume:'Όγκος',speed:'Ταχύτητα',time:'Χρόνος',data:'Δεδομένα',energy:'Ενέργεια',power:'Ισχύς',pressure:'Πίεση',angle:'Γωνία',temperature:'Θερμοκρασία',unit_mm:'Χιλιοστό',unit_cm:'Εκατοστό',unit_m:'Μέτρο',unit_km:'Χιλιόμετρο',unit_in:'Ίντσα',unit_ft:'Πόδι',unit_yd:'Γιάρδα',unit_mi:'Μίλι',unit_nmi:'Ναυτικό μίλι',unit_bit:'Bit',unit_b:'Bit',unit_kbit:'Kilobit',unit_Mbit:'Megabit',unit_Gbit:'Gigabit',unit_Tbit:'Terabit',unit_B:'Byte',unit_kB:'Kilobyte',unit_MB:'Megabyte',unit_GB:'Gigabyte',unit_TB:'Terabyte',unit_KiB:'Kibibyte',unit_MiB:'Mebibyte',unit_GiB:'Gibibyte',unit_TiB:'Tebibyte',unit_kg:'Κιλά',unit_l:'Λίτρο',unit_ml:'Milliliter',unit_mps:'m/s',unit_kmh:'km/h',unit_mph:'mph',unit_knot:'Κόμβος',unit_J:'Joule',unit_kJ:'Kilojoule',unit_Wh:'Watt-ώρα',unit_kWh:'Kilowatt-ώρα',unit_cal:'cal',unit_kcal:'kcal',unit_W:'Watt',unit_kW:'Kilowatt',unit_MW:'Megawatt',unit_hp:'Ιπποδύναμη',unit_Pa:'Pascal',unit_kPa:'Kilopascal',unit_bar:'Bar',unit_psi:'PSI',unit_atm:'Ατμόσφαιρα',unit_deg:'Μοίρα',unit_rad:'Ακτίνιο',unit_grad:'Grad',unit_C:'Κελσίου',unit_F:'Φαρενάιτ',unit_K:'Kelvin',toolReady:'Το αποτέλεσμα θα εμφανιστεί εδώ',toolFuel:'Κόστος καυσίμου',toolEnergy:'Κόστος ρεύματος',toolVat:'Τελικό ποσό',toolUnit:'Αποτέλεσμα',fuelResult:'Καύσιμο που χρησιμοποιήθηκε',energyResult:'Ενέργεια',clearConfirm:'Διαγραφή;',close:'Κλείσιμο',deleteKey:'Διαγραφή',themeLight:'Εναλλαγή σε φωτεινό θέμα',themeDark:'Εναλλαγή σε σκοτεινό θέμα'},
 en:{calc:'Calculator',fuel:'Fuel',energy:'Energy',vat:'VAT',units:'Units',how:'How was this calculated?',history:'History',copy:'Copy result',copied:'Copied',clear:'Clear all',confirm:'Delete all calculation history?',confirmYes:'Delete',none:'No calculations yet.',hint:'Enter a calculation to get started.',delete:'Delete',created:'Created by',fuelD:'Distance (km)',fuelC:'Consumption (L/100 km)',fuelP:'Fuel price / L',fuelGo:'Calculate fuel cost',fuelUsed:'Fuel used',costKm:'Cost per km',energyP:'Power (W)',energyH:'Hours / day',energyD:'Days',energyR:'Price / kWh',energyGo:'Calculate electricity cost',energyUsed:'Energy',amount:'Amount',vatRate:'VAT %',addVat:'Add VAT',removeVat:'Remove VAT',vatAmount:'VAT amount',value:'Value',category:'Category',from:'From',to:'To',convert:'Convert',length:'Length',area:'Area',mass:'Mass',volume:'Volume',speed:'Speed',time:'Time',data:'Data',energy:'Energy',power:'Power',pressure:'Pressure',angle:'Angle',temperature:'Temperature',unit_mm:'Millimeter',unit_cm:'Centimeter',unit_m:'Meter',unit_km:'Kilometer',unit_in:'Inch',unit_ft:'Foot',unit_yd:'Yard',unit_mi:'Statute mile',unit_nmi:'Nautical mile',unit_bit:'Bit',unit_b:'Bit',unit_kbit:'Kilobit',unit_Mbit:'Megabit',unit_Gbit:'Gigabit',unit_Tbit:'Terabit',unit_B:'Byte',unit_kB:'Kilobyte',unit_MB:'Megabyte',unit_GB:'Gigabyte',unit_TB:'Terabyte',unit_KiB:'Kibibyte',unit_MiB:'Mebibyte',unit_GiB:'Gibibyte',unit_TiB:'Tebibyte',unit_kg:'Kilogram',unit_l:'Liter',unit_ml:'Milliliter',unit_mps:'m/s',unit_kmh:'km/h',unit_mph:'mph',unit_knot:'Knot',unit_J:'Joule',unit_kJ:'Kilojoule',unit_Wh:'Watt-hour',unit_kWh:'Kilowatt-hour',unit_cal:'cal',unit_kcal:'kcal',unit_W:'Watt',unit_kW:'Kilowatt',unit_MW:'Megawatt',unit_hp:'Horsepower',unit_Pa:'Pascal',unit_kPa:'Kilopascal',unit_bar:'Bar',unit_psi:'PSI',unit_atm:'Atmosphere',unit_deg:'Degree',unit_rad:'Radian',unit_grad:'Grad',unit_C:'Celsius',unit_F:'Fahrenheit',unit_K:'Kelvin',toolReady:'The result will appear here',toolFuel:'Fuel cost',toolEnergy:'Electricity cost',toolVat:'Final amount',toolUnit:'Result',fuelResult:'Fuel used',energyResult:'Energy',clearConfirm:'Delete?',close:'Close',deleteKey:'Delete',themeLight:'Switch to light mode',themeDark:'Switch to dark mode'}
 };
-const ICONS={calc:'▦',fuel:'⛽',energy:'ϟ',vat:'%',units:'↔'};
+const ICONS={calc:'▦',fuel:'⛽',energy:'ϟ',vat:'%',units:'↔'};const MODE_TRANSLATIONS={calc:['Αριθμομηχανή','Calculator'],fuel:['Καύσιμα','Fuel'],energy:['Ενέργεια','Energy'],vat:['ΦΠΑ','VAT'],units:['Μονάδες','Units']};
+const TOOL_LABEL_KEYS={fuel:['fuelD','fuelC','fuelP'],energy:['energyP','energyH','energyD','energyR'],vat:['amount','vatRate']};
+const modeText=m=>MODE_TRANSLATIONS[m]?.[lang==='el'?0:1]||t(m);
+
 const t=k=>T[lang][k]??T.en[k]??k;
 const gcd=(a,b)=>{a=a<0n?-a:a;b=b<0n?-b:b;while(b){const t=a%b;a=b;b=t}return a};
 function rat(n,d=1n){if(d===0n)throw Error('DIV0');if(d<0n){n=-n;d=-d}const g=gcd(n,d);return{n:n/g,d:d/g}}
@@ -90,6 +93,9 @@ function formatGroupedNumber(raw){
 }
 function formatInputDisplay(s){
  return pretty(String(s)).replace(/\d+(?:\.\d*)?/g,m=>formatGroupedNumber(m));
+}
+function formatExpressionDisplay(s){
+ return formatInputDisplay(String(s??''));
 }
 
 function tokenize(input){
@@ -157,7 +163,7 @@ function render(){
  const display=justCalculated?fmt(lastResult):(raw?formatInputDisplay(raw):'0');
  $('#calculatorDisplay').classList.remove('tool-display','tool-empty');
  $('#calculatorDisplay').classList.toggle('calculated',justCalculated);
- $('#expression').textContent=justCalculated?pretty(lastExpression):'';
+ $('#expression').textContent=justCalculated?formatExpressionDisplay(lastExpression):'';
  const exprEl=$('#expression');
  $('#result').textContent=display;
  $('#result').classList.remove('long-value','near-limit');
@@ -441,7 +447,7 @@ function restoreCalculatorDisplay(){
 }
 function renderTool(){
  const calc=mode==='calc';
- const modeLabel=$('#modeLabel');if(modeLabel)modeLabel.textContent=t(mode);
+ const modeLabel=$('#modeLabel');if(modeLabel)modeLabel.textContent=modeText(mode);
  $('#calculatorCard').classList.toggle('mobile-tool',!calc&&isMobileDevice());
  if(mode==='units'){
    $('#calculatorCard').classList.add('tool-mode');
@@ -463,9 +469,9 @@ function renderTool(){
    return;
  }
  let html='';
- if(mode==='fuel')html='<div class="tool-grid">'+field('fuelD',t('fuelD'))+field('fuelC',t('fuelC'))+field('fuelP',t('fuelP'))+'</div>';
- if(mode==='energy')html='<div class="tool-grid">'+field('energyP',t('energyP'))+field('energyH',t('energyH'))+field('energyD',t('energyD'))+field('energyR',t('energyR'))+'</div>';
- if(mode==='vat')html='<div class="tool-grid">'+field('amount',t('amount'))+field('vatRate',t('vatRate'))+'</div><div class="vat-toggle" role="group"><button type="button" data-vat-mode="add">'+esc(t('addVat'))+'</button><button type="button" data-vat-mode="remove">'+esc(t('removeVat'))+'</button></div>';
+ if(mode==='fuel')html='<div class="tool-grid">'+field('fuelD',T[lang].fuelD)+field('fuelC',T[lang].fuelC)+field('fuelP',T[lang].fuelP)+'</div>';
+ if(mode==='energy')html='<div class="tool-grid">'+field('energyP',T[lang].energyP)+field('energyH',T[lang].energyH)+field('energyD',T[lang].energyD)+field('energyR',T[lang].energyR)+'</div>';
+ if(mode==='vat')html='<div class="tool-grid">'+field('amount',T[lang].amount)+field('vatRate',T[lang].vatRate)+'</div><div class="vat-toggle" role="group"><button type="button" data-vat-mode="add">'+esc(T[lang].addVat)+'</button><button type="button" data-vat-mode="remove">'+esc(T[lang].removeVat)+'</button></div>';
  $('#toolPanel').innerHTML=html;
  toolActiveInput=null;
  renderVatToggle();
@@ -480,6 +486,7 @@ function renderTool(){
 }
 function setMode(next){resultCompact=false;mode=next;howData=null;vatAction='add';if(next!=='calc')toolState[next]={inputs:{},result:null};toolResult=null;if(next==='vat')toolState.vat.inputs.vatRate='24';if(next==='units'){unitExpressions={from:'0',to:'0'};unitActiveInput='from';unitSource='from';unitReplaceOnNextKey=true;window._unitCategory=window._unitCategory||'length';}const label=$('#modeLabel'),icon=$('#modeIcon');if(label)label.textContent=t(mode);if(icon)icon.textContent=modeIcon(mode);renderTool();if(next==='vat')window._runVat?.(true);if(next!=='calc'&&next!=='vat')renderToolDisplay();syncModeButton();}
 function applyLanguage(){
+ lang=readLanguage();
  const savedInputs={};
  if(mode!=='calc'&&mode!=='units')$('#toolPanel input[data-tool-input]').forEach(input=>savedInputs[input.id]=input.value);
  document.documentElement.lang=lang;
@@ -514,7 +521,7 @@ function applyLanguage(){
 const MODE_LABELS=['calc','fuel','energy','vat','units'];
 function renderModeMenu(){
  const menu=$('#modeMenu');if(!menu)return;
- menu.innerHTML=MODE_LABELS.filter(m=>m!==mode).map(m=>`<button class="mode-item" data-mode="${m}" type="button"><span class="mode-item-icon">${modeIcon(m)}</span><span class="mode-item-label">${esc(t(m))}</span></button>`).join('');
+ menu.innerHTML=MODE_LABELS.filter(m=>m!==mode).map(m=>`<button class="mode-item" data-mode="${m}" type="button"><span class="mode-item-icon">${modeIcon(m)}</span><span class="mode-item-label">${esc(modeText(m))}</span></button>`).join('');
  menu.querySelectorAll('.mode-item').forEach(b=>b.addEventListener('click',e=>{
    e.stopPropagation();
    const next=b.dataset.mode;
@@ -524,7 +531,7 @@ function renderModeMenu(){
 }
 function syncModeButton(){
  const label=$('#modeLabel'),icon=$('#modeIcon'),button=$('#modeButton');
- if(label)label.textContent=t(mode);
+ if(label)label.textContent=modeText(mode);
  if(icon)icon.textContent=modeIcon(mode);
  if(button){button.dataset.mode=mode;button.setAttribute('aria-label',t(mode));}
  renderModeMenu();
@@ -718,4 +725,4 @@ window.addEventListener('keydown',e=>{
    clearAll();
  }
 });
-window.__UC_VERSION=VERSION;$('#footerVersion').textContent=`v${VERSION}`;restoreReloadState();bindTools();renderHistory();renderTool();renderModeMenu();syncModeButton();setupHistorySheet();applyLanguage();applyTheme();window.addEventListener('pageshow',e=>{if(e.persisted&&mode!=='calc')setMode('calc')});
+window.__UC_VERSION=VERSION;$('#footerVersion').textContent=`v${VERSION}`;restoreReloadState();lang=readLanguage();bindTools();renderHistory();renderTool();renderModeMenu();syncModeButton();setupHistorySheet();applyLanguage();applyTheme();window.addEventListener('pageshow',e=>{if(e.persisted&&mode!=='calc')setMode('calc')});
