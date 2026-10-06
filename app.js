@@ -1,4 +1,4 @@
-const VERSION='0.4.81';
+const VERSION='0.4.82';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -258,30 +258,20 @@ function normalizeUnitExpression(expr){
 }
 function unitEvaluate(expr){
  const raw=normalizeUnitExpression(expr);
- if(!raw||/[-+*/.]$/.test(raw)||!/^[0-9+*/().\s-]+$/.test(raw))return null;
- try{return ratToNumber(evalExpr(raw))}catch{return null}
+ if(!raw||/[-+*/.]$/.test(raw)||!/^[0-9+*/().\\s-]+$/.test(raw))return null;
+ try{return evalExpr(raw)}catch{return null}
 }
-function unitValueFormat(n){
- if(!Number.isFinite(n))return '';
- const abs=Math.abs(n);
- const max=abs!==0&&abs<1?Math.min(15,Math.max(6,Math.ceil(-Math.log10(abs))+6)):Math.min(12,Math.max(2,String(Math.trunc(abs)).length<7?6:4));
- return Number(n).toLocaleString('en-US',{maximumFractionDigits:max,useGrouping:false});
+function unitFactor(value){
+ return ratFromString(String(value));
+}
+function unitValueFormat(value){
+ if(!value||typeof value!=='object'||!('n'in value&&'d'in value))return '';
+ return ratToDecimal(value,18);
 }
 function formatUnitDisplayValue(value){
  const s=String(value??'').trim();
  if(!s)return '0';
- return s.replace(/-?\d[\d.,]*/g,m=>{
-   let raw=m;
-   if(raw.includes(','))raw=raw.replace(/\./g,'').replace(',','.');
-   else if(/^[-]?\d{1,3}(?:\.\d{3})+$/.test(raw)){
-     const sign=raw.startsWith('-')?'-':'';
-     raw=sign+raw.replace(/^-/,'').replace(/\./g,'');
-   }
-   const n=Number(raw);
-   if(!Number.isFinite(n))return m;
-   const max=Math.min(15,Math.max(6,Math.ceil(Math.max(0,-Math.log10(Math.abs(n||1))))+6));
-   return new Intl.NumberFormat(NUMBER_LOCALE,{maximumFractionDigits:max,useGrouping:true}).format(n);
- });
+ return formatInputDisplay(s);
 }
 function isMobileDevice(){
  return matchMedia('(pointer:coarse)').matches || /Android|iPhone|iPad|iPod|Windows Phone|Mobile/i.test(navigator.userAgent);
@@ -373,25 +363,33 @@ function updateUnitsDisplay(){
 }
 function unitConvertValue(category,value,from,to){
  if(category==='temperature'){
-   const c=from==='°C'?value:from==='°F'?(value-32)*5/9:value-273.15;
-   return to==='°C'?c:to==='°F'?c*9/5+32:c+273.15;
+   const v=value;
+   if(from==='°F'){
+     const c=ratDiv(ratSub(v,ratFromString('32')),ratFromString('1.8'));
+     return to==='°C'?c:to==='°F'?v:ratAdd(c,ratFromString('273.15'));
+   }
+   if(from==='K'){
+     const c=ratSub(v,ratFromString('273.15'));
+     return to==='°C'?c:to==='°F'?ratAdd(ratMul(c,ratFromString('1.8')),ratFromString('32')):v;
+   }
+   return to==='°C'?v:to==='°F'?ratAdd(ratMul(v,ratFromString('1.8')),ratFromString('32')):ratAdd(v,ratFromString('273.15'));
  }
- if(category==='angle')return value*units.angle[from]/units.angle[to];
- return value*units[category][from]/units[category][to];
+ const factors=units[category]||{};
+ return ratMul(value,ratDiv(unitFactor(factors[from]),unitFactor(factors[to])));
 }
 function convertUnitExpression(source='from'){
  const cc=$('#unitCategory')?.value,fu=$('#unitFrom')?.value,tu=$('#unitTo')?.value;
  if(!cc||!fu||!tu)return;
  const expr=String(unitExpressions[source]??'').trim();
  if(!expr){
-   unitExpressions[source]='';
-   unitExpressions[source==='from'?'to':'from']='';
+   unitExpressions[source]='0';
+   unitExpressions[source==='from'?'to':'from']='0';
    updateUnitsDisplay();
    return;
  }
  const value=unitEvaluate(expr);
  if(value===null){
-   unitExpressions[source==='from'?'to':'from']='';
+   unitExpressions[source==='from'?'to':'from']='0';
    updateUnitsDisplay();
    return;
  }
@@ -704,33 +702,15 @@ $('#toolPanel').addEventListener('keydown',e=>{
 });
 $('#toolPanel').addEventListener('input',e=>{
  if(!e.target.matches('input'))return;
+ if(mode==='units')return;
  const input=e.target;
- if(mode==='units'){
-   const side=input.id==='unitValueFrom'?'from':'to';
-   unitActiveInput=side;
-   unitSource=side;
-   unitReplaceOnNextKey=false;
-   const value=normalizeUnitExpression(input.value);
-   unitExpressions[side]=value||'0';
-   convertUnitExpression(side);
-   return;
- }
- if(!input.matches('[data-tool-input]'))return;
- let value=normalizeNumericInput(input.value);
- if(value.startsWith('-'))value='-'+value.slice(1).replace(/-/g,'');
- else value=value.replace(/-/g,'');
- const firstDot=value.indexOf('.');
- if(firstDot!==-1)value=value.slice(0,firstDot+1)+value.slice(firstDot+1).replace(/\./g,'');
- const formatted=formatNumericInput(value);
- if(formatted!==input.value){
-   const pos=input.selectionStart??formatted.length;
-   input.value=formatted;
-   input.setSelectionRange(Math.min(pos,formatted.length),Math.min(pos,formatted.length));
- }
- if(toolState[mode])toolState[mode].inputs[input.id]=input.value;
- if(mode==='fuel')window._runFuel?.();
- else if(mode==='energy')window._runEnergy?.();
- else if(mode==='vat')window._runVat?.(vatAction==='add');
+ const key=input.dataset.toolInput;
+ if(!key)return;
+ const raw=input.value;
+ toolState[mode]??={inputs:{},result:null};
+ toolState[mode].inputs[key]=raw;
+ toolResult=null;
+ renderToolPanel();
 });
 $('#howButton').addEventListener('click',showHow);$('#closeHow').addEventListener('click',closeHow);$('#howModal').addEventListener('click',e=>{if(e.target.id==='howModal')closeHow()});
 $('#historyButton').addEventListener('click',openHistory);$('#historyBackdrop').addEventListener('click',closeHistory);$('#historyList').addEventListener('click',historyClick);$('#copyButton').addEventListener('click',copyResult);
