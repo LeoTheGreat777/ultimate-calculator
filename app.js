@@ -1,5 +1,5 @@
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
-const VERSION='0.4.21';
+const VERSION='0.4.22';
 let lang=localStorage.getItem('uc-lang')==='en'?'en':'el';
 let theme=localStorage.getItem('uc-theme')==='light'?'light':localStorage.getItem('uc-theme')==='dark'?'dark':'auto';
 let mode='calc',expression='',current='',currentIsPercent=false,justCalculated=false,lastExpression='',lastResult=null,howData=null,lastOperation=null,historyClearConfirm=false,toolResult=null,toolActiveInput=null,resultCompact=false;
@@ -191,15 +191,17 @@ function setToolResult(main,detail='',how=null){toolResult={main,detail,how};how
 function populateUnits(){
  const cat=$('#unitCategoryButton');if(!cat)return;
  const category=cat.dataset.value;
- const keys=Object.keys(units[category]);
+ const keys=Object.keys(units[category]||{});
  const from=$('#unitFromButton'),to=$('#unitToButton'),fromMenu=$('#unitFromMenu'),toMenu=$('#unitToMenu');
- const set=(button,menu,current)=>{
-   const value=keys.includes(current)?current:keys[0];
-   button.dataset.value=value;button.querySelector('.unit-select-value').textContent=value;
+ const set=(button,menu,current,fallback)=>{
+   if(!button||!menu)return;
+   const value=keys.includes(current)?current:fallback;
+   button.dataset.value=value;
+   button.querySelector('.unit-select-value').textContent=value;
    menu.innerHTML=keys.map(x=>`<button class="unit-choice${x===value?' active':''}" type="button" data-unit="${x}">${x}</button>`).join('');
  };
- set(from,fromMenu,from?.dataset.value);
- set(to,toMenu,to?.dataset.value);
+ set(from,fromMenu,from?.dataset.value,keys[0]);
+ set(to,toMenu,to?.dataset.value,keys[1]||keys[0]);
 }
 function closeUnitMenus(){$('.unit-select-menu').forEach(m=>m.classList.add('hidden'))}
 function bindTools(){
@@ -305,10 +307,32 @@ function applyLanguage(){
  document.documentElement.lang=lang;$('#langButton').textContent=lang==='el'?'ΕΛ':'EN';$('#historyButtonText').textContent=t('history');$('#copyButton').textContent=t('copy');$('#hint').textContent=t('hint');$('#createdBy').textContent=`${t('created')} Leonidas Kampaxis`;$('#historyTitle').textContent=t('history');$('#clearHistory').textContent=t('clear');renderTool();renderHistory();renderModeMenu();syncModeButton();render()
 }
 const MODE_LABELS=['calc','fuel','energy','vat','units'];
-function renderModeMenu(){const menu=$('#modeMenu');if(!menu)return;menu.innerHTML=MODE_LABELS.map(m=>`<button class="mode-item ${m===mode?'active':''}" data-mode="${m}" type="button"><span class="mode-item-icon">${modeIcon(m)}</span><span class="mode-item-label">${esc(t(m))}</span>${m===mode?'<span class="mode-check">✓</span>':''}</button>`).join('');$$('.mode-item').forEach(b=>b.addEventListener('click',()=>{setMode(b.dataset.mode);closeModeMenu()}))}
-function syncModeButton(){const label=$('#modeLabel');if(label)label.textContent=t(mode);const icon=$('#modeIcon');if(icon)icon.textContent=modeIcon(mode);renderModeMenu()}
-function toggleModeMenu(){const m=$('#modeMenu');if(!m)return;m.classList.toggle('hidden');$('#modeButton').setAttribute('aria-expanded',String(!m.classList.contains('hidden')));if(!m.classList.contains('hidden'))renderModeMenu()}
-function closeModeMenu(){$('#modeMenu')?.classList.add('hidden');$('#modeButton')?.setAttribute('aria-expanded','false')}
+function renderModeMenu(){
+ const menu=$('#modeMenu');if(!menu)return;
+ menu.innerHTML=MODE_LABELS.filter(m=>m!==mode).map(m=>`<button class="mode-item" data-mode="${m}" type="button"><span class="mode-item-icon">${modeIcon(m)}</span><span class="mode-item-label">${esc(t(m))}</span></button>`).join('');
+ menu.querySelectorAll('.mode-item').forEach(b=>b.addEventListener('click',e=>{
+   e.stopPropagation();
+   const next=b.dataset.mode;
+   closeModeMenu();
+   setMode(next);
+ }));
+}
+function syncModeButton(){
+ const label=$('#modeLabel');if(label)label.textContent=t(mode);
+ const icon=$('#modeIcon');if(icon)icon.textContent=modeIcon(mode);
+ renderModeMenu();
+}
+function toggleModeMenu(){
+ const menu=$('#modeMenu');if(!menu)return;
+ const open=menu.classList.contains('hidden');
+ if(open)renderModeMenu();
+ menu.classList.toggle('hidden',!open);
+ $('#modeButton').setAttribute('aria-expanded',String(open));
+}
+function closeModeMenu(){
+ const menu=$('#modeMenu');if(menu)menu.classList.add('hidden');
+ $('#modeButton')?.setAttribute('aria-expanded','false');
+}
 
 function openHistory(){const p=$('#historyPanel'),b=$('#historyBackdrop');renderHistory();p.classList.remove('hidden');b.classList.remove('hidden');requestAnimationFrame(()=>{p.classList.add('open');b.classList.add('open')});p.classList.remove('expanded');$('#historyList').scrollTop=0}
 function closeHistory(){const p=$('#historyPanel'),b=$('#historyBackdrop');p.classList.remove('open','expanded');b.classList.remove('open');setTimeout(()=>{if(!p.classList.contains('open')){p.classList.add('hidden');b.classList.add('hidden')}},220)}
