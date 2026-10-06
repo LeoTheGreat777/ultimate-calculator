@@ -1,4 +1,4 @@
-const VERSION='0.4.55';
+const VERSION='0.4.56';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function readLanguage(){
@@ -313,7 +313,7 @@ const UNIT_LABELS={length:{mm:['Χιλιοστό','Millimeter'],cm:['Εκατο�
 const unitOptions=(category,selected)=>Object.keys(units[category]||{}).map(x=>'<option value="'+x+'"'+(x===selected?' selected':'')+'>'+esc(UNIT_LABELS[category]?.[x]?.[lang==='el'?0:1]||x)+'</option>').join('');
 const toolNumber=id=>{const raw=($('#'+id)?.value??'').trim().replace(',','.');return raw===''?Number(TOOL_DEFAULTS[id]):Number(raw)};
 const liveToolNumber=id=>{const raw=($('#'+id)?.value??'').trim().replace(',','.');if(raw==='')return null;const n=Number(raw);return Number.isFinite(n)?n:null};
-const field=(id,label)=>'<label class="tool-field"><span>'+esc(label)+'</span><input id="'+id+'" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="'+esc(String(TOOL_DEFAULTS[id]??''))+'" data-tool-input="true"></label>';
+const field=(id,label)=>'<label class="tool-field"><span>'+esc(label)+'</span><input id="'+id+'" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="" placeholder="'+esc(String(FIELD_EXAMPLES[id]??''))+'" data-tool-input="true"></label>';
 function setToolResult(main,detail='',how=null){toolResult={main,detail,how};howData=how;renderToolDisplay();}
 function renderVatToggle(){ $$('#toolPanel [data-vat-mode]').forEach(b=>b.classList.toggle('active',b.dataset.vatMode===vatAction)); }
 function populateUnits(preserve=true){
@@ -394,6 +394,7 @@ function restoreCalculatorDisplay(){
 }
 function renderTool(){
  const calc=mode==='calc';
+ const modeLabel=$('#modeLabel');if(modeLabel)modeLabel.textContent=t(mode);
  $('#calculatorCard').classList.toggle('mobile-tool',!calc&&isMobileDevice());
  if(mode==='units'){
    $('#calculatorCard').classList.add('tool-mode');
@@ -434,9 +435,14 @@ function renderTool(){
  bindTools();
  renderVatToggle();
  renderToolDisplay();
- const runLive=()=>{if(mode==='fuel')window._runFuel?.();else if(mode==='energy')window._runEnergy?.();else if(mode==='vat')window._runVat?.(vatAction==='add')};
- runLive();
- requestAnimationFrame(runLive);
+ $('#toolPanel input[data-tool-input]').forEach(input=>{
+   input.addEventListener('input',()=>{
+     if(mode==='fuel')window._runFuel?.();
+     else if(mode==='energy')window._runEnergy?.();
+     else if(mode==='vat')window._runVat?.(vatAction==='add');
+   });
+ });
+
 }
 function setMode(next){resultCompact=false;mode=next;expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null;lastOperation=null;toolResult=null;resetHow();vatAction='add';if(next==='units'){unitExpressions={from:'',to:''};unitActiveInput='from';window._unitCategory=window._unitCategory||'length';}const label=$('#modeLabel'),icon=$('#modeIcon');if(label)label.textContent=t(mode);if(icon)icon.textContent=modeIcon(mode);renderTool();syncModeButton();}
 function applyLanguage(){
