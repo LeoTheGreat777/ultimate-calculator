@@ -31,7 +31,10 @@ function evalExpr(input){
 function percentExplanation(input,result){
  const m=String(input).match(/^(-?\d+(?:\.\d+)?)\s*([+-])\s*(\d+(?:\.\d+)?)%$/);if(!m)return null;
  const base=Number(m[1]),rate=Number(m[3]),part=base*rate/100,total=m[2]==='+'?base+part:base-part;
- return{formula:pretty(input),steps:[`${fmt(rate)}% ${lang==='el'?'του':'of'} ${fmt(base)} = ${fmt(part)}`,`${fmt(base)} ${m[2]==='+'?'+':'−'} ${fmt(part)} = ${fmt(total)}`],result:fmt(result)}
+ const steps=lang==='el'
+   ? [`Υπολόγισε το ${fmt(rate)}% του ${fmt(base)}: ${fmt(base)} × ${fmt(rate)} ÷ 100 = ${fmt(part)}`,m[2]==='+'?`Πρόσθεσε το ${fmt(part)} στο ${fmt(base)}: ${fmt(base)} + ${fmt(part)} = ${fmt(total)}`:`Αφαίρεσε το ${fmt(part)} από το ${fmt(base)}: ${fmt(base)} − ${fmt(part)} = ${fmt(total)}`]
+   : [`Calculate ${fmt(rate)}% of ${fmt(base)}: ${fmt(base)} × ${fmt(rate)} ÷ 100 = ${fmt(part)}`,m[2]==='+'?`Add ${fmt(part)} to ${fmt(base)}: ${fmt(base)} + ${fmt(part)} = ${fmt(total)}`:`Subtract ${fmt(part)} from ${fmt(base)}: ${fmt(base)} − ${fmt(part)} = ${fmt(total)}`];
+ return{formula:pretty(input),steps,result:fmt(result)}
 }
 function resetHow(){howData=null;$('#howButton')?.classList.add('hidden')}
 function applyTheme(){
