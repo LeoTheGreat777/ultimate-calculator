@@ -237,7 +237,7 @@ function bindTools(){
  window._runVat=vat;
  populateUnits();
  const convertUnits=()=>{
-  const v=toolNumber('value'),cc=$('#unitCategoryButton')?.dataset.value,ff=$('#unitFromButton')?.dataset.value,to=$('#unitToButton')?.dataset.value;
+  const v=toolNumber('value'),cc=$('#unitCategory')?.value,ff=$('#unitFrom')?.value,to=$('#unitTo')?.value;
   if(!Number.isFinite(v)||!cc||!ff||!to||units[cc]?.[ff]===undefined||units[cc]?.[to]===undefined)return;
   const out=v*units[cc][ff]/units[cc][to];
   const how={formula:`${fmt(v)} ${ff} → ${to}`,steps:[{title:lang==='el'?'Μετέτρεψε την τιμή':'Convert the value',text:`${fmt(v)} × ${fmt(units[cc][ff])} ÷ ${fmt(units[cc][to])} = ${fmt(out)} ${to}`}],result:`${fmt(out)} ${to}`};
@@ -422,7 +422,11 @@ $('#toolPanel').addEventListener('input',e=>{
 });
 $('#howButton').addEventListener('click',showHow);$('#closeHow').addEventListener('click',closeHow);$('#howModal').addEventListener('click',e=>{if(e.target.id==='howModal')closeHow()});
 $('#historyButton').addEventListener('click',openHistory);$('#historyBackdrop').addEventListener('click',closeHistory);$('#historyList').addEventListener('click',historyClick);$('#copyButton').addEventListener('click',copyResult);
-$('#langButton').addEventListener('click',()=>{lang=lang==='el'?'en':'el';localStorage.setItem('uc-lang',lang);applyLanguage()});
+$('#langButton').addEventListener('click',()=>{
+ lang=lang==='el'?'en':'el';
+ try{localStorage.setItem('uc-lang',lang)}catch{}
+ applyLanguage();
+});
 $('#themeButton').addEventListener('click',toggleTheme);
 $('#modeButton').addEventListener('click',e=>{e.stopPropagation();toggleModeMenu()});
  document.addEventListener('click',e=>{if(!e.target.closest('#modeButton')&&!e.target.closest('#modeMenu'))closeModeMenu();if(!e.target.closest('.unit-select')&&!e.target.closest('.unit-select-menu'))closeUnitMenus();if(historyClearConfirm&&!e.target.closest('#historyClearWrap'))clearHistoryConfirm()});
