@@ -36,5 +36,9 @@
 }
 
 .calculator-card.mobile-tool #keypad{display:none!important}
+.mobile-tool-ac{display:none}
+@media (pointer:coarse){
+ .mobile-tool-ac{display:block;width:100%;height:44px;margin-top:8px;border:0;border-radius:12px;background:var(--key);color:var(--accent2);font-size:18px;font-weight:700;cursor:pointer}
+}
 
 @media (pointer:coarse){input,select,button{touch-action:manipulation}.history-list{touch-action:pan-y;overflow-y:auto}}
