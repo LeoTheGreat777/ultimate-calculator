@@ -1,4 +1,4 @@
-const VERSION='0.4.68';
+const VERSION='0.4.69';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -698,10 +698,9 @@ $('#historyButton').addEventListener('click',openHistory);$('#historyBackdrop').
 $('#langButton').addEventListener('click',e=>{
  e.preventDefault();
  e.stopPropagation();
- saveReloadState();
  lang=lang==='el'?'en':'el';
  try{localStorage.setItem('uc-lang',lang)}catch{}
- window.location.reload();
+ applyLanguage();
 });
 $('#themeButton').addEventListener('click',toggleTheme);
 $('#modeButton').addEventListener('click',e=>{e.stopPropagation();toggleModeMenu()});
