@@ -1,4 +1,4 @@
-const VERSION='0.4.123';
+const VERSION='0.4.122';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -581,7 +581,6 @@ function applyLanguage(){
  else render();
  renderModeMenu();
  syncModeButton();
- syncUnitsQuickButton();
  renderVatToggle();
 }
 const MODE_LABELS=['calc','units','vat','fuel','energy'];
@@ -595,19 +594,11 @@ function renderModeMenu(){
    setMode(next);
  }));
 }
-function syncUnitsQuickButton(){
- const button=$('#unitsQuickButton');
- if(!button)return;
- button.classList.toggle('active',mode==='units');
- button.setAttribute('aria-label',t('units'));
- button.title=t('units');
-}
 function syncModeButton(){
  const label=$('#modeLabel'),icon=$('#modeIcon'),button=$('#modeButton');
  if(label)label.textContent=modeText(mode);
  if(icon)icon.textContent=modeIcon(mode);
  if(button){button.dataset.mode=mode;button.setAttribute('aria-label',t(mode));}
- syncUnitsQuickButton();
  renderModeMenu();
 }
 function toggleModeMenu(){
@@ -633,15 +624,6 @@ function closeModeMenu(){
 
 function openHistory(){const p=$('#historyPanel'),b=$('#historyBackdrop');renderHistory();p.classList.remove('hidden');b.classList.remove('hidden');requestAnimationFrame(()=>{p.classList.add('open');b.classList.add('open')});p.classList.remove('expanded');$('#historyList').scrollTop=0}
 function closeHistory(){const p=$('#historyPanel'),b=$('#historyBackdrop');p.classList.remove('open','expanded');b.classList.remove('open');setTimeout(()=>{if(!p.classList.contains('open')){p.classList.add('hidden');b.classList.add('hidden')}},220)}
-function setupUnitsQuickButton(){
- const button=$('#unitsQuickButton');
- if(!button)return;
- button.addEventListener('click',e=>{
-   e.preventDefault();
-   e.stopPropagation();
-   if(mode!== 'units')setMode('units');
- });
-}
 function setupHistorySheet(){
  const p=$('#historyPanel'),handle=$('.sheet-handle'),list=$('#historyList');let startY=0,tracking=false;
  const start=e=>{startY=e.touches[0].clientY;tracking=true;p.classList.add('dragging')};
@@ -822,5 +804,4 @@ window.addEventListener('keydown',e=>{
    clearAll();
  }
 });
-window.__UC_VERSION=VERSION;$('#footerVersion').textContent=`v${VERSION}`;restoreReloadState();lang=readLanguage();bindTools();renderHistory();renderTool();renderModeMenu();syncModeButton();setupHistorySheet();
-setupUnitsQuickButton();applyLanguage();applyTheme();window.addEventListener('pageshow',e=>{if(e.persisted&&mode!=='calc')setMode('calc')});
+window.__UC_VERSION=VERSION;$('#footerVersion').textContent=`v${VERSION}`;restoreReloadState();lang=readLanguage();bindTools();renderHistory();renderTool();renderModeMenu();syncModeButton();setupHistorySheet();applyLanguage();applyTheme();window.addEventListener('pageshow',e=>{if(e.persisted&&mode!=='calc')setMode('calc')});
