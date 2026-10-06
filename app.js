@@ -1,5 +1,5 @@
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
-const VERSION='0.4.7';
+const VERSION='0.4.8';
 let lang=localStorage.getItem('uc-lang')==='en'?'en':'el';
 let theme=localStorage.getItem('uc-theme')==='light'?'light':localStorage.getItem('uc-theme')==='dark'?'dark':'auto';
 let mode='calc',expression='',current='',currentIsPercent=false,justCalculated=false,lastExpression='',lastResult=null,howData=null,lastOperation=null,historyClearConfirm=false,toolResult=null,toolActiveInput=null;
@@ -93,12 +93,14 @@ function render(){
  });
 }
 function renderToolDisplay(){
- const result=$('#toolResult'),detail=$('#toolResultDetail'),how=$('#toolHow');
- if(!result)return;
- result.textContent=toolResult?.main??t('toolReady');
- result.classList.toggle('placeholder',!toolResult);
- detail.textContent=toolResult?.detail??'';
- how?.classList.toggle('hidden',!toolResult?.how);
+ const d=$('#calculatorDisplay');
+ d.classList.add('tool-display');
+ d.classList.remove('calculated');
+ $('#expression').textContent=toolResult?.detail??'';
+ $('#howButton').classList.toggle('hidden',!toolResult?.how);
+ $('#result').textContent=toolResult?.main??'';
+ $('#result').classList.toggle('long-value',String(toolResult?.main??'').length>18);
+ d.classList.toggle('tool-empty',!toolResult);
 }
 function clearAll(){expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null;lastOperation=null;resetHow();render()}
 function clearCurrent(){resetHow();if(current){current='';currentIsPercent=false;render();return}clearAll()}
@@ -195,21 +197,20 @@ function renderTool(){
  $('#keypad').classList.remove('hidden');
  $('#calculatorCard').classList.toggle('tool-mode',!calc);
  $('#toolPanel').classList.toggle('hidden',calc);
- $('#calculatorDisplay').classList.toggle('hidden',!calc);
+ $('#calculatorDisplay').classList.remove('hidden');
  if(calc){render();return}
  let html='';
  if(mode==='fuel')html=`<div class="tool-grid">${field('fuelD',t('fuelD'))}${field('fuelC',t('fuelC'))}${field('fuelP',t('fuelP'))}</div><button class="tool-action" id="fuelGo" type="button">${t('fuelGo')}</button>`;
  if(mode==='energy')html=`<div class="tool-grid">${field('energyP',t('energyP'))}${field('energyH',t('energyH'))}${field('energyD',t('energyD'))}${field('energyR',t('energyR'))}</div><button class="tool-action" id="energyGo" type="button">${t('energyGo')}</button>`;
  if(mode==='vat')html=`<div class="tool-grid">${field('amount',t('amount'))}${field('vatRate',t('vatRate'))}</div><div class="tool-grid tool-actions-row"><button class="tool-action" id="addVat" type="button">${t('addVat')}</button><button class="tool-action" id="removeVat" type="button">${t('removeVat')}</button></div>`;
  if(mode==='units')html=`<div class="tool-grid">${field('value',t('value'))}<label class="tool-field"><span>${t('category')}</span><select id="unitCategory"><option value="length">${t('length')}</option><option value="mass">${t('mass')}</option><option value="volume">${t('volume')}</option><option value="data">${t('data')}</option></select></label><label class="tool-field"><span>${t('from')}</span><select id="unitFrom"></select></label><label class="tool-field"><span>${t('to')}</span><select id="unitTo"></select></label></div><button class="tool-action" id="convert" type="button">${t('convert')}</button>`;
- const resultBlock=`<div class="tool-result"><div id="toolResult" class="tool-result-main placeholder">${t('toolReady')}</div><div id="toolResultDetail" class="tool-result-detail"></div><button id="toolHow" class="tool-how hidden" type="button">${t('how')}</button></div>`;
- html+=resultBlock;
+
  $('#toolPanel').innerHTML=html;
  toolActiveInput=null;
  if(mode==='units')populateUnits();
  bindTools();
  renderToolDisplay();
- $('#toolHow')?.addEventListener('click',showHow);
+
 }
 function setMode(next){mode=next;expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null;lastOperation=null;toolResult=null;resetHow();renderTool();syncModeButton()}
 function applyLanguage(){
@@ -286,6 +287,7 @@ $('#modeButton').addEventListener('click',e=>{e.stopPropagation();toggleModeMenu
 $('#clearHistory').addEventListener('click',clearHistoryConfirm);$('#historyConfirmYes').addEventListener('click',deleteAllHistory);
 window.addEventListener('keydown',e=>{
  if(e.ctrlKey||e.metaKey||e.altKey)return;
+ if(e.key==='Backspace'||e.code==='Backspace'){e.preventDefault();if(mode==='calc')backspace();else toolKeyInput('backspace');return;}
  if(e.key===','){e.preventDefault();if(mode==='calc')digit('.');else toolKeyInput('.');return}
  if(mode!=='calc'&&/^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement?.tagName)){
    if(/^[0-9.]$/.test(e.key)||e.key==='-'||e.key==='Backspace'||e.key==='Escape'||e.key==='Enter'||e.key==='='){
