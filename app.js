@@ -1,5 +1,5 @@
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
-const VERSION='0.4.31';
+const VERSION='0.4.32';
 let lang=localStorage.getItem('uc-lang')==='en'?'en':'el';
 let theme=localStorage.getItem('uc-theme')==='light'?'light':localStorage.getItem('uc-theme')==='dark'?'dark':'auto';
 let mode='calc',expression='',current='',currentIsPercent=false,justCalculated=false,lastExpression='',lastResult=null,howData=null,lastOperation=null,historyClearConfirm=false,toolResult=null,toolActiveInput=null,resultCompact=false;
@@ -244,46 +244,7 @@ function bindTools(){
  };
  window._runVat=vat;
  window._runVat=vat;
- const categoryLabels={length:t('length'),mass:t('mass'),volume:t('volume'),data:t('data')};
- const catButton=$('#unitCategoryButton'),catMenu=$('#unitCategoryMenu');
- const fromButton=$('#unitFromButton'),fromMenu=$('#unitFromMenu');
- const toButton=$('#unitToButton'),toMenu=$('#unitToMenu');
- const openMenu=(button,menu)=>{
-   if(!button||!menu)return;
-   button.addEventListener('click',e=>{
-     e.preventDefault();
-     e.stopPropagation();
-     const wasOpen=!menu.classList.contains('hidden');
-     closeUnitMenus();
-     if(!wasOpen)menu.classList.remove('hidden');
-   });
-   menu.addEventListener('click',e=>{
-     const choice=e.target.closest('.unit-choice');
-     if(!choice)return;
-     e.preventDefault();
-     e.stopPropagation();
-     if(choice.dataset.category){
-       catButton.dataset.value=choice.dataset.category;
-       catButton.querySelector('.unit-select-value').textContent=choice.textContent;
-       closeUnitMenus();
-       populateUnits();
-       return;
-     }
-     if(choice.dataset.unit){
-       button.dataset.value=choice.dataset.unit;
-       button.querySelector('.unit-select-value').textContent=choice.dataset.unit;
-       closeUnitMenus();
-       populateUnits();
-     }
-   });
- };
- if(catButton&&catMenu){
-   catMenu.innerHTML=Object.entries(categoryLabels).map(([key,label])=>`<button class="unit-choice" type="button" data-category="${key}">${label}</button>`).join('');
-   openMenu(catButton,catMenu);
- }
  populateUnits();
- openMenu(fromButton,fromMenu);
- openMenu(toButton,toMenu);
  const convertUnits=()=>{
   const v=toolNumber('value'),cc=catButton?.dataset.value,ff=fromButton?.dataset.value,to=toButton?.dataset.value;
   if(!Number.isFinite(v)||!cc||!ff||!to||units[cc]?.[ff]===undefined||units[cc]?.[to]===undefined)return;
@@ -339,7 +300,7 @@ function renderTool(){
 }
 function setMode(next){resultCompact=false;mode=next;expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null;lastOperation=null;toolResult=null;resetHow();const label=$('#modeLabel'),icon=$('#modeIcon');if(label)label.textContent=t(mode);if(icon)icon.textContent=modeIcon(mode);renderTool();syncModeButton();}
 function applyLanguage(){
- document.documentElement.lang=lang;$('#langButton').textContent=lang==='el'?'ΕΛ':'EN';$('#historyButtonText').textContent=t('history');$('#copyButton').textContent=t('copy');$('#hint').textContent=t('hint');$('#createdBy').textContent=`${t('created')} Leonidas Kampaxis`;$('#historyTitle').textContent=t('history');$('#clearHistory').textContent=t('clear');renderTool();renderHistory();renderModeMenu();syncModeButton();render()
+ document.documentElement.lang=lang;$('#langButton').textContent=lang==='el'?'ΕΛ':'EN';$('#historyButtonText').textContent=t('history');$('#copyButton').textContent=t('copy');const hint=$('#hint');if(hint)hint.textContent=t('hint');$('#createdBy').textContent=`${t('created')} Leonidas Kampaxis`;$('#historyTitle').textContent=t('history');$('#clearHistory').textContent=t('clear');renderTool();renderHistory();renderModeMenu();syncModeButton();render()
 }
 const MODE_LABELS=['calc','fuel','energy','vat','units'];
 function renderModeMenu(){
@@ -438,6 +399,42 @@ $('#keypad').addEventListener('click',e=>{
    return;
  }
  if(a==='clear')clearButtonAction();else if(a==='backspace')backspace();else if(a==='equals')equals();else if(v==='%')percent();else if(/[+\-*/]/.test(v||''))operator(v==='*'?'×':v==='/'?'÷':v);else if(v)digit(v)
+});
+$('#toolPanel').addEventListener('click',e=>{
+ const choice=e.target.closest('.unit-choice');
+ if(choice){
+   e.preventDefault();
+   e.stopPropagation();
+   const categoryButton=$('#unitCategoryButton');
+   const fromButton=$('#unitFromButton');
+   const toButton=$('#unitToButton');
+   if(choice.dataset.category&&categoryButton){
+     categoryButton.dataset.value=choice.dataset.category;
+     categoryButton.querySelector('.unit-select-value').textContent=choice.textContent;
+     closeUnitMenus();
+     populateUnits();
+     return;
+   }
+   const button=choice.closest('#unitFromMenu')?fromButton:choice.closest('#unitToMenu')?toButton:null;
+   if(choice.dataset.unit&&button){
+     button.dataset.value=choice.dataset.unit;
+     button.querySelector('.unit-select-value').textContent=choice.dataset.unit;
+     closeUnitMenus();
+     populateUnits();
+     return;
+   }
+ }
+ const selector=e.target.closest('.unit-select');
+ if(selector){
+   e.preventDefault();
+   e.stopPropagation();
+   const menu=selector.id==='unitCategoryButton'?$('#unitCategoryMenu'):selector.id==='unitFromButton'?$('#unitFromMenu'):selector.id==='unitToButton'?$('#unitToMenu'):null;
+   if(menu){
+     const open=!menu.classList.contains('hidden');
+     closeUnitMenus();
+     if(!open)menu.classList.remove('hidden');
+   }
+ }
 });
 $('#toolPanel').addEventListener('focusin',e=>{if(e.target.matches('input'))toolActiveInput=e.target});
 $('#toolPanel').addEventListener('beforeinput',e=>{
