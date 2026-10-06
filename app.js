@@ -189,27 +189,20 @@ const toolNumber=id=>{const raw=($(`#${id}`)?.value??'').trim().replace(',','.')
 const field=(id,label)=>`<label class="tool-field"><span>${esc(label)}</span><input id="${id}" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="${FIELD_EXAMPLES[id]||''}" data-tool-input="true"></label>`;
 function setToolResult(main,detail='',how=null){toolResult={main,detail,how};howData=how;renderToolDisplay()}
 function populateUnits(){
- const cat=$('#unitCategoryButton');
- if(!cat)return;
+ const cat=$('#unitCategory');
+ const from=$('#unitFrom');
+ const to=$('#unitTo');
+ if(!cat||!from||!to)return;
+ const category=cat.value||'length';
  const categories=Object.keys(units);
- const categoryMenu=$('#unitCategoryMenu');
- if(categoryMenu){
-  categoryMenu.innerHTML=categories.map(function(x){return '<button class="unit-choice'+(x===cat.dataset.value?' active':'')+'" type="button" data-category="'+x+'">'+esc(t(x))+'</button>'}).join('');
- }
- const category=cat.dataset.value;
- const keys=Object.keys(units[category]||{});
- const from=$('#unitFromButton'),to=$('#unitToButton');
- const fromMenu=$('#unitFromMenu'),toMenu=$('#unitToMenu');
- const set=function(button,menu,current,fallback){
-  if(!button||!menu)return;
-  const value=keys.includes(current)?current:fallback;
-  button.dataset.value=value;
-  const label=button.querySelector('.unit-select-value');
-  if(label)label.textContent=value;
-  menu.innerHTML=keys.map(function(x){return '<button class="unit-choice'+(x===value?' active':'')+'" type="button" data-unit="'+x+'">'+x+'</button>'}).join('');
- };
- set(from,fromMenu,from?.dataset.value,keys[0]);
- set(to,toMenu,to?.dataset.value,keys[1]||keys[0]);
+ cat.innerHTML=categories.map(x=>'<option value="'+x+'">'+esc(t(x))+'</option>').join('');
+ cat.value=categories.includes(category)?category:'length';
+ const keys=Object.keys(units[cat.value]||{});
+ const oldFrom=from.value,oldTo=to.value;
+ from.innerHTML=keys.map(x=>'<option value="'+x+'">'+x+'</option>').join('');
+ to.innerHTML=keys.map(x=>'<option value="'+x+'">'+x+'</option>').join('');
+ from.value=keys.includes(oldFrom)?oldFrom:(keys[0]||'');
+ to.value=keys.includes(oldTo)?oldTo:(keys[1]||keys[0]||'');
 }
 function closeUnitMenus(except=null){
  $$('.unit-select-menu').forEach(menu=>{
@@ -291,7 +284,7 @@ function renderTool(){
  if(mode==='fuel')html=`<div class="tool-grid">${field('fuelD',t('fuelD'))}${field('fuelC',t('fuelC'))}${field('fuelP',t('fuelP'))}</div>`;
  if(mode==='energy')html=`<div class="tool-grid">${field('energyP',t('energyP'))}${field('energyH',t('energyH'))}${field('energyD',t('energyD'))}${field('energyR',t('energyR'))}</div>`;
  if(mode==='vat')html=`<div class="tool-grid">${field('amount',t('amount'))}${field('vatRate',t('vatRate'))}</div>`;
- if(mode==='units')html=`<div class="tool-grid">${field('value',t('value'))}<label class="tool-field"><span>${t('category')}</span><button id="unitCategoryButton" class="unit-select" type="button" data-value="length"><span class="unit-select-value">${t('length')}</span><span class="unit-select-arrow">⌄</span></button><div id="unitCategoryMenu" class="unit-select-menu hidden"></div></label><label class="tool-field"><span>${t('from')}</span><button id="unitFromButton" class="unit-select" type="button" data-value="mm"><span class="unit-select-value">mm</span><span class="unit-select-arrow">⌄</span></button><div id="unitFromMenu" class="unit-select-menu hidden"></div></label><label class="tool-field"><span>${t('to')}</span><button id="unitToButton" class="unit-select" type="button" data-value="cm"><span class="unit-select-value">cm</span><span class="unit-select-arrow">⌄</span></button><div id="unitToMenu" class="unit-select-menu hidden"></div></label></div>`;
+ if(mode==='units')html=`<div class="tool-grid">${field('value',t('value'))}<label class="tool-field"><span>${t('category')}</span><select id="unitCategory" class="unit-select"></select></label><label class="tool-field"><span>${t('from')}</span><select id="unitFrom" class="unit-select"></select></label><label class="tool-field"><span>${t('to')}</span><select id="unitTo" class="unit-select"></select></label></div>`;
 
  $('#toolPanel').innerHTML=html;
  renderToolKeypad();
@@ -405,42 +398,7 @@ $('#keypad').addEventListener('click',e=>{
  }
  if(a==='clear')clearButtonAction();else if(a==='backspace')backspace();else if(a==='equals')equals();else if(v==='%')percent();else if(/[+\-*/]/.test(v||''))operator(v==='*'?'×':v==='/'?'÷':v);else if(v)digit(v)
 });
-$('#toolPanel').addEventListener('click',e=>{
- const choice=e.target.closest('.unit-choice');
- if(choice){
-   e.preventDefault();
-   e.stopPropagation();
-   const categoryButton=$('#unitCategoryButton');
-   const fromButton=$('#unitFromButton');
-   const toButton=$('#unitToButton');
-   if(choice.dataset.category&&categoryButton){
-     categoryButton.dataset.value=choice.dataset.category;
-     categoryButton.querySelector('.unit-select-value').textContent=choice.textContent;
-     closeUnitMenus();
-     populateUnits();
-     return;
-   }
-   const button=choice.closest('#unitFromMenu')?fromButton:choice.closest('#unitToMenu')?toButton:null;
-   if(choice.dataset.unit&&button){
-     button.dataset.value=choice.dataset.unit;
-     button.querySelector('.unit-select-value').textContent=choice.dataset.unit;
-     closeUnitMenus();
-     populateUnits();
-     return;
-   }
- }
- const selector=e.target.closest('.unit-select');
- if(selector){
-   e.preventDefault();
-   e.stopPropagation();
-   const menu=selector.id==='unitCategoryButton'?$('#unitCategoryMenu'):selector.id==='unitFromButton'?$('#unitFromMenu'):selector.id==='unitToButton'?$('#unitToMenu'):null;
-   if(menu){
-     const open=!menu.classList.contains('hidden');
-     closeUnitMenus();
-     if(!open)menu.classList.remove('hidden');
-   }
- }
-});
+$('#toolPanel').addEventListener('change',e=>{if(e.target.matches('#unitCategory'))populateUnits()});
 $('#toolPanel').addEventListener('focusin',e=>{if(e.target.matches('input'))toolActiveInput=e.target});
 $('#toolPanel').addEventListener('beforeinput',e=>{
  if(!e.target.matches('input')||e.inputType?.startsWith('delete'))return;
