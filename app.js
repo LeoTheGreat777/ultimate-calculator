@@ -1,4 +1,4 @@
-const VERSION='0.4.95';
+const VERSION='0.4.96';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -496,7 +496,7 @@ function renderToolKeypad(){
    '<button class="tool-key" data-value="7" type="button">7</button><button class="tool-key" data-value="8" type="button">8</button><button class="tool-key" data-value="9" type="button">9</button>'+
    '<button class="tool-key" data-value="4" type="button">4</button><button class="tool-key" data-value="5" type="button">5</button><button class="tool-key" data-value="6" type="button">6</button>'+
    '<button class="tool-key" data-value="1" type="button">1</button><button class="tool-key" data-value="2" type="button">2</button><button class="tool-key" data-value="3" type="button">3</button>'+
-   '<button class="tool-key tool-key-wide" data-value="0" type="button">0</button><button class="tool-key" data-value="," type="button">,</button><button class="tool-key" data-value="%" type="button">%</button>';
+   '<button class="tool-key tool-key-wide" data-value="0" type="button">0</button><button class="tool-key" data-value="," type="button">,</button>';
 }
 function restoreCalculatorDisplay(){
  const d=$('#calculatorDisplay');
@@ -582,7 +582,7 @@ function applyLanguage(){
  syncModeButton();
  renderVatToggle();
 }
-const MODE_LABELS=['calc','fuel','energy','vat','units'];
+const MODE_LABELS=['calc','units','vat','fuel','energy'];
 function renderModeMenu(){
  const menu=$('#modeMenu');if(!menu)return;
  menu.innerHTML=MODE_LABELS.filter(m=>m!==mode).map(m=>`<button class="mode-item" data-mode="${m}" type="button"><span class="mode-item-icon">${modeIcon(m)}</span><span class="mode-item-label">${esc(modeText(m))}</span></button>`).join('');
