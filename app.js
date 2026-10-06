@@ -2,7 +2,7 @@ const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const VERSION='0.4.3';
 let lang=localStorage.getItem('uc-lang')==='en'?'en':'el';
 let theme=localStorage.getItem('uc-theme')==='light'?'light':localStorage.getItem('uc-theme')==='dark'?'dark':'auto';
-let mode='calc',expression='',current='',currentIsPercent=false,justCalculated=false,lastExpression='',lastResult=null,howData=null,lastOperation=null,historyClearConfirm=false,toolResult=null;
+let mode='calc',expression='',current='',currentIsPercent=false,justCalculated=false,lastExpression='',lastResult=null,howData=null,lastOperation=null,historyClearConfirm=false,toolResult=null,toolActiveInput=null;
 
 const T={
 el:{calc:'Υπολογισμός',fuel:'Καύσιμα',energy:'Ενέργεια',vat:'ΦΠΑ',units:'Μονάδες',how:'Πώς υπολογίστηκε',history:'Ιστορικό',copy:'Αντιγραφή αποτελέσματος',copied:'Αντιγράφηκε',clear:'Διαγραφή όλων',confirm:'Διαγραφή όλου του ιστορικού;',confirmYes:'Διαγραφή',none:'Δεν υπάρχουν υπολογισμοί ακόμη.',hint:'Πληκτρολόγησε μια πράξη για να ξεκινήσεις.',delete:'Διαγραφή',created:'Δημιουργήθηκε από',fuelD:'Απόσταση (km)',fuelC:'Κατανάλωση (L/100 km)',fuelP:'Τιμή καυσίμου / L',fuelGo:'Υπολογισμός κόστους καυσίμου',fuelUsed:'Καύσιμο που χρησιμοποιήθηκε',costKm:'Κόστος ανά km',energyP:'Ισχύς (W)',energyH:'Ώρες / ημέρα',energyD:'Ημέρες',energyR:'Τιμή / kWh',energyGo:'Υπολογισμός κόστους ρεύματος',energyUsed:'Ενέργεια',amount:'Ποσό',vatRate:'ΦΠΑ %',addVat:'Πρόσθεσε ΦΠΑ',removeVat:'Αφαίρεσε ΦΠΑ',vatAmount:'Ποσό ΦΠΑ',value:'Τιμή',category:'Κατηγορία',from:'Από',to:'Σε',convert:'Μετατροπή',length:'Μήκος',mass:'Μάζα',volume:'Όγκος',data:'Δεδομένα',toolReady:'Το αποτέλεσμα θα εμφανιστεί εδώ',toolFuel:'Κόστος καυσίμου',toolEnergy:'Κόστος ρεύματος',toolVat:'Τελικό ποσό',toolUnit:'Αποτέλεσμα',fuelResult:'Καύσιμο που χρησιμοποιήθηκε',energyResult:'Ενέργεια',clearConfirm:'Διαγραφή;',close:'Κλείσιμο'},
@@ -71,13 +71,26 @@ function toggleTheme(){
 }
 function render(){
  if(mode!=='calc')return;
- const display=justCalculated?fmt(lastResult):(formatInputDisplay(expression+current)||'');
+ const raw=expression+current;
+ const display=justCalculated?fmt(lastResult):(raw?formatInputDisplay(raw):'0');
  $('#calculatorDisplay').classList.remove('tool-display','tool-empty');
  $('#calculatorDisplay').classList.toggle('calculated',justCalculated);
  $('#expression').textContent=justCalculated?pretty(lastExpression):'';
- $('#result').textContent=display;$('#result').classList.toggle('long-value',String(display).length>18);requestAnimationFrame(()=>{const r=$('#result');if(r)r.scrollLeft=r.scrollWidth});
- $('#clearButton').textContent=justCalculated?'AC':'C';
- $('#howButton').classList.toggle('hidden',!howData)
+ const exprEl=$('#expression');
+ exprEl.classList.remove('near-limit');
+ $('#result').textContent=display;
+ $('#result').classList.toggle('long-value',String(display).length>18);
+ const hasEntry=Boolean(raw);
+ $('#clearButton').textContent=justCalculated||!hasEntry?'AC':'C';
+ $('#howButton').classList.toggle('hidden',!howData);
+ requestAnimationFrame(()=>{
+   if(exprEl && !justCalculated){
+     const overflowing=exprEl.scrollWidth>exprEl.clientWidth+4;
+     exprEl.classList.toggle('near-limit',overflowing);
+     if(overflowing)exprEl.scrollLeft=exprEl.scrollWidth;
+   }
+   const r=$('#result');if(r)r.scrollLeft=r.scrollWidth;
+ });
 }
 function renderToolDisplay(){
  const d=$('#calculatorDisplay');d.classList.add('tool-display');d.classList.remove('calculated','tool-empty');
@@ -88,6 +101,15 @@ function renderToolDisplay(){
 }
 function clearAll(){expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null;lastOperation=null;resetHow();render()}
 function clearCurrent(){resetHow();if(current){current='';currentIsPercent=false;render();return}clearAll()}
+function clearButtonAction(){
+ if(justCalculated){
+   if(howData){resetHow();render();return}
+   clearAll();return;
+ }
+ if(current){clearCurrent();return}
+ if(expression){clearAll();return}
+ clearAll();
+}
 function backspace(){resetHow();if(justCalculated){clearAll();return}if(current){current=current.slice(0,-1);currentIsPercent=false}else if(expression)expression=expression.slice(0,-1);render()}
 function digit(v){
  resetHow();
@@ -124,7 +146,29 @@ function saveHistory(item){const list=historyItems();const stored={...item,resul
 function renderHistory(){const list=historyItems();$('#historyList').innerHTML=list.length?list.map(x=>`<div class="history-item"><button class="history-main" data-history="${x.id}" type="button"><div class="history-expression">${esc(pretty(x.expression))}</div><div class="history-result">${esc(fmt(x.result&&typeof x.result==='string'?ratFromString(x.result):x.result))}</div></button><button class="history-delete" data-delete="${x.id}" type="button" aria-label="${esc(t('delete'))}">×</button></div>`).join(''):`<div class="empty">${esc(t('none'))}</div>`}
 
 const units={length:{mm:1,cm:.01,m:1,km:1000,in:.0254,ft:.3048,yd:.9144,mi:1609.344},mass:{mg:.000001,g:.001,kg:1,oz:.028349523125,lb:.45359237},volume:{ml:.001,l:1,tsp:.00492892159,tbsp:.0147867648,cup:.2365882365,gal:3.785411784},data:{B:1,KB:1024,MB:1048576,GB:1073741824,TB:1099511627776}};
-const field=(id,label)=>`<label class="tool-field"><span>${esc(label)}</span><input id="${id}" type="number" step="any" inputmode="decimal"></label>`;
+const FIELD_EXAMPLES={fuelD:'250',fuelC:'7.2',fuelP:'1.85',energyP:'100',energyH:'8',energyD:'30',energyR:'0.20',amount:'100',vatRate:'24',value:'10'};
+const field=(id,label)=>`<label class="tool-field"><span>${esc(label)}</span><input id="${id}" type="number" step="any" inputmode="decimal" placeholder="${FIELD_EXAMPLES[id]||''}"></label>`;
+const toolKeypad=()=>`<div class="tool-keypad" aria-label="Numeric keypad">
+ <button type="button" data-tool-key="1">1</button><button type="button" data-tool-key="2">2</button><button type="button" data-tool-key="3">3</button><button type="button" data-tool-key="backspace">⌫</button>
+ <button type="button" data-tool-key="4">4</button><button type="button" data-tool-key="5">5</button><button type="button" data-tool-key="6">6</button><button type="button" data-tool-key="-">−</button>
+ <button type="button" data-tool-key="7">7</button><button type="button" data-tool-key="8">8</button><button type="button" data-tool-key="9">9</button><button type="button" data-tool-key=".">.</button>
+ <button type="button" data-tool-key="clear">C</button><button type="button" data-tool-key="0" class="tool-key-wide">0</button><button type="button" data-tool-key="enter">↵</button>
+</div>`;
+function handleToolKey(key){
+ let input=toolActiveInput;
+ if(!input || input.tagName!=='INPUT'){input=$('#toolPanel input');if(input)input.focus()}
+ if(!input)return;
+ let value=input.value;
+ if(key==='clear')value='';
+ else if(key==='backspace')value=value.slice(0,-1);
+ else if(key==='.')value.includes('.')?value:value+'.';
+ else if(key==='-')value=value.startsWith('-')?value.slice(1):'-'+value;
+ else if(key==='enter'){input.dispatchEvent(new Event('change',{bubbles:true}));return}
+ else value+=key;
+ input.value=value;
+ input.dispatchEvent(new Event('input',{bubbles:true}));
+ input.focus();
+}
 function setToolResult(main,detail='',how=null){toolResult={main,detail,how};howData=how;renderToolDisplay()}
 function populateUnits(){const cat=$('#unitCategory');if(!cat)return;const keys=Object.keys(units[cat.value]);$('#unitFrom').innerHTML=keys.map(x=>`<option value="${x}">${x}</option>`).join('');$('#unitTo').innerHTML=keys.map(x=>`<option value="${x}">${x}</option>`).join('')}
 function bindTools(){
@@ -147,7 +191,8 @@ function renderTool(){
  if(mode==='energy')html=`<div class="tool-grid">${field('energyP',t('energyP'))}${field('energyH',t('energyH'))}${field('energyD',t('energyD'))}${field('energyR',t('energyR'))}</div><button class="tool-action" id="energyGo" type="button">${t('energyGo')}</button>`;
  if(mode==='vat')html=`<div class="tool-grid">${field('amount',t('amount'))}${field('vatRate',t('vatRate'))}</div><div class="tool-grid tool-actions-row"><button class="tool-action" id="addVat" type="button">${t('addVat')}</button><button class="tool-action" id="removeVat" type="button">${t('removeVat')}</button></div>`;
  if(mode==='units')html=`<div class="tool-grid">${field('value',t('value'))}<label class="tool-field"><span>${t('category')}</span><select id="unitCategory"><option value="length">${t('length')}</option><option value="mass">${t('mass')}</option><option value="volume">${t('volume')}</option><option value="data">${t('data')}</option></select></label><label class="tool-field"><span>${t('from')}</span><select id="unitFrom"></select></label><label class="tool-field"><span>${t('to')}</span><select id="unitTo"></select></label></div><button class="tool-action" id="convert" type="button">${t('convert')}</button>`;
- $('#toolPanel').innerHTML=html;
+ $('#toolPanel').innerHTML=html+toolKeypad();
+ toolActiveInput=null;
  if(mode==='units')populateUnits();
  bindTools();
  renderToolDisplay()
@@ -184,7 +229,9 @@ function historyClick(e){
 }
 function copyResult(){const value=justCalculated?ratToDecimal(lastResult,24):(current||expression);if(value===''||!navigator.clipboard)return;navigator.clipboard.writeText(String(value)).then(()=>{const b=$('#copyButton');b.textContent=t('copied');setTimeout(()=>b.textContent=t('copy'),900)}).catch(()=>{})}
 
-$('#keypad').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const a=b.dataset.action,v=b.dataset.value;if(a==='clear'){if(current)clearCurrent();else clearAll()}else if(a==='backspace')backspace();else if(a==='equals')equals();else if(v==='%')percent();else if(/[+\-*/]/.test(v||''))operator(v==='*'?'×':v==='/'?'÷':v);else if(v)digit(v)});
+$('#keypad').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const a=b.dataset.action,v=b.dataset.value;if(a==='clear')clearButtonAction();else if(a==='backspace')backspace();else if(a==='equals')equals();else if(v==='%')percent();else if(/[+\-*/]/.test(v||''))operator(v==='*'?'×':v==='/'?'÷':v);else if(v)digit(v)});
+$('#toolPanel').addEventListener('focusin',e=>{if(e.target.matches('input'))toolActiveInput=e.target});
+$('#toolPanel').addEventListener('click',e=>{const b=e.target.closest('[data-tool-key]');if(b)handleToolKey(b.dataset.toolKey)});
 $('#howButton').addEventListener('click',showHow);$('#closeHow').addEventListener('click',closeHow);$('#howModal').addEventListener('click',e=>{if(e.target.id==='howModal')closeHow()});
 $('#historyButton').addEventListener('click',openHistory);$('#historyBackdrop').addEventListener('click',closeHistory);$('#historyList').addEventListener('click',historyClick);$('#copyButton').addEventListener('click',copyResult);
 $('#langButton').addEventListener('click',()=>{lang=lang==='el'?'en':'el';localStorage.setItem('uc-lang',lang);applyLanguage()});
