@@ -1,5 +1,5 @@
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
-const VERSION='0.4.11';
+const VERSION='0.4.12';
 let lang=localStorage.getItem('uc-lang')==='en'?'en':'el';
 let theme=localStorage.getItem('uc-theme')==='light'?'light':localStorage.getItem('uc-theme')==='dark'?'dark':'auto';
 let mode='calc',expression='',current='',currentIsPercent=false,justCalculated=false,lastExpression='',lastResult=null,howData=null,lastOperation=null,historyClearConfirm=false,toolResult=null,toolActiveInput=null;
@@ -93,8 +93,12 @@ function render(){
    }
    const r=$('#result');
    if(r&&!justCalculated){
-     const nearEdge=r.scrollWidth>r.clientWidth*0.82;
-     r.classList.toggle('near-limit',nearEdge);
+     const ratio=r.scrollWidth/Math.max(1,r.clientWidth);
+     const shrinking=r.classList.contains('near-limit');
+     // Use hysteresis: once the display shrinks, keep it there until the
+     // input becomes clearly shorter. This prevents the font from bouncing
+     // between large/small on every keystroke near the boundary.
+     if(shrinking ? ratio<0.66 : ratio>0.82) r.classList.toggle('near-limit',!shrinking);
      requestAnimationFrame(()=>{
        const stillOverflowing=r.scrollWidth>r.clientWidth+4;
        if(stillOverflowing)r.scrollLeft=r.scrollWidth;
