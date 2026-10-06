@@ -1,4 +1,4 @@
-const VERSION='0.4.123';
+const VERSION='0.4.124';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -234,10 +234,27 @@ function digit(v){
  if(v==='.'&&!current)current='0.';else if(current==='0'&&v!=='.')current=v;else current+=v;
  render()
 }
+function parenthesis(ch){
+ resetHow();
+ if(justCalculated){expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null}
+ if(ch==='('){
+   if(current&&current!=='-')return false;
+   if(current==='-'){expression+=current;current='';currentIsPercent=false}
+   if(expression&&/[0-9.)]$/.test(expression))return false;
+   expression+='(';
+ }else{
+   if(current){expression+=current;current='';currentIsPercent=false}
+   const opens=(expression.match(/\(/g)||[]).length,closes=(expression.match(/\)/g)||[]).length;
+   if(opens<=closes||/[+\-×÷(]$/.test(expression))return false;
+   expression+=')';
+ }
+ render();
+ return true;
+}
 function operator(op){
  resetHow();
  if(justCalculated){expression=ratToDecimal(lastResult,18);current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null}
- if(!current&&!expression){if(op==='-'){current='-';render()}return;}
+ if(!current&&!expression){if(op==='-'){current='-';render()}return;}if(!current&&/\($/.test(expression))return;
  if(current){expression+=current;current='';currentIsPercent=false}
  if(/[+\-×÷]$/.test(expression))expression=expression.slice(0,-1)+op;else expression+=op;
  render()
@@ -788,6 +805,7 @@ window.addEventListener('keydown',e=>{
  if(e.key==='Backspace'||e.code==='Backspace'){e.preventDefault();if(mode==='calc')backspace();else toolKeyInput('backspace');return;}
  if(e.key==='%'&&mode==='units'){e.preventDefault();toolKeyInput('%');return}
  if(e.key===','||e.key==='.'||e.key==='Decimal'){e.preventDefault();if(mode==='calc')digit('.');else if(document.activeElement?.matches('#toolPanel input')){const input=document.activeElement;const pos=input.selectionStart??input.value.length;input.setRangeText(',',pos,pos,'end');input.dispatchEvent(new Event('input',{bubbles:true}))}else toolKeyInput('.');return}
+ if(mode==='calc'&&(e.key==='('||e.key===')')){e.preventDefault();parenthesis(e.key);return}
  if(mode==='units'&&document.activeElement?.matches('#unitValueFrom,#unitValueTo')){
    if(e.key==='Escape'){e.preventDefault();document.activeElement.value='';document.activeElement.dispatchEvent(new Event('input',{bubbles:true}));return}
    return;
