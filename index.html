@@ -21,7 +21,7 @@
 </head>
 <body>
 <main class="app-shell">
-<header class="topbar"><h1>Ultimate Calculator <span id="version" class="version">v0.3.7</span></h1><div class="top-actions"><button id="langButton" class="language-button" type="button">ΕΛ</button><button id="themeButton" class="icon-button" type="button" aria-label="Toggle theme">☾</button></div></header>
+<header class="topbar"><h1>Ultimate Calculator</h1><div class="top-actions"><button id="langButton" class="language-button" type="button">ΕΛ</button><button id="themeButton" class="icon-button" type="button" aria-label="Toggle theme">☾</button></div></header>
 <section id="calculatorCard" class="calculator-card">
 <div class="calculator-toolbar"><button id="historyButton" class="toolbar-button history-top" type="button"><span class="toolbar-icon">◷</span><span id="historyButtonText">Ιστορικό</span></button><div class="mode-control"><button id="modeButton" class="toolbar-button mode-top" type="button" aria-haspopup="menu" aria-expanded="false"><span id="modeIcon" class="toolbar-icon">▦</span><span id="modeLabel">Υπολογισμός</span><span class="mode-chevron" aria-hidden="true">⌄</span></button><div id="modeMenu" class="mode-menu hidden" role="menu"></div></div></div>
 <div id="calculatorDisplay" class="display-wrap"><div class="expression-row"><div id="expression" class="expression" aria-live="polite"></div><button id="howButton" class="how-button hidden" type="button" aria-label="How was this calculated?">?</button></div><div id="result" class="result" aria-live="polite"></div></div>
@@ -71,11 +71,7 @@
     i=1;while(i<working.length-1){const a=working[i-1],op=working[i],b=working[i+1],v=calcPair(a,op,b);steps.push({title:lang==='el'?'Έπειτα':'Then',text:`${a} ${prettyOp(op)} ${b} = ${fmtLocal(v)}`});working.splice(i-1,3,String(v));}
     return steps.length?{formula:pretty(input),steps,result:fmtLocal(result)}:null;
   }
-  document.querySelector('#howButton')?.addEventListener('click',()=>{
-    const data=explainExpression(lastExpression,lastResult); if(!data)return;
-    document.querySelector('#howTitle').textContent=lang==='el'?'Πώς υπολογίστηκε':'How was this calculated?';
-    document.querySelector('#howContent').innerHTML=`<div class="how-step"><div class="how-formula">${esc(data.formula)}</div>${data.steps.map((s,i)=>`<div class="how-line"><span>${i+1}</span><div><strong>${esc(s.title)}</strong><br>${esc(s.text)}</div></div>`).join('')}<div class="how-result">= ${esc(data.result)}</div><div class="how-note">${lang==='el'?'Οι πολλαπλασιασμοί και οι διαιρέσεις υπολογίζονται πριν από τις προσθέσεις και τις αφαιρέσεις.':'Multiplication and division are evaluated before addition and subtraction.'}</div></div>`;
-  },false);
+
 })();
 </script>
 </body>
