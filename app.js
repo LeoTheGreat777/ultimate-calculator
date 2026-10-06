@@ -255,7 +255,7 @@ function toolKeyInput(key){
  let value=input.value;
  if(key==='clear')value='';
  else if(key==='backspace')value=value.slice(0,-1);
- else if(key==='.')value.includes('.')?value:value+'.';
+ else if(key==='.'||key===',')value.includes('.')?value:value+'.';
  else if(key==='-')value=value.startsWith('-')?value.slice(1):'-'+value;
  else if(/^\d$/.test(key))value+=key;
  else return false;
@@ -279,6 +279,11 @@ $('#keypad').addEventListener('click',e=>{
  if(a==='clear')clearButtonAction();else if(a==='backspace')backspace();else if(a==='equals')equals();else if(v==='%')percent();else if(/[+\-*/]/.test(v||''))operator(v==='*'?'×':v==='/'?'÷':v);else if(v)digit(v)
 });
 $('#toolPanel').addEventListener('focusin',e=>{if(e.target.matches('input'))toolActiveInput=e.target});
+$('#toolPanel').addEventListener('input',e=>{
+ if(!e.target.matches('input'))return;
+ const input=e.target;
+ if(input.value.includes(',')){const pos=input.selectionStart;input.value=input.value.replace(/,/g,'.');if(typeof pos==='number')input.setSelectionRange(Math.min(pos,input.value.length),Math.min(pos,input.value.length))}
+});
 $('#howButton').addEventListener('click',showHow);$('#closeHow').addEventListener('click',closeHow);$('#howModal').addEventListener('click',e=>{if(e.target.id==='howModal')closeHow()});
 $('#historyButton').addEventListener('click',openHistory);$('#historyBackdrop').addEventListener('click',closeHistory);$('#historyList').addEventListener('click',historyClick);$('#copyButton').addEventListener('click',copyResult);
 $('#langButton').addEventListener('click',()=>{lang=lang==='el'?'en':'el';localStorage.setItem('uc-lang',lang);applyLanguage()});
@@ -289,13 +294,10 @@ $('#clearHistory').addEventListener('click',clearHistoryConfirm);$('#historyConf
 window.addEventListener('keydown',e=>{
  if(e.ctrlKey||e.metaKey||e.altKey)return;
  if(e.key==='Backspace'||e.code==='Backspace'){e.preventDefault();if(mode==='calc')backspace();else toolKeyInput('backspace');return;}
- if(e.key===','){e.preventDefault();if(mode==='calc')digit('.');else toolKeyInput('.');return}
- if(mode!=='calc'&&/^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement?.tagName)){
-   if(/^[0-9.]$/.test(e.key)||e.key==='-'||e.key==='Backspace'||e.key==='Escape'||e.key==='Enter'||e.key==='='){
-     if(e.key==='Enter'||e.key==='='){e.preventDefault();runActiveTool();return}
-     if(e.key==='Escape'){e.preventDefault();toolKeyInput('clear');return}
-     e.preventDefault();toolKeyInput(e.key);return
-   }
+ if(e.key===','){e.preventDefault();if(mode==='calc')digit('.');else if(document.activeElement?.matches('#toolPanel input')){const input=document.activeElement;if(!input.value.includes('.')){const pos=input.selectionStart??input.value.length;input.setRangeText('.',pos,pos,'end')}}else toolKeyInput('.');return}
+ if(mode!=='calc'&&document.activeElement?.matches('#toolPanel input')){
+   if(e.key==='Enter'||e.key==='='){e.preventDefault();runActiveTool();return}
+   if(e.key==='Escape'){e.preventDefault();document.activeElement.value='';return}
    return;
  }
  if(mode!=='calc')return;
