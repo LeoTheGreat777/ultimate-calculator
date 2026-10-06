@@ -1,5 +1,5 @@
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
-const VERSION='0.4.15';
+const VERSION='0.4.16';
 let lang=localStorage.getItem('uc-lang')==='en'?'en':'el';
 let theme=localStorage.getItem('uc-theme')==='light'?'light':localStorage.getItem('uc-theme')==='dark'?'dark':'auto';
 let mode='calc',expression='',current='',currentIsPercent=false,justCalculated=false,lastExpression='',lastResult=null,howData=null,lastOperation=null,historyClearConfirm=false,toolResult=null,toolActiveInput=null,resultCompact=false;
@@ -26,7 +26,17 @@ function formatRat(a,max=6){
 }
 const fmt=n=>n&&typeof n==='object'&&'n'in n?formatRat(n,6):Number.isFinite(Number(n))?new Intl.NumberFormat(lang==='el'?'el-GR':'en-US',{maximumFractionDigits:6}).format(Number(n)):'Error';
 const pretty=s=>String(s).replace(/\*/g,'×').replace(/\//g,'÷');
-const formatInputDisplay=s=>pretty(String(s));
+function formatGroupedNumber(raw){
+ const s=String(raw);
+ const sign=s.startsWith('-')?'-':'';
+ const body=sign?s.slice(1):s;
+ const [whole,frac]=body.split('.');
+ const grouped=whole.replace(/\\B(?=(\\d{3})+(?!\\d))/g,lang==='el'?'.':',');
+ return sign+grouped+(frac!==undefined?'.'+frac:'');
+}
+function formatInputDisplay(s){
+ return pretty(String(s)).replace(/\\d+(?:\\.\\d*)?/g,m=>formatGroupedNumber(m));
+}
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 function tokenize(input){
@@ -174,7 +184,7 @@ const units={length:{mm:1,cm:.01,m:1,km:1000,in:.0254,ft:.3048,yd:.9144,mi:1609.
 const FIELD_EXAMPLES={fuelD:'250',fuelC:'7.2',fuelP:'1.85',energyP:'100',energyH:'8',energyD:'30',energyR:'0.20',amount:'100',vatRate:'24%',value:'10'};
 const TOOL_DEFAULTS={fuelD:250,fuelC:7.2,fuelP:1.85,energyP:100,energyH:8,energyD:30,energyR:0.20,amount:100,vatRate:24,value:10};
 const toolNumber=id=>{const raw=($(`#${id}`)?.value??'').trim().replace(',','.');return raw===''?Number(TOOL_DEFAULTS[id]):Number(raw)};
-const field=(id,label)=>`<label class="tool-field"><span>${esc(label)}</span><input id="${id}" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="${FIELD_EXAMPLES[id]||''}"></label>`;
+const field=(id,label)=>`<label class="tool-field"><span>${esc(label)}</span><input id="${id}" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="${FIELD_EXAMPLES[id]||''}" data-tool-input="true"></label>`;
 function setToolResult(main,detail='',how=null){toolResult={main,detail,how};howData=how;renderToolDisplay()}
 function populateUnits(){const cat=$('#unitCategory');if(!cat)return;const keys=Object.keys(units[cat.value]);$('#unitFrom').innerHTML=keys.map(x=>`<option value="${x}">${x}</option>`).join('');$('#unitTo').innerHTML=keys.map(x=>`<option value="${x}">${x}</option>`).join('')}
 function bindTools(){
@@ -231,6 +241,8 @@ function renderTool(){
 
  $('#toolPanel').innerHTML=html;
  toolActiveInput=null;
+ const mobileToolInputs=matchMedia('(hover:none) and (pointer:coarse)').matches;
+ $('#toolPanel input[data-tool-input]').forEach(input=>{input.readOnly=mobileToolInputs});
  if(mode==='units')populateUnits();
  bindTools();
  renderToolDisplay();
