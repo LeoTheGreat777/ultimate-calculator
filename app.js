@@ -1,4 +1,4 @@
-const VERSION='0.4.89';
+const VERSION='0.4.90';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -482,7 +482,7 @@ function renderToolKeypad(){
    '<button class="tool-key" data-value="7" type="button">7</button><button class="tool-key" data-value="8" type="button">8</button><button class="tool-key" data-value="9" type="button">9</button>'+
    '<button class="tool-key" data-value="4" type="button">4</button><button class="tool-key" data-value="5" type="button">5</button><button class="tool-key" data-value="6" type="button">6</button>'+
    '<button class="tool-key" data-value="1" type="button">1</button><button class="tool-key" data-value="2" type="button">2</button><button class="tool-key" data-value="3" type="button">3</button>'+
-   '<button class="tool-key tool-key-wide" data-value="0" type="button">0</button><button class="tool-key" data-value="," type="button">,</button>';
+   '<button class="tool-key tool-key-wide" data-value="0" type="button">0</button><button class="tool-key" data-value="," type="button">,</button><button class="tool-key" data-value="%" type="button">%</button>';
 }
 function restoreCalculatorDisplay(){
  const d=$('#calculatorDisplay');
@@ -632,6 +632,14 @@ function copyResult(){
  navigator.clipboard.writeText(String(value)).then(()=>{const b=$('#copyButton');b.textContent=t('copied');setTimeout(()=>b.textContent=t('copy'),900)}).catch(()=>{})
 }
 function clearToolFields(){
+ if(mode==='units'){
+   unitExpressions={from:'0',to:'0'};
+   unitActiveInput='from';
+   unitSource='from';
+   unitReplaceOnNextKey=true;
+   updateUnitsDisplay();
+   return;
+ }
  if(!toolState[mode])return;
  const inputs=toolState[mode].inputs||{};
  Object.keys(inputs).forEach(key=>inputs[key]='');
@@ -652,6 +660,9 @@ function toolKeyInput(key){
      if(key==='.'||key===','){
        const tail=value.split(/[+*/-]/).pop();
        if(!tail.includes('.'))value+=value&&/[+*/-]$/.test(value)?'0.':value?'.':'0.';
+     }else if(key==='%'){
+       if(!value||/[+*/-]$/.test(value)||value.endsWith('%'))return false;
+       value+='%';
      }else if(key==='-'){
        if(value==='')value='-';
        else if(/[+*/-]$/.test(value)){
@@ -693,7 +704,7 @@ $('#keypad').addEventListener('click',e=>{
  if(mode!=='calc'&&a==='clear-all'){clearToolFields();return;}
  if(mode!=='calc'){
    if(mode==='units'){
-     if(a==='clear'||a==='backspace'||v==='.'||/^\d$/.test(v||'')||['+','-','*','/'].includes(v||'')){toolKeyInput(a==='clear'?'clear':a==='backspace'?'backspace':v==='/'?'/':v);return}
+     if(a==='clear'||a==='backspace'||v==='.'||v==='%'||/^\d$/.test(v||'')||['+','-','*','/'].includes(v||'')){toolKeyInput(a==='clear'?'clear':a==='backspace'?'backspace':v==='/'?'/':v);return}
      if(a==='equals')window._runUnits?.();
      return;
    }
@@ -748,6 +759,7 @@ $('#clearHistory').addEventListener('click',clearHistoryConfirm);$('#historyConf
 window.addEventListener('keydown',e=>{
  if(e.ctrlKey||e.metaKey||e.altKey)return;
  if(e.key==='Backspace'||e.code==='Backspace'){e.preventDefault();if(mode==='calc')backspace();else toolKeyInput('backspace');return;}
+ if(e.key==='%'&&mode==='units'){e.preventDefault();toolKeyInput('%');return}
  if(e.key===','||e.key==='.'||e.key==='Decimal'){e.preventDefault();if(mode==='calc')digit('.');else if(document.activeElement?.matches('#toolPanel input')){const input=document.activeElement;const pos=input.selectionStart??input.value.length;input.setRangeText(',',pos,pos,'end');input.dispatchEvent(new Event('input',{bubbles:true}))}else toolKeyInput('.');return}
  if(mode==='units'&&document.activeElement?.matches('#unitValueFrom,#unitValueTo')){
    if(e.key==='Escape'){e.preventDefault();document.activeElement.value='';document.activeElement.dispatchEvent(new Event('input',{bubbles:true}));return}
