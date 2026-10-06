@@ -18,11 +18,11 @@ function ratFromString(s){s=String(s).replace(',','.');let sign=1n;if(s[0]==='-'
 function ratPercent(a){return rat(a.n,a.d*100n)}
 function ratToDecimal(a,max=18){let sign=a.n<0n?'-':'';let n=a.n<0n?-a.n:a.n,d=a.d;const whole=n/d;let rem=n%d;if(rem===0n)return sign+whole.toString();let out='';for(let i=0;i<max&&rem;i++){rem*=10n;out+=String(rem/d);rem%=d}out=out.replace(/0+$/,'');return sign+whole.toString()+'.'+out}
 function ratToNumber(a){const s=ratToDecimal(a,18);return Number(s)}
-function formatRat(a){
- const s=ratToDecimal(a,18),num=Number(s);
- if(Number.isFinite(num)&&Math.abs(num)<1e15)return new Intl.NumberFormat(lang==='el'?'el-GR':'en-US',{maximumFractionDigits:18}).format(num);
+function formatRat(a,max=6){
+ const s=ratToDecimal(a,max),num=Number(s);
+ if(Number.isFinite(num)&&Math.abs(num)<1e15)return new Intl.NumberFormat(lang==='el'?'el-GR':'en-US',{maximumFractionDigits:max}).format(num);
  const raw=s; if(raw.length<=24)return raw;
- const neg=raw[0]==='-';const body=neg?raw.slice(1):raw;const [w,f='']=body.split('.');const exp=(w==='0'?-(f.search(/[1-9]/)+1):w.length-1);if(exp>=15||exp<=-6){const digits=(w==='0'?f.replace(/^0+/,''):w+f).replace(/0+$/,'');const mant=digits.length>1?digits[0]+'.'+digits.slice(1,16):digits;return (neg?'-':'')+mant+' × 10'+(exp>=0?'^'+exp:'^'+exp)}return raw;
+ const neg=raw[0]==='-';const body=neg?raw.slice(1):raw;const [w,f='']=body.split('.');const exp=(w==='0'?-(f.search(/[1-9]/)+1):w.length-1);if(exp>=15||exp<=-6){const digits=(w==='0'?f.replace(/^0+/,''):w+f).replace(/0+$/,'');const mant=digits.length>1?digits[0]+'.'+digits.slice(1,Math.min(16,digits.length)):digits;return (neg?'-':'')+mant+' × 10'+(exp>=0?'^'+exp:'^'+exp)}return raw;
 }
 const fmt=n=>n&&typeof n==='object'&&'n'in n?formatRat(n,6):Number.isFinite(Number(n))?new Intl.NumberFormat(lang==='el'?'el-GR':'en-US',{maximumFractionDigits:6}).format(Number(n)):'Error';
 const pretty=s=>String(s).replace(/\*/g,'×').replace(/\//g,'÷');
