@@ -258,7 +258,7 @@ function normalizeUnitExpression(expr){
 }
 function unitEvaluate(expr){
  const raw=normalizeUnitExpression(expr);
- if(!raw||/[-+*/.]$/.test(raw)||!/^[0-9+*/().\\s-]+$/.test(raw))return null;
+ if(!raw||/[-+*/.]$/.test(raw)||!/^[0-9+*/().\s-]+$/.test(raw))return null;
  try{return evalExpr(raw)}catch{return null}
 }
 function unitFactor(value){
