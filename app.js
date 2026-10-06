@@ -684,7 +684,11 @@ function toolKeyInput(key){
          if(value.endsWith('-'))value=value.slice(0,-1);
          else value=value.slice(0,-1)+'-';
        }else value+='-';
-     }else if(/^[0-9]$/.test(key)){\n       if(value==='0')value=key;\n       else if(/(?:^|[+*/-])0$/.test(value))value=value.slice(0,-1)+key;\n       else value+=key;\n     }
+     }else if(/^[0-9]$/.test(key)){
+       if(value==='0')value=key;
+       else if(/(?:^|[+*/-])0$/.test(value))value=value.slice(0,-1)+key;
+       else value+=key;
+     }
      else if(['+','*','/'].includes(key)){
        if(!value)return false;
        if(/[+*/-]$/.test(value))value=value.slice(0,-1)+key;
