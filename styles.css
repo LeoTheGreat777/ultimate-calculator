@@ -32,4 +32,4 @@
  .unit-unit{min-width:70px;font-size:15px}
 }
 
-@media(max-width:480px){.calculator-card.mobile-tool #keypad{display:none!important}}
+.calculator-card.mobile-tool #keypad{display:none!important}
