@@ -1,3 +1,4 @@
+const VERSION='0.4.46';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function readLanguage(){
@@ -210,16 +211,25 @@ function renderUnitsDisplay(){
  $('#unitValueFrom,#unitValueTo').forEach(input=>input.addEventListener('focus',()=>{unitActiveInput=input.dataset.unitInput;unitReplaceOnNextKey=true;if(!input.readOnly)requestAnimationFrame(()=>input.select())}));
  $('#unitValueFrom,#unitValueTo').forEach(input=>input.addEventListener('click',()=>{unitActiveInput=input.dataset.unitInput;unitReplaceOnNextKey=true}));
  $('#unitValueFrom,#unitValueTo').forEach(input=>input.addEventListener('input',()=>{unitActiveInput=input.dataset.unitInput;unitSource=unitActiveInput;unitReplaceOnNextKey=false;unitExpressions[unitActiveInput]=input.value;convertUnitExpression(unitActiveInput)}));
- $('#unitFrom,#unitTo').forEach(select=>select.addEventListener('change',()=>{convertUnitExpression(unitSource)}));
- cat.addEventListener('change',()=>{
-   window._unitCategory=cat.value;
+ const handleUnitCategoryChange=()=>{
+   window._unitCategory=cat.value||'length';
    unitExpressions={from:'',to:''};
    unitActiveInput='from';
    unitSource='from';
    unitReplaceOnNextKey=false;
    populateUnits();
    updateUnitsDisplay();
- });
+ };
+ const handleUnitSelectionChange=()=>{
+   if(!unitExpressions[unitSource]?.trim()){
+     unitSource=unitExpressions.from?.trim()?'from':unitExpressions.to?.trim()?'to':unitSource;
+   }
+   populateUnits();
+   convertUnitExpression(unitSource);
+ };
+ $('#unitFrom,#unitTo').forEach(select=>select.addEventListener('change',handleUnitSelectionChange));
+ cat.addEventListener('change',handleUnitCategoryChange);
+ cat.addEventListener('input',handleUnitCategoryChange);
  $('#unitSwap').addEventListener('click',()=>{
    const a=$('#unitFrom'),b=$('#unitTo');
    [a.value,b.value]=[b.value,a.value];
