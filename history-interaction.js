@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = '0.3.6';
+  const VERSION = '0.3.7';
   document.querySelector('#version')?.replaceChildren(document.createTextNode(`v${VERSION}`));
   document.querySelector('#footerVersion')?.replaceChildren(document.createTextNode(`v${VERSION}`));
 
