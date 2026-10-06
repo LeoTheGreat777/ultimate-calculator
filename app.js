@@ -1,24 +1,12 @@
-const VERSION='0.4.75';
+const VERSION='0.4.73';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function saveReloadState(){
  try{
-  const state={
-   mode,
-   expression,
-   current,
-   currentIsPercent,
-   justCalculated,
-   lastExpression,
-   lastResult:lastResult&&typeof lastResult==='object'&&'n'in lastResult&&'d'in lastResult?{n:String(lastResult.n),d:String(lastResult.d)}:lastResult===null?null:String(lastResult),
-   lastOperation:lastOperation?{op:String(lastOperation.op),rhs:String(lastOperation.rhs)}:null,
-   howData:howData?{formula:String(howData.formula||''),steps:Array.isArray(howData.steps)?howData.steps.map(step=>typeof step==='object'?{title:String(step.title||''),text:String(step.text||'')}:String(step)),result:String(howData.result||'')}:null
-  };
+  const state={mode,expression,current,currentIsPercent,justCalculated,lastExpression,lastResult:lastResult&&typeof lastResult==='object'&&'n'in lastResult&&'d'in lastResult?{n:lastResult.n.toString(),d:lastResult.d.toString()}:lastResult,lastOperation,howData,toolResult,toolState,unitExpressions,unitActiveInput,unitSource,unitReplaceOnNextKey,vatAction};
   sessionStorage.setItem('uc-reload-state',JSON.stringify(state));
- }catch(e){
-  try{sessionStorage.removeItem('uc-reload-state')}catch{}
- }
+ }catch{}
 }
 function restoreReloadState(){
  try{
@@ -35,12 +23,17 @@ function restoreReloadState(){
   if(state.lastResult&&typeof state.lastResult==='object'&&state.lastResult.n!==undefined&&state.lastResult.d!==undefined)lastResult=rat(BigInt(state.lastResult.n),BigInt(state.lastResult.d));
   else if(state.lastResult!==null&&state.lastResult!==undefined&&state.lastResult!=='')lastResult=ratFromString(String(state.lastResult));
   else lastResult=null;
-  lastOperation=state.lastOperation&&state.lastOperation.op!==undefined?{op:String(state.lastOperation.op),rhs:String(state.lastOperation.rhs??'')}:null;
+  lastOperation=state.lastOperation||null;
   howData=state.howData||null;
   if(mode==='calc'&&lastResult!==null&&lastExpression&&!howData)howData=explanationForExpression(lastExpression,lastResult)||null;
- }catch{
-  try{sessionStorage.removeItem('uc-reload-state')}catch{}
- }
+  toolResult=state.toolResult||null;
+  if(state.toolState)toolState=state.toolState;
+  if(state.unitExpressions)unitExpressions=state.unitExpressions;
+  if(state.unitActiveInput)unitActiveInput=state.unitActiveInput;
+  if(state.unitSource)unitSource=state.unitSource;
+  unitReplaceOnNextKey=!!state.unitReplaceOnNextKey;
+  if(state.vatAction)vatAction=state.vatAction;
+ }catch{}
 }
 function readLanguage(){
  let stored='';
