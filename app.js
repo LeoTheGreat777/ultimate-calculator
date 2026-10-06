@@ -1,5 +1,5 @@
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
-const VERSION='0.4.14';
+const VERSION='0.4.15';
 let lang=localStorage.getItem('uc-lang')==='en'?'en':'el';
 let theme=localStorage.getItem('uc-theme')==='light'?'light':localStorage.getItem('uc-theme')==='dark'?'dark':'auto';
 let mode='calc',expression='',current='',currentIsPercent=false,justCalculated=false,lastExpression='',lastResult=null,howData=null,lastOperation=null,historyClearConfirm=false,toolResult=null,toolActiveInput=null,resultCompact=false;
@@ -70,6 +70,24 @@ function toggleTheme(){
  localStorage.setItem('uc-theme',theme);
  applyTheme();
 }
+function fitDisplayText(el,minSize){
+ if(!el)return;
+ el.classList.remove('near-limit');
+ el.style.fontSize='';
+ el.style.letterSpacing='';
+ el.scrollLeft=0;
+ requestAnimationFrame(()=>{
+   if(!el.isConnected)return;
+   const width=el.clientWidth;
+   const contentWidth=el.scrollWidth;
+   if(!width||contentWidth<=width+2)return;
+   const base=parseFloat(getComputedStyle(el).fontSize);
+   const target=Math.max(minSize,base*(width/contentWidth)*0.97);
+   el.style.fontSize=target+'px';
+   el.style.letterSpacing='-0.04em';
+   el.scrollLeft=0;
+ });
+}
 function render(){
  if(mode!=='calc')return;
  const raw=expression+current;
@@ -78,33 +96,24 @@ function render(){
  $('#calculatorDisplay').classList.toggle('calculated',justCalculated);
  $('#expression').textContent=justCalculated?pretty(lastExpression):'';
  const exprEl=$('#expression');
- exprEl.classList.remove('near-limit');
  $('#result').textContent=display;
- $('#result').classList.remove('long-value');
- if(justCalculated||!raw)resultCompact=false;
+ $('#result').classList.remove('long-value','near-limit');
  const hasEntry=Boolean(raw);
  $('#clearButton').textContent=justCalculated||!hasEntry?'AC':'C';
  $('#howButton').classList.toggle('hidden',!howData);
+ resultCompact=false;
  requestAnimationFrame(()=>{
-   if(exprEl && !justCalculated){
-     const overflowing=exprEl.scrollWidth>exprEl.clientWidth+4;
-     exprEl.classList.toggle('near-limit',overflowing);
-     if(overflowing)exprEl.scrollLeft=exprEl.scrollWidth;
+   if(exprEl){
+     if(justCalculated){
+       exprEl.style.fontSize='';
+       exprEl.style.letterSpacing='';
+       exprEl.scrollLeft=0;
+     }else{
+       fitDisplayText(exprEl,14);
+     }
    }
    const r=$('#result');
-   if(r){
-     const ratio=r.scrollWidth/Math.max(1,r.clientWidth);
-     // Use the actual rendered width, not character count. This keeps a
-     // normal calculated result exactly the same size as the idle 0, while
-     // still shrinking only when the result genuinely needs more room.
-     if(!resultCompact && ratio>0.94)resultCompact=true;
-     else if(resultCompact && ratio<0.68)resultCompact=false;
-     r.classList.toggle('near-limit',resultCompact);
-     requestAnimationFrame(()=>{
-       const stillOverflowing=r.scrollWidth>r.clientWidth+4;
-       if(stillOverflowing)r.scrollLeft=r.scrollWidth;
-     });
-   }
+   if(r)fitDisplayText(r,32);
  });
 }
 function renderToolDisplay(){
