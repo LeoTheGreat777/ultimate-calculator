@@ -7,6 +7,15 @@
 <meta name="description" content="Ultimate Calculator">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
+<script>
+(() => {
+  if (!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(reg => reg.unregister());
+    if (regs.length) caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))));
+  }).catch(() => {});
+})();
+</script>
 <link rel="stylesheet" href="styles.css?v=0.3.7">
 <title>Ultimate Calculator</title>
 </head>
