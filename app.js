@@ -268,7 +268,7 @@ function renderToolKeypad(){
    :'<button class="tool-key tool-action-key tool-key-full" data-tool-action="calculate" type="button">'+(mode==='fuel'?labels.fuel:mode==='energy'?labels.energy:labels.units)+'</button>';
  $('#keypad').className='tool-keypad';
  $('#keypad').innerHTML=calcButton+
-   '<button class="tool-key tool-utility" data-action="backspace" type="button" aria-label="Delete">⌫</button><button class="tool-key tool-utility" data-action="clear" type="button">C</button><button class="tool-key" data-value="-" type="button">−</button>'+
+   '<button class="tool-key tool-utility" data-action="backspace" type="button" aria-label="Delete">⌫</button><button class="tool-key tool-utility tool-key-wide-utility" data-action="clear" type="button">C</button>'+
    '<button class="tool-key" data-value="7" type="button">7</button><button class="tool-key" data-value="8" type="button">8</button><button class="tool-key" data-value="9" type="button">9</button>'+
    '<button class="tool-key" data-value="4" type="button">4</button><button class="tool-key" data-value="5" type="button">5</button><button class="tool-key" data-value="6" type="button">6</button>'+
    '<button class="tool-key" data-value="1" type="button">1</button><button class="tool-key" data-value="2" type="button">2</button><button class="tool-key" data-value="3" type="button">3</button>'+
@@ -285,7 +285,7 @@ function renderTool(){
  if(mode==='fuel')html=`<div class="tool-grid">${field('fuelD',t('fuelD'))}${field('fuelC',t('fuelC'))}${field('fuelP',t('fuelP'))}</div>`;
  if(mode==='energy')html=`<div class="tool-grid">${field('energyP',t('energyP'))}${field('energyH',t('energyH'))}${field('energyD',t('energyD'))}${field('energyR',t('energyR'))}</div>`;
  if(mode==='vat')html=`<div class="tool-grid">${field('amount',t('amount'))}${field('vatRate',t('vatRate'))}</div>`;
- if(mode==='units')html=`<div class="tool-grid">${field('value',t('value'))}<label class="tool-field"><span>${t('category')}</span><select id="unitCategory" class="unit-select"></select></label><label class="tool-field"><span>${t('from')}</span><select id="unitFrom" class="unit-select"></select></label><label class="tool-field"><span>${t('to')}</span><select id="unitTo" class="unit-select"></select></label></div>`;
+ if(mode==='units')html=`<div class="tool-grid">${field('value',t('value'))}<label class="tool-field"><span>${t('category')}</span><select id="unitCategory" class="tool-select"></select></label><label class="tool-field"><span>${t('from')}</span><select id="unitFrom" class="tool-select"></select></label><label class="tool-field"><span>${t('to')}</span><select id="unitTo" class="tool-select"></select></label></div>`;
 
  $('#toolPanel').innerHTML=html;
  renderToolKeypad();
