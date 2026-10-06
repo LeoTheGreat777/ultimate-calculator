@@ -1,34 +1,96 @@
 # Ultimate Calculator
 
-A mobile-first universal calculator for everyday calculations.
+A fast, modern, privacy-friendly all-in-one calculator for everyday calculations. Built as a lightweight client-side web app with a responsive interface that works on desktop and mobile.
 
-## Current MVP
+## Features
 
-- Standard arithmetic with brackets
-- Calculator-style percentages (`20 + 25%`, `80 - 15%`)
-- Local calculation history
-- Copy result and keyboard support
+### Calculator
+- Standard arithmetic with operator precedence and brackets
+- Calculator-style percentages
+- Decimal and negative number support
+- Calculation history
+- Copy results
+- Keyboard support
+- Step-by-step calculation explanations
+- Intermediate results are shown so complex calculations are easy to understand
+
+### Unit Converter
+- Length, weight, volume, speed and temperature conversions
+- Calculator-style arithmetic directly inside unit fields
+- Expressions can be chained just like the main calculator
+- Percentage calculations
+- Automatic conversion while entering an expression
+- Switch conversion direction
+- Keypad-based input designed for a calculator-like experience
+
+### Dedicated Calculators
 - Fuel cost calculator
-- Electricity cost calculator
+- Electricity/energy cost calculator
 - VAT add/remove calculator
-- Unit conversions for length, weight, volume, speed and temperature
-- Dark/light mode
-- Installable PWA with offline support
-- Static Docker image for simple self-hosting
+
+### Interface
+- Responsive desktop and mobile layouts
+- Dark and light themes
+- English and Greek language support
+- Installable PWA
+- Offline-capable static web app
+- Mobile-friendly calculator controls
+- Clean, compact UI with dedicated mode navigation
+- Calculation explanations presented in a readable step-by-step view
+
+## Technology
+
+Ultimate Calculator is intentionally lightweight and does not require a backend for its core functionality.
+
+- HTML
+- CSS
+- Vanilla JavaScript
+- Progressive Web App
+- Docker / Nginx for self-hosting
+
+Calculations are performed locally in the browser. No account or server is required for the core calculator.
 
 ## Run locally
 
-This is a static web app. Any static web server works. For example:
+This is a static web app, so it can be served by any static web server.
+
+### Docker
 
 ```bash
 docker build -t ultimate-calculator .
 docker run --rm -p 8080:80 ultimate-calculator
 ```
 
-Then open `http://localhost:8080`.
+Then open:
+
+```
+http://localhost:8080
+```
+
+You can also serve the project directly with any local static HTTP server.
+
+## Project Direction
+
+The goal is to turn Ultimate Calculator into a single calculation interface for as many everyday calculations as possible, while keeping the core experience fast, simple and independent of AI or a backend.
+
+The project is actively evolving. The interface, calculation modes and conversion system are being refined continuously with a strong focus on making the app feel like a polished native calculator rather than a collection of separate web forms.
 
 ## Roadmap
 
-The long-term goal is to make this a single calculation interface for almost anything people calculate in daily life, without AI or a backend being required for the core experience.
+Planned areas include:
 
-Planned areas include currency conversion, more units, discounts/markup/margins, date/time calculations, loan/interest calculations, reusable formulas, improved history, and richer mobile UX.
+- Currency conversion
+- More unit categories and conversions
+- Discounts, markup and margins
+- Date and time calculations
+- Loan and interest calculations
+- Reusable formulas
+- More advanced calculation history
+- More dedicated calculators
+- Improved mobile UX
+- Additional languages
+- Continued accessibility and interaction improvements
+
+## Self-hosting
+
+The application is designed to be easy to self-host. Because the core application is static, it can run behind Nginx, a simple web server, Docker, or another static hosting platform without requiring a database or application backend.
