@@ -12,7 +12,7 @@ let mode='calc',expression='',current='',currentIsPercent=false,justCalculated=f
 localStorage.removeItem('uc-mode');
 
 const T={
-el:{calc:'Υπολογισμός',fuel:'Καύσιμα',energy:'Ενέργεια',vat:'ΦΠΑ',units:'Μονάδες',how:'Πώς υπολογίστηκε',history:'Ιστορικό',copy:'Αντιγραφή αποτελέσματος',copied:'Αντιγράφηκε',clear:'Διαγραφή όλων',confirm:'Διαγραφή όλου του ιστορικού;',confirmYes:'Διαγραφή',none:'Δεν υπάρχουν υπολογισμοί ακόμη.',hint:'Πληκτρολόγησε μια πράξη για να ξεκινήσεις.',delete:'Διαγραφή',created:'Δημιουργήθηκε από',fuelD:'Απόσταση (km)',fuelC:'Κατανάλωση (L/100 km)',fuelP:'Τιμή καυσίμου / L',fuelGo:'Υπολογισμός κόστους καυσίμου',fuelUsed:'Καύσιμο που χρησιμοποιήθηκε',costKm:'Κόστος ανά km',energyP:'Ισχύς (W)',energyH:'Ώρες / ημέρα',energyD:'Ημέρες',energyR:'Τιμή / kWh',energyGo:'Υπολογισμός κόστους ρεύματος',energyUsed:'Ενέργεια',amount:'Ποσό',vatRate:'ΦΠΑ %',addVat:'Πρόσθεσε ΦΠΑ',removeVat:'Αφαίρεσε ΦΠΑ',vatAmount:'Ποσό ΦΠΑ',value:'Τιμή',category:'Κατηγορία',from:'Από',to:'Σε',convert:'Μετατροπή',length:'Μήκος',mass:'Μάζα',volume:'Όγκος',data:'Δεδομένα',toolReady:'Το αποτέλεσμα θα εμφανιστεί εδώ',toolFuel:'Κόστος καυσίμου',toolEnergy:'Κόστος ρεύματος',toolVat:'Τελικό ποσό',toolUnit:'Αποτέλεσμα',fuelResult:'Καύσιμο που χρησιμοποιήθηκε',energyResult:'Ενέργεια',clearConfirm:'Διαγραφή;',close:'Κλείσιμο'},
+el:{calc:'Αριθμομηχανή',fuel:'Καύσιμα',energy:'Ενέργεια',vat:'ΦΠΑ',units:'Μονάδες',how:'Πώς υπολογίστηκε',history:'Ιστορικό',copy:'Αντιγραφή αποτελέσματος',copied:'Αντιγράφηκε',clear:'Διαγραφή όλων',confirm:'Διαγραφή όλου του ιστορικού;',confirmYes:'Διαγραφή',none:'Δεν υπάρχουν υπολογισμοί ακόμη.',hint:'Πληκτρολόγησε μια πράξη για να ξεκινήσεις.',delete:'Διαγραφή',created:'Δημιουργήθηκε από',fuelD:'Απόσταση (km)',fuelC:'Κατανάλωση (L/100 km)',fuelP:'Τιμή καυσίμου / L',fuelGo:'Υπολογισμός κόστους καυσίμου',fuelUsed:'Καύσιμο που χρησιμοποιήθηκε',costKm:'Κόστος ανά km',energyP:'Ισχύς (W)',energyH:'Ώρες / ημέρα',energyD:'Ημέρες',energyR:'Τιμή / kWh',energyGo:'Υπολογισμός κόστους ρεύματος',energyUsed:'Ενέργεια',amount:'Ποσό',vatRate:'ΦΠΑ %',addVat:'Πρόσθεσε ΦΠΑ',removeVat:'Αφαίρεσε ΦΠΑ',vatAmount:'Ποσό ΦΠΑ',value:'Τιμή',category:'Κατηγορία',from:'Από',to:'Σε',convert:'Μετατροπή',length:'Μήκος',mass:'Μάζα',volume:'Όγκος',data:'Δεδομένα',toolReady:'Το αποτέλεσμα θα εμφανιστεί εδώ',toolFuel:'Κόστος καυσίμου',toolEnergy:'Κόστος ρεύματος',toolVat:'Τελικό ποσό',toolUnit:'Αποτέλεσμα',fuelResult:'Καύσιμο που χρησιμοποιήθηκε',energyResult:'Ενέργεια',clearConfirm:'Διαγραφή;',close:'Κλείσιμο'},
 en:{calc:'Calculator',fuel:'Fuel',energy:'Energy',vat:'VAT',units:'Units',how:'How was this calculated?',history:'History',copy:'Copy result',copied:'Copied',clear:'Clear all',confirm:'Delete all calculation history?',confirmYes:'Delete',none:'No calculations yet.',hint:'Enter a calculation to get started.',delete:'Delete',created:'Created by',fuelD:'Distance (km)',fuelC:'Consumption (L/100 km)',fuelP:'Fuel price / L',fuelGo:'Calculate fuel cost',fuelUsed:'Fuel used',costKm:'Cost per km',energyP:'Power (W)',energyH:'Hours / day',energyD:'Days',energyR:'Price / kWh',energyGo:'Calculate electricity cost',energyUsed:'Energy',amount:'Amount',vatRate:'VAT %',addVat:'Add VAT',removeVat:'Remove VAT',vatAmount:'VAT amount',value:'Value',category:'Category',from:'From',to:'To',convert:'Convert',length:'Length',mass:'Mass',volume:'Volume',data:'Data',toolReady:'The result will appear here',toolFuel:'Fuel cost',toolEnergy:'Electricity cost',toolVat:'Final amount',toolUnit:'Result',fuelResult:'Fuel used',energyResult:'Energy',clearConfirm:'Delete?',close:'Close'}
 };
 const ICONS={calc:'▦',fuel:'⛽',energy:'ϟ',vat:'%',units:'↔'};
@@ -187,13 +187,16 @@ function historyItems(){try{return JSON.parse(localStorage.getItem('uc-history')
 function saveHistory(item){const list=historyItems();const stored={...item,result:item.result&&typeof item.result==='object'&&'n'in item.result?ratToDecimal(item.result,24):String(item.result)};list.unshift({id:Date.now()+Math.random(),...stored});localStorage.setItem('uc-history',JSON.stringify(list.slice(0,100)));renderHistory()}
 function renderHistory(){const list=historyItems();$('#historyList').innerHTML=list.length?list.map(x=>`<div class="history-item"><button class="history-main" data-history="${x.id}" type="button"><div class="history-expression">${esc(pretty(x.expression))}</div><div class="history-result">${esc(fmt(x.result&&typeof x.result==='string'?ratFromString(x.result):x.result))}</div></button><button class="history-delete" data-delete="${x.id}" type="button" aria-label="${esc(t('delete'))}">×</button></div>`).join(''):`<div class="empty">${esc(t('none'))}</div>`}
 
-const units={length:{mm:.001,cm:.01,m:1,km:1000,in:.0254,ft:.3048,yd:.9144,mi:1609.344},mass:{mg:.000001,g:.001,kg:1,oz:.028349523125,lb:.45359237},volume:{ml:.001,l:1,tsp:.00492892159,tbsp:.0147867648,cup:.2365882365,gal:3.785411784},data:{B:1,KB:1024,MB:1048576,GB:1073741824,TB:1099511627776}};
+const units={length:{mm:.001,cm:.01,m:1,km:1000,in:.0254,ft:.3048,yd:.9144,mi:1609.344},mass:{mg:.000001,g:.001,kg:1,oz:.028349523125,lb:.45359237},volume:{ml:.001,l:1,tsp:.00492892159,tbsp:.0147867648,cup:.2365882365,gal:3.785411784},data:{B:1,KB:1024,MB:1048576,GB:1099511627776}};
 const FIELD_EXAMPLES={fuelD:'250',fuelC:'7.2',fuelP:'1.85',energyP:'100',energyH:'8',energyD:'30',energyR:'0.20',amount:'100',vatRate:'24%',value:'10'};
 const TOOL_DEFAULTS={fuelD:250,fuelC:7.2,fuelP:1.85,energyP:100,energyH:8,energyD:30,energyR:0.20,amount:100,vatRate:24,value:10};
+let vatAction='add';
 const unitOptions=(category,selected)=>Object.keys(units[category]||{}).map(x=>'<option value="'+x+'"'+(x===selected?' selected':'')+'>'+x+'</option>').join('');
-const toolNumber=id=>{const raw=($(`#${id}`)?.value??'').trim().replace(',','.');return raw===''?Number(TOOL_DEFAULTS[id]):Number(raw)};
-const field=(id,label)=>`<label class="tool-field"><span>${esc(label)}</span><input id="${id}" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="${FIELD_EXAMPLES[id]||''}" data-tool-input="true"></label>`;
-function setToolResult(main,detail='',how=null){toolResult={main,detail,how};howData=how;renderToolDisplay()}
+const toolNumber=id=>{const raw=($('#'+id)?.value??'').trim().replace(',','.');return raw===''?Number(TOOL_DEFAULTS[id]):Number(raw)};
+const liveToolNumber=id=>{const raw=($('#'+id)?.value??'').trim().replace(',','.');if(raw==='')return null;const n=Number(raw);return Number.isFinite(n)?n:null};
+const field=(id,label)=>'<label class="tool-field"><span>'+esc(label)+'</span><input id="'+id+'" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="'+(FIELD_EXAMPLES[id]||'')+'" data-tool-input="true"></label>';
+function setToolResult(main,detail='',how=null){toolResult={main,detail,how};howData=how;renderToolDisplay();}
+function renderVatToggle(){ $$('#toolPanel [data-vat-mode]').forEach(b=>b.classList.toggle('active',b.dataset.vatMode===vatAction)); }
 function populateUnits(){
  const cat=$('#unitCategory'),from=$('#unitFrom'),to=$('#unitTo');
  if(!cat||!from||!to)return;
@@ -203,69 +206,74 @@ function populateUnits(){
  from.innerHTML=unitOptions(category,keys.includes(oldFrom)?oldFrom:keys[0]);
  to.innerHTML=unitOptions(category,keys.includes(oldTo)?oldTo:(keys[1]||keys[0]));
 }
-function closeUnitMenus(except=null){
- $$('.unit-select-menu').forEach(menu=>{
-   if(menu!==except)menu.classList.add('hidden');
- });
+function closeUnitMenus(except=null){$$('.unit-select-menu').forEach(menu=>{if(menu!==except)menu.classList.add('hidden')})}
+function liveUnitFormat(n){
+ if(!Number.isFinite(n))return '';
+ const abs=Math.abs(n);
+ const max=Math.min(12,abs!==0&&abs<1?Math.max(6,Math.ceil(-Math.log10(abs))+6):6);
+ return new Intl.NumberFormat(lang==='el'?'el-GR':'en-US',{maximumFractionDigits:max,useGrouping:false}).format(n);
 }
 function bindTools(){
  const fuelCalculate=()=>{
-  const d=toolNumber('fuelD'),c=toolNumber('fuelC'),p=toolNumber('fuelP');if([d,c,p].some(x=>!Number.isFinite(x))||d===0)return;
+  const d=liveToolNumber('fuelD'),c=liveToolNumber('fuelC'),p=liveToolNumber('fuelP');
+  if(d===null||c===null||p===null||d===0){setToolResult('','',null);return}
   const used=d*c/100,cost=used*p;
-  const how={formula:`${fmt(d)} km × ${fmt(c)} L/100 km × ${fmt(p)} €/L`,steps:[
-   {title:lang==='el'?'Υπολόγισε τα λίτρα':'Calculate fuel used',text:`${fmt(d)} × ${fmt(c)} ÷ 100 = ${fmt(used)} L`},
-   {title:lang==='el'?'Υπολόγισε το κόστος':'Calculate cost',text:`${fmt(used)} L × ${fmt(p)} €/L = ${fmt(cost)} €`},
-   {title:lang==='el'?'Κόστος ανά km':'Cost per km',text:`${fmt(cost)} € ÷ ${fmt(d)} km = ${fmt(cost/d)} €/km`}],result:`${fmt(cost)} €`};
-  setToolResult(`${fmt(cost)} €`,`${t('fuelResult')}: ${fmt(used)} L · ${t('costKm')}: ${fmt(cost/d)} €/km`,how)
+  const how={formula:fmt(d)+' km × '+fmt(c)+' L/100 km × '+fmt(p)+' €/L',steps:[
+   {title:lang==='el'?'Υπολόγισε τα λίτρα':'Calculate fuel used',text:fmt(d)+' × '+fmt(c)+' ÷ 100 = '+fmt(used)+' L'},
+   {title:lang==='el'?'Υπολόγισε το κόστος':'Calculate cost',text:fmt(used)+' L × '+fmt(p)+' €/L = '+fmt(cost)+' €'},
+   {title:lang==='el'?'Κόστος ανά km':'Cost per km',text:fmt(cost)+' € ÷ '+fmt(d)+' km = '+fmt(cost/d)+' €/km'}],result:fmt(cost)+' €'};
+  setToolResult(fmt(cost)+' €',t('fuelResult')+': '+fmt(used)+' L · '+t('costKm')+': '+fmt(cost/d)+' €/km',how)
  };
  window._runFuel=fuelCalculate;
  const energyCalculate=()=>{
-  const p=toolNumber('energyP'),hh=toolNumber('energyH'),d=toolNumber('energyD'),r=toolNumber('energyR');if([p,hh,d,r].some(x=>!Number.isFinite(x)))return;
+  const p=liveToolNumber('energyP'),hh=liveToolNumber('energyH'),d=liveToolNumber('energyD'),r=liveToolNumber('energyR');
+  if([p,hh,d,r].some(x=>x===null)){setToolResult('','',null);return}
   const kwh=p/1000*hh*d,cost=kwh*r;
-  const how={formula:`${fmt(p)} W ÷ 1000 × ${fmt(hh)} h/day × ${fmt(d)} days`,steps:[
-   {title:lang==='el'?'Μετέτρεψε W σε kW':'Convert W to kW',text:`${fmt(p)} W ÷ 1000 = ${fmt(p/1000)} kW`},
-   {title:lang==='el'?'Υπολόγισε την ενέργεια':'Calculate energy',text:`${fmt(p/1000)} kW × ${fmt(hh)} × ${fmt(d)} = ${fmt(kwh)} kWh`},
-   {title:lang==='el'?'Υπολόγισε το κόστος':'Calculate cost',text:`${fmt(kwh)} kWh × ${fmt(r)} €/kWh = ${fmt(cost)} €`}],result:`${fmt(cost)} €`};
-  setToolResult(`${fmt(cost)} €`,`${t('energyResult')}: ${fmt(kwh)} kWh`,how)
+  const how={formula:fmt(p)+' W ÷ 1000 × '+fmt(hh)+' h/day × '+fmt(d)+' days',steps:[
+   {title:lang==='el'?'Μετέτρεψε W σε kW':'Convert W to kW',text:fmt(p)+' W ÷ 1000 = '+fmt(p/1000)+' kW'},
+   {title:lang==='el'?'Υπολόγισε την ενέργεια':'Calculate energy',text:fmt(p/1000)+' kW × '+fmt(hh)+' × '+fmt(d)+' = '+fmt(kwh)+' kWh'},
+   {title:lang==='el'?'Υπολόγισε το κόστος':'Calculate cost',text:fmt(kwh)+' kWh × '+fmt(r)+' €/kWh = '+fmt(cost)+' €'}],result:fmt(cost)+' €'};
+  setToolResult(fmt(cost)+' €',t('energyResult')+': '+fmt(kwh)+' kWh',how)
  };
  window._runEnergy=energyCalculate;
  const vat=add=>{
-  const aa=toolNumber('amount'),r=toolNumber('vatRate');if(!Number.isFinite(aa)||!Number.isFinite(r))return;
+  const aa=liveToolNumber('amount'),r=liveToolNumber('vatRate');
+  if(aa===null||r===null){setToolResult('','',null);return}
   const total=add?aa*(1+r/100):aa/(1+r/100),tax=add?total-aa:aa-total;
-  const how={formula:add?`${fmt(aa)} € + ${fmt(r)}% VAT`:`${fmt(aa)} € with ${fmt(r)}% VAT`,steps:add?[
-   {title:lang==='el'?'Υπολόγισε τον ΦΠΑ':'Calculate VAT',text:`${fmt(aa)} × ${fmt(r)} ÷ 100 = ${fmt(tax)} €`},
-   {title:lang==='el'?'Πρόσθεσε τον ΦΠΑ':'Add VAT',text:`${fmt(aa)} + ${fmt(tax)} = ${fmt(total)} €`}]:[
-   {title:lang==='el'?'Αφαίρεσε τον ΦΠΑ':'Remove VAT',text:`${fmt(aa)} ÷ (1 + ${fmt(r)} ÷ 100) = ${fmt(total)} €`},
-   {title:lang==='el'?'Ποσό ΦΠΑ':'VAT amount',text:`${fmt(aa)} - ${fmt(total)} = ${fmt(Math.abs(tax))} €`}],result:`${fmt(total)} €`};
-  setToolResult(`${fmt(total)} €`,`${t('vatAmount')}: ${fmt(Math.abs(tax))} €`,how)
+  const how={formula:add?fmt(aa)+' € + '+fmt(r)+'% VAT':fmt(aa)+' € with '+fmt(r)+'% VAT',steps:add?[
+   {title:lang==='el'?'Υπολόγισε τον ΦΠΑ':'Calculate VAT',text:fmt(aa)+' × '+fmt(r)+' ÷ 100 = '+fmt(tax)+' €'},
+   {title:lang==='el'?'Πρόσθεσε τον ΦΠΑ':'Add VAT',text:fmt(aa)+' + '+fmt(tax)+' = '+fmt(total)+' €'}]:[
+   {title:lang==='el'?'Αφαίρεσε τον ΦΠΑ':'Remove VAT',text:fmt(aa)+' ÷ (1 + '+fmt(r)+' ÷ 100) = '+fmt(total)+' €'},
+   {title:lang==='el'?'Ποσό ΦΠΑ':'VAT amount',text:fmt(aa)+' - '+fmt(total)+' = '+fmt(Math.abs(tax))+' €'}],result:fmt(total)+' €'};
+  setToolResult(fmt(total)+' €',t('vatAmount')+': '+fmt(Math.abs(tax))+' €',how)
  };
  window._runVat=vat;
- window._runVat=vat;
- populateUnits();
- const convertUnits=()=>{
-  const v=toolNumber('value'),cc=$('#unitCategory')?.value,ff=$('#unitFrom')?.value,to=$('#unitTo')?.value;
-  if(!Number.isFinite(v)||!cc||!ff||!to||units[cc]?.[ff]===undefined||units[cc]?.[to]===undefined)return;
-  const out=v*units[cc][ff]/units[cc][to];
-  const how={formula:`${fmt(v)} ${ff} → ${to}`,steps:[{title:lang==='el'?'Μετέτρεψε την τιμή':'Convert the value',text:`${fmt(v)} × ${fmt(units[cc][ff])} ÷ ${fmt(units[cc][to])} = ${fmt(out)} ${to}`}],result:`${fmt(out)} ${to}`};
-  setToolResult(`${fmt(out)} ${to}`,`${t('toolUnit')}: ${fmt(out)} ${to}`,how)
+ const convertUnits=(source='unitValueFrom')=>{
+  const cc=$('#unitCategory')?.value,ff=$('#unitFrom')?.value,to=$('#unitTo')?.value;
+  const from=$('#unitValueFrom'),target=$('#unitValueTo');
+  if(!cc||!ff||!to||!from||!target)return;
+  const sourceInput=source==='unitValueTo'?target:from,otherInput=source==='unitValueTo'?from:target;
+  const raw=sourceInput.value.trim().replace(',','.');
+  if(raw===''){otherInput.value='';setToolResult('','',null);return}
+  const v=Number(raw);
+  if(!Number.isFinite(v)||units[cc]?.[ff]===undefined||units[cc]?.[to]===undefined)return;
+  const out=source==='unitValueTo'?v*units[cc][to]/units[cc][ff]:v*units[cc][ff]/units[cc][to];
+  otherInput.value=liveUnitFormat(out);
+  const inputUnit=source==='unitValueTo'?to:ff,outputUnit=source==='unitValueTo'?ff:to;
+  const how={formula:liveUnitFormat(v)+' '+inputUnit+' → '+outputUnit,steps:[{title:lang==='el'?'Μετέτρεψε την τιμή':'Convert the value',text:liveUnitFormat(v)+' '+inputUnit+' = '+liveUnitFormat(out)+' '+outputUnit}],result:liveUnitFormat(out)+' '+outputUnit};
+  setToolResult(liveUnitFormat(out)+' '+outputUnit,t('toolUnit')+': '+liveUnitFormat(out)+' '+outputUnit,how)
  };
  window._runUnits=convertUnits;
+ populateUnits();
 }
 function modeIcon(m){return ICONS[m]||''}
 function renderCalcKeypad(){
  $('#keypad').className='keypad';
- $('#keypad').innerHTML='<button class="key utility" data-action="backspace" type="button" aria-label="Delete">⌫</button><button id="clearButton" class="key utility" data-action="clear" type="button">C</button><button class="key utility" data-value="%" type="button">%</button><button class="key operator" data-value="/" type="button">÷</button><button class="key" data-value="7" type="button">7</button><button class="key" data-value="8" type="button">8</button><button class="key" data-value="9" type="button">9</button><button class="key operator" data-value="*" type="button">×</button><button class="key" data-value="4" type="button">4</button><button class="key" data-value="5" type="button">5</button><button class="key" data-value="6" type="button">6</button><button class="key operator" data-value="-" type="button">−</button><button class="key" data-value="1" type="button">1</button><button class="key" data-value="2" type="button">2</button><button class="key" data-value="3" type="button">3</button><button class="key operator" data-value="+" type="button">+</button><button class="key wide" data-value="0" type="button">0</button><button class="key" data-value="." type="button">.</button><button class="key equals" data-action="equals" type="button">=</button>';
+ $('#keypad').innerHTML='<button class="key utility" data-action="backspace" type="button" aria-label="Delete">⌫</button><button id="clearButton" class="key utility" data-action="clear" type="button">AC</button><button class="key utility" data-value="%" type="button">%</button><button class="key operator" data-value="/" type="button">÷</button><button class="key" data-value="7" type="button">7</button><button class="key" data-value="8" type="button">8</button><button class="key" data-value="9" type="button">9</button><button class="key operator" data-value="*" type="button">×</button><button class="key" data-value="4" type="button">4</button><button class="key" data-value="5" type="button">5</button><button class="key" data-value="6" type="button">6</button><button class="key operator" data-value="-" type="button">−</button><button class="key" data-value="1" type="button">1</button><button class="key" data-value="2" type="button">2</button><button class="key" data-value="3" type="button">3</button><button class="key operator" data-value="+" type="button">+</button><button class="key wide" data-value="0" type="button">0</button><button class="key" data-value="." type="button">.</button><button class="key equals" data-action="equals" type="button">=</button>';
 }
 function renderToolKeypad(){
- const action=mode==='fuel'?'Calculate':mode==='energy'?'Calculate':mode==='units'?'Convert':'';
- const labels=lang==='el'
-   ?{fuel:'Υπολογισμός',energy:'Υπολογισμός',units:'Μετατροπή',add:'Πρόσθεσε ΦΠΑ',remove:'Αφαίρεσε ΦΠΑ'}
-   :{fuel:'Calculate',energy:'Calculate',units:'Convert',add:'Add VAT',remove:'Remove VAT'};
- const calcButton=mode==='vat'
-   ?'<button class="tool-key tool-action-key" data-tool-action="addVat" type="button">'+labels.add+'</button><button class="tool-key tool-action-key" data-tool-action="removeVat" type="button">'+labels.remove+'</button>'
-   :'<button class="tool-key tool-action-key tool-key-full" data-tool-action="calculate" type="button">'+(mode==='fuel'?labels.fuel:mode==='energy'?labels.energy:labels.units)+'</button>';
  $('#keypad').className='tool-keypad';
- $('#keypad').innerHTML=calcButton+
+ $('#keypad').innerHTML=
    '<button class="tool-key tool-utility" data-action="backspace" type="button" aria-label="Delete">⌫</button><button class="tool-key tool-utility tool-key-wide-utility" data-action="clear" type="button">C</button>'+
    '<button class="tool-key" data-value="7" type="button">7</button><button class="tool-key" data-value="8" type="button">8</button><button class="tool-key" data-value="9" type="button">9</button>'+
    '<button class="tool-key" data-value="4" type="button">4</button><button class="tool-key" data-value="5" type="button">5</button><button class="tool-key" data-value="6" type="button">6</button>'+
@@ -280,15 +288,13 @@ function renderTool(){
  $('#calculatorDisplay').classList.remove('hidden');
  if(calc){renderCalcKeypad();render();return}
  let html='';
- if(mode==='fuel')html=`<div class="tool-grid">${field('fuelD',t('fuelD'))}${field('fuelC',t('fuelC'))}${field('fuelP',t('fuelP'))}</div>`;
- if(mode==='energy')html=`<div class="tool-grid">${field('energyP',t('energyP'))}${field('energyH',t('energyH'))}${field('energyD',t('energyD'))}${field('energyR',t('energyR'))}</div>`;
- if(mode==='vat')html=`<div class="tool-grid">${field('amount',t('amount'))}${field('vatRate',t('vatRate'))}</div>`;
+ if(mode==='fuel')html='<div class="tool-grid">'+field('fuelD',t('fuelD'))+field('fuelC',t('fuelC'))+field('fuelP',t('fuelP'))+'</div>';
+ if(mode==='energy')html='<div class="tool-grid">'+field('energyP',t('energyP'))+field('energyH',t('energyH'))+field('energyD',t('energyD'))+field('energyR',t('energyR'))+'</div>';
+ if(mode==='vat')html='<div class="tool-grid">'+field('amount',t('amount'))+field('vatRate',t('vatRate'))+'</div><div class="vat-toggle" role="group"><button type="button" data-vat-mode="add">'+esc(t('addVat'))+'</button><button type="button" data-vat-mode="remove">'+esc(t('removeVat'))+'</button></div>';
  if(mode==='units'){
- const category='length';
- const keys=Object.keys(units[category]);
- html=`<div class="tool-grid">${field('value',t('value'))}<label class="tool-field"><span>${t('category')}</span><select id="unitCategory" class="tool-select">${Object.keys(units).map(x=>'<option value="'+x+'">'+esc(t(x))+'</option>').join('')}</select></label><label class="tool-field"><span>${t('from')}</span><select id="unitFrom" class="tool-select">${unitOptions(category,keys[0])}</select></label><label class="tool-field"><span>${t('to')}</span><select id="unitTo" class="tool-select">${unitOptions(category,keys[1])}</select></label></div>`;
-}
-
+   const category='length',keys=Object.keys(units[category]);
+   html='<div class="conversion-toolbar"><select id="unitCategory" class="conversion-category">'+Object.keys(units).map(x=>'<option value="'+x+'">'+esc(t(x))+'</option>').join('')+'</select><button id="unitSwap" class="conversion-swap" type="button" aria-label="Swap units">⇄</button></div><div class="conversion-boxes"><label class="conversion-box"><span class="conversion-label">'+esc(t('from'))+'</span><div class="conversion-input-row"><input id="unitValueFrom" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="0" data-tool-input="true"><select id="unitFrom" class="conversion-unit">'+unitOptions(category,keys[0])+'</select></div></label><label class="conversion-box"><span class="conversion-label">'+esc(t('to'))+'</span><div class="conversion-input-row"><input id="unitValueTo" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="0" data-tool-input="true"><select id="unitTo" class="conversion-unit">'+unitOptions(category,keys[1])+'</select></div></label></div>';
+ }
  $('#toolPanel').innerHTML=html;
  renderToolKeypad();
  toolActiveInput=null;
@@ -296,8 +302,16 @@ function renderTool(){
  $('#toolPanel input[data-tool-input]').forEach(input=>{input.readOnly=touchDevice;input.setAttribute('inputmode',touchDevice?'none':'decimal');if(touchDevice)input.setAttribute('readonly','readonly');else input.removeAttribute('readonly')});
  if(mode==='units')populateUnits();
  bindTools();
+ renderVatToggle();
+ if(mode==='units')$('#unitSwap')?.addEventListener('click',()=>{
+   const from=$('#unitFrom'),to=$('#unitTo'),a=$('#unitValueFrom'),b=$('#unitValueTo');
+   if(!from||!to||!a||!b)return;
+   [from.value,to.value]=[to.value,from.value];
+   [a.value,b.value]=[b.value,a.value];
+   if(a.value)window._runUnits?.('unitValueFrom');
+   else if(b.value)window._runUnits?.('unitValueTo');
+ });
  renderToolDisplay();
-
 }
 function setMode(next){resultCompact=false;mode=next;expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null;lastOperation=null;toolResult=null;resetHow();const label=$('#modeLabel'),icon=$('#modeIcon');if(label)label.textContent=t(mode);if(icon)icon.textContent=modeIcon(mode);renderTool();syncModeButton();}
 function applyLanguage(){
@@ -394,16 +408,27 @@ $('#keypad').addEventListener('click',e=>{
  const b=e.target.closest('button');if(!b)return;
  const a=b.dataset.action,v=b.dataset.value;
  if(mode!=='calc'){
-   const ta=b.dataset.toolAction;
-   if(ta){ if(ta==='addVat')window._runVat?.(true); else if(ta==='removeVat')window._runVat?.(false); else if(ta==='calculate')runActiveTool(); return; }
-   if(a==='equals'){runActiveTool();return}
    if(a==='clear'||a==='backspace'||v==='.'||/^\d$/.test(v||'')){toolKeyInput(a==='clear'?'clear':a==='backspace'?'backspace':v);return}
    if(v==='-'){toolKeyInput('-');return}
    return;
  }
  if(a==='clear')clearButtonAction();else if(a==='backspace')backspace();else if(a==='equals')equals();else if(v==='%')percent();else if(/[+\-*/]/.test(v||''))operator(v==='*'?'×':v==='/'?'÷':v);else if(v)digit(v)
 });
-$('#toolPanel').addEventListener('change',e=>{if(e.target.matches('#unitCategory'))populateUnits()});
+$('#toolPanel').addEventListener('change',e=>{
+ if(e.target.matches('#unitCategory')){
+   populateUnits();
+   const from=$('#unitValueFrom'),to=$('#unitValueTo');
+   if(from)from.value='';
+   if(to)to.value='';
+   setToolResult('','',null);
+ }
+ if(e.target.matches('#unitFrom,#unitTo')&&mode==='units')window._runUnits?.(e.target.id==='unitTo'?'unitValueTo':'unitValueFrom');
+ if(e.target.matches('[data-vat-mode]')){
+   vatAction=e.target.dataset.vatMode==='remove'?'remove':'add';
+   renderVatToggle();
+   window._runVat?.(vatAction==='add');
+ }
+});
 $('#toolPanel').addEventListener('focusin',e=>{if(e.target.matches('input'))toolActiveInput=e.target});
 $('#toolPanel').addEventListener('beforeinput',e=>{
  if(!e.target.matches('input')||e.inputType?.startsWith('delete'))return;
@@ -427,6 +452,10 @@ $('#toolPanel').addEventListener('input',e=>{
    input.value=value;
    input.setSelectionRange(Math.min(pos,value.length),Math.min(pos,value.length));
  }
+ if(mode==='fuel')window._runFuel?.();
+ else if(mode==='energy')window._runEnergy?.();
+ else if(mode==='vat')window._runVat?.(vatAction==='add');
+ else if(mode==='units')window._runUnits?.(input.id);
 });
 $('#howButton').addEventListener('click',showHow);$('#closeHow').addEventListener('click',closeHow);$('#howModal').addEventListener('click',e=>{if(e.target.id==='howModal')closeHow()});
 $('#historyButton').addEventListener('click',openHistory);$('#historyBackdrop').addEventListener('click',closeHistory);$('#historyList').addEventListener('click',historyClick);$('#copyButton').addEventListener('click',copyResult);
@@ -445,8 +474,7 @@ window.addEventListener('keydown',e=>{
  if(e.key==='Backspace'||e.code==='Backspace'){e.preventDefault();if(mode==='calc')backspace();else toolKeyInput('backspace');return;}
  if(e.key===','){e.preventDefault();if(mode==='calc')digit('.');else if(document.activeElement?.matches('#toolPanel input')){const input=document.activeElement;if(!input.value.includes('.')){const pos=input.selectionStart??input.value.length;input.setRangeText('.',pos,pos,'end')}}else toolKeyInput('.');return}
  if(mode!=='calc'&&document.activeElement?.matches('#toolPanel input')){
-   if(e.key==='Enter'||e.key==='='){e.preventDefault();runActiveTool();return}
-   if(e.key==='Escape'){e.preventDefault();document.activeElement.value='';return}
+   if(e.key==='Escape'){e.preventDefault();document.activeElement.value='';document.activeElement.dispatchEvent(new Event('input',{bubbles:true}));return}
    return;
  }
  if(mode!=='calc')return;
