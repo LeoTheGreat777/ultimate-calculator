@@ -1,4 +1,4 @@
-const VERSION='0.4.76';
+const VERSION='0.4.77';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -194,7 +194,7 @@ function renderToolDisplay(){
  d.classList.remove('calculated');
  $('#expression').textContent=toolResult?.detail??'';
  $('#howButton').classList.toggle('hidden',!toolResult?.how);
- $('#result').textContent=toolResult?.main??'';
+ $('#result').textContent=toolResult?.main||'0';
  $('#result').classList.toggle('long-value',String(toolResult?.main??'').length>18);
  d.classList.toggle('tool-empty',!toolResult);
 }
@@ -501,12 +501,13 @@ function applyLanguage(){
  $('#howButton').setAttribute('aria-label',t('how'));
  $('#historyPanel').setAttribute('aria-label',t('history'));
  $('#historyConfirmYes').textContent=t('confirmYes');
+ $('#historyTitle').textContent=t('history');
+ $('#clearHistory').textContent=t('clear');
+ $('#historyConfirmText').textContent=t('confirm');
  $('#closeHow').setAttribute('aria-label',t('close'));
  $('#themeButton').setAttribute('aria-label',((theme==='dark'||(theme==='auto'&&!matchMedia('(prefers-color-scheme: light)').matches))?t('themeLight'):t('themeDark')));
  const hint=$('#hint');if(hint)hint.textContent=t('hint');
  const created=$('#createdBy');if(created)created.textContent=t('created')+' Leonidas Kampaxis';
- const historyTitle=$('#historyTitle');if(historyTitle)historyTitle.textContent=t('history');
- const clearHistory=$('#clearHistory');if(clearHistory)clearHistory.textContent=t('clear');
  if(mode==='calc'&&justCalculated&&lastExpression&&lastResult!==null){howData=explanationForExpression(lastExpression,lastResult)||howData;calcHowData=howData;}
  renderTool();
  Object.entries(savedInputs).forEach(([id,value])=>{
