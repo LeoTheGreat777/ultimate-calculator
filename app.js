@@ -1,4 +1,4 @@
-const VERSION='0.4.59';
+const VERSION='0.4.60';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function readLanguage(){
@@ -441,9 +441,9 @@ function renderTool(){
      else if(mode==='energy')window._runEnergy?.();
      else if(mode==='vat')window._runVat?.(vatAction==='add');
    };
-   input.addEventListener('input',run,{passive:true});
-   input.addEventListener('change',run,{passive:true});
-   input.addEventListener('keyup',run,{passive:true});
+   input.oninput=run;
+   input.onchange=run;
+   input.onkeyup=run;
  });
 }
 function setMode(next){resultCompact=false;mode=next;toolResult=null;howData=null;vatAction='add';if(next==='units'){unitExpressions={from:'',to:''};unitActiveInput='from';unitSource='from';window._unitCategory=window._unitCategory||'length';}const label=$('#modeLabel'),icon=$('#modeIcon');if(label)label.textContent=t(mode);if(icon)icon.textContent=modeIcon(mode);renderTool();syncModeButton();}
