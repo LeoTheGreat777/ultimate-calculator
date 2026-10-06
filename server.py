@@ -117,6 +117,15 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             return None
         return user
 
+    def end_headers(self):
+        path = urllib.parse.urlparse(self.path).path if hasattr(self, "path") else ""
+        if path == "/" or path.endswith(".html"):
+            self.send_header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+            self.send_header("Pragma", "no-cache")
+        elif path.endswith((".js", ".css", ".webmanifest")):
+            self.send_header("Cache-Control", "no-cache, must-revalidate, max-age=0")
+        super().end_headers()
+
     def do_GET(self):
         path = urllib.parse.urlparse(self.path).path
         if path == "/api/health":
