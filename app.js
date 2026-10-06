@@ -196,7 +196,7 @@ function unitValueFormat(n){
  if(!Number.isFinite(n))return '';
  const abs=Math.abs(n);
  const max=abs!==0&&abs<1?Math.min(15,Math.max(6,Math.ceil(-Math.log10(abs))+6)):Math.min(12,Math.max(2,String(Math.trunc(abs)).length<7?6:4));
- return new Intl.NumberFormat(lang==='el'?'el-GR':'en-US',{maximumFractionDigits:max,useGrouping:false}).format(n);
+ return new Intl.NumberFormat(lang==='el'?'el-GR':'en-US',{maximumFractionDigits:max,useGrouping:true}).format(n);
 }
 function renderUnitsDisplay(){
  const d=$('#calculatorDisplay');
@@ -227,7 +227,7 @@ function convertUnitExpression(source='from'){
  const expr=unitExpressions[source]||'';
  if(!expr.trim()){unitExpressions[source]='';unitExpressions[source==='from'?'to':'from']='';updateUnitsDisplay();return}
  const value=unitEvaluate(expr);
- if(value===null){updateUnitsDisplay();return}
+ if(value===null){unitExpressions[source==='from'?'to':'from']='';updateUnitsDisplay();return}
  const out=source==='from'?value*units[cc][fu]/units[cc][tu]:value*units[cc][tu]/units[cc][fu];
  unitExpressions[source==='from'?'to':'from']=unitValueFormat(out);
  updateUnitsDisplay();
