@@ -1,4 +1,4 @@
-const VERSION='0.4.64';
+const VERSION='0.4.65';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function readLanguage(){
@@ -421,6 +421,7 @@ function renderTool(){
  if(mode==='vat')html='<div class="tool-grid">'+field('amount',t('amount'))+field('vatRate',t('vatRate'))+'</div><div class="vat-toggle" role="group"><button type="button" data-vat-mode="add">'+esc(t('addVat'))+'</button><button type="button" data-vat-mode="remove">'+esc(t('removeVat'))+'</button></div>';
  $('#toolPanel').innerHTML=html;
  toolActiveInput=null;
+ renderVatToggle();
  if(isMobileDevice()){
    $('#keypad').className='hidden';
    $('#keypad').innerHTML='';
