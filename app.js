@@ -1,5 +1,5 @@
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
-const VERSION='0.4.25';
+const VERSION='0.4.26';
 let lang=localStorage.getItem('uc-lang')==='en'?'en':'el';
 let theme=localStorage.getItem('uc-theme')==='light'?'light':localStorage.getItem('uc-theme')==='dark'?'dark':'auto';
 let mode='calc',expression='',current='',currentIsPercent=false,justCalculated=false,lastExpression='',lastResult=null,howData=null,lastOperation=null,historyClearConfirm=false,toolResult=null,toolActiveInput=null,resultCompact=false;
@@ -331,6 +331,7 @@ function toggleModeMenu(){
  if(open){
    renderModeMenu();
    menu.classList.remove('hidden');
+   control.classList.add('mode-open');
    requestAnimationFrame(()=>control.classList.add('mode-open'));
  }else{
    control.classList.remove('mode-open');
