@@ -39,7 +39,6 @@ function formatGroupedNumber(raw){
 function formatInputDisplay(s){
  return pretty(String(s)).replace(/\\d+(?:\\.\\d*)?/g,m=>formatGroupedNumber(m));
 }
-const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 function tokenize(input){
  const s=String(input).replace(/×/g,'*').replace(/÷/g,'/').replace(/\s+/g,'');const tokens=[];let i=0;
