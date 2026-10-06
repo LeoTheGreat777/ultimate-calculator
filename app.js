@@ -224,7 +224,8 @@ function renderUnitsDisplay(){
    if(!unitExpressions[unitSource]?.trim()){
      unitSource=unitExpressions.from?.trim()?'from':unitExpressions.to?.trim()?'to':unitSource;
    }
-   populateUnits();
+   unitActiveInput=unitSource;
+   unitReplaceOnNextKey=false;
    convertUnitExpression(unitSource);
  };
  $('#unitFrom,#unitTo').forEach(select=>select.addEventListener('change',handleUnitSelectionChange));
@@ -269,13 +270,14 @@ const liveToolNumber=id=>{const raw=($('#'+id)?.value??'').trim().replace(',','.
 const field=(id,label)=>'<label class="tool-field"><span>'+esc(label)+'</span><input id="'+id+'" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="'+(FIELD_EXAMPLES[id]||'')+'" data-tool-input="true"></label>';
 function setToolResult(main,detail='',how=null){toolResult={main,detail,how};howData=how;renderToolDisplay();}
 function renderVatToggle(){ $$('#toolPanel [data-vat-mode]').forEach(b=>b.classList.toggle('active',b.dataset.vatMode===vatAction)); }
-function populateUnits(){
+function populateUnits(preserve=true){
  const cat=$('#unitCategory'),from=$('#unitFrom'),to=$('#unitTo');
  if(!cat||!from||!to)return;
  const category=cat.value||'length';
  const keys=Object.keys(units[category]||{});
- from.innerHTML=unitOptions(category,keys[0]);
- to.innerHTML=unitOptions(category,keys[1]||keys[0]);
+ const previousFrom=from.value,previousTo=to.value;
+ from.innerHTML=unitOptions(category,preserve&&keys.includes(previousFrom)?previousFrom:keys[0]);
+ to.innerHTML=unitOptions(category,preserve&&keys.includes(previousTo)?previousTo:(keys[1]||keys[0]));
 }
 function closeUnitMenus(except=null){$$('.unit-select-menu').forEach(menu=>{if(menu!==except)menu.classList.add('hidden')})}
 function liveUnitFormat(n){
