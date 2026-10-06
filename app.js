@@ -1,4 +1,4 @@
-const VERSION='0.4.94';
+const VERSION='0.4.95';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -684,7 +684,7 @@ function toolKeyInput(key){
          if(value.endsWith('-'))value=value.slice(0,-1);
          else value=value.slice(0,-1)+'-';
        }else value+='-';
-     }else if(/^[0-9]$/.test(key))value+=key;
+     }else if(/^[0-9]$/.test(key)){\n       if(value==='0')value=key;\n       else if(/(?:^|[+*/-])0$/.test(value))value=value.slice(0,-1)+key;\n       else value+=key;\n     }
      else if(['+','*','/'].includes(key)){
        if(!value)return false;
        if(/[+*/-]$/.test(value))value=value.slice(0,-1)+key;
