@@ -1,4 +1,4 @@
-const VERSION='0.4.60';
+const VERSION='0.4.61';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function readLanguage(){
@@ -8,7 +8,7 @@ function readLanguage(){
 }
 let lang=readLanguage();
 let theme=localStorage.getItem('uc-theme')==='light'?'light':localStorage.getItem('uc-theme')==='dark'?'dark':'auto';
-let mode='calc',expression='',current='',currentIsPercent=false,justCalculated=false,lastExpression='',lastResult=null,howData=null,lastOperation=null,historyClearConfirm=false,toolResult=null,toolActiveInput=null,resultCompact=false,unitActiveInput='from',unitSource='from',unitReplaceOnNextKey=false,unitExpressions={from:'',to:''};
+let mode='calc',expression='',current='',currentIsPercent=false,justCalculated=false,lastExpression='',lastResult=null,howData=null,lastOperation=null,historyClearConfirm=false,toolResult=null,toolActiveInput=null,resultCompact=false,unitActiveInput='from',unitSource='from',unitReplaceOnNextKey=false,unitExpressions={from:'',to:''},toolState={fuel:{inputs:{},result:null},energy:{inputs:{},result:null},vat:{inputs:{},result:null}};
 localStorage.removeItem('uc-mode');
 
 const T={
@@ -313,8 +313,8 @@ const UNIT_LABELS={length:{mm:['Χιλιοστό','Millimeter'],cm:['Εκατο�
 const unitOptions=(category,selected)=>Object.keys(units[category]||{}).map(x=>'<option value="'+x+'"'+(x===selected?' selected':'')+'>'+esc(UNIT_LABELS[category]?.[x]?.[lang==='el'?0:1]||x)+'</option>').join('');
 const toolNumber=id=>{const raw=($('#'+id)?.value??'').trim().replace(',','.');return raw===''?Number(TOOL_DEFAULTS[id]):Number(raw)};
 const liveToolNumber=id=>{const raw=($('#'+id)?.value??'').trim().replace(',','.');if(raw==='')return null;const n=Number(raw);return Number.isFinite(n)?n:null};
-const field=(id,label)=>'<label class="tool-field"><span>'+esc(label)+'</span><input id="'+id+'" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="" placeholder="'+esc(String(FIELD_EXAMPLES[id]??''))+'" data-tool-input="true"></label>';
-function setToolResult(main,detail='',how=null){toolResult={main,detail,how};howData=how;renderToolDisplay();}
+const field=(id,label)=>{const value=toolState[mode]?.inputs?.[id]??'';return '<label class="tool-field"><span>'+esc(label)+'</span><input id="'+id+'" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="'+esc(value)+'" placeholder="'+esc(String(FIELD_EXAMPLES[id]??''))+'" data-tool-input="true"></label>'};
+function setToolResult(main,detail='',how=null){toolResult={main,detail,how};if(toolState[mode])toolState[mode].result=toolResult;howData=how;renderToolDisplay();}
 function renderVatToggle(){ $$('#toolPanel [data-vat-mode]').forEach(b=>b.classList.toggle('active',b.dataset.vatMode===vatAction)); }
 function populateUnits(preserve=true){
  const cat=$('#unitCategory'),from=$('#unitFrom'),to=$('#unitTo');
@@ -428,25 +428,17 @@ function renderTool(){
    renderToolKeypad();
  }
  $('#toolPanel input[data-tool-input]').forEach(input=>{
-   input.readOnly=false;
-   input.removeAttribute('readonly');
-   input.setAttribute('inputmode','decimal');
- });
- bindTools();
- renderVatToggle();
- renderToolDisplay();
- $('#toolPanel input[data-tool-input]').forEach(input=>{
    const run=()=>{
+     if(toolState[mode])toolState[mode].inputs[input.id]=input.value;
      if(mode==='fuel')window._runFuel?.();
      else if(mode==='energy')window._runEnergy?.();
      else if(mode==='vat')window._runVat?.(vatAction==='add');
    };
    input.oninput=run;
    input.onchange=run;
-   input.onkeyup=run;
  });
 }
-function setMode(next){resultCompact=false;mode=next;toolResult=null;howData=null;vatAction='add';if(next==='units'){unitExpressions={from:'',to:''};unitActiveInput='from';unitSource='from';window._unitCategory=window._unitCategory||'length';}const label=$('#modeLabel'),icon=$('#modeIcon');if(label)label.textContent=t(mode);if(icon)icon.textContent=modeIcon(mode);renderTool();syncModeButton();}
+function setMode(next){resultCompact=false;mode=next;howData=null;vatAction='add';toolResult=toolState[next]?.result||null;if(next==='units'){unitExpressions={from:'0',to:'0'};unitActiveInput='from';unitSource='from';unitReplaceOnNextKey=true;window._unitCategory=window._unitCategory||'length';}const label=$('#modeLabel'),icon=$('#modeIcon');if(label)label.textContent=t(mode);if(icon)icon.textContent=modeIcon(mode);renderTool();syncModeButton();}
 function applyLanguage(){
  const savedInputs={};
  if(mode!=='calc'&&mode!=='units')$('#toolPanel input[data-tool-input]').forEach(input=>savedInputs[input.id]=input.value);
