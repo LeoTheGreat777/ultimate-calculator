@@ -1,4 +1,4 @@
-const VERSION='0.4.48';
+const VERSION='0.4.49';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function readLanguage(){
@@ -187,7 +187,7 @@ function historyItems(){try{return JSON.parse(localStorage.getItem('uc-history')
 function saveHistory(item){const list=historyItems();const stored={...item,result:item.result&&typeof item.result==='object'&&'n'in item.result?ratToDecimal(item.result,24):String(item.result)};list.unshift({id:Date.now()+Math.random(),...stored});localStorage.setItem('uc-history',JSON.stringify(list.slice(0,100)));renderHistory()}
 function renderHistory(){const list=historyItems();$('#historyList').innerHTML=list.length?list.map(x=>`<div class="history-item"><button class="history-main" data-history="${x.id}" type="button"><div class="history-expression">${esc(pretty(x.expression))}</div><div class="history-result">${esc(fmt(x.result&&typeof x.result==='string'?ratFromString(x.result):x.result))}</div></button><button class="history-delete" data-delete="${x.id}" type="button" aria-label="${esc(t('delete'))}">×</button></div>`).join(''):`<div class="empty">${esc(t('none'))}</div>`}
 
-const units={length:{mm:.001,cm:.01,m:1,km:1000,in:.0254,ft:.3048,yd:.9144,mi:1609.344},area:{'mm²':.000001,'cm²':.0001,'m²':1,'km²':1000000,'in²':.00064516,'ft²':.09290304,acre:4046.8564224,ha:10000},mass:{mg:.000001,g:.001,kg:1,oz:.028349523125,lb:.45359237,t:1000},volume:{ml:.001,l:1,'m³':1000,tsp:.00492892159,tbsp:.0147867648,cup:.2365882365,gal:3.785411784,qt:.946352946,pt:.473176473},speed:{'m/s':1,'km/h':.2777777778,mph:.44704,knot:.5144444444},time:{ms:.001,s:1,min:60,h:3600,day:86400,week:604800},data:{B:1,KB:1024,MB:1048576,GB:1073741824,TB:1099511627776},energy:{J:1,kJ:1000,Wh:3600,kWh:3600000,cal:4.184,kcal:4184},power:{W:1,kW:1000,MW:1000000,hp:745.6998716},pressure:{Pa:1,kPa:1000,bar:100000,psi:6894.757293,atm:101325},angle:{deg:1,rad:57.2957795131,grad:.9},temperature:{'°C':1,'°F':1,K:1}};
+const units={length:{mm:.001,cm:.01,m:1,km:1000,in:.0254,ft:.3048,yd:.9144,mi:1609.344,nmi:1852},area:{'mm²':.000001,'cm²':.0001,'m²':1,'km²':1000000,'in²':.00064516,'ft²':.09290304,acre:4046.8564224,ha:10000},mass:{mg:.000001,g:.001,kg:1,oz:.028349523125,lb:.45359237,t:1000},volume:{ml:.001,l:1,'m³':1000,tsp:.00492892159,tbsp:.0147867648,cup:.2365882365,gal:3.785411784,qt:.946352946,pt:.473176473},speed:{'m/s':1,'km/h':.2777777778,mph:.44704,knot:.5144444444},time:{ms:.001,s:1,min:60,h:3600,day:86400,week:604800},data:{bit:1,b:1,kbit:1000,Mbit:1000000,Gbit:1000000000,Tbit:1000000000000,B:8,kB:8000,MB:8000000,GB:8000000000,TB:8000000000000,KiB:8192,MiB:8388608,GiB:8589934592,TiB:8796093022208},energy:{J:1,kJ:1000,Wh:3600,kWh:3600000,cal:4.184,kcal:4184},power:{W:1,kW:1000,MW:1000000,hp:745.6998716},pressure:{Pa:1,kPa:1000,bar:100000,psi:6894.757293,atm:101325},angle:{deg:1,rad:57.2957795131,grad:.9},temperature:{'°C':1,'°F':1,K:1}};
 function unitEvaluate(expr){
  const raw=String(expr??'').trim().replace(/,/g,'.').replace(/×/g,'*').replace(/÷/g,'/');
  if(!raw||/[-+*/.]$/.test(raw)||!/^[0-9+*/().\s-]+$/.test(raw))return null;
@@ -312,7 +312,7 @@ let vatAction='add';
 const unitOptions=(category,selected)=>Object.keys(units[category]||{}).map(x=>'<option value="'+x+'"'+(x===selected?' selected':'')+'>'+x+'</option>').join('');
 const toolNumber=id=>{const raw=($('#'+id)?.value??'').trim().replace(',','.');return raw===''?Number(TOOL_DEFAULTS[id]):Number(raw)};
 const liveToolNumber=id=>{const raw=($('#'+id)?.value??'').trim().replace(',','.');if(raw==='')return null;const n=Number(raw);return Number.isFinite(n)?n:null};
-const field=(id,label)=>'<label class="tool-field"><span>'+esc(label)+'</span><input id="'+id+'" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="'+(FIELD_EXAMPLES[id]||'')+'" data-tool-input="true"></label>';
+const field=(id,label)=>'<label class="tool-field"><span>'+esc(label)+'</span><input id="'+id+'" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="'+esc(String(TOOL_DEFAULTS[id]??''))+'" data-tool-input="true"></label>';
 function setToolResult(main,detail='',how=null){toolResult={main,detail,how};howData=how;renderToolDisplay();}
 function renderVatToggle(){ $$('#toolPanel [data-vat-mode]').forEach(b=>b.classList.toggle('active',b.dataset.vatMode===vatAction)); }
 function populateUnits(preserve=true){
@@ -432,8 +432,11 @@ function renderTool(){
  bindTools();
  renderVatToggle();
  renderToolDisplay();
+ if(mode==='fuel')window._runFuel?.();
+ if(mode==='energy')window._runEnergy?.();
+ if(mode==='vat')window._runVat?.(vatAction==='add');
 }
-function setMode(next){resultCompact=false;mode=next;expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null;lastOperation=null;toolResult=null;resetHow();if(next==='units'){unitExpressions={from:'',to:''};unitActiveInput='from';window._unitCategory=window._unitCategory||'length';}const label=$('#modeLabel'),icon=$('#modeIcon');if(label)label.textContent=t(mode);if(icon)icon.textContent=modeIcon(mode);renderTool();syncModeButton();}
+function setMode(next){resultCompact=false;mode=next;expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null;lastOperation=null;toolResult=null;resetHow();vatAction='add';if(next==='units'){unitExpressions={from:'',to:''};unitActiveInput='from';window._unitCategory=window._unitCategory||'length';}const label=$('#modeLabel'),icon=$('#modeIcon');if(label)label.textContent=t(mode);if(icon)icon.textContent=modeIcon(mode);renderTool();syncModeButton();}
 function applyLanguage(){
  document.documentElement.lang=lang;$('#langButton').textContent=lang==='el'?'ΕΛ':'EN';$('#historyButtonText').textContent=t('history');$('#copyButton').textContent=t('copy');const hint=$('#hint');if(hint)hint.textContent=t('hint');$('#createdBy').textContent=`${t('created')} Leonidas Kampaxis`;$('#historyTitle').textContent=t('history');$('#clearHistory').textContent=t('clear');
  if(mode==='calc'&&justCalculated&&lastExpression&&lastResult!==null)howData=explanationForExpression(lastExpression,lastResult)||howData;
