@@ -193,10 +193,11 @@ function populateUnits(){
  const from=$('#unitFrom');
  const to=$('#unitTo');
  if(!cat||!from||!to)return;
- const category=cat.value||'length';
  const categories=Object.keys(units);
+ const currentCategory=cat.value||'length';
  cat.innerHTML=categories.map(x=>'<option value="'+x+'">'+esc(t(x))+'</option>').join('');
- cat.value=categories.includes(category)?category:'length';
+ cat.value=categories.includes(currentCategory)?currentCategory:'length';
+ const category=cat.value;
  const keys=Object.keys(units[cat.value]||{});
  const oldFrom=from.value,oldTo=to.value;
  from.innerHTML=keys.map(x=>'<option value="'+x+'">'+x+'</option>').join('');
