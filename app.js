@@ -1,6 +1,7 @@
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const VERSION='0.3.7';
 let lang=localStorage.getItem('uc-lang')==='en'?'en':'el';
+let theme=localStorage.getItem('uc-theme')==='light'?'light':localStorage.getItem('uc-theme')==='dark'?'dark':'auto';
 let mode='calc',expression='',current='',currentIsPercent=false,justCalculated=false,lastExpression='',lastResult=null,howData=null,lastOperation=null,historyClearConfirm=false,toolResult=null;
 
 const T={
@@ -33,6 +34,18 @@ function percentExplanation(input,result){
  return{formula:pretty(input),steps:[`${fmt(rate)}% ${lang==='el'?'του':'of'} ${fmt(base)} = ${fmt(part)}`,`${fmt(base)} ${m[2]==='+'?'+':'−'} ${fmt(part)} = ${fmt(total)}`],result:fmt(result)}
 }
 function resetHow(){howData=null;$('#howButton')?.classList.add('hidden')}
+function applyTheme(){
+ document.body.classList.toggle('light',theme==='light');
+ document.documentElement.classList.toggle('force-dark',theme==='dark');
+ const b=$('#themeButton');
+ if(b){const dark=theme==='dark'||(theme==='auto'&&!matchMedia('(prefers-color-scheme: light)').matches);b.textContent=dark?'☾':'☀';b.setAttribute('aria-label',dark?'Switch to light mode':'Switch to dark mode')}
+}
+function toggleTheme(){
+ const dark=theme==='dark'||(theme==='auto'&&!matchMedia('(prefers-color-scheme: light)').matches);
+ theme=dark?'light':'dark';
+ localStorage.setItem('uc-theme',theme);
+ applyTheme();
+}
 function render(){
  if(mode!=='calc')return;
  const display=justCalculated?fmt(lastResult):(pretty(expression+current)||'');
@@ -152,7 +165,7 @@ $('#keypad').addEventListener('click',e=>{const b=e.target.closest('button');if(
 $('#howButton').addEventListener('click',showHow);$('#closeHow').addEventListener('click',closeHow);$('#howModal').addEventListener('click',e=>{if(e.target.id==='howModal')closeHow()});
 $('#historyButton').addEventListener('click',openHistory);$('#historyBackdrop').addEventListener('click',closeHistory);$('#historyList').addEventListener('click',historyClick);$('#copyButton').addEventListener('click',copyResult);
 $('#langButton').addEventListener('click',()=>{lang=lang==='el'?'en':'el';localStorage.setItem('uc-lang',lang);applyLanguage()});
-$('#themeButton').addEventListener('click',()=>document.body.classList.toggle('light'));
+$('#themeButton').addEventListener('click',toggleTheme);
 $('#modeButton').addEventListener('click',e=>{e.stopPropagation();toggleModeMenu()});
  document.addEventListener('click',e=>{if(!e.target.closest('#modeButton')&&!e.target.closest('#modeMenu'))closeModeMenu();if(historyClearConfirm&&!e.target.closest('#historyClearWrap'))clearHistoryConfirm()});
 $('#clearHistory').addEventListener('click',clearHistoryConfirm);$('#historyConfirmYes').addEventListener('click',deleteAllHistory);
@@ -166,4 +179,4 @@ window.addEventListener('keydown',e=>{
  else if(e.key==='Backspace'){e.preventDefault();backspace()}
  else if(e.key==='Escape'){e.preventDefault();clearAll()}
 });
-$('#version').textContent=`v${VERSION}`;$('#footerVersion').textContent=`v${VERSION}`;renderHistory();renderTool();renderModeMenu();syncModeButton();setupHistorySheet();applyLanguage();
+$('#footerVersion').textContent=`v${VERSION}`;renderHistory();renderTool();renderModeMenu();syncModeButton();setupHistorySheet();applyLanguage();applyTheme();
