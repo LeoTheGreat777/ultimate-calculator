@@ -75,7 +75,7 @@ function render(){
  $('#calculatorDisplay').classList.remove('tool-display','tool-empty');
  $('#calculatorDisplay').classList.toggle('calculated',justCalculated);
  $('#expression').textContent=justCalculated?pretty(lastExpression):'';
- $('#result').textContent=display;requestAnimationFrame(()=>{const r=$('#result');if(r)r.scrollLeft=r.scrollWidth});
+ $('#result').textContent=display;$('#result').classList.toggle('long-value',String(display).length>18);requestAnimationFrame(()=>{const r=$('#result');if(r)r.scrollLeft=r.scrollWidth});
  $('#clearButton').textContent=justCalculated?'AC':'C';
  $('#howButton').classList.toggle('hidden',!howData)
 }
@@ -83,7 +83,7 @@ function renderToolDisplay(){
  const d=$('#calculatorDisplay');d.classList.add('tool-display');d.classList.remove('calculated','tool-empty');
  $('#expression').textContent=toolResult?.detail??'';
  $('#howButton').classList.toggle('hidden',!toolResult?.how);
- $('#result').textContent=toolResult?.main??'';
+ $('#result').textContent=toolResult?.main??'';$('#result').classList.toggle('long-value',String(toolResult?.main??'').length>18);
  if(!toolResult)d.classList.add('tool-empty')
 }
 function clearAll(){expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null;lastOperation=null;resetHow();render()}
