@@ -10,52 +10,50 @@ en:{calc:'Calculator',fuel:'Fuel',energy:'Energy',vat:'VAT',units:'Units',how:'H
 };
 const ICONS={calc:'▦',fuel:'⛽',energy:'ϟ',vat:'%',units:'↔'};
 const t=k=>T[lang][k]??T.en[k]??k;
-const fmt=n=>Number.isFinite(Number(n))?new Intl.NumberFormat(lang==='el'?'el-GR':'en-US',{maximumFractionDigits:10}).format(Number(n)):'Error';
-const formatInputDisplay=s=>{const text=pretty(String(s||''));return text.length>22?text.replace(/(\d)(?=(\d{3})+(?!\d))/g,'$1,'):text};
+const gcd=(a,b)=>{a=a<0n?-a:a;b=b<0n?-b:b;while(b){const t=a%b;a=b;b=t}return a};
+function rat(n,d=1n){if(d===0n)throw Error('DIV0');if(d<0n){n=-n;d=-d}const g=gcd(n,d);return{n:n/g,d:d/g}}
+const ratAdd=(a,b)=>rat(a.n*b.d+b.n*a.d,a.d*b.d),ratSub=(a,b)=>rat(a.n*b.d-b.n*a.d,a.d*b.d),ratMul=(a,b)=>rat(a.n*b.n,a.d*b.d),ratDiv=(a,b)=>{if(b.n===0n)throw Error('DIV0');return rat(a.n*b.d,a.d*b.n)};
+function ratFromString(s){s=String(s).replace(',','.');let sign=1n;if(s[0]==='-'){sign=-1n;s=s.slice(1)}const [whole,frac='']=s.split('.');const digits=(whole||'0')+(frac||'');const scale=10n**BigInt(frac.length);return rat(sign*BigInt(digits||'0'),scale)}
+function ratPercent(a){return rat(a.n,a.d*100n)}
+function ratToDecimal(a,max=18){let sign=a.n<0n?'-':'';let n=a.n<0n?-a.n:a.n,d=a.d;const whole=n/d;let rem=n%d;if(rem===0n)return sign+whole.toString();let out='';for(let i=0;i<max&&rem;i++){rem*=10n;out+=String(rem/d);rem%=d}out=out.replace(/0+$/,'');return sign+whole.toString()+'.'+out}
+function ratToNumber(a){const s=ratToDecimal(a,18);return Number(s)}
+function formatRat(a){
+ const s=ratToDecimal(a,18),num=Number(s);
+ if(Number.isFinite(num)&&Math.abs(num)<1e15)return new Intl.NumberFormat(lang==='el'?'el-GR':'en-US',{maximumFractionDigits:18}).format(num);
+ const raw=s; if(raw.length<=24)return raw;
+ const neg=raw[0]==='-';const body=neg?raw.slice(1):raw;const [w,f='']=body.split('.');const exp=(w==='0'?-(f.search(/[1-9]/)+1):w.length-1);if(exp>=15||exp<=-6){const digits=(w==='0'?f.replace(/^0+/,''):w+f).replace(/0+$/,'');const mant=digits.length>1?digits[0]+'.'+digits.slice(1,16):digits;return (neg?'-':'')+mant+' × 10'+(exp>=0?'^'+exp:'^'+exp)}return raw;
+}
+const fmt=n=>n&&typeof n==='object'&&'n'in n?formatRat(n):Number.isFinite(Number(n))?new Intl.NumberFormat(lang==='el'?'el-GR':'en-US',{maximumFractionDigits:18}).format(Number(n)):'Error';
 const pretty=s=>String(s).replace(/\*/g,'×').replace(/\//g,'÷');
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 function tokenize(input){
- const s=input.replace(/×/g,'*').replace(/÷/g,'/').replace(/,/g,'.').replace(/\s+/g,''),tokens=[];let i=0;
+ const s=String(input).replace(/×/g,'*').replace(/÷/g,'/').replace(/\s+/g,'');const tokens=[];let i=0;
  while(i<s.length){const ch=s[i];
-  if(/[0-9.]/.test(ch)){const start=i;let dots=0;while(i<s.length&&/[0-9.]/.test(s[i])){if(s[i]==='.')dots++;i++}if(dots>1)throw Error();const n=Number(s.slice(start,i));if(!Number.isFinite(n))throw Error();let percent=false;if(s[i]==='%'){percent=true;i++}tokens.push({type:'number',value:n,percent});continue}
-  if('+-*/()'.includes(ch)){tokens.push({type:ch});i++;continue}throw Error()
+  if(/[0-9.]/.test(ch)){const start=i;let dots=0;while(i<s.length&&/[0-9.]/.test(s[i])){if(s[i]==='.')dots++;i++}if(dots>1)throw Error('NUMBER');let raw=s.slice(start,i);if(s[i]==='%'){i++;tokens.push({type:'number',value:ratPercent(ratFromString(raw)),percent:true,raw:raw+'%'});}else tokens.push({type:'number',value:ratFromString(raw),percent:false,raw});continue}
+  if('+-*/()'.includes(ch)){tokens.push({type:ch});i++;continue}throw Error('CHAR')
  }return tokens
 }
 function evalExpr(input){
  const tokens=tokenize(input);let pos=0;
- function primary(){const tok=tokens[pos++];if(!tok)throw Error();if(tok.type==='('){const v=additive();if(!tokens[pos]||tokens[pos].type!==')')throw Error();pos++;return v}if(tok.type==='number')return{value:tok.value,percent:tok.percent};throw Error()}
- function mult(){let left=primary();while(tokens[pos]&&['*','/'].includes(tokens[pos].type)){const op=tokens[pos++].type,right=primary();if(op==='*')left={value:left.value*(right.percent?right.value/100:right.value),percent:false};else{const divisor=right.percent?right.value/100:right.value;if(divisor===0)throw Error();left={value:left.value/divisor,percent:false}}}return left}
- function additive(){let left=mult();while(tokens[pos]&&['+','-'].includes(tokens[pos].type)){const op=tokens[pos++].type,right=mult(),rv=right.percent?left.value*right.value/100:right.value;left={value:op==='+'?left.value+rv:left.value-rv,percent:false}}return left}
- const out=additive();if(pos!==tokens.length||!Number.isFinite(out.value))throw Error();return out.value
+ function primary(){const tok=tokens[pos++];if(!tok)throw Error('INCOMPLETE');if(tok.type==='('){const v=additive();if(!tokens[pos]||tokens[pos].type!==')')throw Error('PAREN');pos++;return v}if(tok.type==='number')return tok.value;throw Error('SYNTAX')}
+ function mult(){let left=primary();while(tokens[pos]&&['*','/'].includes(tokens[pos].type)){const op=tokens[pos++].type,right=primary();left=op==='*'?ratMul(left,right):ratDiv(left,right)}return left}
+ function additive(){let left=mult();while(tokens[pos]&&['+','-'].includes(tokens[pos].type)){const op=tokens[pos++].type,right=mult();left=op==='+'?ratAdd(left,right):ratSub(left,right)}return left}
+ const out=additive();if(pos!==tokens.length)throw Error('SYNTAX');return out
 }
+
 function explanationForExpression(input,result){
- const source=String(input).replace(/×/g,'*').replace(/÷/g,'/').replace(/,/g,'.').replace(/\s+/g,'');
- let tokens;try{tokens=tokenize(source)}catch{return null}
- let pos=0;
- const primary=()=>{if(tokens[pos]?.type==='('){pos++;const child=additive();if(tokens[pos]?.type!==')')throw Error();pos++;return{type:'group',child}}const x=tokens[pos++];if(!x||x.type!=='number')throw Error();return{type:'number',value:x.value,percent:x.percent,raw:x.value+(x.percent?'%':'')}};
+ let tokens;try{tokens=tokenize(input)}catch{return null}let pos=0;
+ const primary=()=>{if(tokens[pos]?.type==='('){pos++;const child=additive();if(tokens[pos]?.type!==')')throw Error();pos++;return{type:'group',child}}const x=tokens[pos++];if(!x||x.type!=='number')throw Error();return{type:'number',value:x.value,percent:x.percent,raw:x.raw}};
  const mult=()=>{let left=primary();while(tokens[pos]&&['*','/'].includes(tokens[pos].type)){const op=tokens[pos++].type;left={type:'op',op,left,right:primary()}}return left};
  const additive=()=>{let left=mult();while(tokens[pos]&&['+','-'].includes(tokens[pos].type)){const op=tokens[pos++].type;left={type:'op',op,left,right:mult()}}return left};
  let tree;try{tree=additive();if(pos!==tokens.length)throw Error()}catch{return null}
  const renderNode=n=>n.type==='number'?n.raw:n.type==='group'?'('+renderNode(n.child)+')':renderNode(n.left)+n.op+renderNode(n.right);
- const show=n=>Number.isFinite(Number(n))?fmt(n):String(n);
  const steps=[];
- const walk=n=>{
-  if(n.type==='number')return n.value;
-  if(n.type==='group')return walk(n.child);
-  const l=walk(n.left),r=walk(n.right),percent=n.right.type==='number'&&n.right.percent;
-  const rv=percent&&['+','-'].includes(n.op)?l*r/100:percent?r/100:r;
-  const v=n.op==='+'?l+rv:n.op==='-'?l-rv:n.op==='*'?l*rv:l/rv;
-  const op=({'+':'+','-':'−','*':'×','/':'÷'})[n.op];
-  if(percent&&['+','-'].includes(n.op)){
-   steps.push(lang==='el'?show(l)+' × '+show(r)+' ÷ 100 = '+show(rv)+' (το '+show(r)+'% του '+show(l)+')':show(l)+' × '+show(r)+' ÷ 100 = '+show(rv)+' ('+show(r)+'% of '+show(l)+')');
-   steps.push(show(l)+' '+op+' '+show(rv)+' = '+show(v));
-  }else steps.push(pretty(renderNode(n.left))+' '+op+' '+pretty(renderNode(n.right))+' = '+show(v));
-  return v;
- };
- try{walk(tree)}catch{return null}
- return{formula:pretty(input),steps,result:show(result)};
+ const walk=n=>{if(n.type==='number')return n.value;if(n.type==='group')return walk(n.child);const l=walk(n.left),r=walk(n.right),percent=n.right.type==='number'&&n.right.percent;const rv=percent&&['+','-'].includes(n.op)?ratMul(l,r):r;const v=n.op==='+'?ratAdd(l,rv):n.op==='-'?ratSub(l,rv):n.op==='*'?ratMul(l,rv):ratDiv(l,rv);const op=({'+':'+','-':'−','*':'×','/':'÷'})[n.op];if(percent&&['+','-'].includes(n.op)){const pct=ratDiv(r,ratFromString('0.01'));steps.push({title:lang==='el'?'Υπολόγισε το ποσοστό':'Calculate the percentage',text:formatRat(l)+' × '+formatRat(pct)+' ÷ 100 = '+formatRat(rv)});steps.push({title:lang==='el'?'Έπειτα':'Then',text:formatRat(l)+' '+op+' '+formatRat(rv)+' = '+formatRat(v)});}else steps.push({title:lang==='el'?'Υπολόγισε':'Calculate',text:pretty(renderNode(n.left))+' '+op+' '+pretty(renderNode(n.right))+' = '+formatRat(v)});return v};
+ try{walk(tree)}catch{return null}return{formula:pretty(input),steps,result:formatRat(result)}
 }
+
 function resetHow(){howData=null;$('#howButton')?.classList.add('hidden')}
 function applyTheme(){
  document.body.classList.toggle('light',theme==='light');
@@ -99,7 +97,7 @@ function digit(v){
 }
 function operator(op){
  resetHow();
- if(justCalculated){expression=String(lastResult);current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null}
+ if(justCalculated){expression=ratToDecimal(lastResult,18);current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null}
  if(!current&&!expression)return;
  if(current){expression+=current;current='';currentIsPercent=false}
  if(/[+\-×÷]$/.test(expression))expression=expression.slice(0,-1)+op;else expression+=op;
@@ -114,7 +112,7 @@ function repeatEquals(){
 function equals(){
  if(justCalculated&&repeatEquals())return;
  const full=expression+current;if(!full||/[+\-×÷]$/.test(full))return;
- try{const value=evalExpr(full);lastExpression=full;lastResult=value;lastOperation=parseLastOperation(full);justCalculated=true;currentIsPercent=false;howData=percentExplanation(full,value)||{formula:pretty(full),steps:[`${pretty(full)} = ${fmt(value)}`],result:fmt(value)};saveHistory({expression:full,result:value,how:howData});render()}
+ try{const value=evalExpr(full);lastExpression=full;lastResult=value;lastOperation=parseLastOperation(full);justCalculated=true;currentIsPercent=false;howData=explanationForExpression(full,value)||{formula:pretty(full),steps:[`${pretty(full)} = ${fmt(value)}`],result:fmt(value)};saveHistory({expression:full,result:value,how:howData});render()}
  catch{current='Error';currentIsPercent=false;render();setTimeout(()=>{if(current==='Error'){current='';render()}},900)}
 }
 function showHow(){if(!howData)return;$('#howTitle').textContent=t('how');$('#howContent').innerHTML=`<div class="how-step"><div class="how-formula">${esc(howData.formula)}</div>${howData.steps.map((s,i)=>`<div class="how-line"><span>${i+1}</span>${esc(s)}</div>`).join('')}<div class="how-result">= ${esc(howData.result)}</div></div>`;$('#howModal').classList.remove('hidden')}
@@ -126,15 +124,6 @@ function renderHistory(){const list=historyItems();$('#historyList').innerHTML=l
 const units={length:{mm:1,cm:.01,m:1,km:1000,in:.0254,ft:.3048,yd:.9144,mi:1609.344},mass:{mg:.000001,g:.001,kg:1,oz:.028349523125,lb:.45359237},volume:{ml:.001,l:1,tsp:.00492892159,tbsp:.0147867648,cup:.2365882365,gal:3.785411784},data:{B:1,KB:1024,MB:1048576,GB:1073741824,TB:1099511627776}};
 const field=(id,label)=>`<label class="tool-field"><span>${esc(label)}</span><input id="${id}" type="number" step="any" inputmode="decimal"></label>`;
 function setToolResult(main,detail='',how=null){toolResult={main,detail,how};howData=how;renderToolDisplay()}
-function populateUnits(){const cat=$('#unitCategory');if(!cat)return;const keys=Object.keys(units[cat.value]);$('#unitFrom').innerHTML=keys.map(x=>`<option value="${x}">${x}</option>`).join('');$('#unitTo').innerHTML=keys.map(x=>`<option value="${x}">${x}</option>`).join('')}
-function bindTools(){
- const fuelGo=$('#fuelGo');fuelGo?.addEventListener('click',()=>{const d=+$('#fuelD').value,c=+$('#fuelC').value,p=+$('#fuelP').value;if([d,c,p].some(x=>!Number.isFinite(x))||d===0)return;const used=d*c/100,cost=used*p,perKm=cost/d;const how={formula:t('fuelGo'),steps:[`Fuel used: ${fmt(d)} km × ${fmt(c)} ÷ 100 = ${fmt(used)} L`,`Cost: ${fmt(used)} L × ${fmt(p)} €/L = ${fmt(cost)} €`,`Cost per km: ${fmt(cost)} € ÷ ${fmt(d)} km = ${fmt(perKm)} €/km`],result:fmt(cost)};if(lang==='el')how.steps=[`Καύσιμο: ${fmt(d)} km × ${fmt(c)} ÷ 100 = ${fmt(used)} L`,`Κόστος: ${fmt(used)} L × ${fmt(p)} €/L = ${fmt(cost)} €`,`Κόστος ανά km: ${fmt(cost)} € ÷ ${fmt(d)} km = ${fmt(perKm)} €/km`];setToolResult(`${fmt(cost)} €`,`${t('fuelResult')}: ${fmt(used)} L · ${t('costKm')}: ${fmt(perKm)} €/km`,how)});
- const energyGo=$('#energyGo');energyGo?.addEventListener('click',()=>{const p=+$('#energyP').value,h=+$('#energyH').value,d=+$('#energyD').value,r=+$('#energyR').value;if([p,h,d,r].some(x=>!Number.isFinite(x)))return;const kw=p/1000,kwh=kw*h*d,cost=kwh*r;const how={formula:t('energyGo'),steps:[`Power: ${fmt(p)} W ÷ 1000 = ${fmt(kw)} kW`,`Energy: ${fmt(kw)} kW × ${fmt(h)} h × ${fmt(d)} days = ${fmt(kwh)} kWh`,`Cost: ${fmt(kwh)} kWh × ${fmt(r)} €/kWh = ${fmt(cost)} €`],result:fmt(cost)};if(lang==='el')how.steps=[`Ισχύς: ${fmt(p)} W ÷ 1000 = ${fmt(kw)} kW`,`Ενέργεια: ${fmt(kw)} kW × ${fmt(h)} ώρες × ${fmt(d)} ημέρες = ${fmt(kwh)} kWh`,`Κόστος: ${fmt(kwh)} kWh × ${fmt(r)} €/kWh = ${fmt(cost)} €`];setToolResult(`${fmt(cost)} €`,`${t('energyResult')}: ${fmt(kwh)} kWh`,how)});
- const vat=add=>{const a=+$('#amount').value,r=+$('#vatRate').value;if(!Number.isFinite(a)||!Number.isFinite(r))return;const total=add?a*(1+r/100):a/(1+r/100),tax=add?total-a:a-total;const how=add?{formula:t('addVat'),steps:[`${fmt(a)} × ${fmt(r)} ÷ 100 = ${fmt(tax)} €`,`Final: ${fmt(a)} + ${fmt(tax)} = ${fmt(total)} €`],result:fmt(total)}:{formula:t('removeVat'),steps:[`Without VAT: ${fmt(a)} ÷ (1 + ${fmt(r)} ÷ 100) = ${fmt(total)} €`,`VAT included: ${fmt(a)} − ${fmt(total)} = ${fmt(Math.abs(tax))} €`],result:fmt(total)};if(lang==='el'){how.steps=add?[`${fmt(a)} × ${fmt(r)} ÷ 100 = ${fmt(tax)} €`,`Τελικό ποσό: ${fmt(a)} + ${fmt(tax)} = ${fmt(total)} €`]:[`Χωρίς ΦΠΑ: ${fmt(a)} ÷ (1 + ${fmt(r)} ÷ 100) = ${fmt(total)} €`,`ΦΠΑ που περιλαμβάνεται: ${fmt(a)} − ${fmt(total)} = ${fmt(Math.abs(tax))} €`]};setToolResult(`${fmt(total)} €`,`${t('vatAmount')}: ${fmt(Math.abs(tax))} €`,how)};
- $('#addVat')?.addEventListener('click',()=>vat(true));$('#removeVat')?.addEventListener('click',()=>vat(false));
- $('#unitCategory')?.addEventListener('change',populateUnits);
- $('#convert')?.addEventListener('click',()=>{const v=+$('#value').value,c=$('#unitCategory').value,f=$('#unitFrom').value,to=$('#unitTo').value;if(!Number.isFinite(v))return;const factor=units[c][f]/units[c][to],out=v*factor;const how={formula:t('convert'),steps:[`1 ${f} = ${fmt(factor)} ${to}`,`${fmt(v)} ${f} × ${fmt(factor)} = ${fmt(out)} ${to}`],result:`${fmt(out)} ${to}`};setToolResult(`${fmt(out)} ${to}`,`${fmt(v)} ${f} → ${fmt(out)} ${to}`,how)});
-}
 function populateUnits(){const cat=$('#unitCategory');if(!cat)return;const keys=Object.keys(units[cat.value]);$('#unitFrom').innerHTML=keys.map(x=>`<option value="${x}">${x}</option>`).join('');$('#unitTo').innerHTML=keys.map(x=>`<option value="${x}">${x}</option>`).join('')}
 function bindTools(){
  const fuelGo=$('#fuelGo');fuelGo?.addEventListener('click',()=>{const d=+$('#fuelD').value,c=+$('#fuelC').value,p=+$('#fuelP').value;if([d,c,p].some(x=>!Number.isFinite(x))||d===0)return;const used=d*c/100,cost=used*p;setToolResult(`${fmt(cost)} €`,`${t('fuelResult')}: ${fmt(used)} L · ${t('costKm')}: ${fmt(cost/d)} €/km`)});
@@ -189,7 +178,7 @@ function deleteAllHistory(){localStorage.removeItem('uc-history');historyClearCo
 function historyClick(e){
  const del=e.target.closest('[data-delete]'),item=e.target.closest('[data-history]');
  if(del){localStorage.setItem('uc-history',JSON.stringify(historyItems().filter(x=>String(x.id)!==del.dataset.delete)));renderHistory();return}
- if(item){const x=historyItems().find(x=>String(x.id)===item.dataset.history);if(!x)return;closeHistory();setMode('calc');lastExpression=x.expression;lastResult=Number(x.result);justCalculated=true;expression='';current='';currentIsPercent=false;howData=x.how||null;lastOperation=parseLastOperation(x.expression);render();syncModeButton()}
+ if(item){const x=historyItems().find(x=>String(x.id)===item.dataset.history);if(!x)return;closeHistory();setMode('calc');lastExpression=x.expression;lastResult=ratFromString(String(x.result));justCalculated=true;expression='';current='';currentIsPercent=false;howData=x.how||null;lastOperation=parseLastOperation(x.expression);render();syncModeButton()}
 }
 function copyResult(){const value=justCalculated?lastResult:(current||expression);if(value===''||!navigator.clipboard)return;navigator.clipboard.writeText(String(value)).then(()=>{const b=$('#copyButton');b.textContent=t('copied');setTimeout(()=>b.textContent=t('copy'),900)}).catch(()=>{})}
 
