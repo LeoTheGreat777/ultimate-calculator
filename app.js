@@ -2,6 +2,36 @@ const VERSION='0.4.67';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+function saveReloadState(){
+ try{
+  const state={mode,expression,current,currentIsPercent,justCalculated,lastExpression,lastResult:lastResult&&typeof lastResult==='object'?ratToDecimal(lastResult,30):lastResult,lastOperation,toolResult,toolState,unitExpressions,unitActiveInput,unitSource,unitReplaceOnNextKey,vatAction};
+  sessionStorage.setItem('uc-reload-state',JSON.stringify(state));
+ }catch{}
+}
+function restoreReloadState(){
+ try{
+  const raw=sessionStorage.getItem('uc-reload-state');
+  if(!raw)return;
+  sessionStorage.removeItem('uc-reload-state');
+  const state=JSON.parse(raw);
+  if(state.mode)mode=state.mode;
+  expression=state.expression||'';
+  current=state.current||'';
+  currentIsPercent=!!state.currentIsPercent;
+  justCalculated=!!state.justCalculated;
+  lastExpression=state.lastExpression||'';
+  lastResult=state.lastResult!==null&&state.lastResult!==undefined&&state.lastResult!==''?ratFromString(String(state.lastResult)):null;
+  lastOperation=state.lastOperation||null;
+  toolResult=state.toolResult||null;
+  if(state.toolState)toolState=state.toolState;
+  if(state.unitExpressions)unitExpressions=state.unitExpressions;
+  if(state.unitActiveInput)unitActiveInput=state.unitActiveInput;
+  if(state.unitSource)unitSource=state.unitSource;
+  unitReplaceOnNextKey=!!state.unitReplaceOnNextKey;
+  if(state.vatAction)vatAction=state.vatAction;
+  if(mode==='calc'&&lastResult!==null&&lastExpression)howData=explanationForExpression(lastExpression,lastResult)||null;
+ }catch{}
+}
 function readLanguage(){
  let stored='';
  try{stored=localStorage.getItem('uc-lang')||''}catch{}
@@ -659,9 +689,8 @@ $('#langButton').addEventListener('click',e=>{
  e.stopPropagation();
  lang=lang==='el'?'en':'el';
  try{localStorage.setItem('uc-lang',lang)}catch{}
- document.documentElement.lang=lang;
- applyLanguage();
- $('#langButton').textContent=lang==='el'?'ΕΛ':'EN';
+ saveReloadState();
+ window.location.reload();
 });
 $('#themeButton').addEventListener('click',toggleTheme);
 $('#modeButton').addEventListener('click',e=>{e.stopPropagation();toggleModeMenu()});
@@ -689,4 +718,4 @@ window.addEventListener('keydown',e=>{
    clearAll();
  }
 });
-window.__UC_VERSION=VERSION;$('#footerVersion').textContent=`v${VERSION}`;bindTools();renderHistory();renderTool();renderModeMenu();syncModeButton();setupHistorySheet();applyLanguage();applyTheme();window.addEventListener('pageshow',e=>{if(e.persisted&&mode!=='calc')setMode('calc')});
+window.__UC_VERSION=VERSION;$('#footerVersion').textContent=`v${VERSION}`;restoreReloadState();bindTools();renderHistory();renderTool();renderModeMenu();syncModeButton();setupHistorySheet();applyLanguage();applyTheme();window.addEventListener('pageshow',e=>{if(e.persisted&&mode!=='calc')setMode('calc')});
