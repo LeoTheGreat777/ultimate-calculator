@@ -1,5 +1,5 @@
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
-const VERSION='0.4.18';
+const VERSION='0.4.19';
 let lang=localStorage.getItem('uc-lang')==='en'?'en':'el';
 let theme=localStorage.getItem('uc-theme')==='light'?'light':localStorage.getItem('uc-theme')==='dark'?'dark':'auto';
 let mode='calc',expression='',current='',currentIsPercent=false,justCalculated=false,lastExpression='',lastResult=null,howData=null,lastOperation=null,historyClearConfirm=false,toolResult=null,toolActiveInput=null,resultCompact=false;
@@ -182,13 +182,26 @@ function historyItems(){try{return JSON.parse(localStorage.getItem('uc-history')
 function saveHistory(item){const list=historyItems();const stored={...item,result:item.result&&typeof item.result==='object'&&'n'in item.result?ratToDecimal(item.result,24):String(item.result)};list.unshift({id:Date.now()+Math.random(),...stored});localStorage.setItem('uc-history',JSON.stringify(list.slice(0,100)));renderHistory()}
 function renderHistory(){const list=historyItems();$('#historyList').innerHTML=list.length?list.map(x=>`<div class="history-item"><button class="history-main" data-history="${x.id}" type="button"><div class="history-expression">${esc(pretty(x.expression))}</div><div class="history-result">${esc(fmt(x.result&&typeof x.result==='string'?ratFromString(x.result):x.result))}</div></button><button class="history-delete" data-delete="${x.id}" type="button" aria-label="${esc(t('delete'))}">×</button></div>`).join(''):`<div class="empty">${esc(t('none'))}</div>`}
 
-const units={length:{mm:1,cm:.01,m:1,km:1000,in:.0254,ft:.3048,yd:.9144,mi:1609.344},mass:{mg:.000001,g:.001,kg:1,oz:.028349523125,lb:.45359237},volume:{ml:.001,l:1,tsp:.00492892159,tbsp:.0147867648,cup:.2365882365,gal:3.785411784},data:{B:1,KB:1024,MB:1048576,GB:1073741824,TB:1099511627776}};
+const units={length:{mm:.001,cm:.01,m:1,km:1000,in:.0254,ft:.3048,yd:.9144,mi:1609.344},mass:{mg:.000001,g:.001,kg:1,oz:.028349523125,lb:.45359237},volume:{ml:.001,l:1,tsp:.00492892159,tbsp:.0147867648,cup:.2365882365,gal:3.785411784},data:{B:1,KB:1024,MB:1048576,GB:1073741824,TB:1099511627776}};
 const FIELD_EXAMPLES={fuelD:'250',fuelC:'7.2',fuelP:'1.85',energyP:'100',energyH:'8',energyD:'30',energyR:'0.20',amount:'100',vatRate:'24%',value:'10'};
 const TOOL_DEFAULTS={fuelD:250,fuelC:7.2,fuelP:1.85,energyP:100,energyH:8,energyD:30,energyR:0.20,amount:100,vatRate:24,value:10};
 const toolNumber=id=>{const raw=($(`#${id}`)?.value??'').trim().replace(',','.');return raw===''?Number(TOOL_DEFAULTS[id]):Number(raw)};
 const field=(id,label)=>`<label class="tool-field"><span>${esc(label)}</span><input id="${id}" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="${FIELD_EXAMPLES[id]||''}" data-tool-input="true"></label>`;
 function setToolResult(main,detail='',how=null){toolResult={main,detail,how};howData=how;renderToolDisplay()}
-function populateUnits(){const cat=$('#unitCategory');if(!cat)return;const keys=Object.keys(units[cat.value]);$('#unitFrom').innerHTML=keys.map(x=>`<option value="${x}">${x}</option>`).join('');$('#unitTo').innerHTML=keys.map(x=>`<option value="${x}">${x}</option>`).join('')}
+function populateUnits(){
+ const cat=$('#unitCategoryButton');if(!cat)return;
+ const category=cat.dataset.value;
+ const keys=Object.keys(units[category]);
+ const from=$('#unitFromButton'),to=$('#unitToButton'),fromMenu=$('#unitFromMenu'),toMenu=$('#unitToMenu');
+ const set=(button,menu,current)=>{
+   const value=keys.includes(current)?current:keys[0];
+   button.dataset.value=value;button.querySelector('.unit-select-value').textContent=value;
+   menu.innerHTML=keys.map(x=>`<button class="unit-choice${x===value?' active':''}" type="button" data-unit="${x}">${x}</button>`).join('');
+ };
+ set(from,fromMenu,from?.dataset.value);
+ set(to,toMenu,to?.dataset.value);
+}
+function closeUnitMenus(){$('.unit-select-menu').forEach(m=>m.classList.add('hidden'))}
 function bindTools(){
  const fuelCalculate=()=>{
   const d=toolNumber('fuelD'),c=toolNumber('fuelC'),p=toolNumber('fuelP');if([d,c,p].some(x=>!Number.isFinite(x))||d===0)return;
@@ -222,9 +235,22 @@ function bindTools(){
  };
  window._runVat=vat;
  window._runVat=vat;
- $('#unitCategory')?.addEventListener('change',populateUnits);
+ const categoryLabels={length:t('length'),mass:t('mass'),volume:t('volume'),data:t('data')};
+ const catButton=$('#unitCategoryButton'),catMenu=$('#unitCategoryMenu');
+ if(catButton&&catMenu){
+   catMenu.innerHTML=Object.keys(categoryLabels).map(k=>`<button class="unit-choice" type="button" data-category="${k}">${categoryLabels[k]}</button>`).join('');
+   catMenu.addEventListener('click',e=>{const b=e.target.closest('[data-category]');if(!b)return;catButton.dataset.value=b.dataset.category;catButton.querySelector('.unit-select-value').textContent=b.textContent;catMenu.classList.add('hidden');populateUnits();});
+   catButton.addEventListener('click',()=>{closeUnitMenus();catMenu.classList.toggle('hidden')});
+ }
+ populateUnits();
+ const fromButton=$('#unitFromButton'),toButton=$('#unitToButton');
+ const bindUnitButton=(button,menu)=>{
+   button?.addEventListener('click',()=>{closeUnitMenus();menu.classList.toggle('hidden')});
+   menu?.addEventListener('click',e=>{const b=e.target.closest('[data-unit]');if(!b)return;button.dataset.value=b.dataset.unit;button.querySelector('.unit-select-value').textContent=b.dataset.unit;menu.classList.add('hidden');populateUnits();});
+ };
+ bindUnitButton(fromButton,$('#unitFromMenu'));bindUnitButton(toButton,$('#unitToMenu'));
  const convertUnits=()=>{
-  const v=toolNumber('value'),cc=$('#unitCategory').value,ff=$('#unitFrom').value,to=$('#unitTo').value;if(!Number.isFinite(v))return;
+  const v=toolNumber('value'),cc=catButton?.dataset.value,ff=fromButton?.dataset.value,to=toButton?.dataset.value;if(!Number.isFinite(v)||!cc||!ff||!to)return;
   const out=v*units[cc][ff]/units[cc][to];
   const how={formula:`${fmt(v)} ${ff} → ${to}`,steps:[{title:lang==='el'?'Μετέτρεψε την τιμή':'Convert the value',text:`${fmt(v)} × ${fmt(units[cc][ff])} ÷ ${fmt(units[cc][to])} = ${fmt(out)} ${to}`}],result:`${fmt(out)} ${to}`};
   setToolResult(`${fmt(out)} ${to}`,`${t('toolUnit')}: ${fmt(out)} ${to}`,how)
@@ -243,7 +269,7 @@ function renderToolKeypad(){
    :{fuel:'Calculate',energy:'Calculate',units:'Convert',add:'Add VAT',remove:'Remove VAT'};
  const calcButton=mode==='vat'
    ?'<button class="tool-key tool-action-key" data-tool-action="addVat" type="button">'+labels.add+'</button><button class="tool-key tool-action-key" data-tool-action="removeVat" type="button">'+labels.remove+'</button>'
-   :'<button class="tool-key tool-action-key tool-key-wide" data-action="equals" type="button">'+(mode==='fuel'?labels.fuel:mode==='energy'?labels.energy:labels.units)+'</button>';
+   :'<button class="tool-key tool-action-key tool-key-wide" data-tool-action="calculate" type="button">'+(mode==='fuel'?labels.fuel:mode==='energy'?labels.energy:labels.units)+'</button>';
  $('#keypad').className='tool-keypad';
  $('#keypad').innerHTML=calcButton+
    '<button class="tool-key tool-utility" data-action="backspace" type="button" aria-label="Delete">⌫</button><button class="tool-key tool-utility" data-action="clear" type="button">C</button><button class="tool-key" data-value="-" type="button">−</button>'+
@@ -262,7 +288,7 @@ function renderTool(){
  if(mode==='fuel')html=`<div class="tool-grid">${field('fuelD',t('fuelD'))}${field('fuelC',t('fuelC'))}${field('fuelP',t('fuelP'))}</div>`;
  if(mode==='energy')html=`<div class="tool-grid">${field('energyP',t('energyP'))}${field('energyH',t('energyH'))}${field('energyD',t('energyD'))}${field('energyR',t('energyR'))}</div>`;
  if(mode==='vat')html=`<div class="tool-grid">${field('amount',t('amount'))}${field('vatRate',t('vatRate'))}</div>`;
- if(mode==='units')html=`<div class="tool-grid">${field('value',t('value'))}<label class="tool-field"><span>${t('category')}</span><select id="unitCategory"><option value="length">${t('length')}</option><option value="mass">${t('mass')}</option><option value="volume">${t('volume')}</option><option value="data">${t('data')}</option></select></label><label class="tool-field"><span>${t('from')}</span><select id="unitFrom"></select></label><label class="tool-field"><span>${t('to')}</span><select id="unitTo"></select></label></div>`;
+ if(mode==='units')html=`<div class="tool-grid"><${field('value',t('value')).replace('<label class="tool-field">','<label class="tool-field">')}<label class="tool-field"><span>${t('category')}</span><button id="unitCategoryButton" class="unit-select" type="button" data-value="length"><span class="unit-select-value">${t('length')}</span><span class="unit-select-arrow">⌄</span></button><div id="unitCategoryMenu" class="unit-select-menu hidden"></div></label><label class="tool-field"><span>${t('from')}</span><button id="unitFromButton" class="unit-select" type="button" data-value="mm"><span class="unit-select-value">mm</span><span class="unit-select-arrow">⌄</span></button><div id="unitFromMenu" class="unit-select-menu hidden"></div></label><label class="tool-field"><span>${t('to')}</span><button id="unitToButton" class="unit-select" type="button" data-value="cm"><span class="unit-select-value">cm</span><span class="unit-select-arrow">⌄</span></button><div id="unitToMenu" class="unit-select-menu hidden"></div></label></div>`;
 
  $('#toolPanel').innerHTML=html;
  renderToolKeypad();
@@ -335,7 +361,7 @@ $('#keypad').addEventListener('click',e=>{
  const a=b.dataset.action,v=b.dataset.value;
  if(mode!=='calc'){
    const ta=b.dataset.toolAction;
-   if(ta){ if(ta==='addVat')window._runVat?.(true); else if(ta==='removeVat')window._runVat?.(false); return; }
+   if(ta){ if(ta==='addVat')window._runVat?.(true); else if(ta==='removeVat')window._runVat?.(false); else if(ta==='calculate')runActiveTool(); return; }
    if(a==='equals'){runActiveTool();return}
    if(a==='clear'||a==='backspace'||v==='.'||/^\d$/.test(v||'')){toolKeyInput(a==='clear'?'clear':a==='backspace'?'backspace':v);return}
    if(v==='-'){toolKeyInput('-');return}
