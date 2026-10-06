@@ -1,4 +1,4 @@
-const VERSION='0.4.80';
+const VERSION='0.4.81';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -265,7 +265,23 @@ function unitValueFormat(n){
  if(!Number.isFinite(n))return '';
  const abs=Math.abs(n);
  const max=abs!==0&&abs<1?Math.min(15,Math.max(6,Math.ceil(-Math.log10(abs))+6)):Math.min(12,Math.max(2,String(Math.trunc(abs)).length<7?6:4));
- return new Intl.NumberFormat(NUMBER_LOCALE,{maximumFractionDigits:max,useGrouping:true}).format(n);
+ return Number(n).toLocaleString('en-US',{maximumFractionDigits:max,useGrouping:false});
+}
+function formatUnitDisplayValue(value){
+ const s=String(value??'').trim();
+ if(!s)return '0';
+ return s.replace(/-?\d[\d.,]*/g,m=>{
+   let raw=m;
+   if(raw.includes(','))raw=raw.replace(/\./g,'').replace(',','.');
+   else if(/^[-]?\d{1,3}(?:\.\d{3})+$/.test(raw)){
+     const sign=raw.startsWith('-')?'-':'';
+     raw=sign+raw.replace(/^-/,'').replace(/\./g,'');
+   }
+   const n=Number(raw);
+   if(!Number.isFinite(n))return m;
+   const max=Math.min(15,Math.max(6,Math.ceil(Math.max(0,-Math.log10(Math.abs(n||1))))+6));
+   return new Intl.NumberFormat(NUMBER_LOCALE,{maximumFractionDigits:max,useGrouping:true}).format(n);
+ });
 }
 function isMobileDevice(){
  return matchMedia('(pointer:coarse)').matches || /Android|iPhone|iPad|iPod|Windows Phone|Mobile/i.test(navigator.userAgent);
@@ -344,18 +360,16 @@ function renderUnitsDisplay(){
 function updateUnitsDisplay(){
  const from=$('#unitValueFrom'),to=$('#unitValueTo');
  if(!from||!to)return;
- from.value=formatInputDisplay(unitExpressions.from??'0');
- to.value=formatInputDisplay(unitExpressions.to??'0');
- $('.unit-row').forEach(row=>{
-   const active=row.dataset.unitRow===unitActiveInput;
-   row.classList.toggle('active',active);
-   row.dataset.active=active?'true':'false';
-   const input=row.querySelector('.unit-value');
-   if(input){
-     input.classList.toggle('unit-active-value',active);
-     input.classList.toggle('unit-result-value',!active);
-   }
- });
+ from.value=formatUnitDisplayValue(unitExpressions.from??'0');
+ to.value=formatUnitDisplayValue(unitExpressions.to??'0');
+ const active=unitActiveInput==='to'?'to':'from';
+ unitActiveInput=active;
+ from.classList.toggle('unit-active-value',active==='from');
+ from.classList.toggle('unit-result-value',active==='to');
+ to.classList.toggle('unit-active-value',active==='to');
+ to.classList.toggle('unit-result-value',active==='from');
+ from.closest('.unit-row')?.classList.toggle('active',active==='from');
+ to.closest('.unit-row')?.classList.toggle('active',active==='to');
 }
 function unitConvertValue(category,value,from,to){
  if(category==='temperature'){
@@ -696,7 +710,8 @@ $('#toolPanel').addEventListener('input',e=>{
    unitActiveInput=side;
    unitSource=side;
    unitReplaceOnNextKey=false;
-   unitExpressions[side]=input.value;
+   const value=normalizeUnitExpression(input.value);
+   unitExpressions[side]=value||'0';
    convertUnitExpression(side);
    return;
  }
