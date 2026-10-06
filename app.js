@@ -1,4 +1,4 @@
-const VERSION='0.4.62';
+const VERSION='0.4.63';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function readLanguage(){
@@ -430,7 +430,7 @@ function renderTool(){
 
 
 }
-function setMode(next){resultCompact=false;mode=next;howData=null;vatAction='add';toolResult=toolState[next]?.result||null;if(next==='units'){unitExpressions={from:'0',to:'0'};unitActiveInput='from';unitSource='from';unitReplaceOnNextKey=true;window._unitCategory=window._unitCategory||'length';}const label=$('#modeLabel'),icon=$('#modeIcon');if(label)label.textContent=t(mode);if(icon)icon.textContent=modeIcon(mode);renderTool();syncModeButton();}
+function setMode(next){resultCompact=false;mode=next;howData=null;vatAction='add';if(next!=='calc')toolState[next]={inputs:{},result:null};toolResult=null;if(next==='units'){unitExpressions={from:'0',to:'0'};unitActiveInput='from';unitSource='from';unitReplaceOnNextKey=true;window._unitCategory=window._unitCategory||'length';}const label=$('#modeLabel'),icon=$('#modeIcon');if(label)label.textContent=t(mode);if(icon)icon.textContent=modeIcon(mode);renderTool();if(next!=='calc')renderToolDisplay();syncModeButton();}
 function applyLanguage(){
  const savedInputs={};
  if(mode!=='calc'&&mode!=='units')$('#toolPanel input[data-tool-input]').forEach(input=>savedInputs[input.id]=input.value);
@@ -549,7 +549,7 @@ function toolKeyInput(key){
 function runActiveTool(){
  if(mode==='fuel'){window._runFuel?.();return}
  if(mode==='energy'){window._runEnergy?.();return}
- if(mode==='vat'){window._runVat?.(true);return}
+ if(mode==='vat'){window._runVat?.(vatAction==='add');return}
  if(mode==='units'){window._runUnits?.();return}
 }
 $('#keypad').addEventListener('click',e=>{
