@@ -1,5 +1,5 @@
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
-const VERSION='0.4.17';
+const VERSION='0.4.18';
 let lang=localStorage.getItem('uc-lang')==='en'?'en':'el';
 let theme=localStorage.getItem('uc-theme')==='light'?'light':localStorage.getItem('uc-theme')==='dark'?'dark':'auto';
 let mode='calc',expression='',current='',currentIsPercent=false,justCalculated=false,lastExpression='',lastResult=null,howData=null,lastOperation=null,historyClearConfirm=false,toolResult=null,toolActiveInput=null,resultCompact=false;
@@ -190,7 +190,7 @@ const field=(id,label)=>`<label class="tool-field"><span>${esc(label)}</span><in
 function setToolResult(main,detail='',how=null){toolResult={main,detail,how};howData=how;renderToolDisplay()}
 function populateUnits(){const cat=$('#unitCategory');if(!cat)return;const keys=Object.keys(units[cat.value]);$('#unitFrom').innerHTML=keys.map(x=>`<option value="${x}">${x}</option>`).join('');$('#unitTo').innerHTML=keys.map(x=>`<option value="${x}">${x}</option>`).join('')}
 function bindTools(){
- const fuelGo=$('#fuelGo');fuelGo?.addEventListener('click',()=>{
+ const fuelCalculate=()=>{
   const d=toolNumber('fuelD'),c=toolNumber('fuelC'),p=toolNumber('fuelP');if([d,c,p].some(x=>!Number.isFinite(x))||d===0)return;
   const used=d*c/100,cost=used*p;
   const how={formula:`${fmt(d)} km × ${fmt(c)} L/100 km × ${fmt(p)} €/L`,steps:[
@@ -198,8 +198,9 @@ function bindTools(){
    {title:lang==='el'?'Υπολόγισε το κόστος':'Calculate cost',text:`${fmt(used)} L × ${fmt(p)} €/L = ${fmt(cost)} €`},
    {title:lang==='el'?'Κόστος ανά km':'Cost per km',text:`${fmt(cost)} € ÷ ${fmt(d)} km = ${fmt(cost/d)} €/km`}],result:`${fmt(cost)} €`};
   setToolResult(`${fmt(cost)} €`,`${t('fuelResult')}: ${fmt(used)} L · ${t('costKm')}: ${fmt(cost/d)} €/km`,how)
- });
- const energyGo=$('#energyGo');energyGo?.addEventListener('click',()=>{
+ };
+ window._runFuel=fuelCalculate;
+ const energyCalculate=()=>{
   const p=toolNumber('energyP'),hh=toolNumber('energyH'),d=toolNumber('energyD'),r=toolNumber('energyR');if([p,hh,d,r].some(x=>!Number.isFinite(x)))return;
   const kwh=p/1000*hh*d,cost=kwh*r;
   const how={formula:`${fmt(p)} W ÷ 1000 × ${fmt(hh)} h/day × ${fmt(d)} days`,steps:[
@@ -207,7 +208,8 @@ function bindTools(){
    {title:lang==='el'?'Υπολόγισε την ενέργεια':'Calculate energy',text:`${fmt(p/1000)} kW × ${fmt(hh)} × ${fmt(d)} = ${fmt(kwh)} kWh`},
    {title:lang==='el'?'Υπολόγισε το κόστος':'Calculate cost',text:`${fmt(kwh)} kWh × ${fmt(r)} €/kWh = ${fmt(cost)} €`}],result:`${fmt(cost)} €`};
   setToolResult(`${fmt(cost)} €`,`${t('energyResult')}: ${fmt(kwh)} kWh`,how)
- });
+ };
+ window._runEnergy=energyCalculate;
  const vat=add=>{
   const aa=toolNumber('amount'),r=toolNumber('vatRate');if(!Number.isFinite(aa)||!Number.isFinite(r))return;
   const total=add?aa*(1+r/100):aa/(1+r/100),tax=add?total-aa:aa-total;
@@ -219,13 +221,15 @@ function bindTools(){
   setToolResult(`${fmt(total)} €`,`${t('vatAmount')}: ${fmt(Math.abs(tax))} €`,how)
  };
  window._runVat=vat;
+ window._runVat=vat;
  $('#unitCategory')?.addEventListener('change',populateUnits);
- $('#convert')?.addEventListener('click',()=>{
+ const convertUnits=()=>{
   const v=toolNumber('value'),cc=$('#unitCategory').value,ff=$('#unitFrom').value,to=$('#unitTo').value;if(!Number.isFinite(v))return;
   const out=v*units[cc][ff]/units[cc][to];
   const how={formula:`${fmt(v)} ${ff} → ${to}`,steps:[{title:lang==='el'?'Μετέτρεψε την τιμή':'Convert the value',text:`${fmt(v)} × ${fmt(units[cc][ff])} ÷ ${fmt(units[cc][to])} = ${fmt(out)} ${to}`}],result:`${fmt(out)} ${to}`};
   setToolResult(`${fmt(out)} ${to}`,`${t('toolUnit')}: ${fmt(out)} ${to}`,how)
- });
+ };
+ window._runUnits=convertUnits;
 }
 function modeIcon(m){return ICONS[m]||''}
 function renderCalcKeypad(){
@@ -321,9 +325,10 @@ function toolKeyInput(key){
  return true;
 }
 function runActiveTool(){
+ if(mode==='fuel'){window._runFuel?.();return}
+ if(mode==='energy'){window._runEnergy?.();return}
  if(mode==='vat'){window._runVat?.(true);return}
- const button=mode==='fuel'?$('#fuelGo'):mode==='energy'?$('#energyGo'):mode==='units'?$('#convert'):null;
- button?.click();
+ if(mode==='units'){window._runUnits?.();return}
 }
 $('#keypad').addEventListener('click',e=>{
  const b=e.target.closest('button');if(!b)return;
