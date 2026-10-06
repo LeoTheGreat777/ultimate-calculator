@@ -1,4 +1,4 @@
-const VERSION='0.4.65';
+const VERSION='0.4.66';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function readLanguage(){
@@ -431,17 +431,31 @@ function renderTool(){
 
 
 }
-function setMode(next){resultCompact=false;mode=next;howData=null;vatAction='add';if(next!=='calc')toolState[next]={inputs:{},result:null};toolResult=null;if(next==='units'){unitExpressions={from:'0',to:'0'};unitActiveInput='from';unitSource='from';unitReplaceOnNextKey=true;window._unitCategory=window._unitCategory||'length';}const label=$('#modeLabel'),icon=$('#modeIcon');if(label)label.textContent=t(mode);if(icon)icon.textContent=modeIcon(mode);renderTool();if(next!=='calc')renderToolDisplay();syncModeButton();}
+function setMode(next){resultCompact=false;mode=next;howData=null;vatAction='add';if(next!=='calc')toolState[next]={inputs:{},result:null};toolResult=null;if(next==='vat')toolState.vat.inputs.vatRate='24';if(next==='units'){unitExpressions={from:'0',to:'0'};unitActiveInput='from';unitSource='from';unitReplaceOnNextKey=true;window._unitCategory=window._unitCategory||'length';}const label=$('#modeLabel'),icon=$('#modeIcon');if(label)label.textContent=t(mode);if(icon)icon.textContent=modeIcon(mode);renderTool();if(next==='vat')window._runVat?.(true);if(next!=='calc'&&next!=='vat')renderToolDisplay();syncModeButton();}
 function applyLanguage(){
  const savedInputs={};
  if(mode!=='calc'&&mode!=='units')$('#toolPanel input[data-tool-input]').forEach(input=>savedInputs[input.id]=input.value);
- document.documentElement.lang=lang;$('#langButton').textContent=lang==='el'?'ΕΛ':'EN';$('#copyButton').textContent=t('copy');const hint=$('#hint');if(hint)hint.textContent=t('hint');$('#createdBy').textContent=`${t('created')} Leonidas Kampaxis`;$('#historyTitle').textContent=t('history');$('#clearHistory').textContent=t('clear');
+ document.documentElement.lang=lang;
+ $('#langButton').textContent=lang==='el'?'ΕΛ':'EN';
+ $('#copyButton').textContent=t('copy');
+ const hint=$('#hint');if(hint)hint.textContent=t('hint');
+ const created=$('#createdBy');if(created)created.textContent=t('created')+' Leonidas Kampaxis';
+ const historyTitle=$('#historyTitle');if(historyTitle)historyTitle.textContent=t('history');
+ const clearHistory=$('#clearHistory');if(clearHistory)clearHistory.textContent=t('clear');
  if(mode==='calc'&&justCalculated&&lastExpression&&lastResult!==null)howData=explanationForExpression(lastExpression,lastResult)||howData;
  renderTool();
- Object.entries(savedInputs).forEach(([id,value])=>{if(toolState[mode])toolState[mode].inputs[id]=value;const input=$('#'+id);if(input)input.value=value});
- toolResult=toolState[mode]?.result||null;
- if(mode==='fuel')window._runFuel?.();else if(mode==='energy')window._runEnergy?.();else if(mode==='vat')window._runVat?.(vatAction==='add');
- renderHistory();renderModeMenu();syncModeButton();render()
+ Object.entries(savedInputs).forEach(([id,value])=>{
+   if(toolState[mode])toolState[mode].inputs[id]=value;
+   const input=$('#'+id);if(input)input.value=value;
+ });
+ if(mode==='fuel')window._runFuel?.();
+ else if(mode==='energy')window._runEnergy?.();
+ else if(mode==='vat')window._runVat?.(vatAction==='add');
+ else if(mode==='units')window._runUnits?.();
+ else render();
+ renderModeMenu();
+ syncModeButton();
+ renderVatToggle();
 }
 const MODE_LABELS=['calc','fuel','energy','vat','units'];
 function renderModeMenu(){
