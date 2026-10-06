@@ -17,11 +17,9 @@
 <script>
 (() => {
   try {
-    let savedLanguage = localStorage.getItem('uc-lang');
-    if (savedLanguage !== 'en' && savedLanguage !== 'el') {
-      const match = document.cookie.match(/(?:^|; )uc-lang=(en|el)(?:;|$)/);
-      savedLanguage = match ? match[1] : '';
-    }
+    let savedLanguage = '';
+    const match = document.cookie.match(/(?:^|; )uc-lang=(en|el)(?:;|$)/);
+    savedLanguage = match ? match[1] : localStorage.getItem('uc-lang') || '';
     if (savedLanguage === 'en' || savedLanguage === 'el') {
       document.documentElement.lang = savedLanguage;
       document.addEventListener('DOMContentLoaded', () => {
