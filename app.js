@@ -107,7 +107,7 @@ function percent(){resetHow();if(!current||currentIsPercent)return;current+='%';
 function parseLastOperation(full){const m=String(full).match(/^(.*?)([+\-×÷])(-?\d+(?:[.,]\d+)?%?)$/);return m?{op:m[2],rhs:m[3]}:null}
 function repeatEquals(){
  if(!justCalculated||!lastOperation)return false;
- try{const rhs=lastOperation.rhs,base=String(lastResult),full=base+lastOperation.op+rhs,value=evalExpr(full);lastExpression=full;lastResult=value;justCalculated=true;howData=explanationForExpression(full,value)||{formula:pretty(full),steps:[`${pretty(full)} = ${fmt(value)}`],result:fmt(value)};saveHistory({expression:full,result:value,how:howData});render();return true}catch{return false}
+ try{const rhs=lastOperation.rhs,base=ratToDecimal(lastResult,24),full=base+lastOperation.op+rhs,value=evalExpr(full);lastExpression=full;lastResult=value;justCalculated=true;howData=explanationForExpression(full,value)||{formula:pretty(full),steps:[`${pretty(full)} = ${fmt(value)}`],result:fmt(value)};saveHistory({expression:full,result:value,how:howData});render();return true}catch{return false}
 }
 function equals(){
  if(justCalculated&&repeatEquals())return;
@@ -115,10 +115,10 @@ function equals(){
  try{const value=evalExpr(full);lastExpression=full;lastResult=value;lastOperation=parseLastOperation(full);justCalculated=true;currentIsPercent=false;howData=explanationForExpression(full,value)||{formula:pretty(full),steps:[`${pretty(full)} = ${fmt(value)}`],result:fmt(value)};saveHistory({expression:full,result:value,how:howData});render()}
  catch{current='Error';currentIsPercent=false;render();setTimeout(()=>{if(current==='Error'){current='';render()}},900)}
 }
-function showHow(){if(!howData)return;$('#howTitle').textContent=t('how');$('#howContent').innerHTML=`<div class="how-step"><div class="how-formula">${esc(howData.formula)}</div>${howData.steps.map((s,i)=>`<div class="how-line"><span>${i+1}</span>${esc(s)}</div>`).join('')}<div class="how-result">= ${esc(howData.result)}</div></div>`;$('#howModal').classList.remove('hidden')}
+function showHow(){if(!howData)return;$('#howTitle').textContent=t('how');$('#howContent').innerHTML=`<div class="how-step"><div class="how-formula">${esc(howData.formula)}</div>${howData.steps.map((s,i)=>`<div class="how-line"><span>${i+1}</span><div><strong>${esc(s.title||'')}</strong><div>${esc(s.text||s)}</div></div></div>`).join('')}<div class="how-result">= ${esc(howData.result)}</div></div>`;$('#howModal').classList.remove('hidden')}
 function closeHow(){$('#howModal').classList.add('hidden')}
 function historyItems(){try{return JSON.parse(localStorage.getItem('uc-history')||'[]')}catch{return[]}}
-function saveHistory(item){const list=historyItems();list.unshift({id:Date.now()+Math.random(),...item});localStorage.setItem('uc-history',JSON.stringify(list.slice(0,100)));renderHistory()}
+function saveHistory(item){const list=historyItems();const stored={...item,result:item.result&&typeof item.result==='object'&&'n'in item.result?ratToDecimal(item.result,24):String(item.result)};list.unshift({id:Date.now()+Math.random(),...stored});localStorage.setItem('uc-history',JSON.stringify(list.slice(0,100)));renderHistory()}
 function renderHistory(){const list=historyItems();$('#historyList').innerHTML=list.length?list.map(x=>`<div class="history-item"><button class="history-main" data-history="${x.id}" type="button"><div class="history-expression">${esc(pretty(x.expression))}</div><div class="history-result">${esc(fmt(x.result))}</div></button><button class="history-delete" data-delete="${x.id}" type="button" aria-label="${esc(t('delete'))}">×</button></div>`).join(''):`<div class="empty">${esc(t('none'))}</div>`}
 
 const units={length:{mm:1,cm:.01,m:1,km:1000,in:.0254,ft:.3048,yd:.9144,mi:1609.344},mass:{mg:.000001,g:.001,kg:1,oz:.028349523125,lb:.45359237},volume:{ml:.001,l:1,tsp:.00492892159,tbsp:.0147867648,cup:.2365882365,gal:3.785411784},data:{B:1,KB:1024,MB:1048576,GB:1073741824,TB:1099511627776}};
@@ -180,7 +180,7 @@ function historyClick(e){
  if(del){localStorage.setItem('uc-history',JSON.stringify(historyItems().filter(x=>String(x.id)!==del.dataset.delete)));renderHistory();return}
  if(item){const x=historyItems().find(x=>String(x.id)===item.dataset.history);if(!x)return;closeHistory();setMode('calc');lastExpression=x.expression;lastResult=ratFromString(String(x.result));justCalculated=true;expression='';current='';currentIsPercent=false;howData=x.how||null;lastOperation=parseLastOperation(x.expression);render();syncModeButton()}
 }
-function copyResult(){const value=justCalculated?lastResult:(current||expression);if(value===''||!navigator.clipboard)return;navigator.clipboard.writeText(String(value)).then(()=>{const b=$('#copyButton');b.textContent=t('copied');setTimeout(()=>b.textContent=t('copy'),900)}).catch(()=>{})}
+function copyResult(){const value=justCalculated?ratToDecimal(lastResult,24):(current||expression);if(value===''||!navigator.clipboard)return;navigator.clipboard.writeText(String(value)).then(()=>{const b=$('#copyButton');b.textContent=t('copied');setTimeout(()=>b.textContent=t('copy'),900)}).catch(()=>{})}
 
 $('#keypad').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const a=b.dataset.action,v=b.dataset.value;if(a==='clear'){if(current)clearCurrent();else clearAll()}else if(a==='backspace')backspace();else if(a==='equals')equals();else if(v==='%')percent();else if(/[+\-*/]/.test(v||''))operator(v==='*'?'×':v==='/'?'÷':v);else if(v)digit(v)});
 $('#howButton').addEventListener('click',showHow);$('#closeHow').addEventListener('click',closeHow);$('#howModal').addEventListener('click',e=>{if(e.target.id==='howModal')closeHow()});
