@@ -1,5 +1,5 @@
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
-const VERSION='0.4.16';
+const VERSION='0.4.17';
 let lang=localStorage.getItem('uc-lang')==='en'?'en':'el';
 let theme=localStorage.getItem('uc-theme')==='light'?'light':localStorage.getItem('uc-theme')==='dark'?'dark':'auto';
 let mode='calc',expression='',current='',currentIsPercent=false,justCalculated=false,lastExpression='',lastResult=null,howData=null,lastOperation=null,historyClearConfirm=false,toolResult=null,toolActiveInput=null,resultCompact=false;
@@ -228,13 +228,32 @@ function bindTools(){
  });
 }
 function modeIcon(m){return ICONS[m]||''}
+function renderCalcKeypad(){
+ $('#keypad').className='keypad';
+ $('#keypad').innerHTML='<button class="key utility" data-action="backspace" type="button" aria-label="Delete">⌫</button><button id="clearButton" class="key utility" data-action="clear" type="button">C</button><button class="key utility" data-value="%" type="button">%</button><button class="key operator" data-value="/" type="button">÷</button><button class="key" data-value="7" type="button">7</button><button class="key" data-value="8" type="button">8</button><button class="key" data-value="9" type="button">9</button><button class="key operator" data-value="*" type="button">×</button><button class="key" data-value="4" type="button">4</button><button class="key" data-value="5" type="button">5</button><button class="key" data-value="6" type="button">6</button><button class="key operator" data-value="-" type="button">−</button><button class="key" data-value="1" type="button">1</button><button class="key" data-value="2" type="button">2</button><button class="key" data-value="3" type="button">3</button><button class="key operator" data-value="+" type="button">+</button><button class="key wide" data-value="0" type="button">0</button><button class="key" data-value="." type="button">.</button><button class="key equals" data-action="equals" type="button">=</button>';
+}
+function renderToolKeypad(){
+ const action=mode==='fuel'?'Calculate':mode==='energy'?'Calculate':mode==='units'?'Convert':'';
+ const labels=lang==='el'
+   ?{fuel:'Υπολογισμός',energy:'Υπολογισμός',units:'Μετατροπή',add:'Πρόσθεσε ΦΠΑ',remove:'Αφαίρεσε ΦΠΑ'}
+   :{fuel:'Calculate',energy:'Calculate',units:'Convert',add:'Add VAT',remove:'Remove VAT'};
+ const calcButton=mode==='vat'
+   ?'<button class="tool-key tool-action-key" data-tool-action="addVat" type="button">'+labels.add+'</button><button class="tool-key tool-action-key" data-tool-action="removeVat" type="button">'+labels.remove+'</button>'
+   :'<button class="tool-key tool-action-key tool-key-wide" data-action="equals" type="button">'+(mode==='fuel'?labels.fuel:mode==='energy'?labels.energy:labels.units)+'</button>';
+ $('#keypad').className='tool-keypad';
+ $('#keypad').innerHTML=calcButton+
+   '<button class="tool-key tool-utility" data-action="backspace" type="button" aria-label="Delete">⌫</button><button class="tool-key tool-utility" data-action="clear" type="button">C</button><button class="tool-key" data-value="-" type="button">−</button>'+
+   '<button class="tool-key" data-value="7" type="button">7</button><button class="tool-key" data-value="8" type="button">8</button><button class="tool-key" data-value="9" type="button">9</button>'+
+   '<button class="tool-key" data-value="4" type="button">4</button><button class="tool-key" data-value="5" type="button">5</button><button class="tool-key" data-value="6" type="button">6</button>'+
+   '<button class="tool-key" data-value="1" type="button">1</button><button class="tool-key" data-value="2" type="button">2</button><button class="tool-key" data-value="3" type="button">3</button>'+
+   '<button class="tool-key tool-key-wide" data-value="0" type="button">0</button><button class="tool-key" data-value="." type="button">.</button>';
+}
 function renderTool(){
  const calc=mode==='calc';
- $('#keypad').classList.remove('hidden');
  $('#calculatorCard').classList.toggle('tool-mode',!calc);
  $('#toolPanel').classList.toggle('hidden',calc);
  $('#calculatorDisplay').classList.remove('hidden');
- if(calc){render();return}
+ if(calc){renderCalcKeypad();render();return}
  let html='';
  if(mode==='fuel')html=`<div class="tool-grid">${field('fuelD',t('fuelD'))}${field('fuelC',t('fuelC'))}${field('fuelP',t('fuelP'))}</div><button class="tool-action" id="fuelGo" type="button">${t('fuelGo')}</button>`;
  if(mode==='energy')html=`<div class="tool-grid">${field('energyP',t('energyP'))}${field('energyH',t('energyH'))}${field('energyD',t('energyD'))}${field('energyR',t('energyR'))}</div><button class="tool-action" id="energyGo" type="button">${t('energyGo')}</button>`;
@@ -242,6 +261,7 @@ function renderTool(){
  if(mode==='units')html=`<div class="tool-grid">${field('value',t('value'))}<label class="tool-field"><span>${t('category')}</span><select id="unitCategory"><option value="length">${t('length')}</option><option value="mass">${t('mass')}</option><option value="volume">${t('volume')}</option><option value="data">${t('data')}</option></select></label><label class="tool-field"><span>${t('from')}</span><select id="unitFrom"></select></label><label class="tool-field"><span>${t('to')}</span><select id="unitTo"></select></label></div><button class="tool-action" id="convert" type="button">${t('convert')}</button>`;
 
  $('#toolPanel').innerHTML=html;
+ renderToolKeypad();
  toolActiveInput=null;
  const mobileToolInputs=matchMedia('(hover:none) and (pointer:coarse)').matches;
  $('#toolPanel input[data-tool-input]').forEach(input=>{input.readOnly=mobileToolInputs});
@@ -308,9 +328,11 @@ $('#keypad').addEventListener('click',e=>{
  const b=e.target.closest('button');if(!b)return;
  const a=b.dataset.action,v=b.dataset.value;
  if(mode!=='calc'){
+   const ta=b.dataset.toolAction;
+   if(ta){ if(ta==='addVat')$('#addVat')?.click(); else if(ta==='removeVat')$('#removeVat')?.click(); return; }
    if(a==='equals'){runActiveTool();return}
    if(a==='clear'||a==='backspace'||v==='.'||/^\d$/.test(v||'')){toolKeyInput(a==='clear'?'clear':a==='backspace'?'backspace':v);return}
-   if(v==='-' ){toolKeyInput('-');return}
+   if(v==='-'){toolKeyInput('-');return}
    return;
  }
  if(a==='clear')clearButtonAction();else if(a==='backspace')backspace();else if(a==='equals')equals();else if(v==='%')percent();else if(/[+\-*/]/.test(v||''))operator(v==='*'?'×':v==='/'?'÷':v);else if(v)digit(v)
