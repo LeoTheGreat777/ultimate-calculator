@@ -20,8 +20,10 @@
     const savedLanguage = localStorage.getItem('uc-lang');
     if (savedLanguage === 'en' || savedLanguage === 'el') {
       document.documentElement.lang = savedLanguage;
-      const button = document.getElementById('langButton');
-      if (button) button.textContent = savedLanguage === 'en' ? 'EN' : 'ΕΛ';
+      document.addEventListener('DOMContentLoaded', () => {
+        const button = document.getElementById('langButton');
+        if (button) button.textContent = savedLanguage === 'en' ? 'EN' : 'ΕΛ';
+      });
     }
   } catch {}
 })();
