@@ -536,7 +536,7 @@ function setMode(next){resultCompact=false;if(mode==='calc')calcHowData=howData;
 function applyLanguage(){
  lang=readLanguage();
  const savedInputs={};
- if(mode!=='calc'&&mode!=='units')$('#toolPanel input[data-tool-input]').forEach(input=>savedInputs[input.id]=input.value);
+ if(mode!=='calc'&&mode!=='units')$$('#toolPanel input[data-tool-input]').forEach(input=>savedInputs[input.id]=input.value);
  document.documentElement.lang=lang;
  $('#langButton').textContent=lang==='el'?'ΕΛ':'EN';
  $('#copyButton').textContent=t('copy');
@@ -644,7 +644,7 @@ function clearToolFields(){
  const inputs=toolState[mode].inputs||{};
  Object.keys(inputs).forEach(key=>inputs[key]='');
  toolActiveInput=null;
- $('#toolPanel input[data-tool-input]').forEach(input=>input.value='');
+ $$('#toolPanel input[data-tool-input]').forEach(input=>input.value='');
  toolResult=null;
  howData=null;
  renderToolDisplay();
