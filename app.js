@@ -199,38 +199,56 @@ function unitValueFormat(n){
  const max=abs!==0&&abs<1?Math.min(15,Math.max(6,Math.ceil(-Math.log10(abs))+6)):Math.min(12,Math.max(2,String(Math.trunc(abs)).length<7?6:4));
  return new Intl.NumberFormat(lang==='el'?'el-GR':'en-US',{maximumFractionDigits:max,useGrouping:true}).format(n);
 }
+function isMobileDevice(){
+ return matchMedia('(pointer:coarse)').matches || /Android|iPhone|iPad|iPod|Windows Phone|Mobile/i.test(navigator.userAgent);
+}
 function renderUnitsDisplay(){
  const d=$('#calculatorDisplay');
  d.className='display-wrap unit-display';
  d.innerHTML='<div class="unit-display-toolbar"><select id="unitCategory" class="conversion-category">'+Object.keys(units).map(x=>'<option value="'+x+'">'+esc(t(x))+'</option>').join('')+'</select><button id="unitSwap" class="conversion-swap" type="button" aria-label="Swap units">⇄</button></div><div class="unit-rows"><div class="unit-row" data-unit-row="from"><input id="unitValueFrom" class="unit-value" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="" aria-label="'+esc(t('from'))+'"><select id="unitFrom" class="unit-unit"></select></div><div class="unit-row" data-unit-row="to"><input id="unitValueTo" class="unit-value" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="" aria-label="'+esc(t('to'))+'"><select id="unitTo" class="unit-unit"></select></div></div>';
  const cat=$('#unitCategory');
  cat.value=window._unitCategory||'length';
- populateUnits();
- const touchDevice=matchMedia('(hover:none) and (pointer:coarse)').matches || 'ontouchstart' in window;
- $('#unitValueFrom,#unitValueTo').forEach(input=>{input.readOnly=touchDevice;input.setAttribute('inputmode',touchDevice?'none':'decimal');input.dataset.unitInput=input.id==='unitValueFrom'?'from':'to'});
- $('#unitValueFrom,#unitValueTo').forEach(input=>input.addEventListener('focus',()=>{unitActiveInput=input.dataset.unitInput;unitReplaceOnNextKey=true;if(!input.readOnly)requestAnimationFrame(()=>input.select())}));
- $('#unitValueFrom,#unitValueTo').forEach(input=>input.addEventListener('click',()=>{unitActiveInput=input.dataset.unitInput;unitReplaceOnNextKey=true}));
- $('#unitValueFrom,#unitValueTo').forEach(input=>input.addEventListener('input',()=>{unitActiveInput=input.dataset.unitInput;unitSource=unitActiveInput;unitReplaceOnNextKey=false;unitExpressions[unitActiveInput]=input.value;convertUnitExpression(unitActiveInput)}));
- const handleUnitCategoryChange=()=>{
+ populateUnits(false);
+ $('#unitValueFrom,#unitValueTo').forEach(input=>{
+   input.readOnly=false;
+   input.setAttribute('inputmode','decimal');
+   input.dataset.unitInput=input.id==='unitValueFrom'?'from':'to';
+   input.addEventListener('focus',()=>{
+     unitActiveInput=input.dataset.unitInput;
+     unitSource=unitActiveInput;
+     unitReplaceOnNextKey=true;
+     if(!isMobileDevice())requestAnimationFrame(()=>input.select());
+   });
+   input.addEventListener('click',()=>{
+     unitActiveInput=input.dataset.unitInput;
+     unitSource=unitActiveInput;
+     unitReplaceOnNextKey=true;
+   });
+   input.addEventListener('input',()=>{
+     unitActiveInput=input.dataset.unitInput;
+     unitSource=unitActiveInput;
+     unitReplaceOnNextKey=false;
+     unitExpressions[unitActiveInput]=input.value;
+     convertUnitExpression(unitActiveInput);
+   });
+ });
+ cat.addEventListener('change',()=>{
    window._unitCategory=cat.value||'length';
    unitExpressions={from:'',to:''};
    unitActiveInput='from';
    unitSource='from';
-   unitReplaceOnNextKey=false;
-   populateUnits();
+   unitReplaceOnNextKey=true;
+   populateUnits(false);
    updateUnitsDisplay();
- };
- const handleUnitSelectionChange=()=>{
-   if(!unitExpressions[unitSource]?.trim()){
-     unitSource=unitExpressions.from?.trim()?'from':unitExpressions.to?.trim()?'to':unitSource;
-   }
-   unitActiveInput=unitSource;
+ });
+ $('#unitFrom,#unitTo').forEach(select=>select.addEventListener('change',()=>{
+   const changed=select.id==='unitFrom'?'from':'to';
+   const source=unitExpressions.from?.trim()?'from':unitExpressions.to?.trim()?'to':changed;
+   unitSource=source;
+   unitActiveInput=source;
    unitReplaceOnNextKey=false;
-   convertUnitExpression(unitSource);
- };
- $('#unitFrom,#unitTo').forEach(select=>select.addEventListener('change',handleUnitSelectionChange));
- cat.addEventListener('change',handleUnitCategoryChange);
- cat.addEventListener('input',handleUnitCategoryChange);
+   convertUnitExpression(source);
+ }));
  $('#unitSwap').addEventListener('click',()=>{
    const a=$('#unitFrom'),b=$('#unitTo');
    [a.value,b.value]=[b.value,a.value];
@@ -344,7 +362,12 @@ function renderTool(){
    $('#toolPanel').classList.add('hidden');
    $('#calculatorDisplay').classList.remove('hidden');
    renderUnitsDisplay();
-   renderCalcKeypad();
+   if(isMobileDevice()){
+     $('#keypad').className='hidden';
+     $('#keypad').innerHTML='';
+   }else{
+     renderCalcKeypad();
+   }
    return;
  }
  $('#calculatorCard').classList.toggle('tool-mode',!calc);
