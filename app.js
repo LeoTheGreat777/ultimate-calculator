@@ -719,8 +719,7 @@ $('#toolPanel').addEventListener('input',e=>{
  const raw=input.value;
  toolState[mode]??={inputs:{},result:null};
  toolState[mode].inputs[key]=raw;
- toolResult=null;
- renderToolPanel();
+ runActiveTool();
 });
 $('#howButton').addEventListener('click',showHow);$('#closeHow').addEventListener('click',closeHow);$('#howModal').addEventListener('click',e=>{if(e.target.id==='howModal')closeHow()});
 $('#historyButton').addEventListener('click',openHistory);$('#historyBackdrop').addEventListener('click',closeHistory);$('#historyList').addEventListener('click',historyClick);$('#copyButton').addEventListener('click',copyResult);
