@@ -1,5 +1,5 @@
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
-const VERSION='0.4.13';
+const VERSION='0.4.14';
 let lang=localStorage.getItem('uc-lang')==='en'?'en':'el';
 let theme=localStorage.getItem('uc-theme')==='light'?'light':localStorage.getItem('uc-theme')==='dark'?'dark':'auto';
 let mode='calc',expression='',current='',currentIsPercent=false,justCalculated=false,lastExpression='',lastResult=null,howData=null,lastOperation=null,historyClearConfirm=false,toolResult=null,toolActiveInput=null,resultCompact=false;
@@ -80,7 +80,7 @@ function render(){
  const exprEl=$('#expression');
  exprEl.classList.remove('near-limit');
  $('#result').textContent=display;
- $('#result').classList.toggle('long-value',justCalculated&&String(display).length>18);
+ $('#result').classList.remove('long-value');
  if(justCalculated||!raw)resultCompact=false;
  const hasEntry=Boolean(raw);
  $('#clearButton').textContent=justCalculated||!hasEntry?'AC':'C';
@@ -92,11 +92,11 @@ function render(){
      if(overflowing)exprEl.scrollLeft=exprEl.scrollWidth;
    }
    const r=$('#result');
-   if(r&&!justCalculated){
+   if(r){
      const ratio=r.scrollWidth/Math.max(1,r.clientWidth);
-     // Deliberately use a persistent state instead of reading/toggling the
-     // class itself. The class must not be cleared on every render, or the
-     // font will jump large -> small -> large as each digit is entered.
+     // Use the actual rendered width, not character count. This keeps a
+     // normal calculated result exactly the same size as the idle 0, while
+     // still shrinking only when the result genuinely needs more room.
      if(!resultCompact && ratio>0.94)resultCompact=true;
      else if(resultCompact && ratio<0.68)resultCompact=false;
      r.classList.toggle('near-limit',resultCompact);
@@ -104,9 +104,6 @@ function render(){
        const stillOverflowing=r.scrollWidth>r.clientWidth+4;
        if(stillOverflowing)r.scrollLeft=r.scrollWidth;
      });
-   }else if(r){
-     r.classList.remove('near-limit');
-     r.scrollLeft=r.scrollWidth;
    }
  });
 }
