@@ -203,16 +203,14 @@ function renderUnitsDisplay(){
  d.className='display-wrap unit-display';
  d.innerHTML='<div class="unit-display-toolbar"><select id="unitCategory" class="conversion-category">'+Object.keys(units).map(x=>'<option value="'+x+'">'+esc(t(x))+'</option>').join('')+'</select><button id="unitSwap" class="conversion-swap" type="button" aria-label="Swap units">⇄</button></div><div class="unit-rows"><div class="unit-row" data-unit-row="from"><input id="unitValueFrom" class="unit-value" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="" aria-label="'+esc(t('from'))+'"><select id="unitFrom" class="unit-unit"></select></div><div class="unit-row" data-unit-row="to"><input id="unitValueTo" class="unit-value" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="" aria-label="'+esc(t('to'))+'"><select id="unitTo" class="unit-unit"></select></div></div>';
  const cat=$('#unitCategory');
- cat.value=cat.dataset.value||cat.value||'length';
+ cat.value=window._unitCategory||'length';
  populateUnits();
- cat.value='length';
- if(window._unitCategory)cat.value=window._unitCategory;
  const touchDevice=matchMedia('(hover:none) and (pointer:coarse)').matches || 'ontouchstart' in window;
  $('#unitValueFrom,#unitValueTo').forEach(input=>{input.readOnly=touchDevice;input.setAttribute('inputmode',touchDevice?'none':'decimal');input.dataset.unitInput=input.id==='unitValueFrom'?'from':'to'});
  $('#unitValueFrom,#unitValueTo').forEach(input=>input.addEventListener('focus',()=>{unitActiveInput=input.dataset.unitInput}));
  $('#unitValueFrom,#unitValueTo').forEach(input=>input.addEventListener('input',()=>{unitActiveInput=input.dataset.unitInput;unitExpressions[unitActiveInput]=input.value;convertUnitExpression(unitActiveInput)}));
  $('#unitFrom,#unitTo').forEach(select=>select.addEventListener('change',()=>{unitActiveInput=select.id==='unitFrom'?'from':'to';convertUnitExpression(unitActiveInput)}));
- cat.addEventListener('change',()=>{window._unitCategory=cat.value;unitExpressions={from:'',to:''};unitActiveInput='from';updateUnitsDisplay()});
+ cat.addEventListener('change',()=>{window._unitCategory=cat.value;unitExpressions={from:'',to:''};unitActiveInput='from';populateUnits();updateUnitsDisplay()});
  $('#unitSwap').addEventListener('click',()=>{const a=$('#unitFrom'),b=$('#unitTo');[a.value,b.value]=[b.value,a.value];[unitExpressions.from,unitExpressions.to]=[unitExpressions.to,unitExpressions.from];unitActiveInput=unitExpressions.from?'from':'to';convertUnitExpression(unitActiveInput)});
  updateUnitsDisplay();
 }
