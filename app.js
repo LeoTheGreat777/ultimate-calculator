@@ -1,4 +1,4 @@
-const VERSION='0.4.49';
+const VERSION='0.4.50';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function readLanguage(){
@@ -432,9 +432,9 @@ function renderTool(){
  bindTools();
  renderVatToggle();
  renderToolDisplay();
- if(mode==='fuel')window._runFuel?.();
- if(mode==='energy')window._runEnergy?.();
- if(mode==='vat')window._runVat?.(vatAction==='add');
+ const runLive=()=>{if(mode==='fuel')window._runFuel?.();else if(mode==='energy')window._runEnergy?.();else if(mode==='vat')window._runVat?.(vatAction==='add')};
+ runLive();
+ requestAnimationFrame(runLive);
 }
 function setMode(next){resultCompact=false;mode=next;expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null;lastOperation=null;toolResult=null;resetHow();vatAction='add';if(next==='units'){unitExpressions={from:'',to:''};unitActiveInput='from';window._unitCategory=window._unitCategory||'length';}const label=$('#modeLabel'),icon=$('#modeIcon');if(label)label.textContent=t(mode);if(icon)icon.textContent=modeIcon(mode);renderTool();syncModeButton();}
 function applyLanguage(){
