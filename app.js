@@ -1,4 +1,4 @@
-const VERSION='0.4.79';
+const VERSION='0.4.80';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -344,15 +344,16 @@ function renderUnitsDisplay(){
 function updateUnitsDisplay(){
  const from=$('#unitValueFrom'),to=$('#unitValueTo');
  if(!from||!to)return;
- from.value=formatInputDisplay(unitExpressions.from??'');
- to.value=formatInputDisplay(unitExpressions.to??'');
+ from.value=formatInputDisplay(unitExpressions.from??'0');
+ to.value=formatInputDisplay(unitExpressions.to??'0');
  $('.unit-row').forEach(row=>{
    const active=row.dataset.unitRow===unitActiveInput;
    row.classList.toggle('active',active);
+   row.dataset.active=active?'true':'false';
    const input=row.querySelector('.unit-value');
    if(input){
-     input.style.color=active?'var(--text)':'var(--muted)';
-     input.style.opacity=active?'1':'.48';
+     input.classList.toggle('unit-active-value',active);
+     input.classList.toggle('unit-result-value',!active);
    }
  });
 }
