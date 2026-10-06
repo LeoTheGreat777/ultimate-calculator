@@ -19,7 +19,7 @@
 .unit-row.active{background:rgba(110,168,254,.055)}
 .unit-row.active::after{content:'';position:absolute;right:0;bottom:7px;width:3px;height:28px;border-radius:3px;background:var(--accent)}
 .unit-value{width:100%;min-width:0;border:0;background:transparent;color:var(--muted);font-size:clamp(40px,10vw,58px);line-height:1.05;font-weight:400;letter-spacing:-.055em;outline:none;padding:0;text-align:right;transition:color .15s ease,opacity .15s ease}
-.unit-row.active .unit-value{color:var(--text)}
+.unit-row.active .unit-value{color:var(--text)!important;opacity:1!important}
 .unit-row:not(.active) .unit-value{opacity:.48}
 .unit-value:focus{outline:none;box-shadow:none}
 .unit-value::placeholder{color:var(--muted);opacity:.28}
