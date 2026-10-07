@@ -58,3 +58,7 @@
 .calculator-card.mobile-tool .tool-keypad{grid-auto-rows:48px}
 .calculator-card.mobile-tool .tool-keypad button{height:48px!important;min-height:48px!important}
 .calculator-card.mobile-tool .tool-field input{caret-color:transparent}
+
+/* History sheet close button (the sheet can cover the whole screen on phones) */
+.history-clear-wrap{gap:6px}
+.history-close{flex:0 0 32px;width:32px;height:32px;font-size:22px}

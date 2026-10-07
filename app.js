@@ -1,4 +1,4 @@
-const VERSION='0.4.127';
+const VERSION='0.4.128';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 // localStorage can throw (blocked storage, private mode, quota full). Never let that break the app.
@@ -593,6 +593,7 @@ function applyLanguage(){
  $('#clearHistory').textContent=t('clear');
  $('#historyConfirmText').textContent=t('confirm');
  $('#closeHow').setAttribute('aria-label',t('close'));
+ $('#closeHistory').setAttribute('aria-label',t('close'));
  $('#themeButton').setAttribute('aria-label',((theme==='dark'||(theme==='auto'&&!matchMedia('(prefers-color-scheme: light)').matches))?t('themeLight'):t('themeDark')));
  const hint=$('#hint');if(hint)hint.textContent=t('hint');
  const created=$('#createdBy');if(created)created.textContent=t('created')+' Leonidas Kampaxis';
@@ -654,8 +655,13 @@ function openHistory(){const p=$('#historyPanel'),b=$('#historyBackdrop');render
 function closeHistory(){const p=$('#historyPanel'),b=$('#historyBackdrop');p.classList.remove('open','expanded');b.classList.remove('open');setTimeout(()=>{if(!p.classList.contains('open')){p.classList.add('hidden');b.classList.add('hidden')}},220)}
 function setupHistorySheet(){
  const p=$('#historyPanel'),handle=$('.sheet-handle'),list=$('#historyList');let startY=0,tracking=false;
- const start=e=>{startY=e.touches[0].clientY;tracking=true;p.classList.add('dragging')};
- const end=e=>{if(!tracking)return;const dy=e.changedTouches[0].clientY-startY;tracking=false;p.classList.remove('dragging');if(dy<-35){p.classList.add('expanded');list.scrollTop=0}else if(dy>35&&list.scrollTop<=2){p.classList.remove('expanded')}startY=0};
+ // Only tracks swipes to expand/collapse. The handle drag itself lives in history-interaction.js;
+ // adding .dragging here disabled the list (pointer-events:none) and stopped it scrolling.
+ let startScroll=0;
+ const start=e=>{startY=e.touches[0].clientY;startScroll=list.scrollTop;tracking=true};
+ // Swipe up expands the sheet (only when it is not expanded yet, otherwise it is a normal scroll).
+ // Swipe down collapses it only if the list was already at the top when the touch began.
+ const end=e=>{if(!tracking)return;const dy=e.changedTouches[0].clientY-startY;tracking=false;if(dy<-35&&!p.classList.contains('expanded')){p.classList.add('expanded');list.scrollTop=0}else if(dy>35&&startScroll<=2){p.classList.remove('expanded')}startY=0};
  [p,handle].forEach(el=>{el.addEventListener('touchstart',start,{passive:true});el.addEventListener('touchend',end,{passive:true})});
  let timer;list.addEventListener('scroll',()=>{list.classList.add('is-scrolling');clearTimeout(timer);timer=setTimeout(()=>list.classList.remove('is-scrolling'),650)},{passive:true})
 }
@@ -799,7 +805,7 @@ $('#toolPanel').addEventListener('input',e=>{
  runActiveTool();
 });
 $('#howButton').addEventListener('click',showHow);$('#closeHow').addEventListener('click',closeHow);$('#howModal').addEventListener('click',e=>{if(e.target.id==='howModal')closeHow()});
-$('#historyButton').addEventListener('click',openHistory);$('#historyBackdrop').addEventListener('click',closeHistory);$('#historyList').addEventListener('click',historyClick);$('#copyButton').addEventListener('click',copyResult);
+$('#historyButton').addEventListener('click',openHistory);$('#closeHistory').addEventListener('click',closeHistory);$('#historyBackdrop').addEventListener('click',closeHistory);$('#historyList').addEventListener('click',historyClick);$('#copyButton').addEventListener('click',copyResult);
 $('#langButton').addEventListener('click',e=>{
  e.preventDefault();
  e.stopPropagation();
