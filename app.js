@@ -1,4 +1,4 @@
-const VERSION='0.4.128';
+const VERSION='0.4.129';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 // localStorage can throw (blocked storage, private mode, quota full). Never let that break the app.
@@ -462,7 +462,54 @@ const liveToolNumber=id=>{const raw=normalizeNumericInput($('#'+id)?.value??'');
 const field=(id,label)=>{const value=toolState[mode]?.inputs?.[id]??'';const touch=isMobileDevice();return '<label class="tool-field"><span>'+esc(label)+'</span><input id="'+id+'" type="text" inputmode="'+(touch?'none':'decimal')+'"'+(touch?' readonly':'')+' autocomplete="off" spellcheck="false" value="'+esc(value)+'" placeholder="'+esc(String(FIELD_EXAMPLES[id]??''))+'" data-tool-input="true"></label>'};
 function setActiveToolInput(input){toolActiveInput=input||null;$$('#toolPanel input[data-tool-input]').forEach(i=>i.classList.toggle('tool-active',i===toolActiveInput))}
 function setToolResult(main,detail='',how=null){toolResult={main,detail,how};if(toolState[mode])toolState[mode].result=toolResult;howData=how;renderToolDisplay();}
-function renderVatToggle(){ $$('#toolPanel [data-vat-mode]').forEach(b=>b.classList.toggle('active',b.dataset.vatMode===vatAction)); }
+function renderVatToggle(){
+ $$('#toolPanel [data-vat-mode]').forEach(b=>{const on=b.dataset.vatMode===vatAction;b.classList.toggle('active',on);b.setAttribute('aria-checked',String(on))});
+ const tg=$('#toolPanel .vat-toggle');if(tg)tg.dataset.active=vatAction;
+}
+function setVatAction(next){if(next!=='add'&&next!=='remove')return;vatAction=next;renderVatToggle();window._runVat?.(vatAction==='add')}
+// Add/Remove VAT works like an iOS segmented control: tap a side, drag the thumb, or swipe left/right.
+function setupVatSlide(){
+ const panel=$('#toolPanel');let drag=null,suppressClick=false;
+ const thumbRange=tg=>{const b=tg.querySelector('[data-vat-mode="remove"]'),a=tg.querySelector('[data-vat-mode="add"]');return b.offsetLeft-a.offsetLeft};
+ panel.addEventListener('pointerdown',e=>{
+   const tg=e.target.closest('.vat-toggle');if(!tg||e.button>0)return;
+   const range=thumbRange(tg);
+   drag={tg,id:e.pointerId,x0:e.clientX,lastX:e.clientX,lastT:performance.now(),v:0,range,start:vatAction==='remove'?range:0,moved:false};
+   tg.setPointerCapture?.(e.pointerId);
+ });
+ panel.addEventListener('pointermove',e=>{
+   if(!drag||e.pointerId!==drag.id)return;
+   const dx=e.clientX-drag.x0;
+   if(!drag.moved&&Math.abs(dx)<6)return;
+   drag.moved=true;drag.tg.classList.add('sliding');
+   const now=performance.now();drag.v=(e.clientX-drag.lastX)/Math.max(1,now-drag.lastT);drag.lastX=e.clientX;drag.lastT=now;
+   const pos=Math.max(0,Math.min(drag.range,drag.start+dx));
+   drag.tg.style.setProperty('--vat-thumb-x',pos+'px');
+   e.preventDefault();
+ });
+ const finish=e=>{
+   if(!drag||e.pointerId!==drag.id)return;
+   const d=drag;drag=null;d.tg.classList.remove('sliding');
+   if(!d.moved)return; // a plain tap: the click handler picks the side
+   // Use the last tracked position: pointerup coordinates are not reliable on every touch device.
+   const pos=Math.max(0,Math.min(d.range,d.start+(d.lastX-d.x0)));
+   const recent=performance.now()-d.lastT<100;
+   const dx=d.lastX-d.x0;
+   // A quick flick or a clear swipe (>30px) picks that direction; otherwise the side the thumb is closer to.
+   const next=recent&&Math.abs(d.v)>0.5?(d.v>0?'remove':'add'):Math.abs(dx)>30?(dx>0?'remove':'add'):(pos>d.range/2?'remove':'add');
+   d.tg.style.removeProperty('--vat-thumb-x');
+   suppressClick=true;setTimeout(()=>{suppressClick=false},0);
+   setVatAction(next);
+ };
+ panel.addEventListener('pointerup',finish);
+ panel.addEventListener('pointercancel',finish);
+ panel.addEventListener('click',e=>{if(suppressClick&&e.target.closest('.vat-toggle')){e.stopImmediatePropagation();e.preventDefault()}},true);
+ panel.addEventListener('keydown',e=>{
+   if(!e.target.closest('.vat-toggle'))return;
+   if(e.key==='ArrowLeft'){e.preventDefault();setVatAction('add');panel.querySelector('[data-vat-mode="add"]')?.focus()}
+   if(e.key==='ArrowRight'){e.preventDefault();setVatAction('remove');panel.querySelector('[data-vat-mode="remove"]')?.focus()}
+ });
+}
 function populateUnits(preserve=true){
  const cat=$('#unitCategory'),from=$('#unitFrom'),to=$('#unitTo');
  if(!cat||!from||!to)return;
@@ -567,7 +614,7 @@ function renderTool(){
  let html='';
  if(mode==='fuel')html='<div class="tool-grid">'+field('fuelD',T[lang].fuelD)+field('fuelC',T[lang].fuelC)+field('fuelP',T[lang].fuelP)+'</div>';
  if(mode==='energy')html='<div class="tool-grid">'+field('energyP',T[lang].energyP)+field('energyH',T[lang].energyH)+field('energyD',T[lang].energyD)+field('energyR',T[lang].energyR)+'</div>';
- if(mode==='vat')html='<div class="tool-grid">'+field('amount',T[lang].amount)+field('vatRate',T[lang].vatRate)+'</div><div class="vat-toggle" role="group"><button type="button" data-vat-mode="add">'+esc(T[lang].addVat)+'</button><button type="button" data-vat-mode="remove">'+esc(T[lang].removeVat)+'</button></div>';
+ if(mode==='vat')html='<div class="tool-grid">'+field('amount',T[lang].amount)+field('vatRate',T[lang].vatRate)+'</div><div class="vat-toggle" role="radiogroup" data-active="'+vatAction+'"><span class="vat-thumb" aria-hidden="true"></span><button type="button" role="radio" data-vat-mode="add">'+esc(T[lang].addVat)+'</button><button type="button" role="radio" data-vat-mode="remove">'+esc(T[lang].removeVat)+'</button></div>';
 
  $('#toolPanel').innerHTML=html;
  setActiveToolInput($('#toolPanel input[data-tool-input]'));
@@ -776,9 +823,7 @@ $('#toolPanel').addEventListener('click',e=>{
  if(clear){clearToolFields();return}
  const button=e.target.closest('[data-vat-mode]');
  if(!button)return;
- vatAction=button.dataset.vatMode==='remove'?'remove':'add';
- renderVatToggle();
- window._runVat?.(vatAction==='add');
+ setVatAction(button.dataset.vatMode==='remove'?'remove':'add');
 });
 $('#toolPanel').addEventListener('focusin',e=>{if(e.target.matches('input'))setActiveToolInput(e.target)});
 $('#toolPanel').addEventListener('click',e=>{const input=e.target.closest('.tool-field')?.querySelector('input');if(input)setActiveToolInput(input)});
@@ -843,4 +888,4 @@ window.addEventListener('keydown',e=>{
  else if(e.key==='Enter'||e.key==='='){e.preventDefault();equals()}
  else if(e.key==='Backspace'){e.preventDefault();backspace()}
 });
-window.__UC_VERSION=VERSION;$('#footerVersion').textContent=`v${VERSION}`;restoreReloadState();lang=readLanguage();bindTools();renderHistory();renderTool();renderModeMenu();syncModeButton();setupHistorySheet();applyLanguage();applyTheme();window.addEventListener('pageshow',e=>{if(e.persisted&&mode!=='calc')setMode('calc')});
+window.__UC_VERSION=VERSION;$('#footerVersion').textContent=`v${VERSION}`;restoreReloadState();lang=readLanguage();bindTools();renderHistory();renderTool();renderModeMenu();syncModeButton();setupHistorySheet();setupVatSlide();applyLanguage();applyTheme();window.addEventListener('pageshow',e=>{if(e.persisted&&mode!=='calc')setMode('calc')});
