@@ -14,6 +14,17 @@ DB_PATH = os.environ.get("DB_PATH", os.path.join(DATA_DIR, "calculator.db"))
 PORT = int(os.environ.get("PORT", "80"))
 SESSION_DAYS = 30
 
+# Only these files are public. Everything else in ROOT (the SQLite database in
+# data/, server.py, Dockerfile, .github, ...) must never be served.
+STATIC_FILES = {
+    "/index.html",
+    "/app.js",
+    "/history-interaction.js",
+    "/styles.css",
+    "/icon.svg",
+    "/manifest.webmanifest",
+}
+
 os.makedirs(DATA_DIR, exist_ok=True)
 
 def db():
@@ -116,6 +127,17 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.send_json({"error": "Authentication required"}, HTTPStatus.UNAUTHORIZED)
             return None
         return user
+
+    def send_head(self):
+        # Used by both GET and HEAD for static files.
+        path = urllib.parse.urlparse(self.path).path
+        if path == "/":
+            path = "/index.html"
+        if path not in STATIC_FILES:
+            self.send_error(HTTPStatus.NOT_FOUND)
+            return None
+        self.path = path
+        return super().send_head()
 
     def end_headers(self):
         path = urllib.parse.urlparse(self.path).path if hasattr(self, "path") else ""
