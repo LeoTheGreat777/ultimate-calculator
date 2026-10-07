@@ -1,6 +1,8 @@
-const VERSION='0.4.125';
+const VERSION='0.4.126';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+// localStorage can throw (blocked storage, private mode, quota full). Never let that break the app.
+const store={get:k=>{try{return localStorage.getItem(k)}catch{return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch{}},del:k=>{try{localStorage.removeItem(k)}catch{}}};
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function saveReloadState(){
  try{
@@ -41,9 +43,9 @@ function readLanguage(){
  return stored==='en'||stored==='el'?stored:'el';
 }
 let lang=readLanguage();
-let theme=localStorage.getItem('uc-theme')==='light'?'light':localStorage.getItem('uc-theme')==='dark'?'dark':'auto';
+let theme=store.get('uc-theme')==='light'?'light':store.get('uc-theme')==='dark'?'dark':'auto';
 let mode='calc',expression='',current='',currentIsPercent=false,justCalculated=false,lastExpression='',lastResult=null,howData=null,calcHowData=null,lastOperation=null,historyClearConfirm=false,toolResult=null,toolActiveInput=null,resultCompact=false,unitActiveInput='from',unitSource='from',unitReplaceOnNextKey=false,unitExpressions={from:'',to:''},toolState={fuel:{inputs:{},result:null},energy:{inputs:{},result:null},vat:{inputs:{},result:null}};
-localStorage.removeItem('uc-mode');
+store.del('uc-mode');
 
 const T={
 el:{calc:'Αριθμομηχανή',fuel:'Καύσιμα',energy:'Ενέργεια',vat:'ΦΠΑ',units:'Μονάδες',how:'Πώς υπολογίστηκε',history:'Ιστορικό',copy:'Αντιγραφή αποτελέσματος',copied:'Αντιγράφηκε',clear:'Διαγραφή όλων',confirm:'Διαγραφή όλου του ιστορικού;',confirmYes:'Διαγραφή',none:'Δεν υπάρχουν υπολογισμοί ακόμη.',hint:'Πληκτρολόγησε μια πράξη για να ξεκινήσεις.',delete:'Διαγραφή',created:'Δημιουργήθηκε από',fuelD:'Απόσταση (km)',fuelC:'Κατανάλωση (L/100 km)',fuelP:'Τιμή καυσίμου / L',fuelGo:'Υπολογισμός κόστους καυσίμου',fuelUsed:'Καύσιμο που χρησιμοποιήθηκε',costKm:'Κόστος ανά km',energyP:'Ισχύς (W)',energyH:'Ώρες / ημέρα',energyD:'Ημέρες',energyR:'Τιμή / kWh',energyGo:'Υπολογισμός κόστους ρεύματος',energyUsed:'Ενέργεια',amount:'Ποσό',vatRate:'ΦΠΑ %',addVat:'Πρόσθεσε ΦΠΑ',removeVat:'Αφαίρεσε ΦΠΑ',vatAmount:'Ποσό ΦΠΑ',value:'Τιμή',category:'Κατηγορία',from:'Από',to:'Σε',convert:'Μετατροπή',length:'Μήκος',area:'Εμβαδόν',mass:'Μάζα',volume:'Όγκος',speed:'Ταχύτητα',time:'Χρόνος',data:'Δεδομένα',energy:'Ενέργεια',power:'Ισχύς',pressure:'Πίεση',angle:'Γωνία',temperature:'Θερμοκρασία',unit_mm:'Χιλιοστό',unit_cm:'Εκατοστό',unit_m:'Μέτρο',unit_km:'Χιλιόμετρο',unit_in:'Ίντσα',unit_ft:'Πόδι',unit_yd:'Γιάρδα',unit_mi:'Μίλι',unit_nmi:'Ναυτικό μίλι',unit_bit:'Bit',unit_b:'Bit',unit_kbit:'Kilobit',unit_Mbit:'Megabit',unit_Gbit:'Gigabit',unit_Tbit:'Terabit',unit_B:'Byte',unit_kB:'Kilobyte',unit_MB:'Megabyte',unit_GB:'Gigabyte',unit_TB:'Terabyte',unit_KiB:'Kibibyte',unit_MiB:'Mebibyte',unit_GiB:'Gibibyte',unit_TiB:'Tebibyte',unit_kg:'Κιλά',unit_l:'Λίτρο',unit_ml:'Milliliter',unit_mps:'m/s',unit_kmh:'km/h',unit_mph:'mph',unit_knot:'Κόμβος',unit_J:'Joule',unit_kJ:'Kilojoule',unit_Wh:'Watt-ώρα',unit_kWh:'Kilowatt-ώρα',unit_cal:'cal',unit_kcal:'kcal',unit_W:'Watt',unit_kW:'Kilowatt',unit_MW:'Megawatt',unit_hp:'Ιπποδύναμη',unit_Pa:'Pascal',unit_kPa:'Kilopascal',unit_bar:'Bar',unit_psi:'PSI',unit_atm:'Ατμόσφαιρα',unit_deg:'Μοίρα',unit_rad:'Ακτίνιο',unit_grad:'Grad',unit_C:'Κελσίου',unit_F:'Φαρενάιτ',unit_K:'Kelvin',toolReady:'Το αποτέλεσμα θα εμφανιστεί εδώ',toolFuel:'Κόστος καυσίμου',toolEnergy:'Κόστος ρεύματος',toolVat:'Τελικό ποσό',toolUnit:'Αποτέλεσμα',fuelResult:'Καύσιμο που χρησιμοποιήθηκε',energyResult:'Ενέργεια',clearConfirm:'Διαγραφή;',close:'Κλείσιμο',swap:'Εναλλαγή μονάδων',deleteKey:'Διαγραφή',themeLight:'Εναλλαγή σε φωτεινό θέμα',themeDark:'Εναλλαγή σε σκοτεινό θέμα'},
@@ -77,11 +79,20 @@ function ratFromString(s){s=normalizeNumericInput(s);let sign=1n;if(s[0]==='-'){
 function ratPercent(a){return rat(a.n,a.d*100n)}
 function ratToDecimal(a,max=18){let sign=a.n<0n?'-':'';let n=a.n<0n?-a.n:a.n,d=a.d;const whole=n/d;let rem=n%d;if(rem===0n)return sign+whole.toString();let out='';for(let i=0;i<max&&rem;i++){rem*=10n;out+=String(rem/d);rem%=d}out=out.replace(/0+$/,'');return sign+whole.toString()+'.'+out}
 function ratToNumber(a){const s=ratToDecimal(a,18);return Number(s)}
+function formatScientific(raw){
+ const neg=raw[0]==='-';const body=neg?raw.slice(1):raw;const [w,f='']=body.split('.');
+ const exp=w.replace(/^0+/,'')?w.replace(/^0+/,'').length-1:-(f.search(/[1-9]/)+1);
+ const digits=(w+f).replace(/^0+/,'').replace(/0+$/,'');
+ const mant=digits.length>1?digits[0]+','+digits.slice(1,7).replace(/0+$/,''):digits;
+ return (neg?'-':'')+mant.replace(/,$/,'')+' × 10^'+exp;
+}
 function formatRat(a,max=6){
  const s=ratToDecimal(a,max),num=Number(s);
+ // Non-zero values too small for `max` decimals would round to "0": show them in scientific notation.
+ if(a.n!==0n&&num===0)return formatScientific(ratToDecimal(a,200));
  if(Number.isFinite(num)&&Math.abs(num)<1e15)return new Intl.NumberFormat(NUMBER_LOCALE,{maximumFractionDigits:max}).format(num);
- const raw=s; if(raw.length<=24)return formatGroupedNumber(raw);
- const neg=raw[0]==='-';const body=neg?raw.slice(1):raw;const [w,f='']=body.split('.');const exp=(w==='0'?-(f.search(/[1-9]/)+1):w.length-1);if(exp>=15||exp<=-6){const digits=(w==='0'?f.replace(/^0+/,''):w+f).replace(/0+$/,'');const mant=digits.length>1?digits[0]+'.'+digits.slice(1,Math.min(16,digits.length)):digits;return (neg?'-':'')+mant+' × 10'+(exp>=0?'^'+exp:'^'+exp)}return raw;
+ if(s.length<=24)return formatGroupedNumber(s);
+ return formatScientific(s);
 }
 const fmt=n=>n&&typeof n==='object'&&'n'in n?formatRat(n,6):Number.isFinite(Number(n))?new Intl.NumberFormat(NUMBER_LOCALE,{maximumFractionDigits:6}).format(Number(n)):'Error';
 const pretty=s=>String(s).replace(/\*/g,'×').replace(/\//g,'÷');
@@ -156,7 +167,7 @@ function applyTheme(){
 function toggleTheme(){
  const dark=theme==='dark'||(theme==='auto'&&!matchMedia('(prefers-color-scheme: light)').matches);
  theme=dark?'light':'dark';
- localStorage.setItem('uc-theme',theme);
+ store.set('uc-theme',theme);
  applyTheme();
 }
 function fitDisplayText(el,minSize){
@@ -180,7 +191,7 @@ function fitDisplayText(el,minSize){
 function render(){
  if(mode!=='calc')return;
  const raw=expression+current;
- const display=justCalculated?fmt(lastResult):(raw?formatInputDisplay(raw):'0');
+ const display=current==='Error'?'Error':justCalculated?fmt(lastResult):(raw?formatInputDisplay(raw):'0');
  $('#calculatorDisplay').classList.remove('tool-display','tool-empty');
  $('#calculatorDisplay').classList.toggle('calculated',justCalculated);
  $('#expression').textContent=justCalculated?formatExpressionDisplay(lastExpression):'';
@@ -273,11 +284,11 @@ function equals(){
 }
 function showHow(){if(!howData)return;$('#howTitle').textContent=t('how');$('#howContent').innerHTML=`<div class="how-step"><div class="how-expression-label">${lang==='el'?'Πράξη':'Expression'}</div><div class="how-formula">${esc(howData.formula)}</div><div class="how-steps">${howData.steps.map((s,i)=>`<div class="how-line"><span>${i+1}</span><div class="how-line-body"><strong>${esc(s.title||'')}</strong><div>${esc(s.text||s)}</div></div></div>`).join('')}</div><div class="how-result"><span>${lang==='el'?'Αποτέλεσμα':'Result'}</span><strong>${esc(howData.result)}</strong></div></div>`;$('#howModal').classList.remove('hidden')}
 function closeHow(){$('#howModal').classList.add('hidden')}
-function historyItems(){try{return JSON.parse(localStorage.getItem('uc-history')||'[]')}catch{return[]}}
-function saveHistory(item){const list=historyItems();const stored={...item,result:item.result&&typeof item.result==='object'&&'n'in item.result?ratToDecimal(item.result,24):String(item.result)};list.unshift({id:Date.now()+Math.random(),...stored});localStorage.setItem('uc-history',JSON.stringify(list.slice(0,100)));renderHistory()}
+function historyItems(){try{return JSON.parse(store.get('uc-history')||'[]')}catch{return[]}}
+function saveHistory(item){const list=historyItems();const stored={...item,result:item.result&&typeof item.result==='object'&&'n'in item.result?ratToDecimal(item.result,24):String(item.result)};list.unshift({id:Date.now()+Math.random(),...stored});store.set('uc-history',JSON.stringify(list.slice(0,100)));renderHistory()}
 function renderHistory(){const list=historyItems();$('#historyList').innerHTML=list.length?list.map(x=>`<div class="history-item"><button class="history-main" data-history="${x.id}" type="button"><div class="history-expression">${esc(pretty(x.expression))}</div><div class="history-result">${esc(fmt(x.result&&typeof x.result==='string'?ratFromString(x.result):x.result))}</div></button><button class="history-delete" data-delete="${x.id}" type="button" aria-label="${esc(t('delete'))}">×</button></div>`).join(''):`<div class="empty">${esc(t('none'))}</div>`}
 
-const units={length:{mm:'0.001',cm:'0.01',m:'1',km:'1000',in:'0.0254',ft:'0.3048',yd:'0.9144',mi:'1609.344',nmi:'1852'},area:{'mm²':'0.000001','cm²':'0.0001','m²':'1','km²':'1000000','in²':'0.00064516','ft²':'0.09290304',acre:'4046.8564224',ha:'10000'},mass:{mg:'0.000001',g:'0.001',kg:'1',oz:'0.028349523125',lb:'0.45359237',t:'1000'},volume:{ml:'0.001',l:'1','m³':'1000',tsp:'0.00492892159375',tbsp:'0.01478676478125',cup:'0.2365882365',gal:'3.785411784',qt:'0.946352946',pt:'0.473176473'},speed:{'m/s':'1','km/h':'0.27777777777777777778',mph:'0.44704',knot:'0.51444444444444444444'},time:{ms:'0.001',s:'1',min:'60',h:'3600',day:'86400',week:'604800'},data:{bit:'1',b:'1',kbit:'1000',Mbit:'1000000',Gbit:'1000000000',Tbit:'1000000000000',B:'8',kB:'8000',MB:'8000000',GB:'8000000000',TB:'8000000000000',KiB:'8192',MiB:'8388608',GiB:'8589934592',TiB:'8796093022208'},energy:{J:'1',kJ:'1000',Wh:'3600',kWh:'3600000',cal:'4.184',kcal:'4184'},power:{W:'1',kW:'1000',MW:'1000000',hp:'745.69987158227022'},pressure:{Pa:'1',kPa:'1000',bar:'100000',psi:'6894.757293168',atm:'101325'},angle:{deg:'1',rad:'57.2957795130823208768',grad:'0.9'},temperature:{'°C':'1','°F':'1',K:'1'}};
+const units={length:{mm:'0.001',cm:'0.01',m:'1',km:'1000',in:'0.0254',ft:'0.3048',yd:'0.9144',mi:'1609.344',nmi:'1852'},area:{'mm²':'0.000001','cm²':'0.0001','m²':'1','km²':'1000000','in²':'0.00064516','ft²':'0.09290304',stremma:'1000',acre:'4046.8564224',ha:'10000'},mass:{mg:'0.000001',g:'0.001',kg:'1',oz:'0.028349523125',lb:'0.45359237',t:'1000'},volume:{ml:'0.001',l:'1','m³':'1000',tsp:'0.00492892159375',tbsp:'0.01478676478125',cup:'0.2365882365',gal:'3.785411784',qt:'0.946352946',pt:'0.473176473'},speed:{'m/s':'1','km/h':'0.27777777777777777778',mph:'0.44704',knot:'0.51444444444444444444'},time:{ms:'0.001',s:'1',min:'60',h:'3600',day:'86400',week:'604800'},data:{bit:'1',b:'1',kbit:'1000',Mbit:'1000000',Gbit:'1000000000',Tbit:'1000000000000',B:'8',kB:'8000',MB:'8000000',GB:'8000000000',TB:'8000000000000',KiB:'8192',MiB:'8388608',GiB:'8589934592',TiB:'8796093022208'},energy:{J:'1',kJ:'1000',Wh:'3600',kWh:'3600000',cal:'4.184',kcal:'4184'},power:{W:'1',kW:'1000',MW:'1000000',hp:'745.69987158227022'},pressure:{Pa:'1',kPa:'1000',bar:'100000',psi:'6894.757293168',atm:'101325'},angle:{deg:'1',rad:'57.2957795130823208768',grad:'0.9'},temperature:{'°C':'1','°F':'1',K:'1'}};
 function normalizeUnitExpression(expr){
  return String(expr??'').trim().replace(/×/g,'*').replace(/÷/g,'/').replace(/-?\d[\d.,]*/g,m=>{
   const sign=m.startsWith('-')?'-':'';
@@ -443,7 +454,7 @@ window._equalsUnits=equalsUnits;
 const FIELD_EXAMPLES={fuelD:'250',fuelC:'7,2',fuelP:'1,85',energyP:'100',energyH:'8',energyD:'30',energyR:'0,20',amount:'100',vatRate:'24%',value:'10'};
 const TOOL_DEFAULTS={fuelD:250,fuelC:7.2,fuelP:1.85,energyP:100,energyH:8,energyD:30,energyR:0.20,amount:100,vatRate:24,value:10};
 let vatAction='add';
-const UNIT_LABELS={length:{mm:['Χιλιοστό','Millimeter'],cm:['Εκατοστό','Centimeter'],m:['Μέτρο','Meter'],km:['Χιλιόμετρο','Kilometer'],in:['Ίντσα','Inch'],ft:['Πόδι','Foot'],yd:['Γιάρδα','Yard'],mi:['Μίλι','Statute mile'],nmi:['Ναυτικό μίλι','Nautical mile']},area:{'mm²':['Τετρ. χιλιοστό','Square millimeter'],'cm²':['Τετρ. εκατοστό','Square centimeter'],'m²':['Τετρ. μέτρο','Square meter'],'km²':['Τετρ. χιλιόμετρο','Square kilometer'],'in²':['Τετρ. ίντσα','Square inch'],'ft²':['Τετρ. πόδι','Square foot'],acre:['Στρέμμα','Acre'],ha:['Εκτάριο','Hectare']},mass:{mg:['Χιλιοστόγραμμο','Milligram'],g:['Γραμμάριο','Gram'],kg:['Κιλιόγραμμο','Kilogram'],oz:['Ουγγιά','Ounce'],lb:['Λίβρα','Pound'],t:['Τόνος','Metric ton']},volume:{ml:['Χιλιοστόλιτρο','Milliliter'],l:['Λίτρο','Liter'],'m³':['Κυβικό μέτρο','Cubic meter'],tsp:['Κουταλάκι','Teaspoon'],tbsp:['Κουταλιά','Tablespoon'],cup:['Κούπα','Cup'],gal:['Γαλόνι','Gallon'],qt:['Quart','Quart'],pt:['Pint','Pint']},speed:{'m/s':['Μέτρα/δευτ.','Meters/second'],'km/h':['Χιλιόμετρα/ώρα','Kilometers/hour'],mph:['Μίλια/ώρα','Miles/hour'],knot:['Κόμβος','Knot']},time:{ms:['Millisec.','Millisecond'],s:['Δευτερόλεπτο','Second'],min:['Λεπτό','Minute'],h:['Ώρα','Hour'],day:['Ημέρα','Day'],week:['Εβδομάδα','Week']},data:{bit:['Bit','Bit'],b:['Bit','Bit'],kbit:['Κιλομπίτ','Kilobit'],Mbit:['Μεγαμπίτ','Megabit'],Gbit:['Γιγαμπίτ','Gigabit'],Tbit:['Τεραμπίτ','Terabit'],B:['Byte','Byte'],kB:['Κιλομπάιτ','Kilobyte'],MB:['Μεγαμπάιτ','Megabyte'],GB:['Γιγαμπάιτ','Gigabyte'],TB:['Τεραμπάιτ','Terabyte'],KiB:['Κιμπιμπάιτ','Kibibyte'],MiB:['Μεμπιμπάιτ','Mebibyte'],GiB:['Γκιμπιμπάιτ','Gibibyte'],TiB:['Τεμπιμπάιτ','Tebibyte']},energy:{J:['Τζάουλ','Joule'],kJ:['Κιλοτζάουλ','Kilojoule'],Wh:['Watt-ώρα','Watt-hour'],kWh:['Kilowatt-ώρα','Kilowatt-hour'],cal:['Θερμίδα','cal'],kcal:['Χιλιοθερμίδα','kcal']},power:{W:['Βατ','Watt'],kW:['Κιλοβάτ','Kilowatt'],MW:['Μεγαβάτ','Megawatt'],hp:['Ιπποδύναμη','Horsepower']},pressure:{Pa:['Πασκάλ','Pascal'],kPa:['Κιλοπασκάλ','Kilopascal'],bar:['Μπαρ','Bar'],psi:['PSI','PSI'],atm:['Ατμόσφαιρα','Atmosphere']},angle:{deg:['Μοίρα','Degree'],rad:['Ακτίνιο','Radian'],grad:['Γκραντ','Grad']},temperature:{'°C':['Κελσίου','Celsius'],'°F':['Φαρενάιτ','Fahrenheit'],K:['Kelvin','Kelvin']}};
+const UNIT_LABELS={length:{mm:['Χιλιοστό','Millimeter'],cm:['Εκατοστό','Centimeter'],m:['Μέτρο','Meter'],km:['Χιλιόμετρο','Kilometer'],in:['Ίντσα','Inch'],ft:['Πόδι','Foot'],yd:['Γιάρδα','Yard'],mi:['Μίλι','Statute mile'],nmi:['Ναυτικό μίλι','Nautical mile']},area:{'mm²':['Τετρ. χιλιοστό','Square millimeter'],'cm²':['Τετρ. εκατοστό','Square centimeter'],'m²':['Τετρ. μέτρο','Square meter'],'km²':['Τετρ. χιλιόμετρο','Square kilometer'],'in²':['Τετρ. ίντσα','Square inch'],'ft²':['Τετρ. πόδι','Square foot'],stremma:['Στρέμμα','Stremma'],acre:['Έικρ','Acre'],ha:['Εκτάριο','Hectare']},mass:{mg:['Χιλιοστόγραμμο','Milligram'],g:['Γραμμάριο','Gram'],kg:['Χιλιόγραμμο','Kilogram'],oz:['Ουγγιά','Ounce'],lb:['Λίβρα','Pound'],t:['Τόνος','Metric ton']},volume:{ml:['Χιλιοστόλιτρο','Milliliter'],l:['Λίτρο','Liter'],'m³':['Κυβικό μέτρο','Cubic meter'],tsp:['Κουταλάκι','Teaspoon'],tbsp:['Κουταλιά','Tablespoon'],cup:['Κούπα','Cup'],gal:['Γαλόνι','Gallon'],qt:['Quart','Quart'],pt:['Pint','Pint']},speed:{'m/s':['Μέτρα/δευτ.','Meters/second'],'km/h':['Χιλιόμετρα/ώρα','Kilometers/hour'],mph:['Μίλια/ώρα','Miles/hour'],knot:['Κόμβος','Knot']},time:{ms:['Millisec.','Millisecond'],s:['Δευτερόλεπτο','Second'],min:['Λεπτό','Minute'],h:['Ώρα','Hour'],day:['Ημέρα','Day'],week:['Εβδομάδα','Week']},data:{bit:['Bit','Bit'],b:['Bit','Bit'],kbit:['Κιλομπίτ','Kilobit'],Mbit:['Μεγαμπίτ','Megabit'],Gbit:['Γιγαμπίτ','Gigabit'],Tbit:['Τεραμπίτ','Terabit'],B:['Byte','Byte'],kB:['Κιλομπάιτ','Kilobyte'],MB:['Μεγαμπάιτ','Megabyte'],GB:['Γιγαμπάιτ','Gigabyte'],TB:['Τεραμπάιτ','Terabyte'],KiB:['Κιμπιμπάιτ','Kibibyte'],MiB:['Μεμπιμπάιτ','Mebibyte'],GiB:['Γκιμπιμπάιτ','Gibibyte'],TiB:['Τεμπιμπάιτ','Tebibyte']},energy:{J:['Τζάουλ','Joule'],kJ:['Κιλοτζάουλ','Kilojoule'],Wh:['Watt-ώρα','Watt-hour'],kWh:['Kilowatt-ώρα','Kilowatt-hour'],cal:['Θερμίδα','cal'],kcal:['Χιλιοθερμίδα','kcal']},power:{W:['Βατ','Watt'],kW:['Κιλοβάτ','Kilowatt'],MW:['Μεγαβάτ','Megawatt'],hp:['Ιπποδύναμη','Horsepower']},pressure:{Pa:['Πασκάλ','Pascal'],kPa:['Κιλοπασκάλ','Kilopascal'],bar:['Μπαρ','Bar'],psi:['PSI','PSI'],atm:['Ατμόσφαιρα','Atmosphere']},angle:{deg:['Μοίρα','Degree'],rad:['Ακτίνιο','Radian'],grad:['Γκραντ','Grad']},temperature:{'°C':['Κελσίου','Celsius'],'°F':['Φαρενάιτ','Fahrenheit'],K:['Kelvin','Kelvin']}};
 const unitOptions=(category,selected)=>Object.keys(units[category]||{}).map(x=>'<option value="'+x+'"'+(x===selected?' selected':'')+'>'+esc(UNIT_LABELS[category]?.[x]?.[lang==='el'?0:1]||x)+'</option>').join('');
 const toolNumber=id=>{const raw=normalizeNumericInput($('#'+id)?.value??'');return raw===''?Number(TOOL_DEFAULTS[id]):Number(raw)};
 const liveToolNumber=id=>{const raw=normalizeNumericInput($('#'+id)?.value??'');if(raw==='')return null;const n=Number(raw);return Number.isFinite(n)?n:null};
@@ -482,7 +493,7 @@ function bindTools(){
   const p=liveToolNumber('energyP'),hh=liveToolNumber('energyH'),d=liveToolNumber('energyD'),r=liveToolNumber('energyR');
   if([p,hh,d,r].some(x=>x===null)){setToolResult('','',null);return}
   const kwh=p/1000*hh*d,cost=kwh*r;
-  const how={formula:fmt(p)+' W ÷ 1000 × '+fmt(hh)+' h/day × '+fmt(d)+' days',steps:[
+  const how={formula:fmt(p)+' W ÷ 1000 × '+fmt(hh)+(lang==='el'?' ώρες/ημέρα × ':' h/day × ')+fmt(d)+(lang==='el'?' ημέρες':' days'),steps:[
    {title:lang==='el'?'Μετέτρεψε W σε kW':'Convert W to kW',text:fmt(p)+' W ÷ 1000 = '+fmt(p/1000)+' kW'},
    {title:lang==='el'?'Υπολόγισε την ενέργεια':'Calculate energy',text:fmt(p/1000)+' kW × '+fmt(hh)+' × '+fmt(d)+' = '+fmt(kwh)+' kWh'},
    {title:lang==='el'?'Υπολόγισε το κόστος':'Calculate cost',text:fmt(kwh)+' kWh × '+fmt(r)+' €/kWh = '+fmt(cost)+' €'}],result:fmt(cost)+' €'};
@@ -493,7 +504,8 @@ function bindTools(){
   const aa=liveToolNumber('amount'),r=liveToolNumber('vatRate');
   if(aa===null||r===null){setToolResult('','',null);return}
   const total=add?aa*(1+r/100):aa/(1+r/100),tax=add?total-aa:aa-total;
-  const how={formula:add?fmt(aa)+' € + '+fmt(r)+'% VAT':fmt(aa)+' € with '+fmt(r)+'% VAT',steps:add?[
+  const vatWord=lang==='el'?'ΦΠΑ':'VAT';
+  const how={formula:add?fmt(aa)+' € + '+fmt(r)+'% '+vatWord:fmt(aa)+(lang==='el'?' € με ':' € with ')+fmt(r)+'% '+vatWord,steps:add?[
    {title:lang==='el'?'Υπολόγισε τον ΦΠΑ':'Calculate VAT',text:fmt(aa)+' × '+fmt(r)+' ÷ 100 = '+fmt(tax)+' €'},
    {title:lang==='el'?'Πρόσθεσε τον ΦΠΑ':'Add VAT',text:fmt(aa)+' + '+fmt(tax)+' = '+fmt(total)+' €'}]:[
    {title:lang==='el'?'Αφαίρεσε τον ΦΠΑ':'Remove VAT',text:fmt(aa)+' ÷ (1 + '+fmt(r)+' ÷ 100) = '+fmt(total)+' €'},
@@ -567,7 +579,7 @@ function renderTool(){
 
 
 }
-function setMode(next){resultCompact=false;if(mode==='calc')calcHowData=howData;mode=next;howData=next==='calc'?calcHowData:null;vatAction='add';if(next!=='calc')toolState[next]={inputs:{},result:null};toolResult=null;if(next==='vat')toolState.vat.inputs.vatRate='24';if(next==='units'){unitExpressions={from:'0',to:'0'};unitActiveInput='from';unitSource='from';unitReplaceOnNextKey=true;window._unitCategory=window._unitCategory||'length';}const label=$('#modeLabel'),icon=$('#modeIcon');if(label)label.textContent=modeText(mode);if(icon)icon.textContent=modeIcon(mode);renderTool();if(next==='vat')window._runVat?.(true);if(next!=='calc'&&next!=='vat')renderToolDisplay();syncModeButton();}
+function setMode(next){resultCompact=false;if(mode==='calc')calcHowData=howData;mode=next;howData=next==='calc'?calcHowData:null;vatAction='add';if(next!=='calc')toolState[next]={inputs:{},result:null};toolResult=null;if(next==='vat')toolState.vat.inputs.vatRate='24';if(next==='units'){unitExpressions={from:'0',to:'0'};unitActiveInput='from';unitSource='from';unitReplaceOnNextKey=true;window._unitCategory=window._unitCategory||'length';}const label=$('#modeLabel'),icon=$('#modeIcon');if(label)label.textContent=modeText(mode);if(icon)icon.textContent=modeIcon(mode);renderTool();if(next==='vat')window._runVat?.(true);if(next!=='calc'&&next!=='vat'&&next!=='units')renderToolDisplay();syncModeButton();}
 function applyLanguage(){
  lang=readLanguage();
  const savedInputs={};
@@ -655,10 +667,10 @@ function clearHistoryConfirm(){
  if(historyClearConfirm){btn.classList.add('hidden');confirm.classList.remove('hidden');$('#historyConfirmText').textContent=t('confirm')}else{btn.classList.remove('hidden');confirm.classList.add('hidden')}
  wrap.classList.toggle('confirming',historyClearConfirm)
 }
-function deleteAllHistory(){localStorage.removeItem('uc-history');historyClearConfirm=false;$('#clearHistory').classList.remove('hidden');$('#historyConfirm').classList.add('hidden');$('#historyClearWrap').classList.remove('confirming');renderHistory()}
+function deleteAllHistory(){store.del('uc-history');historyClearConfirm=false;$('#clearHistory').classList.remove('hidden');$('#historyConfirm').classList.add('hidden');$('#historyClearWrap').classList.remove('confirming');renderHistory()}
 function historyClick(e){
  const del=e.target.closest('[data-delete]'),item=e.target.closest('[data-history]');
- if(del){localStorage.setItem('uc-history',JSON.stringify(historyItems().filter(x=>String(x.id)!==del.dataset.delete)));renderHistory();return}
+ if(del){store.set('uc-history',JSON.stringify(historyItems().filter(x=>String(x.id)!==del.dataset.delete)));renderHistory();return}
  if(item){const x=historyItems().find(x=>String(x.id)===item.dataset.history);if(!x)return;closeHistory();setMode('calc');lastExpression=x.expression;lastResult=ratFromString(String(x.result));justCalculated=true;expression='';current='';currentIsPercent=false;howData=x.how||null;calcHowData=howData;lastOperation=parseLastOperation(x.expression);render();syncModeButton()}
 }
 function copyResult(){
@@ -724,7 +736,7 @@ function toolKeyInput(key){
  let value=input.value;
  if(key==='clear')value='';
  else if(key==='backspace')value=value.slice(0,-1);
- else if(key==='.'||key===',')value.includes('.')?value:value+'.';
+ else if(key==='.'||key===','){if(!/[.,]/.test(value))value+=(value===''||value==='-')?'0,':','}
  else if(key==='-')value=value.startsWith('-')?value.slice(1):'-'+value;
  else if(/^\d$/.test(key))value=value==='0'?key:value+key;
  else return false;
@@ -740,7 +752,8 @@ function runActiveTool(){
 }
 $('#keypad').addEventListener('click',e=>{
  const b=e.target.closest('button');if(!b)return;
- const a=b.dataset.action,v=b.dataset.value;
+ // The keypad shows "," as the decimal key; every mode handles it as ".".
+ const a=b.dataset.action,v=b.dataset.value===','?'.':b.dataset.value;
  if(mode!=='calc'&&a==='clear-all'){clearToolFields();return;}
  if(mode!=='calc'){
    if(mode==='units'){
@@ -807,9 +820,16 @@ window.addEventListener('keydown',e=>{
  if(e.key==='%'&&mode==='units'){e.preventDefault();toolKeyInput('%');return}
  if(e.key===','||e.key==='.'||e.key==='Decimal'){e.preventDefault();if(mode==='calc')digit('.');else if(document.activeElement?.matches('#toolPanel input')){const input=document.activeElement;const pos=input.selectionStart??input.value.length;input.setRangeText(',',pos,pos,'end');input.dispatchEvent(new Event('input',{bubbles:true}))}else toolKeyInput('.');return}
  if(mode==='calc'&&(e.key==='('||e.key===')')){e.preventDefault();parenthesis(e.key);return}
- if(mode==='units'&&document.activeElement?.matches('#unitValueFrom,#unitValueTo')){
-   if(e.key==='Escape'){e.preventDefault();document.activeElement.value='';document.activeElement.dispatchEvent(new Event('input',{bubbles:true}));return}
+ if(e.key==='Escape'){
+   if(!$('#howModal').classList.contains('hidden')){e.preventDefault();closeHow();return}
+   if(!$('#historyPanel').classList.contains('hidden')){e.preventDefault();closeHistory();return}
+   if($('.mode-control')?.classList.contains('mode-open')){e.preventDefault();closeModeMenu();return}
+   if(mode==='calc'){e.preventDefault();clearAll()}
    return;
+ }
+ if(mode==='units'&&!document.activeElement?.matches('select')){
+   if(/^[0-9]$/.test(e.key)||['+','-','*','/'].includes(e.key)){e.preventDefault();toolKeyInput(e.key);return}
+   if(e.key==='Enter'||e.key==='='){e.preventDefault();window._equalsUnits?.();return}
  }
  if(mode!=='calc')return;
  if(/^[0-9]$/.test(e.key))digit(e.key);
@@ -817,12 +837,5 @@ window.addEventListener('keydown',e=>{
  else if(e.key==='%')percent();
  else if(e.key==='Enter'||e.key==='='){e.preventDefault();equals()}
  else if(e.key==='Backspace'){e.preventDefault();backspace()}
- else if(e.key==='Escape'){
-   e.preventDefault();
-   if(!$('#howModal').classList.contains('hidden')){closeHow();return}
-   if(!$('#historyPanel').classList.contains('hidden')){closeHistory();return}
-   if($('.mode-control')?.classList.contains('mode-open')){closeModeMenu();return}
-   clearAll();
- }
 });
 window.__UC_VERSION=VERSION;$('#footerVersion').textContent=`v${VERSION}`;restoreReloadState();lang=readLanguage();bindTools();renderHistory();renderTool();renderModeMenu();syncModeButton();setupHistorySheet();applyLanguage();applyTheme();window.addEventListener('pageshow',e=>{if(e.persisted&&mode!=='calc')setMode('calc')});
