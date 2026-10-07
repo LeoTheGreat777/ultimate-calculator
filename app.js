@@ -1,4 +1,4 @@
-const VERSION='0.4.126';
+const VERSION='0.4.127';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 // localStorage can throw (blocked storage, private mode, quota full). Never let that break the app.
@@ -458,7 +458,9 @@ const UNIT_LABELS={length:{mm:['Χιλιοστό','Millimeter'],cm:['Εκατο�
 const unitOptions=(category,selected)=>Object.keys(units[category]||{}).map(x=>'<option value="'+x+'"'+(x===selected?' selected':'')+'>'+esc(UNIT_LABELS[category]?.[x]?.[lang==='el'?0:1]||x)+'</option>').join('');
 const toolNumber=id=>{const raw=normalizeNumericInput($('#'+id)?.value??'');return raw===''?Number(TOOL_DEFAULTS[id]):Number(raw)};
 const liveToolNumber=id=>{const raw=normalizeNumericInput($('#'+id)?.value??'');if(raw==='')return null;const n=Number(raw);return Number.isFinite(n)?n:null};
-const field=(id,label)=>{const value=toolState[mode]?.inputs?.[id]??'';return '<label class="tool-field"><span>'+esc(label)+'</span><input id="'+id+'" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="'+esc(value)+'" placeholder="'+esc(String(FIELD_EXAMPLES[id]??''))+'" data-tool-input="true"></label>'};
+// On phones the fields are filled only from the app's own keypad, so the native keyboard never opens.
+const field=(id,label)=>{const value=toolState[mode]?.inputs?.[id]??'';const touch=isMobileDevice();return '<label class="tool-field"><span>'+esc(label)+'</span><input id="'+id+'" type="text" inputmode="'+(touch?'none':'decimal')+'"'+(touch?' readonly':'')+' autocomplete="off" spellcheck="false" value="'+esc(value)+'" placeholder="'+esc(String(FIELD_EXAMPLES[id]??''))+'" data-tool-input="true"></label>'};
+function setActiveToolInput(input){toolActiveInput=input||null;$$('#toolPanel input[data-tool-input]').forEach(i=>i.classList.toggle('tool-active',i===toolActiveInput))}
 function setToolResult(main,detail='',how=null){toolResult={main,detail,how};if(toolState[mode])toolState[mode].result=toolResult;howData=how;renderToolDisplay();}
 function renderVatToggle(){ $$('#toolPanel [data-vat-mode]').forEach(b=>b.classList.toggle('active',b.dataset.vatMode===vatAction)); }
 function populateUnits(preserve=true){
@@ -566,16 +568,11 @@ function renderTool(){
  if(mode==='fuel')html='<div class="tool-grid">'+field('fuelD',T[lang].fuelD)+field('fuelC',T[lang].fuelC)+field('fuelP',T[lang].fuelP)+'</div>';
  if(mode==='energy')html='<div class="tool-grid">'+field('energyP',T[lang].energyP)+field('energyH',T[lang].energyH)+field('energyD',T[lang].energyD)+field('energyR',T[lang].energyR)+'</div>';
  if(mode==='vat')html='<div class="tool-grid">'+field('amount',T[lang].amount)+field('vatRate',T[lang].vatRate)+'</div><div class="vat-toggle" role="group"><button type="button" data-vat-mode="add">'+esc(T[lang].addVat)+'</button><button type="button" data-vat-mode="remove">'+esc(T[lang].removeVat)+'</button></div>';
- if(isMobileDevice())html+='<button class="mobile-tool-ac" type="button" data-mobile-action="clear-all">AC</button>';
+
  $('#toolPanel').innerHTML=html;
- toolActiveInput=null;
+ setActiveToolInput($('#toolPanel input[data-tool-input]'));
  renderVatToggle();
- if(isMobileDevice()){
-   $('#keypad').className='hidden';
-   $('#keypad').innerHTML='';
- }else{
-   renderToolKeypad();
- }
+ renderToolKeypad();
 
 
 }
@@ -732,7 +729,8 @@ function toolKeyInput(key){
  }
  const input=toolActiveInput&&toolActiveInput.matches('#toolPanel input')?toolActiveInput:$('#toolPanel input');
  if(!input)return false;
- input.focus();
+ if(!isMobileDevice())input.focus();
+ setActiveToolInput(input);
  let value=input.value;
  if(key==='clear')value='';
  else if(key==='backspace')value=value.slice(0,-1);
@@ -776,7 +774,8 @@ $('#toolPanel').addEventListener('click',e=>{
  renderVatToggle();
  window._runVat?.(vatAction==='add');
 });
-$('#toolPanel').addEventListener('focusin',e=>{if(e.target.matches('input'))toolActiveInput=e.target});
+$('#toolPanel').addEventListener('focusin',e=>{if(e.target.matches('input'))setActiveToolInput(e.target)});
+$('#toolPanel').addEventListener('click',e=>{const input=e.target.closest('.tool-field')?.querySelector('input');if(input)setActiveToolInput(input)});
 $('#toolPanel').addEventListener('beforeinput',e=>{
  if(!e.target.matches('input')||e.inputType?.startsWith('delete'))return;
  if(e.data&&!/^[0-9.,-]+$/.test(e.data))e.preventDefault();
