@@ -1,4 +1,4 @@
-const VERSION='0.4.126';
+const VERSION='0.4.127';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 // localStorage can throw (blocked storage, private mode, quota full). Never let that break the app.
@@ -458,9 +458,58 @@ const UNIT_LABELS={length:{mm:['Χιλιοστό','Millimeter'],cm:['Εκατο�
 const unitOptions=(category,selected)=>Object.keys(units[category]||{}).map(x=>'<option value="'+x+'"'+(x===selected?' selected':'')+'>'+esc(UNIT_LABELS[category]?.[x]?.[lang==='el'?0:1]||x)+'</option>').join('');
 const toolNumber=id=>{const raw=normalizeNumericInput($('#'+id)?.value??'');return raw===''?Number(TOOL_DEFAULTS[id]):Number(raw)};
 const liveToolNumber=id=>{const raw=normalizeNumericInput($('#'+id)?.value??'');if(raw==='')return null;const n=Number(raw);return Number.isFinite(n)?n:null};
-const field=(id,label)=>{const value=toolState[mode]?.inputs?.[id]??'';return '<label class="tool-field"><span>'+esc(label)+'</span><input id="'+id+'" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="'+esc(value)+'" placeholder="'+esc(String(FIELD_EXAMPLES[id]??''))+'" data-tool-input="true"></label>'};
+// On phones the fields are filled only from the app's own keypad, so the native keyboard never opens.
+const field=(id,label)=>{const value=toolState[mode]?.inputs?.[id]??'';const touch=isMobileDevice();return '<label class="tool-field"><span>'+esc(label)+'</span><input id="'+id+'" type="text" inputmode="'+(touch?'none':'decimal')+'"'+(touch?' readonly':'')+' autocomplete="off" spellcheck="false" value="'+esc(value)+'" placeholder="'+esc(String(FIELD_EXAMPLES[id]??''))+'" data-tool-input="true"></label>'};
+function setActiveToolInput(input){toolActiveInput=input||null;$$('#toolPanel input[data-tool-input]').forEach(i=>i.classList.toggle('tool-active',i===toolActiveInput))}
 function setToolResult(main,detail='',how=null){toolResult={main,detail,how};if(toolState[mode])toolState[mode].result=toolResult;howData=how;renderToolDisplay();}
-function renderVatToggle(){ $$('#toolPanel [data-vat-mode]').forEach(b=>b.classList.toggle('active',b.dataset.vatMode===vatAction)); }
+function renderVatToggle(){
+ $$('#toolPanel [data-vat-mode]').forEach(b=>{const on=b.dataset.vatMode===vatAction;b.classList.toggle('active',on);b.setAttribute('aria-checked',String(on))});
+ const tg=$('#toolPanel .vat-toggle');if(tg)tg.dataset.active=vatAction;
+}
+function setVatAction(next){if(next!=='add'&&next!=='remove')return;vatAction=next;renderVatToggle();window._runVat?.(vatAction==='add')}
+// Add/Remove VAT works like an iOS segmented control: tap a side, drag the thumb, or swipe left/right.
+function setupVatSlide(){
+ const panel=$('#toolPanel');let drag=null,suppressClick=false;
+ const thumbRange=tg=>{const b=tg.querySelector('[data-vat-mode="remove"]'),a=tg.querySelector('[data-vat-mode="add"]');return b.offsetLeft-a.offsetLeft};
+ panel.addEventListener('pointerdown',e=>{
+   const tg=e.target.closest('.vat-toggle');if(!tg||e.button>0)return;
+   const range=thumbRange(tg);
+   drag={tg,id:e.pointerId,x0:e.clientX,lastX:e.clientX,lastT:performance.now(),v:0,range,start:vatAction==='remove'?range:0,moved:false};
+   tg.setPointerCapture?.(e.pointerId);
+ });
+ panel.addEventListener('pointermove',e=>{
+   if(!drag||e.pointerId!==drag.id)return;
+   const dx=e.clientX-drag.x0;
+   if(!drag.moved&&Math.abs(dx)<6)return;
+   drag.moved=true;drag.tg.classList.add('sliding');
+   const now=performance.now();drag.v=(e.clientX-drag.lastX)/Math.max(1,now-drag.lastT);drag.lastX=e.clientX;drag.lastT=now;
+   const pos=Math.max(0,Math.min(drag.range,drag.start+dx));
+   drag.tg.style.setProperty('--vat-thumb-x',pos+'px');
+   e.preventDefault();
+ });
+ const finish=e=>{
+   if(!drag||e.pointerId!==drag.id)return;
+   const d=drag;drag=null;d.tg.classList.remove('sliding');
+   if(!d.moved)return; // a plain tap: the click handler picks the side
+   // Use the last tracked position: pointerup coordinates are not reliable on every touch device.
+   const pos=Math.max(0,Math.min(d.range,d.start+(d.lastX-d.x0)));
+   const recent=performance.now()-d.lastT<100;
+   const dx=d.lastX-d.x0;
+   // A quick flick or a clear swipe (>30px) picks that direction; otherwise the side the thumb is closer to.
+   const next=recent&&Math.abs(d.v)>0.5?(d.v>0?'remove':'add'):Math.abs(dx)>30?(dx>0?'remove':'add'):(pos>d.range/2?'remove':'add');
+   d.tg.style.removeProperty('--vat-thumb-x');
+   suppressClick=true;setTimeout(()=>{suppressClick=false},0);
+   setVatAction(next);
+ };
+ panel.addEventListener('pointerup',finish);
+ panel.addEventListener('pointercancel',finish);
+ panel.addEventListener('click',e=>{if(suppressClick&&e.target.closest('.vat-toggle')){e.stopImmediatePropagation();e.preventDefault()}},true);
+ panel.addEventListener('keydown',e=>{
+   if(!e.target.closest('.vat-toggle'))return;
+   if(e.key==='ArrowLeft'){e.preventDefault();setVatAction('add');panel.querySelector('[data-vat-mode="add"]')?.focus()}
+   if(e.key==='ArrowRight'){e.preventDefault();setVatAction('remove');panel.querySelector('[data-vat-mode="remove"]')?.focus()}
+ });
+}
 function populateUnits(preserve=true){
  const cat=$('#unitCategory'),from=$('#unitFrom'),to=$('#unitTo');
  if(!cat||!from||!to)return;
@@ -565,17 +614,12 @@ function renderTool(){
  let html='';
  if(mode==='fuel')html='<div class="tool-grid">'+field('fuelD',T[lang].fuelD)+field('fuelC',T[lang].fuelC)+field('fuelP',T[lang].fuelP)+'</div>';
  if(mode==='energy')html='<div class="tool-grid">'+field('energyP',T[lang].energyP)+field('energyH',T[lang].energyH)+field('energyD',T[lang].energyD)+field('energyR',T[lang].energyR)+'</div>';
- if(mode==='vat')html='<div class="tool-grid">'+field('amount',T[lang].amount)+field('vatRate',T[lang].vatRate)+'</div><div class="vat-toggle" role="group"><button type="button" data-vat-mode="add">'+esc(T[lang].addVat)+'</button><button type="button" data-vat-mode="remove">'+esc(T[lang].removeVat)+'</button></div>';
- if(isMobileDevice())html+='<button class="mobile-tool-ac" type="button" data-mobile-action="clear-all">AC</button>';
+ if(mode==='vat')html='<div class="tool-grid">'+field('amount',T[lang].amount)+field('vatRate',T[lang].vatRate)+'</div><div class="vat-toggle" role="radiogroup" data-active="'+vatAction+'"><span class="vat-thumb" aria-hidden="true"></span><button type="button" role="radio" data-vat-mode="add">'+esc(T[lang].addVat)+'</button><button type="button" role="radio" data-vat-mode="remove">'+esc(T[lang].removeVat)+'</button></div>';
+
  $('#toolPanel').innerHTML=html;
- toolActiveInput=null;
+ setActiveToolInput($('#toolPanel input[data-tool-input]'));
  renderVatToggle();
- if(isMobileDevice()){
-   $('#keypad').className='hidden';
-   $('#keypad').innerHTML='';
- }else{
-   renderToolKeypad();
- }
+ renderToolKeypad();
 
 
 }
@@ -596,6 +640,7 @@ function applyLanguage(){
  $('#clearHistory').textContent=t('clear');
  $('#historyConfirmText').textContent=t('confirm');
  $('#closeHow').setAttribute('aria-label',t('close'));
+ $('#closeHistory').setAttribute('aria-label',t('close'));
  $('#themeButton').setAttribute('aria-label',((theme==='dark'||(theme==='auto'&&!matchMedia('(prefers-color-scheme: light)').matches))?t('themeLight'):t('themeDark')));
  const hint=$('#hint');if(hint)hint.textContent=t('hint');
  const created=$('#createdBy');if(created)created.textContent=t('created')+' Leonidas Kampaxis';
@@ -657,8 +702,13 @@ function openHistory(){const p=$('#historyPanel'),b=$('#historyBackdrop');render
 function closeHistory(){const p=$('#historyPanel'),b=$('#historyBackdrop');p.classList.remove('open','expanded');b.classList.remove('open');setTimeout(()=>{if(!p.classList.contains('open')){p.classList.add('hidden');b.classList.add('hidden')}},220)}
 function setupHistorySheet(){
  const p=$('#historyPanel'),handle=$('.sheet-handle'),list=$('#historyList');let startY=0,tracking=false;
- const start=e=>{startY=e.touches[0].clientY;tracking=true;p.classList.add('dragging')};
- const end=e=>{if(!tracking)return;const dy=e.changedTouches[0].clientY-startY;tracking=false;p.classList.remove('dragging');if(dy<-35){p.classList.add('expanded');list.scrollTop=0}else if(dy>35&&list.scrollTop<=2){p.classList.remove('expanded')}startY=0};
+ // Only tracks swipes to expand/collapse. The handle drag itself lives in history-interaction.js;
+ // adding .dragging here disabled the list (pointer-events:none) and stopped it scrolling.
+ let startScroll=0;
+ const start=e=>{startY=e.touches[0].clientY;startScroll=list.scrollTop;tracking=true};
+ // Swipe up expands the sheet (only when it is not expanded yet, otherwise it is a normal scroll).
+ // Swipe down collapses it only if the list was already at the top when the touch began.
+ const end=e=>{if(!tracking)return;const dy=e.changedTouches[0].clientY-startY;tracking=false;if(dy<-35&&!p.classList.contains('expanded')){p.classList.add('expanded');list.scrollTop=0}else if(dy>35&&startScroll<=2){p.classList.remove('expanded')}startY=0};
  [p,handle].forEach(el=>{el.addEventListener('touchstart',start,{passive:true});el.addEventListener('touchend',end,{passive:true})});
  let timer;list.addEventListener('scroll',()=>{list.classList.add('is-scrolling');clearTimeout(timer);timer=setTimeout(()=>list.classList.remove('is-scrolling'),650)},{passive:true})
 }
@@ -732,7 +782,8 @@ function toolKeyInput(key){
  }
  const input=toolActiveInput&&toolActiveInput.matches('#toolPanel input')?toolActiveInput:$('#toolPanel input');
  if(!input)return false;
- input.focus();
+ if(!isMobileDevice())input.focus();
+ setActiveToolInput(input);
  let value=input.value;
  if(key==='clear')value='';
  else if(key==='backspace')value=value.slice(0,-1);
@@ -772,11 +823,10 @@ $('#toolPanel').addEventListener('click',e=>{
  if(clear){clearToolFields();return}
  const button=e.target.closest('[data-vat-mode]');
  if(!button)return;
- vatAction=button.dataset.vatMode==='remove'?'remove':'add';
- renderVatToggle();
- window._runVat?.(vatAction==='add');
+ setVatAction(button.dataset.vatMode==='remove'?'remove':'add');
 });
-$('#toolPanel').addEventListener('focusin',e=>{if(e.target.matches('input'))toolActiveInput=e.target});
+$('#toolPanel').addEventListener('focusin',e=>{if(e.target.matches('input'))setActiveToolInput(e.target)});
+$('#toolPanel').addEventListener('click',e=>{const input=e.target.closest('.tool-field')?.querySelector('input');if(input)setActiveToolInput(input)});
 $('#toolPanel').addEventListener('beforeinput',e=>{
  if(!e.target.matches('input')||e.inputType?.startsWith('delete'))return;
  if(e.data&&!/^[0-9.,-]+$/.test(e.data))e.preventDefault();
@@ -800,7 +850,7 @@ $('#toolPanel').addEventListener('input',e=>{
  runActiveTool();
 });
 $('#howButton').addEventListener('click',showHow);$('#closeHow').addEventListener('click',closeHow);$('#howModal').addEventListener('click',e=>{if(e.target.id==='howModal')closeHow()});
-$('#historyButton').addEventListener('click',openHistory);$('#historyBackdrop').addEventListener('click',closeHistory);$('#historyList').addEventListener('click',historyClick);$('#copyButton').addEventListener('click',copyResult);
+$('#historyButton').addEventListener('click',openHistory);$('#closeHistory').addEventListener('click',closeHistory);$('#historyBackdrop').addEventListener('click',closeHistory);$('#historyList').addEventListener('click',historyClick);$('#copyButton').addEventListener('click',copyResult);
 $('#langButton').addEventListener('click',e=>{
  e.preventDefault();
  e.stopPropagation();
@@ -838,4 +888,4 @@ window.addEventListener('keydown',e=>{
  else if(e.key==='Enter'||e.key==='='){e.preventDefault();equals()}
  else if(e.key==='Backspace'){e.preventDefault();backspace()}
 });
-window.__UC_VERSION=VERSION;$('#footerVersion').textContent=`v${VERSION}`;restoreReloadState();lang=readLanguage();bindTools();renderHistory();renderTool();renderModeMenu();syncModeButton();setupHistorySheet();applyLanguage();applyTheme();window.addEventListener('pageshow',e=>{if(e.persisted&&mode!=='calc')setMode('calc')});
+window.__UC_VERSION=VERSION;$('#footerVersion').textContent=`v${VERSION}`;restoreReloadState();lang=readLanguage();bindTools();renderHistory();renderTool();renderModeMenu();syncModeButton();setupHistorySheet();setupVatSlide();applyLanguage();applyTheme();window.addEventListener('pageshow',e=>{if(e.persisted&&mode!=='calc')setMode('calc')});
