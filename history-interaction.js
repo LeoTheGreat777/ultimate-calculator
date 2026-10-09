@@ -108,6 +108,8 @@
 
   function onPointerDown(e) {
     if (!panel.classList.contains('open') || e.button > 0 || pointerId !== null) return;
+    // Buttons in the heading (close, clear all, chart) must get their own click; capturing the pointer here would swallow it.
+    if (e.target.closest('button')) return;
     pointerId = e.pointerId;
     startY = lastY = e.clientY;
     lastTime = performance.now();

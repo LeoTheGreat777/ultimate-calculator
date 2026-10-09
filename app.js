@@ -1,4 +1,4 @@
-const VERSION='0.4.127-s7';
+const VERSION='0.4.127-s8';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 // localStorage can throw (blocked storage, private mode, quota full). Never let that break the app.
@@ -6,7 +6,7 @@ const store={get:k=>{try{return localStorage.getItem(k)}catch{return null}},set:
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function saveReloadState(){
  try{
-  const state={mode,expression,current,currentIsPercent,justCalculated,lastExpression,lastResult:lastResult&&typeof lastResult==='object'&&'n'in lastResult&&'d'in lastResult?{n:lastResult.n.toString(),d:lastResult.d.toString()}:lastResult,lastOperation,howData,toolResult,toolState,unitExpressions,unitActiveInput,unitSource,unitReplaceOnNextKey,vatAction};
+  const state={mode,expression,current,currentIsPercent,justCalculated,lastExpression,lastResult:lastResult&&typeof lastResult==='object'&&'n'in lastResult&&'d'in lastResult?{n:lastResult.n.toString(),d:lastResult.d.toString()}:lastResult,lastOperation,howData,toolResult,toolState,unitExpressions,unitActiveInput,unitSource,unitReplaceOnNextKey,vatAction,graph};
   sessionStorage.setItem('uc-reload-state',JSON.stringify(state));
  }catch{}
 }
@@ -35,6 +35,7 @@ function restoreReloadState(){
   if(state.unitSource)unitSource=state.unitSource;
   unitReplaceOnNextKey=!!state.unitReplaceOnNextKey;
   if(state.vatAction)vatAction=state.vatAction;
+  if(state.graph&&Array.isArray(state.graph.fns)&&state.graph.fns.length)graph=state.graph;
  }catch{}
 }
 function readLanguage(){
@@ -49,10 +50,10 @@ let mode='calc',expression='',current='',currentIsPercent=false,justCalculated=f
 store.del('uc-mode');
 
 const T={
-el:{calc:'Αριθμομηχανή',fuel:'Καύσιμα',energy:'Ενέργεια',vat:'ΦΠΑ',units:'Μονάδες',how:'Πώς υπολογίστηκε',history:'Ιστορικό',copy:'Αντιγραφή αποτελέσματος',copied:'Αντιγράφηκε',clear:'Διαγραφή όλων',confirm:'Διαγραφή όλου του ιστορικού;',confirmYes:'Διαγραφή',none:'Δεν υπάρχουν υπολογισμοί ακόμη.',hint:'Πληκτρολόγησε μια πράξη για να ξεκινήσεις.',delete:'Διαγραφή',created:'Δημιουργήθηκε από',fuelD:'Απόσταση (km)',fuelC:'Κατανάλωση (L/100 km)',fuelP:'Τιμή καυσίμου / L',fuelGo:'Υπολογισμός κόστους καυσίμου',fuelUsed:'Καύσιμο που χρησιμοποιήθηκε',costKm:'Κόστος ανά km',energyP:'Ισχύς (W)',energyH:'Ώρες / ημέρα',energyD:'Ημέρες',energyR:'Τιμή / kWh',energyGo:'Υπολογισμός κόστους ρεύματος',energyUsed:'Ενέργεια',amount:'Ποσό',vatRate:'ΦΠΑ %',addVat:'Πρόσθεσε ΦΠΑ',removeVat:'Αφαίρεσε ΦΠΑ',vatAmount:'Ποσό ΦΠΑ',value:'Τιμή',category:'Κατηγορία',from:'Από',to:'Σε',convert:'Μετατροπή',length:'Μήκος',area:'Εμβαδόν',mass:'Μάζα',volume:'Όγκος',speed:'Ταχύτητα',time:'Χρόνος',data:'Δεδομένα',energy:'Ενέργεια',power:'Ισχύς',pressure:'Πίεση',angle:'Γωνία',temperature:'Θερμοκρασία',unit_mm:'Χιλιοστό',unit_cm:'Εκατοστό',unit_m:'Μέτρο',unit_km:'Χιλιόμετρο',unit_in:'Ίντσα',unit_ft:'Πόδι',unit_yd:'Γιάρδα',unit_mi:'Μίλι',unit_nmi:'Ναυτικό μίλι',unit_bit:'Bit',unit_b:'Bit',unit_kbit:'Kilobit',unit_Mbit:'Megabit',unit_Gbit:'Gigabit',unit_Tbit:'Terabit',unit_B:'Byte',unit_kB:'Kilobyte',unit_MB:'Megabyte',unit_GB:'Gigabyte',unit_TB:'Terabyte',unit_KiB:'Kibibyte',unit_MiB:'Mebibyte',unit_GiB:'Gibibyte',unit_TiB:'Tebibyte',unit_kg:'Κιλά',unit_l:'Λίτρο',unit_ml:'Milliliter',unit_mps:'m/s',unit_kmh:'km/h',unit_mph:'mph',unit_knot:'Κόμβος',unit_J:'Joule',unit_kJ:'Kilojoule',unit_Wh:'Watt-ώρα',unit_kWh:'Kilowatt-ώρα',unit_cal:'cal',unit_kcal:'kcal',unit_W:'Watt',unit_kW:'Kilowatt',unit_MW:'Megawatt',unit_hp:'Ιπποδύναμη',unit_Pa:'Pascal',unit_kPa:'Kilopascal',unit_bar:'Bar',unit_psi:'PSI',unit_atm:'Ατμόσφαιρα',unit_deg:'Μοίρα',unit_rad:'Ακτίνιο',unit_grad:'Grad',unit_C:'Κελσίου',unit_F:'Φαρενάιτ',unit_K:'Kelvin',toolReady:'Το αποτέλεσμα θα εμφανιστεί εδώ',toolFuel:'Κόστος καυσίμου',toolEnergy:'Κόστος ρεύματος',toolVat:'Τελικό ποσό',toolUnit:'Αποτέλεσμα',fuelResult:'Καύσιμο που χρησιμοποιήθηκε',energyResult:'Ενέργεια',clearConfirm:'Διαγραφή;',close:'Κλείσιμο',swap:'Εναλλαγή μονάδων',deleteKey:'Διαγραφή',themeLight:'Εναλλαγή σε φωτεινό θέμα',themeDark:'Εναλλαγή σε σκοτεινό θέμα'},
-en:{calc:'Calculator',fuel:'Fuel',energy:'Energy',vat:'VAT',units:'Units',how:'How was this calculated?',history:'History',copy:'Copy result',copied:'Copied',clear:'Clear all',confirm:'Delete all calculation history?',confirmYes:'Delete',none:'No calculations yet.',hint:'Enter a calculation to get started.',delete:'Delete',created:'Created by',fuelD:'Distance (km)',fuelC:'Consumption (L/100 km)',fuelP:'Fuel price / L',fuelGo:'Calculate fuel cost',fuelUsed:'Fuel used',costKm:'Cost per km',energyP:'Power (W)',energyH:'Hours / day',energyD:'Days',energyR:'Price / kWh',energyGo:'Calculate electricity cost',energyUsed:'Energy',amount:'Amount',vatRate:'VAT %',addVat:'Add VAT',removeVat:'Remove VAT',vatAmount:'VAT amount',value:'Value',category:'Category',from:'From',to:'To',convert:'Convert',length:'Length',area:'Area',mass:'Mass',volume:'Volume',speed:'Speed',time:'Time',data:'Data',energy:'Energy',power:'Power',pressure:'Pressure',angle:'Angle',temperature:'Temperature',unit_mm:'Millimeter',unit_cm:'Centimeter',unit_m:'Meter',unit_km:'Kilometer',unit_in:'Inch',unit_ft:'Foot',unit_yd:'Yard',unit_mi:'Statute mile',unit_nmi:'Nautical mile',unit_bit:'Bit',unit_b:'Bit',unit_kbit:'Kilobit',unit_Mbit:'Megabit',unit_Gbit:'Gigabit',unit_Tbit:'Terabit',unit_B:'Byte',unit_kB:'Kilobyte',unit_MB:'Megabyte',unit_GB:'Gigabyte',unit_TB:'Terabyte',unit_KiB:'Kibibyte',unit_MiB:'Mebibyte',unit_GiB:'Gibibyte',unit_TiB:'Tebibyte',unit_kg:'Kilogram',unit_l:'Liter',unit_ml:'Milliliter',unit_mps:'m/s',unit_kmh:'km/h',unit_mph:'mph',unit_knot:'Knot',unit_J:'Joule',unit_kJ:'Kilojoule',unit_Wh:'Watt-hour',unit_kWh:'Kilowatt-hour',unit_cal:'cal',unit_kcal:'kcal',unit_W:'Watt',unit_kW:'Kilowatt',unit_MW:'Megawatt',unit_hp:'Horsepower',unit_Pa:'Pascal',unit_kPa:'Kilopascal',unit_bar:'Bar',unit_psi:'PSI',unit_atm:'Atmosphere',unit_deg:'Degree',unit_rad:'Radian',unit_grad:'Grad',unit_C:'Celsius',unit_F:'Fahrenheit',unit_K:'Kelvin',toolReady:'The result will appear here',toolFuel:'Fuel cost',toolEnergy:'Electricity cost',toolVat:'Final amount',toolUnit:'Result',fuelResult:'Fuel used',energyResult:'Energy',clearConfirm:'Delete?',close:'Close',swap:'Swap units',deleteKey:'Delete',themeLight:'Switch to light mode',themeDark:'Switch to dark mode'}
+el:{calc:'Αριθμομηχανή',fuel:'Καύσιμα',energy:'Ενέργεια',vat:'ΦΠΑ',units:'Μονάδες',how:'Πώς υπολογίστηκε',history:'Ιστορικό',copy:'Αντιγραφή αποτελέσματος',copied:'Αντιγράφηκε',clear:'Διαγραφή όλων',confirm:'Διαγραφή όλου του ιστορικού;',confirmYes:'Διαγραφή',none:'Δεν υπάρχουν υπολογισμοί ακόμη.',hint:'Πληκτρολόγησε μια πράξη για να ξεκινήσεις.',delete:'Διαγραφή',created:'Δημιουργήθηκε από',fuelD:'Απόσταση (km)',fuelC:'Κατανάλωση (L/100 km)',fuelP:'Τιμή καυσίμου / L',fuelGo:'Υπολογισμός κόστους καυσίμου',fuelUsed:'Καύσιμο που χρησιμοποιήθηκε',costKm:'Κόστος ανά km',energyP:'Ισχύς (W)',energyH:'Ώρες / ημέρα',energyD:'Ημέρες',energyR:'Τιμή / kWh',energyGo:'Υπολογισμός κόστους ρεύματος',energyUsed:'Ενέργεια',amount:'Ποσό',vatRate:'ΦΠΑ %',addVat:'Πρόσθεσε ΦΠΑ',removeVat:'Αφαίρεσε ΦΠΑ',vatAmount:'Ποσό ΦΠΑ',value:'Τιμή',category:'Κατηγορία',from:'Από',to:'Σε',convert:'Μετατροπή',length:'Μήκος',area:'Εμβαδόν',mass:'Μάζα',volume:'Όγκος',speed:'Ταχύτητα',time:'Χρόνος',data:'Δεδομένα',energy:'Ενέργεια',power:'Ισχύς',pressure:'Πίεση',angle:'Γωνία',temperature:'Θερμοκρασία',unit_mm:'Χιλιοστό',unit_cm:'Εκατοστό',unit_m:'Μέτρο',unit_km:'Χιλιόμετρο',unit_in:'Ίντσα',unit_ft:'Πόδι',unit_yd:'Γιάρδα',unit_mi:'Μίλι',unit_nmi:'Ναυτικό μίλι',unit_bit:'Bit',unit_b:'Bit',unit_kbit:'Kilobit',unit_Mbit:'Megabit',unit_Gbit:'Gigabit',unit_Tbit:'Terabit',unit_B:'Byte',unit_kB:'Kilobyte',unit_MB:'Megabyte',unit_GB:'Gigabyte',unit_TB:'Terabyte',unit_KiB:'Kibibyte',unit_MiB:'Mebibyte',unit_GiB:'Gibibyte',unit_TiB:'Tebibyte',unit_kg:'Κιλά',unit_l:'Λίτρο',unit_ml:'Milliliter',unit_mps:'m/s',unit_kmh:'km/h',unit_mph:'mph',unit_knot:'Κόμβος',unit_J:'Joule',unit_kJ:'Kilojoule',unit_Wh:'Watt-ώρα',unit_kWh:'Kilowatt-ώρα',unit_cal:'cal',unit_kcal:'kcal',unit_W:'Watt',unit_kW:'Kilowatt',unit_MW:'Megawatt',unit_hp:'Ιπποδύναμη',unit_Pa:'Pascal',unit_kPa:'Kilopascal',unit_bar:'Bar',unit_psi:'PSI',unit_atm:'Ατμόσφαιρα',unit_deg:'Μοίρα',unit_rad:'Ακτίνιο',unit_grad:'Grad',unit_C:'Κελσίου',unit_F:'Φαρενάιτ',unit_K:'Kelvin',toolReady:'Το αποτέλεσμα θα εμφανιστεί εδώ',toolFuel:'Κόστος καυσίμου',toolEnergy:'Κόστος ρεύματος',toolVat:'Τελικό ποσό',toolUnit:'Αποτέλεσμα',fuelResult:'Καύσιμο που χρησιμοποιήθηκε',energyResult:'Ενέργεια',clearConfirm:'Διαγραφή;',close:'Κλείσιμο',swap:'Εναλλαγή μονάδων',deleteKey:'Διαγραφή',themeLight:'Εναλλαγή σε φωτεινό θέμα',themeDark:'Εναλλαγή σε σκοτεινό θέμα',graph:'Γράφημα',chart:'Διάγραμμα'},
+en:{calc:'Calculator',fuel:'Fuel',energy:'Energy',vat:'VAT',units:'Units',how:'How was this calculated?',history:'History',copy:'Copy result',copied:'Copied',clear:'Clear all',confirm:'Delete all calculation history?',confirmYes:'Delete',none:'No calculations yet.',hint:'Enter a calculation to get started.',delete:'Delete',created:'Created by',fuelD:'Distance (km)',fuelC:'Consumption (L/100 km)',fuelP:'Fuel price / L',fuelGo:'Calculate fuel cost',fuelUsed:'Fuel used',costKm:'Cost per km',energyP:'Power (W)',energyH:'Hours / day',energyD:'Days',energyR:'Price / kWh',energyGo:'Calculate electricity cost',energyUsed:'Energy',amount:'Amount',vatRate:'VAT %',addVat:'Add VAT',removeVat:'Remove VAT',vatAmount:'VAT amount',value:'Value',category:'Category',from:'From',to:'To',convert:'Convert',length:'Length',area:'Area',mass:'Mass',volume:'Volume',speed:'Speed',time:'Time',data:'Data',energy:'Energy',power:'Power',pressure:'Pressure',angle:'Angle',temperature:'Temperature',unit_mm:'Millimeter',unit_cm:'Centimeter',unit_m:'Meter',unit_km:'Kilometer',unit_in:'Inch',unit_ft:'Foot',unit_yd:'Yard',unit_mi:'Statute mile',unit_nmi:'Nautical mile',unit_bit:'Bit',unit_b:'Bit',unit_kbit:'Kilobit',unit_Mbit:'Megabit',unit_Gbit:'Gigabit',unit_Tbit:'Terabit',unit_B:'Byte',unit_kB:'Kilobyte',unit_MB:'Megabyte',unit_GB:'Gigabyte',unit_TB:'Terabyte',unit_KiB:'Kibibyte',unit_MiB:'Mebibyte',unit_GiB:'Gibibyte',unit_TiB:'Tebibyte',unit_kg:'Kilogram',unit_l:'Liter',unit_ml:'Milliliter',unit_mps:'m/s',unit_kmh:'km/h',unit_mph:'mph',unit_knot:'Knot',unit_J:'Joule',unit_kJ:'Kilojoule',unit_Wh:'Watt-hour',unit_kWh:'Kilowatt-hour',unit_cal:'cal',unit_kcal:'kcal',unit_W:'Watt',unit_kW:'Kilowatt',unit_MW:'Megawatt',unit_hp:'Horsepower',unit_Pa:'Pascal',unit_kPa:'Kilopascal',unit_bar:'Bar',unit_psi:'PSI',unit_atm:'Atmosphere',unit_deg:'Degree',unit_rad:'Radian',unit_grad:'Grad',unit_C:'Celsius',unit_F:'Fahrenheit',unit_K:'Kelvin',toolReady:'The result will appear here',toolFuel:'Fuel cost',toolEnergy:'Electricity cost',toolVat:'Final amount',toolUnit:'Result',fuelResult:'Fuel used',energyResult:'Energy',clearConfirm:'Delete?',close:'Close',swap:'Swap units',deleteKey:'Delete',themeLight:'Switch to light mode',themeDark:'Switch to dark mode',graph:'Graph',chart:'Chart'}
 };
-const ICONS={calc:'▦',fuel:'⛽︎',energy:'ϟ',vat:'%',units:'↔'};const MODE_TRANSLATIONS={calc:['Αριθμομηχανή','Calculator'],fuel:['Καύσιμα','Fuel'],energy:['Ενέργεια','Energy'],vat:['ΦΠΑ','VAT'],units:['Μονάδες','Units']};
+const ICONS={calc:'▦',graph:'∿',fuel:'⛽︎',energy:'ϟ',vat:'%',units:'↔'};const MODE_TRANSLATIONS={calc:['Αριθμομηχανή','Calculator'],graph:['Γράφημα','Graph'],fuel:['Καύσιμα','Fuel'],energy:['Ενέργεια','Energy'],vat:['ΦΠΑ','VAT'],units:['Μονάδες','Units']};
 const TOOL_LABEL_KEYS={fuel:['fuelD','fuelC','fuelP'],energy:['energyP','energyH','energyD','energyR'],vat:['amount','vatRate']};
 const modeText=m=>MODE_TRANSLATIONS[m]?.[lang==='el'?0:1]||t(m);
 
@@ -166,6 +167,7 @@ function applyTheme(){
  document.documentElement.classList.toggle('force-light',theme==='light');
  const b=$('#themeButton');
  if(b){const dark=theme==='dark'||(theme==='auto'&&!matchMedia('(prefers-color-scheme: light)').matches);b.textContent=dark?'☾':'☀';b.setAttribute('aria-label',dark?t('themeLight'):t('themeDark'))}
+ redrawCharts();
 }
 function toggleTheme(){
  const dark=theme==='dark'||(theme==='auto'&&!matchMedia('(prefers-color-scheme: light)').matches);
@@ -204,6 +206,7 @@ function render(){
  const hasEntry=Boolean(raw);
  $('#clearButton').textContent=justCalculated||!hasEntry?'AC':'C';
  $('#howButton').classList.toggle('hidden',!howData);
+ $('#chartButton')?.classList.add('hidden');
  resultCompact=false;
  requestAnimationFrame(()=>{
    if(exprEl){
@@ -225,6 +228,8 @@ function renderToolDisplay(){
  d.classList.remove('calculated');
  $('#expression').textContent=toolResult?.detail??'';
  $('#howButton').classList.toggle('hidden',!toolResult?.how);
+ $('#chartButton')?.classList.toggle('hidden',!toolChartAvailable());
+ $('#chartButton')?.setAttribute('aria-label',t('chart'));
  $('#result').textContent=toolResult?.main||'0';
  $('#result').classList.toggle('long-value',String(toolResult?.main??'').length>18);
  d.classList.toggle('tool-empty',!toolResult);
@@ -301,7 +306,7 @@ function showHow(){if(!howData)return;$('#howTitle').textContent=t('how');$('#ho
 function closeHow(){$('#howModal').classList.add('hidden')}
 function historyItems(){try{return JSON.parse(store.get('uc-history')||'[]')}catch{return[]}}
 function saveHistory(item){const list=historyItems();const stored={...item,result:item.result&&typeof item.result==='object'&&'n'in item.result?ratToDecimal(item.result,24):String(item.result)};list.unshift({id:Date.now()+Math.random(),...stored});store.set('uc-history',JSON.stringify(list.slice(0,100)));renderHistory()}
-function renderHistory(){const list=historyItems();$('#historyList').innerHTML=list.length?list.map(x=>`<div class="history-item"><button class="history-main" data-history="${x.id}" type="button"><div class="history-expression">${esc(pretty(x.expression))}</div><div class="history-result">${esc(fmt(x.result&&typeof x.result==='string'?ratFromString(x.result):x.result))}</div></button><button class="history-delete" data-delete="${x.id}" type="button" aria-label="${esc(t('delete'))}">×</button></div>`).join(''):`<div class="empty">${esc(t('none'))}</div>`}
+function renderHistory(){const list=historyItems();$('#historyList').innerHTML=list.length?list.map(x=>`<div class="history-item"><button class="history-main" data-history="${x.id}" type="button"><div class="history-expression">${esc(pretty(x.expression))}</div><div class="history-result">${esc(fmt(x.result&&typeof x.result==='string'?ratFromString(x.result):x.result))}</div></button><button class="history-delete" data-delete="${x.id}" type="button" aria-label="${esc(t('delete'))}">×</button></div>`).join(''):`<div class="empty">${esc(t('none'))}</div>`;historyChartRefresh()}
 
 const units={length:{mm:'0.001',cm:'0.01',m:'1',km:'1000',in:'0.0254',ft:'0.3048',yd:'0.9144',mi:'1609.344',nmi:'1852'},area:{'mm²':'0.000001','cm²':'0.0001','m²':'1','km²':'1000000','in²':'0.00064516','ft²':'0.09290304',stremma:'1000',acre:'4046.8564224',ha:'10000'},mass:{mg:'0.000001',g:'0.001',kg:'1',oz:'0.028349523125',lb:'0.45359237',t:'1000'},volume:{ml:'0.001',l:'1','m³':'1000',tsp:'0.00492892159375',tbsp:'0.01478676478125',cup:'0.2365882365',gal:'3.785411784',qt:'0.946352946',pt:'0.473176473'},speed:{'m/s':'1','km/h':'0.27777777777777777778',mph:'0.44704',knot:'0.51444444444444444444'},time:{ms:'0.001',s:'1',min:'60',h:'3600',day:'86400',week:'604800'},data:{bit:'1',b:'1',kbit:'1000',Mbit:'1000000',Gbit:'1000000000',Tbit:'1000000000000',B:'8',kB:'8000',MB:'8000000',GB:'8000000000',TB:'8000000000000',KiB:'8192',MiB:'8388608',GiB:'8589934592',TiB:'8796093022208'},energy:{J:'1',kJ:'1000',Wh:'3600',kWh:'3600000',cal:'4.184',kcal:'4184'},power:{W:'1',kW:'1000',MW:'1000000',hp:'745.69987158227022'},pressure:{Pa:'1',kPa:'1000',bar:'100000',psi:'6894.757293168',atm:'101325'},angle:{deg:'1',rad:'57.2957795130823208768',grad:'0.9'},temperature:{'°C':'1','°F':'1',K:'1'}};
 function normalizeUnitExpression(expr){
@@ -490,12 +495,13 @@ function setupVatSlide(){
    const tg=e.target.closest('.vat-toggle');if(!tg||e.button>0)return;
    const range=thumbRange(tg);
    drag={tg,id:e.pointerId,x0:e.clientX,lastX:e.clientX,lastT:performance.now(),v:0,range,start:vatAction==='remove'?range:0,moved:false};
-   tg.setPointerCapture?.(e.pointerId);
+   // Capture only once a drag starts: capturing on pointerdown sends the click to the toggle instead of the button, so a plain click did nothing.
  });
  panel.addEventListener('pointermove',e=>{
    if(!drag||e.pointerId!==drag.id)return;
    const dx=e.clientX-drag.x0;
    if(!drag.moved&&Math.abs(dx)<6)return;
+   if(!drag.moved)drag.tg.setPointerCapture?.(e.pointerId);
    drag.moved=true;drag.tg.classList.add('sliding');
    const now=performance.now();drag.v=(e.clientX-drag.lastX)/Math.max(1,now-drag.lastT);drag.lastX=e.clientX;drag.lastT=now;
    const pos=Math.max(0,Math.min(drag.range,drag.start+dx));
@@ -599,8 +605,9 @@ function restoreCalculatorDisplay(){
  const d=$('#calculatorDisplay');
  if(!d||!d.querySelector('#expression')||!d.querySelector('#result')){
    d.className='display-wrap';
-   d.innerHTML='<div class="expression-row"><div id="expression" class="expression" aria-live="polite"></div><button id="howButton" class="how-button hidden" type="button" aria-label="How was this calculated?">?</button></div><div id="result" class="result" aria-live="polite">0</div>';
+   d.innerHTML='<div class="expression-row"><div id="expression" class="expression" aria-live="polite"></div><button id="chartButton" class="how-button chart-button hidden" type="button" aria-label="'+esc(t('chart'))+'">'+CHART_ICON+'</button><button id="howButton" class="how-button hidden" type="button" aria-label="How was this calculated?">?</button></div><div id="result" class="result" aria-live="polite">0</div>';
    $('#howButton').addEventListener('click',showHow);
+   $('#chartButton').addEventListener('click',showToolChart);
  }
  d.classList.remove('unit-display');
 }
@@ -608,8 +615,18 @@ function renderTool(){
  const calc=mode==='calc';
  const card=$('#calculatorCard');
  const modeLabel=$('#modeLabel');if(modeLabel)modeLabel.textContent=modeText(mode);
- card.classList.toggle('mobile-tool',!calc&&isMobileDevice()&&mode!=='units');
+ card.classList.toggle('mobile-tool',!calc&&isMobileDevice()&&mode!=='units'&&mode!=='graph');
  card.classList.remove('unit-keypad-open');
+ // Graph mode (charts.js) builds its own display and keypad.
+ card.classList.toggle('graph-mode',mode==='graph');
+ document.body.classList.toggle('graph-on',mode==='graph');
+ if(mode==='graph'){
+   card.classList.remove('tool-mode');
+   $('#toolPanel').classList.add('hidden');
+   $('#calculatorDisplay').classList.remove('hidden');
+   renderGraphMode();
+   return;
+ }
  if(mode==='units'){
    $('#calculatorCard').classList.add('tool-mode');
    $('#toolPanel').classList.add('hidden');
@@ -640,7 +657,7 @@ function renderTool(){
 
 
 }
-function setMode(next){resultCompact=false;if(mode==='calc')calcHowData=howData;mode=next;howData=next==='calc'?calcHowData:null;vatAction='add';if(next!=='calc')toolState[next]={inputs:{},result:null};toolResult=null;if(next==='vat')toolState.vat.inputs.vatRate='24';if(next==='units'){unitExpressions={from:'0',to:'0'};unitActiveInput='from';unitSource='from';unitReplaceOnNextKey=true;window._unitCategory=window._unitCategory||'length';}const label=$('#modeLabel'),icon=$('#modeIcon');if(label)label.textContent=modeText(mode);if(icon)icon.textContent=modeIcon(mode);renderTool();if(next==='vat')window._runVat?.(true);if(next!=='calc'&&next!=='vat'&&next!=='units')renderToolDisplay();syncModeButton();}
+function setMode(next){resultCompact=false;if(mode==='calc')calcHowData=howData;mode=next;howData=next==='calc'?calcHowData:null;vatAction='add';if(next!=='calc')toolState[next]={inputs:{},result:null};toolResult=null;if(next==='vat')toolState.vat.inputs.vatRate='24';if(next==='units'){unitExpressions={from:'0',to:'0'};unitActiveInput='from';unitSource='from';unitReplaceOnNextKey=true;window._unitCategory=window._unitCategory||'length';}const label=$('#modeLabel'),icon=$('#modeIcon');if(label)label.textContent=modeText(mode);if(icon)icon.textContent=modeIcon(mode);renderTool();if(next==='vat')window._runVat?.(true);if(next!=='calc'&&next!=='vat'&&next!=='units'&&next!=='graph')renderToolDisplay();syncModeButton();}
 function applyLanguage(){
  lang=readLanguage();
  const savedInputs={};
@@ -650,7 +667,7 @@ function applyLanguage(){
  $('#copyButton').textContent=t('copy');
  $('#historyButtonText').textContent=t('history');
  $('#howTitle').textContent=t('how');
- $('#howButton').setAttribute('aria-label',t('how'));
+ $('#howButton')?.setAttribute('aria-label',t('how'));
  $('#historyPanel').setAttribute('aria-label',t('history'));
  $('#historyConfirmYes').textContent=t('confirmYes');
  $('#historyTitle').textContent=t('history');
@@ -658,6 +675,8 @@ function applyLanguage(){
  $('#historyConfirmText').textContent=t('confirm');
  $('#closeHow').setAttribute('aria-label',t('close'));
  $('#closeHistory').setAttribute('aria-label',t('close'));
+ $('#historyChartButton')?.setAttribute('aria-label',t('chart'));
+ $('#historyChartButton')?.setAttribute('title',t('chart'));
  $('#themeButton').setAttribute('aria-label',((theme==='dark'||(theme==='auto'&&!matchMedia('(prefers-color-scheme: light)').matches))?t('themeLight'):t('themeDark')));
  const hint=$('#hint');if(hint)hint.textContent=t('hint');
  const created=$('#createdBy');if(created)created.textContent=t('created')+' Leonidas Kampaxis';
@@ -676,7 +695,7 @@ function applyLanguage(){
  syncModeButton();
  renderVatToggle();
 }
-const MODE_LABELS=['calc','units','vat','fuel','energy'];
+const MODE_LABELS=['calc','graph','units','vat','fuel','energy'];
 function renderModeMenu(){
  const menu=$('#modeMenu');if(!menu)return;
  menu.innerHTML=MODE_LABELS.filter(m=>m!==mode).map(m=>`<button class="mode-item" data-mode="${m}" type="button"><span class="mode-item-icon">${modeIcon(m)}</span><span class="mode-item-label">${esc(modeText(m))}</span></button>`).join('');
@@ -702,20 +721,24 @@ const SIDE_KEYS={
        en:[[['0–9'],'Numbers'],[['+','-','*','/'],'Operators'],[[',','.'],'Decimal point'],[['(',')'],'Parentheses'],[['%'],'Percent'],[['Enter','='],'Result'],[['Backspace'],'Delete last'],[['Esc'],'Clear the calculation']]},
  units:{el:[[['0–9'],'Αριθμοί'],[['+','-','*','/'],'Πράξη μέσα στην τιμή'],[[',','.'],'Υποδιαστολή'],[['%'],'Ποσοστό'],[['Enter','='],'Ολοκλήρωση'],[['Backspace'],'Σβήνει το τελευταίο'],[['Esc'],'Κλείνει ανοιχτά παράθυρα']],
         en:[[['0–9'],'Numbers'],[['+','-','*','/'],'Math inside the value'],[[',','.'],'Decimal point'],[['%'],'Percent'],[['Enter','='],'Finish'],[['Backspace'],'Delete last'],[['Esc'],'Close open windows']]},
+ graph:{el:[[['x'],'Η μεταβλητή x'],[['^'],'Δύναμη, π.χ. x^3'],[['sin','sqrt','ln'],'Συναρτήσεις: γράψε το όνομα'],[['Enter'],'Επόμενη συνάρτηση'],[['↑','↓'],'Αλλαγή συνάρτησης'],[['←','→'],'Μετακίνηση γραφήματος'],[['Backspace'],'Σβήνει το τελευταίο'],[['Esc'],'Καθαρίζει τη συνάρτηση']],
+        en:[[['x'],'The variable x'],[['^'],'Power, e.g. x^3'],[['sin','sqrt','ln'],'Functions: type the name'],[['Enter'],'Next function'],[['↑','↓'],'Switch function'],[['←','→'],'Move the graph'],[['Backspace'],'Delete last'],[['Esc'],'Clear the function']]},
  tool:{el:[[['Tab'],'Επόμενο πεδίο'],[['Shift','Tab'],'Προηγούμενο πεδίο'],[['0–9'],'Αριθμοί στο πεδίο'],[[',','.'],'Υποδιαστολή'],[['Backspace'],'Σβήνει το τελευταίο'],[['Esc'],'Κλείνει ανοιχτά παράθυρα']],
        en:[[['Tab'],'Next field'],[['Shift','Tab'],'Previous field'],[['0–9'],'Type in the field'],[[',','.'],'Decimal point'],[['Backspace'],'Delete last'],[['Esc'],'Close open windows']]}
 };
 const SIDE_TIPS={
  calc:{el:['Το κουμπί ( ) καταλαβαίνει μόνο του αν ανοίγει ή κλείνει παρένθεση. Όσες ξεχάσεις ανοιχτές, τις κλείνει το =.','Για αρνητικό αριθμό πάτα − αμέσως μετά από × ή ÷. Το 2 × − 3 δίνει −6.','Το 50 + 10% δίνει 55, γιατί το ποσοστό παίρνεται από τον προηγούμενο αριθμό.','Πάτα ξανά = για να επαναλάβεις την τελευταία πράξη. Το 2 + 3 = = δίνει 8.','Μετά το αποτέλεσμα, το ? δείχνει βήμα βήμα πώς βγήκε.','Στο Ιστορικό, πάτα έναν υπολογισμό για να τον ξαναφέρεις.'],
        en:['The ( ) key works out on its own whether to open or close a parenthesis. Any you leave open, = closes for you.','For a negative number, press − right after × or ÷. 2 × − 3 gives −6.','50 + 10% gives 55, because the percent is taken from the previous number.','Press = again to repeat the last operation. 2 + 3 = = gives 8.','After a result, the ? button shows step by step how it was worked out.','In History, click a calculation to bring it back.']},
+ graph:{el:['Έως τρεις συναρτήσεις μαζί. Το + δίπλα στη συνάρτηση προσθέτει νέα.','Σύρε το γράφημα για να το μετακινήσεις. Ζουμ με τη ρόδα του ποντικιού, τα + − ή με δύο δάχτυλα.','Οι τελείες δείχνουν ρίζες, ελάχιστα, μέγιστα και τομές. Πάτα μία για να δεις τις τιμές της, ή το ? για λίστα.','Το ⤢ προσαρμόζει το ύψος στην καμπύλη και το ⌂ γυρίζει στην αρχή. Το ⤓ το αποθηκεύει ως εικόνα.','Το 2x σημαίνει 2 × x και το sin x σημαίνει sin(x). Οι γωνίες είναι σε ακτίνια.'],
+        en:['Up to three functions at once. The + next to a function adds a new one.','Drag the graph to move it. Zoom with the mouse wheel, the + − buttons or two fingers.','The dots mark roots, minima, maxima and intersections. Click one to see its values, or ? for a list.','⤢ fits the height to the curve and ⌂ goes back to the start. ⤓ saves it as an image.','2x means 2 × x and sin x means sin(x). Angles are in radians.']},
  units:{el:['Πάτα την πάνω ή την κάτω τιμή για να γράψεις εκεί. Η άλλη μετατρέπεται αμέσως.','Το ⇄ αλλάζει θέση στις δύο μονάδες.','Μπορείς να γράψεις και πράξη, π.χ. 12 + 8, και να πατήσεις =.','Από το μενού πάνω από τις τιμές διαλέγεις κατηγορία: μήκος, βάρος, θερμοκρασία, δεδομένα και άλλα.','Το Εμβαδόν έχει και στρέμματα.'],
         en:['Click the top or bottom value to type there. The other one converts right away.','⇄ swaps the two units.','You can type a calculation too, e.g. 12 + 8, then press =.','The menu above the values picks the category: length, mass, temperature, data and more.','Area includes the Greek stremma.']},
- vat:{el:['«Πρόσθεσε ΦΠΑ»: από την καθαρή τιμή βρίσκεις την τελική.','«Αφαίρεσε ΦΠΑ»: από την τελική τιμή βρίσκεις την καθαρή και πόσος ήταν ο ΦΠΑ.','Ο συντελεστής ξεκινά στο 24%. Άλλαξέ τον αν χρειάζεσαι άλλον.','Σύρε τον διακόπτη ή πάτα ← → πάνω του για να αλλάξεις πρόσθεση και αφαίρεση.','Το ? δείχνει πώς βγήκε το ποσό.'],
-      en:['"Add VAT": from the net price you get the final price.','"Remove VAT": from the final price you get the net price and how much VAT it had.','The rate starts at 24%. Change it if you need another one.','Drag the switch, or press ← → on it, to change between add and remove.','The ? button shows how the amount was worked out.']},
- fuel:{el:['Συμπλήρωσε απόσταση, κατανάλωση και τιμή. Το κόστος βγαίνει αμέσως.','Την κατανάλωση σε L/100 km τη δείχνει ο υπολογιστής ταξιδιού του αυτοκινήτου.','Για ταξίδι με επιστροφή, βάλε διπλή απόσταση.','Κάτω από το κόστος βλέπεις πόσα λίτρα θα κάψεις και πόσο κοστίζει κάθε km.'],
-       en:['Fill in distance, consumption and price. The cost shows up right away.','The car\'s trip computer shows consumption in L/100 km.','For a round trip, enter double the distance.','Under the cost you see the litres used and the cost per km.']},
- energy:{el:['Την ισχύ σε W τη γράφει το ταμπελάκι ή το κουτί της συσκευής.','Βάλε 30 ημέρες για το κόστος ενός μήνα ή 365 για έναν χρόνο.','Η τιμή ανά kWh γράφεται στον λογαριασμό του ρεύματος.','Για συσκευές που ανάβουν και σβήνουν μόνες τους, όπως το ψυγείο, οι ώρες είναι κατά προσέγγιση.'],
-         en:['The power in W is on the device\'s label or box.','Use 30 days for a month\'s cost, or 365 for a year.','The price per kWh is on your electricity bill.','For devices that switch on and off by themselves, like a fridge, the hours are an estimate.']}
+ vat:{el:['«Πρόσθεσε ΦΠΑ»: από την καθαρή τιμή βρίσκεις την τελική.','«Αφαίρεσε ΦΠΑ»: από την τελική τιμή βρίσκεις την καθαρή και πόσος ήταν ο ΦΠΑ.','Ο συντελεστής ξεκινά στο 24%. Άλλαξέ τον αν χρειάζεσαι άλλον.','Σύρε τον διακόπτη ή πάτα ← → πάνω του για να αλλάξεις πρόσθεση και αφαίρεση.','Το ? δείχνει πώς βγήκε το ποσό και το κουμπί με τις στήλες το δείχνει σε διάγραμμα.'],
+      en:['"Add VAT": from the net price you get the final price.','"Remove VAT": from the final price you get the net price and how much VAT it had.','The rate starts at 24%. Change it if you need another one.','Drag the switch, or press ← → on it, to change between add and remove.','The ? button shows how the amount was worked out, and the bars button shows it as a chart.']},
+ fuel:{el:['Συμπλήρωσε απόσταση, κατανάλωση και τιμή. Το κόστος βγαίνει αμέσως.','Την κατανάλωση σε L/100 km τη δείχνει ο υπολογιστής ταξιδιού του αυτοκινήτου.','Για ταξίδι με επιστροφή, βάλε διπλή απόσταση.','Κάτω από το κόστος βλέπεις πόσα λίτρα θα κάψεις και πόσο κοστίζει κάθε km.','Το κουμπί με τις στήλες δείχνει πώς αλλάζει το κόστος με την απόσταση.'],
+       en:['Fill in distance, consumption and price. The cost shows up right away.','The car\'s trip computer shows consumption in L/100 km.','For a round trip, enter double the distance.','Under the cost you see the litres used and the cost per km.','The bars button shows how the cost changes with distance.']},
+ energy:{el:['Την ισχύ σε W τη γράφει το ταμπελάκι ή το κουτί της συσκευής.','Βάλε 30 ημέρες για το κόστος ενός μήνα ή 365 για έναν χρόνο.','Η τιμή ανά kWh γράφεται στον λογαριασμό του ρεύματος.','Για συσκευές που ανάβουν και σβήνουν μόνες τους, όπως το ψυγείο, οι ώρες είναι κατά προσέγγιση.','Το κουμπί με τις στήλες δείχνει το κόστος ανά ημέρα, μήνα και χρόνο.'],
+         en:['The power in W is on the device\'s label or box.','Use 30 days for a month\'s cost, or 365 for a year.','The price per kWh is on your electricity bill.','For devices that switch on and off by themselves, like a fridge, the hours are an estimate.','The bars button shows the cost per day, month and year.']}
 };
 function renderSideTips(){
  const left=$('#sideKeys'),right=$('#sideTips');if(!left||!right)return;
@@ -856,6 +879,7 @@ function runActiveTool(){
 $('#keypad').addEventListener('click',e=>{
  const b=e.target.closest('button');if(!b)return;
  // The keypad shows "," as the decimal key; every mode handles it as ".".
+ if(mode==='graph'){graphKey(b.dataset.g);return}
  const a=b.dataset.action,v=b.dataset.value===','?'.':b.dataset.value;
  if(mode!=='calc'&&a==='clear-all'){clearToolFields();return;}
  if(mode!=='calc'){
@@ -918,6 +942,7 @@ $('#clearHistory').addEventListener('click',clearHistoryConfirm);$('#historyConf
 window.addEventListener('keydown',e=>{
  if(e.ctrlKey||e.metaKey||e.altKey)return;
  if(mode==='calc'&&e.key.length===1&&!/^[0-9+\-*/%.,()=]$/.test(e.key)){e.preventDefault();e.stopImmediatePropagation();return}
+ if(mode==='graph'&&e.key!=='Escape'){if($('#howModal').classList.contains('hidden')&&$('#historyPanel').classList.contains('hidden')&&graphKeydown(e))e.preventDefault();return}
  if(e.key==='Backspace'||e.code==='Backspace'){e.preventDefault();if(mode==='calc')backspace();else toolKeyInput('backspace');return;}
  if(e.key==='%'&&mode==='units'){e.preventDefault();toolKeyInput('%');return}
  if(e.key===','||e.key==='.'||e.key==='Decimal'){e.preventDefault();if(mode==='calc')digit('.');else if(document.activeElement?.matches('#toolPanel input')){const input=document.activeElement;const pos=input.selectionStart??input.value.length;input.setRangeText(',',pos,pos,'end');input.dispatchEvent(new Event('input',{bubbles:true}))}else toolKeyInput('.');return}
@@ -927,6 +952,7 @@ window.addEventListener('keydown',e=>{
    if(!$('#historyPanel').classList.contains('hidden')){e.preventDefault();closeHistory();return}
    if($('.mode-control')?.classList.contains('mode-open')){e.preventDefault();closeModeMenu();return}
    if(mode==='calc'){e.preventDefault();clearAll()}
+   else if(mode==='graph'){e.preventDefault();graphKey('clear')}
    return;
  }
  if(mode==='units'&&!document.activeElement?.matches('select')){
@@ -940,4 +966,4 @@ window.addEventListener('keydown',e=>{
  else if(e.key==='Enter'||e.key==='='){e.preventDefault();equals()}
  else if(e.key==='Backspace'){e.preventDefault();backspace()}
 });
-window.__UC_VERSION=VERSION;$('#footerVersion').textContent=`v${VERSION}`;restoreReloadState();lang=readLanguage();bindTools();renderHistory();renderTool();renderModeMenu();syncModeButton();setupHistorySheet();setupVatSlide();applyLanguage();applyTheme();window.addEventListener('pageshow',e=>{if(e.persisted&&mode!=='calc')setMode('calc')});
+window.__UC_VERSION=VERSION;$('#footerVersion').textContent=`v${VERSION}`;restoreReloadState();lang=readLanguage();bindTools();renderHistory();renderTool();renderModeMenu();syncModeButton();setupHistorySheet();setupVatSlide();bindHistoryChart();$('#chartButton')?.addEventListener('click',showToolChart);applyLanguage();applyTheme();window.addEventListener('pageshow',e=>{if(e.persisted&&mode!=='calc')setMode('calc')});

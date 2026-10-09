@@ -19,6 +19,7 @@ SESSION_DAYS = 30
 STATIC_FILES = {
     "/index.html",
     "/app.js",
+    "/charts.js",
     "/history-interaction.js",
     "/styles.css",
     "/icon.svg",
