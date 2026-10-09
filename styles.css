@@ -71,8 +71,7 @@
 .vat-toggle[data-active="remove"]{--vat-thumb-x:calc(100% + 5px)}
 .vat-toggle.sliding .vat-thumb{transition:none}
 
-/* Parentheses row and ± key: key and display heights follow the screen height so the whole keypad stays visible on phones. */
-.calculator-card{--k:clamp(44px,calc((100dvh - 420px) / 5.66),68px);--p:max(38px,calc(var(--k) * .7))}
+/* Calculator keypad: key and display heights follow the screen height so the whole keypad stays visible on phones. */
+.calculator-card{--k:clamp(44px,calc((100dvh - 380px) / 5),68px)}
 .calculator-card:not(.tool-mode) .keypad .key{height:var(--k);min-height:var(--k)}
-.calculator-card:not(.tool-mode) .keypad .key.paren{grid-column:span 2;height:var(--p);min-height:var(--p);font-size:21px}
-.calculator-card:not(.tool-mode) #calculatorDisplay{height:clamp(92px,calc(100dvh - 257px - 5 * var(--k) - var(--p)),205px)}
+.calculator-card:not(.tool-mode) #calculatorDisplay{height:clamp(92px,calc(100dvh - 249px - 5 * var(--k)),205px)}

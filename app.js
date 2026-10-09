@@ -1,4 +1,4 @@
-const VERSION='0.4.127-s5';
+const VERSION='0.4.127-s6';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 // localStorage can throw (blocked storage, private mode, quota full). Never let that break the app.
@@ -270,18 +270,19 @@ function operator(op){
  resetHow();
  if(justCalculated){expression=carryText(lastResult,18);current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null}
  if(current==='-'&&expression){current=''}
+ if(op==='-'&&!current&&/[×÷(]$/.test(expression)){current='-';render();return}
  if(!current&&!expression){if(op==='-'){current='-';render()}return;}if(!current&&/\($/.test(expression))return;
  if(current){expression+=current;current='';currentIsPercent=false}
  if(/[+\-×÷]$/.test(expression))expression=expression.slice(0,-1)+op;else expression+=op;
  render()
 }
-function toggleSign(){
+// One "( )" key: closes a parenthesis when one is open and a number was just typed, otherwise opens one (after a number it adds × first).
+function smartParen(){
  if(current==='Error')return;
- resetHow();
- if(justCalculated){if(!lastResult)return;lastResult={n:-lastResult.n,d:lastResult.d};lastExpression=lastExpression?'-('+lastExpression+')':'';lastOperation=null;render();return}
- if(!current&&/\)$/.test(expression))return;
- current=current.startsWith('-')?current.slice(1):'-'+current;
- render()
+ const full=justCalculated?'':expression+current,open=(full.match(/\(/g)||[]).length-(full.match(/\)/g)||[]).length,afterValue=/[0-9.%)]$/.test(full);
+ if(open>0&&afterValue){parenthesis(')');return}
+ if(afterValue)operator('×');
+ parenthesis('(')
 }
 function percent(){resetHow();if(!current||currentIsPercent)return;current+='%';currentIsPercent=true;render()}
 function parseLastOperation(full){const m=String(full).match(/^(.*?)([+\-×÷])(-?\d+(?:[.,]\d+)?%?)$/);return m?{op:m[2],rhs:m[3]}:null}
@@ -581,9 +582,9 @@ function bindTools(){
 function modeIcon(m){return ICONS[m]||''}
 function renderCalcKeypad(){
  $('#keypad').className='keypad';
- // Parentheses and ± only in Calculator mode; Units keeps its own layout.
- const extra=mode==='calc',signLabel=lang==='el'?'Αλλαγή προσήμου':'Change sign';
- $('#keypad').innerHTML=(extra?'<button class="key utility paren" data-value="(" type="button">(</button><button class="key utility paren" data-value=")" type="button">)</button>':'')+'<button class="key utility" data-action="backspace" type="button" aria-label="'+esc(t('deleteKey'))+'">⌫</button><button id="clearButton" class="key utility" data-action="clear" type="button">AC</button><button class="key utility" data-value="%" type="button">%</button><button class="key operator" data-value="/" type="button">÷</button><button class="key" data-value="7" type="button">7</button><button class="key" data-value="8" type="button">8</button><button class="key" data-value="9" type="button">9</button><button class="key operator" data-value="*" type="button">×</button><button class="key" data-value="4" type="button">4</button><button class="key" data-value="5" type="button">5</button><button class="key" data-value="6" type="button">6</button><button class="key operator" data-value="-" type="button">−</button><button class="key" data-value="1" type="button">1</button><button class="key" data-value="2" type="button">2</button><button class="key" data-value="3" type="button">3</button><button class="key operator" data-value="+" type="button">+</button>'+(extra?'<button class="key" data-action="sign" type="button" aria-label="'+esc(signLabel)+'">±</button><button class="key" data-value="0" type="button">0</button>':'<button class="key wide" data-value="0" type="button">0</button>')+'<button class="key" data-value="," type="button">,</button><button class="key equals" data-action="equals" type="button">=</button>';
+ // The "( )" key is only in Calculator mode; Units keeps its own layout.
+ const extra=mode==='calc',parenLabel=lang==='el'?'Παρενθέσεις':'Parentheses';
+ $('#keypad').innerHTML='<button class="key utility" data-action="backspace" type="button" aria-label="'+esc(t('deleteKey'))+'">⌫</button><button id="clearButton" class="key utility" data-action="clear" type="button">AC</button><button class="key utility" data-value="%" type="button">%</button><button class="key operator" data-value="/" type="button">÷</button><button class="key" data-value="7" type="button">7</button><button class="key" data-value="8" type="button">8</button><button class="key" data-value="9" type="button">9</button><button class="key operator" data-value="*" type="button">×</button><button class="key" data-value="4" type="button">4</button><button class="key" data-value="5" type="button">5</button><button class="key" data-value="6" type="button">6</button><button class="key operator" data-value="-" type="button">−</button><button class="key" data-value="1" type="button">1</button><button class="key" data-value="2" type="button">2</button><button class="key" data-value="3" type="button">3</button><button class="key operator" data-value="+" type="button">+</button>'+(extra?'<button class="key utility" data-action="paren" type="button" aria-label="'+esc(parenLabel)+'">( )</button><button class="key" data-value="0" type="button">0</button>':'<button class="key wide" data-value="0" type="button">0</button>')+'<button class="key" data-value="," type="button">,</button><button class="key equals" data-action="equals" type="button">=</button>';
 }
 function renderToolKeypad(){
  $('#keypad').className='tool-keypad';
@@ -832,7 +833,7 @@ $('#keypad').addEventListener('click',e=>{
    if(v==='-'){toolKeyInput('-');return}
    return;
  }
- if(a==='clear')clearButtonAction();else if(a==='backspace')backspace();else if(a==='equals')equals();else if(a==='sign')toggleSign();else if(v==='('||v===')')parenthesis(v);else if(v==='%')percent();else if(/[+\-*/]/.test(v||''))operator(v==='*'?'×':v==='/'?'÷':v);else if(v)digit(v)
+ if(a==='clear')clearButtonAction();else if(a==='backspace')backspace();else if(a==='equals')equals();else if(a==='paren')smartParen();else if(v==='%')percent();else if(/[+\-*/]/.test(v||''))operator(v==='*'?'×':v==='/'?'÷':v);else if(v)digit(v)
 });
 $('#toolPanel').addEventListener('click',e=>{
  const clear=e.target.closest('[data-mobile-action="clear-all"]');
