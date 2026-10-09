@@ -1,4 +1,4 @@
-const VERSION='0.4.127-s6';
+const VERSION='0.4.127-s7';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 // localStorage can throw (blocked storage, private mode, quota full). Never let that break the app.
@@ -693,7 +693,42 @@ function syncModeButton(){
  if(icon)icon.textContent=modeIcon(mode);
  if(button){button.dataset.mode=mode;button.setAttribute('aria-label',t(mode));}
  renderModeMenu();
+ renderSideTips();
 }
+// Side columns on wide desktop screens (shown by CSS only): keyboard shortcuts on the left, tips for the current mode on the right.
+// Each shortcut is [keys, text]; keys are shown as separate key caps.
+const SIDE_KEYS={
+ calc:{el:[[['0–9'],'Αριθμοί'],[['+','-','*','/'],'Πράξεις'],[[',','.'],'Υποδιαστολή'],[['(',')'],'Παρενθέσεις'],[['%'],'Ποσοστό'],[['Enter','='],'Αποτέλεσμα'],[['Backspace'],'Σβήνει το τελευταίο'],[['Esc'],'Καθαρίζει την πράξη']],
+       en:[[['0–9'],'Numbers'],[['+','-','*','/'],'Operators'],[[',','.'],'Decimal point'],[['(',')'],'Parentheses'],[['%'],'Percent'],[['Enter','='],'Result'],[['Backspace'],'Delete last'],[['Esc'],'Clear the calculation']]},
+ units:{el:[[['0–9'],'Αριθμοί'],[['+','-','*','/'],'Πράξη μέσα στην τιμή'],[[',','.'],'Υποδιαστολή'],[['%'],'Ποσοστό'],[['Enter','='],'Ολοκλήρωση'],[['Backspace'],'Σβήνει το τελευταίο'],[['Esc'],'Κλείνει ανοιχτά παράθυρα']],
+        en:[[['0–9'],'Numbers'],[['+','-','*','/'],'Math inside the value'],[[',','.'],'Decimal point'],[['%'],'Percent'],[['Enter','='],'Finish'],[['Backspace'],'Delete last'],[['Esc'],'Close open windows']]},
+ tool:{el:[[['Tab'],'Επόμενο πεδίο'],[['Shift','Tab'],'Προηγούμενο πεδίο'],[['0–9'],'Αριθμοί στο πεδίο'],[[',','.'],'Υποδιαστολή'],[['Backspace'],'Σβήνει το τελευταίο'],[['Esc'],'Κλείνει ανοιχτά παράθυρα']],
+       en:[[['Tab'],'Next field'],[['Shift','Tab'],'Previous field'],[['0–9'],'Type in the field'],[[',','.'],'Decimal point'],[['Backspace'],'Delete last'],[['Esc'],'Close open windows']]}
+};
+const SIDE_TIPS={
+ calc:{el:['Το κουμπί ( ) καταλαβαίνει μόνο του αν ανοίγει ή κλείνει παρένθεση. Όσες ξεχάσεις ανοιχτές, τις κλείνει το =.','Για αρνητικό αριθμό πάτα − αμέσως μετά από × ή ÷. Το 2 × − 3 δίνει −6.','Το 50 + 10% δίνει 55, γιατί το ποσοστό παίρνεται από τον προηγούμενο αριθμό.','Πάτα ξανά = για να επαναλάβεις την τελευταία πράξη. Το 2 + 3 = = δίνει 8.','Μετά το αποτέλεσμα, το ? δείχνει βήμα βήμα πώς βγήκε.','Στο Ιστορικό, πάτα έναν υπολογισμό για να τον ξαναφέρεις.'],
+       en:['The ( ) key works out on its own whether to open or close a parenthesis. Any you leave open, = closes for you.','For a negative number, press − right after × or ÷. 2 × − 3 gives −6.','50 + 10% gives 55, because the percent is taken from the previous number.','Press = again to repeat the last operation. 2 + 3 = = gives 8.','After a result, the ? button shows step by step how it was worked out.','In History, click a calculation to bring it back.']},
+ units:{el:['Πάτα την πάνω ή την κάτω τιμή για να γράψεις εκεί. Η άλλη μετατρέπεται αμέσως.','Το ⇄ αλλάζει θέση στις δύο μονάδες.','Μπορείς να γράψεις και πράξη, π.χ. 12 + 8, και να πατήσεις =.','Από το μενού πάνω από τις τιμές διαλέγεις κατηγορία: μήκος, βάρος, θερμοκρασία, δεδομένα και άλλα.','Το Εμβαδόν έχει και στρέμματα.'],
+        en:['Click the top or bottom value to type there. The other one converts right away.','⇄ swaps the two units.','You can type a calculation too, e.g. 12 + 8, then press =.','The menu above the values picks the category: length, mass, temperature, data and more.','Area includes the Greek stremma.']},
+ vat:{el:['«Πρόσθεσε ΦΠΑ»: από την καθαρή τιμή βρίσκεις την τελική.','«Αφαίρεσε ΦΠΑ»: από την τελική τιμή βρίσκεις την καθαρή και πόσος ήταν ο ΦΠΑ.','Ο συντελεστής ξεκινά στο 24%. Άλλαξέ τον αν χρειάζεσαι άλλον.','Σύρε τον διακόπτη ή πάτα ← → πάνω του για να αλλάξεις πρόσθεση και αφαίρεση.','Το ? δείχνει πώς βγήκε το ποσό.'],
+      en:['"Add VAT": from the net price you get the final price.','"Remove VAT": from the final price you get the net price and how much VAT it had.','The rate starts at 24%. Change it if you need another one.','Drag the switch, or press ← → on it, to change between add and remove.','The ? button shows how the amount was worked out.']},
+ fuel:{el:['Συμπλήρωσε απόσταση, κατανάλωση και τιμή. Το κόστος βγαίνει αμέσως.','Την κατανάλωση σε L/100 km τη δείχνει ο υπολογιστής ταξιδιού του αυτοκινήτου.','Για ταξίδι με επιστροφή, βάλε διπλή απόσταση.','Κάτω από το κόστος βλέπεις πόσα λίτρα θα κάψεις και πόσο κοστίζει κάθε km.'],
+       en:['Fill in distance, consumption and price. The cost shows up right away.','The car\'s trip computer shows consumption in L/100 km.','For a round trip, enter double the distance.','Under the cost you see the litres used and the cost per km.']},
+ energy:{el:['Την ισχύ σε W τη γράφει το ταμπελάκι ή το κουτί της συσκευής.','Βάλε 30 ημέρες για το κόστος ενός μήνα ή 365 για έναν χρόνο.','Η τιμή ανά kWh γράφεται στον λογαριασμό του ρεύματος.','Για συσκευές που ανάβουν και σβήνουν μόνες τους, όπως το ψυγείο, οι ώρες είναι κατά προσέγγιση.'],
+         en:['The power in W is on the device\'s label or box.','Use 30 days for a month\'s cost, or 365 for a year.','The price per kWh is on your electricity bill.','For devices that switch on and off by themselves, like a fridge, the hours are an estimate.']}
+};
+function renderSideTips(){
+ const left=$('#sideKeys'),right=$('#sideTips');if(!left||!right)return;
+ const l=lang==='el'?'el':'en',keys=(SIDE_KEYS[mode]||SIDE_KEYS.tool)[l],tips=(SIDE_TIPS[mode]||SIDE_TIPS.calc)[l];
+ left.setAttribute('aria-label',l==='el'?'Συντομεύσεις πληκτρολογίου':'Keyboard shortcuts');
+ right.setAttribute('aria-label',l==='el'?'Συμβουλές':'Tips');
+ left.innerHTML='<h2 class="side-title">'+(l==='el'?'Πληκτρολόγιο':'Keyboard')+'</h2><ul class="side-keys">'+keys.map(([k,text])=>'<li><span class="side-caps">'+k.map(x=>'<kbd>'+esc(x)+'</kbd>').join('')+'</span><span class="side-key-text">'+esc(text)+'</span></li>').join('')+'</ul>';
+ right.innerHTML='<h2 class="side-title">'+(l==='el'?'Συμβουλές':'Tips')+' · '+esc(modeText(mode))+'</h2><ul class="side-list">'+tips.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>';
+ placeSideTips();
+}
+// Line the side columns up with the top of the calculator card.
+function placeSideTips(){const card=$('#calculatorCard');if(card)document.documentElement.style.setProperty('--side-top',Math.round(card.getBoundingClientRect().top)+'px')}
+window.addEventListener('resize',placeSideTips);
 function toggleModeMenu(){
  const menu=$('#modeMenu'),control=$('.mode-control'),button=$('#modeButton');
  if(!menu||!control||!button)return;
