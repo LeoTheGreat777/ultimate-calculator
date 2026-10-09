@@ -1,4 +1,4 @@
-const VERSION='0.4.127-s4';
+const VERSION='0.4.127-s5';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 // localStorage can throw (blocked storage, private mode, quota full). Never let that break the app.
@@ -124,7 +124,7 @@ function tokenize(input){
 }
 function evalExpr(input){
  const tokens=tokenize(input);let pos=0;
- function primary(){const tok=tokens[pos++];if(!tok)throw Error('INCOMPLETE');if(tok.type==='+'||tok.type==='-'){const v=primary();return{value:tok.type==='-'?ratMul(ratFromString('-1'),v.value):v.value,percent:false}}if(tok.type==='('){const v=additive();if(!tokens[pos]||tokens[pos].type!==')')throw Error('PAREN');pos++;return{value:v.value,percent:false}}if(tok.type==='number')return{value:tok.value,percent:tok.percent};throw Error('SYNTAX')}
+ function primary(){const tok=tokens[pos++];if(!tok)throw Error('INCOMPLETE');if(tok.type==='+'||tok.type==='-'){const v=primary();return{value:tok.type==='-'?ratMul(ratFromString('-1'),v.value):v.value,percent:v.percent}}if(tok.type==='('){const v=additive();if(!tokens[pos]||tokens[pos].type!==')')throw Error('PAREN');pos++;return{value:v.value,percent:false}}if(tok.type==='number')return{value:tok.value,percent:tok.percent};throw Error('SYNTAX')}
  function mult(){let left=primary();while(tokens[pos]&&['*','/'].includes(tokens[pos].type)){const op=tokens[pos++].type,right=primary();left={value:op==='*'?ratMul(left.value,right.value):ratDiv(left.value,right.value),percent:false}}return left}
  function additive(){let left=mult();while(tokens[pos]&&['+','-'].includes(tokens[pos].type)){const op=tokens[pos++].type,right=mult();const rv=right.percent?ratMul(left.value,right.value):right.value;left={value:op==='+'?ratAdd(left.value,rv):ratSub(left.value,rv),percent:false}}return left}
  const out=additive();if(pos!==tokens.length)throw Error('SYNTAX');return out.value
@@ -245,7 +245,7 @@ function digit(v){
  if(justCalculated){expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null}
  if(currentIsPercent){current=v;currentIsPercent=false;render();return}
  if(v==='.'&&current.includes('.'))return;
- if(v==='.'&&!current)current='0.';else if(current==='0'&&v!=='.')current=v;else current+=v;
+ if(v==='.'&&(!current||current==='-'))current+='0.';else if(current==='0'&&v!=='.')current=v;else current+=v;
  render()
 }
 function parenthesis(ch){
@@ -257,6 +257,7 @@ function parenthesis(ch){
    if(expression&&/[0-9.)]$/.test(expression))return false;
    expression+='(';
  }else{
+   if(current==='-')return false;
    if(current){expression+=current;current='';currentIsPercent=false}
    const opens=(expression.match(/\(/g)||[]).length,closes=(expression.match(/\)/g)||[]).length;
    if(opens<=closes||/[+\-×÷(]$/.test(expression))return false;
@@ -268,9 +269,18 @@ function parenthesis(ch){
 function operator(op){
  resetHow();
  if(justCalculated){expression=carryText(lastResult,18);current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null}
+ if(current==='-'&&expression){current=''}
  if(!current&&!expression){if(op==='-'){current='-';render()}return;}if(!current&&/\($/.test(expression))return;
  if(current){expression+=current;current='';currentIsPercent=false}
  if(/[+\-×÷]$/.test(expression))expression=expression.slice(0,-1)+op;else expression+=op;
+ render()
+}
+function toggleSign(){
+ if(current==='Error')return;
+ resetHow();
+ if(justCalculated){if(!lastResult)return;lastResult={n:-lastResult.n,d:lastResult.d};lastExpression=lastExpression?'-('+lastExpression+')':'';lastOperation=null;render();return}
+ if(!current&&/\)$/.test(expression))return;
+ current=current.startsWith('-')?current.slice(1):'-'+current;
  render()
 }
 function percent(){resetHow();if(!current||currentIsPercent)return;current+='%';currentIsPercent=true;render()}
@@ -281,7 +291,8 @@ function repeatEquals(){
 }
 function equals(){
  if(justCalculated&&repeatEquals())return;
- const full=expression+current;if(!full||/[+\-×÷]$/.test(full))return;
+ let full=expression+current;if(!full||/[+\-×÷(]$/.test(full))return;
+ const openParens=(full.match(/\(/g)||[]).length-(full.match(/\)/g)||[]).length;if(openParens>0){full+=')'.repeat(openParens);expression=full;current=''}
  try{const value=evalExpr(full);lastExpression=full;lastResult=value;lastOperation=parseLastOperation(full);justCalculated=true;currentIsPercent=false;howData=explanationForExpression(full,value)||{formula:pretty(full),steps:[`${pretty(full)} = ${fmt(value)}`],result:fmt(value)};saveHistory({expression:full,result:value,how:howData});render()}
  catch{current='Error';currentIsPercent=false;render();setTimeout(()=>{if(current==='Error'){current='';render()}},900)}
 }
@@ -570,7 +581,9 @@ function bindTools(){
 function modeIcon(m){return ICONS[m]||''}
 function renderCalcKeypad(){
  $('#keypad').className='keypad';
- $('#keypad').innerHTML='<button class="key utility" data-action="backspace" type="button" aria-label="'+esc(t('deleteKey'))+'">⌫</button><button id="clearButton" class="key utility" data-action="clear" type="button">AC</button><button class="key utility" data-value="%" type="button">%</button><button class="key operator" data-value="/" type="button">÷</button><button class="key" data-value="7" type="button">7</button><button class="key" data-value="8" type="button">8</button><button class="key" data-value="9" type="button">9</button><button class="key operator" data-value="*" type="button">×</button><button class="key" data-value="4" type="button">4</button><button class="key" data-value="5" type="button">5</button><button class="key" data-value="6" type="button">6</button><button class="key operator" data-value="-" type="button">−</button><button class="key" data-value="1" type="button">1</button><button class="key" data-value="2" type="button">2</button><button class="key" data-value="3" type="button">3</button><button class="key operator" data-value="+" type="button">+</button><button class="key wide" data-value="0" type="button">0</button><button class="key" data-value="," type="button">,</button><button class="key equals" data-action="equals" type="button">=</button>';
+ // Parentheses and ± only in Calculator mode; Units keeps its own layout.
+ const extra=mode==='calc',signLabel=lang==='el'?'Αλλαγή προσήμου':'Change sign';
+ $('#keypad').innerHTML=(extra?'<button class="key utility paren" data-value="(" type="button">(</button><button class="key utility paren" data-value=")" type="button">)</button>':'')+'<button class="key utility" data-action="backspace" type="button" aria-label="'+esc(t('deleteKey'))+'">⌫</button><button id="clearButton" class="key utility" data-action="clear" type="button">AC</button><button class="key utility" data-value="%" type="button">%</button><button class="key operator" data-value="/" type="button">÷</button><button class="key" data-value="7" type="button">7</button><button class="key" data-value="8" type="button">8</button><button class="key" data-value="9" type="button">9</button><button class="key operator" data-value="*" type="button">×</button><button class="key" data-value="4" type="button">4</button><button class="key" data-value="5" type="button">5</button><button class="key" data-value="6" type="button">6</button><button class="key operator" data-value="-" type="button">−</button><button class="key" data-value="1" type="button">1</button><button class="key" data-value="2" type="button">2</button><button class="key" data-value="3" type="button">3</button><button class="key operator" data-value="+" type="button">+</button>'+(extra?'<button class="key" data-action="sign" type="button" aria-label="'+esc(signLabel)+'">±</button><button class="key" data-value="0" type="button">0</button>':'<button class="key wide" data-value="0" type="button">0</button>')+'<button class="key" data-value="," type="button">,</button><button class="key equals" data-action="equals" type="button">=</button>';
 }
 function renderToolKeypad(){
  $('#keypad').className='tool-keypad';
@@ -819,7 +832,7 @@ $('#keypad').addEventListener('click',e=>{
    if(v==='-'){toolKeyInput('-');return}
    return;
  }
- if(a==='clear')clearButtonAction();else if(a==='backspace')backspace();else if(a==='equals')equals();else if(v==='%')percent();else if(/[+\-*/]/.test(v||''))operator(v==='*'?'×':v==='/'?'÷':v);else if(v)digit(v)
+ if(a==='clear')clearButtonAction();else if(a==='backspace')backspace();else if(a==='equals')equals();else if(a==='sign')toggleSign();else if(v==='('||v===')')parenthesis(v);else if(v==='%')percent();else if(/[+\-*/]/.test(v||''))operator(v==='*'?'×':v==='/'?'÷':v);else if(v)digit(v)
 });
 $('#toolPanel').addEventListener('click',e=>{
  const clear=e.target.closest('[data-mobile-action="clear-all"]');
