@@ -1,4 +1,4 @@
-const VERSION='0.4.127-s3';
+const VERSION='0.4.127-s4';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 // localStorage can throw (blocked storage, private mode, quota full). Never let that break the app.
@@ -44,6 +44,7 @@ function readLanguage(){
 }
 let lang=readLanguage();
 let theme=store.get('uc-theme')==='light'?'light':store.get('uc-theme')==='dark'?'dark':'auto';
+let carry=null;
 let mode='calc',expression='',current='',currentIsPercent=false,justCalculated=false,lastExpression='',lastResult=null,howData=null,calcHowData=null,lastOperation=null,historyClearConfirm=false,toolResult=null,toolActiveInput=null,resultCompact=false,unitActiveInput='from',unitSource='from',unitReplaceOnNextKey=false,unitExpressions={from:'',to:''},toolState={fuel:{inputs:{},result:null},energy:{inputs:{},result:null},vat:{inputs:{},result:null}};
 store.del('uc-mode');
 
@@ -78,6 +79,7 @@ function formatNumericInput(s){
 function ratFromString(s){s=normalizeNumericInput(s);let sign=1n;if(s[0]==='-'){sign=-1n;s=s.slice(1)}const [whole,frac='']=s.split('.');const digits=(whole||'0')+(frac||'');const scale=10n**BigInt(frac.length);return rat(sign*BigInt(digits||'0'),scale)}
 function ratPercent(a){return rat(a.n,a.d*100n)}
 function ratToDecimal(a,max=18){let sign=a.n<0n?'-':'';let n=a.n<0n?-a.n:a.n,d=a.d;const whole=n/d;let rem=n%d;if(rem===0n)return sign+whole.toString();let out='';for(let i=0;i<max&&rem;i++){rem*=10n;out+=String(rem/d);rem%=d}out=out.replace(/0+$/,'');return sign+whole.toString()+'.'+out}
+function ratToRoundedDecimal(a,max=6){const neg=a.n<0n,n=neg?-a.n:a.n,scale=10n**BigInt(max);let q=n*scale/a.d;if(2n*((n*scale)%a.d)>=a.d)q++;if(q===0n)return '0';let digits=q.toString().padStart(max+1,'0');const whole=digits.slice(0,digits.length-max),frac=digits.slice(digits.length-max).replace(/0+$/,'');return (neg?'-':'')+whole+(frac?'.'+frac:'')}
 function ratToNumber(a){const s=ratToDecimal(a,18);return Number(s)}
 function formatScientific(raw){
  const neg=raw[0]==='-';const body=neg?raw.slice(1):raw;const [w,f='']=body.split('.');
@@ -87,7 +89,7 @@ function formatScientific(raw){
  return (neg?'-':'')+mant.replace(/,$/,'')+' × 10^'+exp;
 }
 function formatRat(a,max=6){
- const s=ratToDecimal(a,max),num=Number(s);
+ const s=ratToRoundedDecimal(a,max),num=Number(s);
  // Non-zero values too small for `max` decimals would round to "0": show them in scientific notation.
  if(a.n!==0n&&num===0)return formatScientific(ratToDecimal(a,200));
  if(Number.isFinite(num)&&Math.abs(num)<1e15)return new Intl.NumberFormat(NUMBER_LOCALE,{maximumFractionDigits:max}).format(num);
@@ -112,10 +114,11 @@ function formatExpressionDisplay(s){
  return formatInputDisplay(String(s??''));
 }
 
+function carryText(r,digits){const abs=r.n<0n?{n:-r.n,d:r.d}:r;carry={text:ratToDecimal(abs,digits),value:abs};return ratToDecimal(r,digits)}
 function tokenize(input){
  const s=String(input).replace(/×/g,'*').replace(/÷/g,'/').replace(/\s+/g,'');const tokens=[];let i=0;
  while(i<s.length){const ch=s[i];
-  if(/[0-9.]/.test(ch)){const start=i;let dots=0;while(i<s.length&&/[0-9.]/.test(s[i])){if(s[i]==='.')dots++;i++}if(dots>1)throw Error('NUMBER');let raw=s.slice(start,i);if(s[i]==='%'){i++;tokens.push({type:'number',value:ratPercent(ratFromString(raw)),percent:true,raw:raw+'%'});}else tokens.push({type:'number',value:ratFromString(raw),percent:false,raw});continue}
+  if(/[0-9.]/.test(ch)){const start=i;let dots=0;while(i<s.length&&/[0-9.]/.test(s[i])){if(s[i]==='.')dots++;i++}if(dots>1)throw Error('NUMBER');let raw=s.slice(start,i);if(s[i]==='%'){i++;tokens.push({type:'number',value:ratPercent(ratFromString(raw)),percent:true,raw:raw+'%'});}else{const exact=carry&&raw===carry.text&&(start===0||(start===1&&s[0]==='-'));tokens.push({type:'number',value:exact?carry.value:ratFromString(raw),percent:false,raw})}continue}
   if('+-*/()'.includes(ch)){tokens.push({type:ch});i++;continue}throw Error('CHAR')
  }return tokens
 }
@@ -226,7 +229,7 @@ function renderToolDisplay(){
  $('#result').classList.toggle('long-value',String(toolResult?.main??'').length>18);
  d.classList.toggle('tool-empty',!toolResult);
 }
-function clearAll(){resultCompact=false;expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null;lastOperation=null;resetHow();render()}
+function clearAll(){carry=null;resultCompact=false;expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null;lastOperation=null;resetHow();render()}
 function clearCurrent(){resetHow();if(current){current='';currentIsPercent=false;render();return}clearAll()}
 function clearButtonAction(){
  if(justCalculated){clearAll();return}
@@ -264,7 +267,7 @@ function parenthesis(ch){
 }
 function operator(op){
  resetHow();
- if(justCalculated){expression=ratToDecimal(lastResult,18);current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null}
+ if(justCalculated){expression=carryText(lastResult,18);current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null}
  if(!current&&!expression){if(op==='-'){current='-';render()}return;}if(!current&&/\($/.test(expression))return;
  if(current){expression+=current;current='';currentIsPercent=false}
  if(/[+\-×÷]$/.test(expression))expression=expression.slice(0,-1)+op;else expression+=op;
@@ -274,7 +277,7 @@ function percent(){resetHow();if(!current||currentIsPercent)return;current+='%';
 function parseLastOperation(full){const m=String(full).match(/^(.*?)([+\-×÷])(-?\d+(?:[.,]\d+)?%?)$/);return m?{op:m[2],rhs:m[3]}:null}
 function repeatEquals(){
  if(!justCalculated||!lastOperation)return false;
- try{const rhs=lastOperation.rhs,base=ratToDecimal(lastResult,24),full=base+lastOperation.op+rhs,value=evalExpr(full);lastExpression=full;lastResult=value;justCalculated=true;howData=explanationForExpression(full,value)||{formula:pretty(full),steps:[`${pretty(full)} = ${fmt(value)}`],result:fmt(value)};calcHowData=howData;saveHistory({expression:full,result:value,how:howData});render();return true}catch{return false}
+ try{const rhs=lastOperation.rhs,base=carryText(lastResult,24),full=base+lastOperation.op+rhs,value=evalExpr(full);lastExpression=full;lastResult=value;justCalculated=true;howData=explanationForExpression(full,value)||{formula:pretty(full),steps:[`${pretty(full)} = ${fmt(value)}`],result:fmt(value)};calcHowData=howData;saveHistory({expression:full,result:value,how:howData});render();return true}catch{return false}
 }
 function equals(){
  if(justCalculated&&repeatEquals())return;
