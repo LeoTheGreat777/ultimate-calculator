@@ -1,4 +1,4 @@
-const VERSION='0.4.127-s8';
+const VERSION='0.4.127-s9';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 // localStorage can throw (blocked storage, private mode, quota full). Never let that break the app.
@@ -207,6 +207,7 @@ function render(){
  $('#clearButton').textContent=justCalculated||!hasEntry?'AC':'C';
  $('#howButton').classList.toggle('hidden',!howData);
  $('#chartButton')?.classList.add('hidden');
+ syncFuelButtons();
  resultCompact=false;
  requestAnimationFrame(()=>{
    if(exprEl){
@@ -230,6 +231,7 @@ function renderToolDisplay(){
  $('#howButton').classList.toggle('hidden',!toolResult?.how);
  $('#chartButton')?.classList.toggle('hidden',!toolChartAvailable());
  $('#chartButton')?.setAttribute('aria-label',t('chart'));
+ syncFuelButtons();
  $('#result').textContent=toolResult?.main||'0';
  $('#result').classList.toggle('long-value',String(toolResult?.main??'').length>18);
  d.classList.toggle('tool-empty',!toolResult);
@@ -616,6 +618,7 @@ function renderTool(){
  const card=$('#calculatorCard');
  const modeLabel=$('#modeLabel');if(modeLabel)modeLabel.textContent=modeText(mode);
  card.classList.toggle('mobile-tool',!calc&&isMobileDevice()&&mode!=='units'&&mode!=='graph');
+ document.body.classList.toggle('mobile-tool-on',card.classList.contains('mobile-tool'));
  card.classList.remove('unit-keypad-open');
  // Graph mode (charts.js) builds its own display and keypad.
  card.classList.toggle('graph-mode',mode==='graph');
@@ -735,8 +738,8 @@ const SIDE_TIPS={
         en:['Click the top or bottom value to type there. The other one converts right away.','⇄ swaps the two units.','You can type a calculation too, e.g. 12 + 8, then press =.','The menu above the values picks the category: length, mass, temperature, data and more.','Area includes the Greek stremma.']},
  vat:{el:['«Πρόσθεσε ΦΠΑ»: από την καθαρή τιμή βρίσκεις την τελική.','«Αφαίρεσε ΦΠΑ»: από την τελική τιμή βρίσκεις την καθαρή και πόσος ήταν ο ΦΠΑ.','Ο συντελεστής ξεκινά στο 24%. Άλλαξέ τον αν χρειάζεσαι άλλον.','Σύρε τον διακόπτη ή πάτα ← → πάνω του για να αλλάξεις πρόσθεση και αφαίρεση.','Το ? δείχνει πώς βγήκε το ποσό και το κουμπί με τις στήλες το δείχνει σε διάγραμμα.'],
       en:['"Add VAT": from the net price you get the final price.','"Remove VAT": from the final price you get the net price and how much VAT it had.','The rate starts at 24%. Change it if you need another one.','Drag the switch, or press ← → on it, to change between add and remove.','The ? button shows how the amount was worked out, and the bars button shows it as a chart.']},
- fuel:{el:['Συμπλήρωσε απόσταση, κατανάλωση και τιμή. Το κόστος βγαίνει αμέσως.','Την κατανάλωση σε L/100 km τη δείχνει ο υπολογιστής ταξιδιού του αυτοκινήτου.','Για ταξίδι με επιστροφή, βάλε διπλή απόσταση.','Κάτω από το κόστος βλέπεις πόσα λίτρα θα κάψεις και πόσο κοστίζει κάθε km.','Το κουμπί με τις στήλες δείχνει πώς αλλάζει το κόστος με την απόσταση.'],
-       en:['Fill in distance, consumption and price. The cost shows up right away.','The car\'s trip computer shows consumption in L/100 km.','For a round trip, enter double the distance.','Under the cost you see the litres used and the cost per km.','The bars button shows how the cost changes with distance.']},
+ fuel:{el:['Συμπλήρωσε απόσταση, κατανάλωση και τιμή. Το κόστος βγαίνει αμέσως.','Την κατανάλωση σε L/100 km τη δείχνει ο υπολογιστής ταξιδιού του αυτοκινήτου.','Για ταξίδι με επιστροφή, βάλε διπλή απόσταση.','Κάτω από το κόστος βλέπεις πόσα λίτρα θα κάψεις και πόσο κοστίζει κάθε km.','Το κουμπί με τις στήλες δείχνει πώς αλλάζει το κόστος με την απόσταση.','Ο σελιδοδείκτης αποθηκεύει τον υπολογισμό. Η λίστα δίπλα δείχνει μέση τιμή και σύνολα.'],
+       en:['Fill in distance, consumption and price. The cost shows up right away.','The car\'s trip computer shows consumption in L/100 km.','For a round trip, enter double the distance.','Under the cost you see the litres used and the cost per km.','The bars button shows how the cost changes with distance.','The bookmark button saves the calculation. The list button shows the average price, average consumption and totals.']},
  energy:{el:['Την ισχύ σε W τη γράφει το ταμπελάκι ή το κουτί της συσκευής.','Βάλε 30 ημέρες για το κόστος ενός μήνα ή 365 για έναν χρόνο.','Η τιμή ανά kWh γράφεται στον λογαριασμό του ρεύματος.','Για συσκευές που ανάβουν και σβήνουν μόνες τους, όπως το ψυγείο, οι ώρες είναι κατά προσέγγιση.','Το κουμπί με τις στήλες δείχνει το κόστος ανά ημέρα, μήνα και χρόνο.'],
          en:['The power in W is on the device\'s label or box.','Use 30 days for a month\'s cost, or 365 for a year.','The price per kWh is on your electricity bill.','For devices that switch on and off by themselves, like a fridge, the hours are an estimate.','The bars button shows the cost per day, month and year.']}
 };
@@ -927,6 +930,8 @@ $('#toolPanel').addEventListener('input',e=>{
 });
 $('#howButton').addEventListener('click',showHow);$('#closeHow').addEventListener('click',closeHow);$('#howModal').addEventListener('click',e=>{if(e.target.id==='howModal')closeHow()});
 $('#historyButton').addEventListener('click',openHistory);$('#closeHistory').addEventListener('click',closeHistory);$('#historyBackdrop').addEventListener('click',closeHistory);$('#historyList').addEventListener('click',historyClick);$('#copyButton').addEventListener('click',copyResult);
+// In the tools, tapping the result copies it too (on short phones the copy button is hidden to make room for the keypad).
+$('#calculatorDisplay').addEventListener('click',e=>{if(mode==='calc'||mode==='units'||mode==='graph'||!e.target.closest('#result')||!toolResult?.main)return;copyResult();const r=$('#result');r.classList.add('copied');setTimeout(()=>r.classList.remove('copied'),700)});
 $('#langButton').addEventListener('click',e=>{
  e.preventDefault();
  e.stopPropagation();

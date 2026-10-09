@@ -459,7 +459,71 @@ function redrawCharts(){
  if(typeof mode==='undefined')return;
  if(mode==='graph'){renderGraphFns();drawGraphSoon()}
  if($('#toolChart')&&!$('#howModal').classList.contains('hidden'))drawToolChart();
+ if(!$('#howModal').classList.contains('hidden'))drawFuelLogChart();
  historyChartRefresh();
 }
 window.addEventListener('resize',()=>requestAnimationFrame(redrawCharts));
 try{matchMedia('(prefers-color-scheme: light)').addEventListener('change',()=>requestAnimationFrame(redrawCharts))}catch{}
+
+/* ---------- Fuel log: saved fuel calculations and their averages (s9) ---------- */
+const FUEL_LOG_KEY='uc-fuel-log';
+let fuelLastSaved='',fuelClearArmed=false;
+function fuelLog(){try{const a=JSON.parse(localStorage.getItem(FUEL_LOG_KEY)||'[]');return Array.isArray(a)?a.filter(e=>e&&[e.d,e.c,e.p].every(v=>Number.isFinite(v)&&v>0)):[]}catch{return[]}}
+function fuelLogSet(a){try{localStorage.setItem(FUEL_LOG_KEY,JSON.stringify(a.slice(0,300)))}catch{}}
+function fText(k){
+ const el={save:'Αποθήκευση υπολογισμού',saved:'Αποθηκεύτηκε',log:'Αποθηκευμένα και μέσοι όροι',title:'Αποθηκευμένα καύσιμα',avgPrice:'Μέση τιμή καυσίμου',avgCons:'Μέση κατανάλωση',avgKm:'Μέσο κόστος ανά km',total:'Σύνολο',trips:n=>n===1?'1 υπολογισμός':n+' υπολογισμοί',use:'Βάλε τη μέση τιμή στον υπολογισμό',clear:'Διαγραφή όλων',clearSure:'Σίγουρα; Πάτα ξανά',empty:'Δεν έχεις αποθηκεύσει ακόμα κάτι. Συμπλήρωσε απόσταση, κατανάλωση και τιμή και πάτα το κουμπί αποθήκευσης δίπλα στο αποτέλεσμα.',note:'Η μέση τιμή λογαριάζει πόσα λίτρα είχε κάθε υπολογισμός, όπως θα έβγαινε αν διαιρούσες όλα τα ευρώ με όλα τα λίτρα.',priceChart:'Τιμή ανά λίτρο σε κάθε υπολογισμό',avg:'μέσος όρος',del:'Διαγραφή'};
+ const en={save:'Save this calculation',saved:'Saved',log:'Saved entries and averages',title:'Saved fuel entries',avgPrice:'Average fuel price',avgCons:'Average consumption',avgKm:'Average cost per km',total:'Total',trips:n=>n===1?'1 entry':n+' entries',use:'Use the average price in the calculation',clear:'Delete all',clearSure:'Sure? Tap again',empty:'Nothing saved yet. Fill in distance, consumption and price, then press the save button next to the result.',note:'The average price takes into account how many litres each entry had, the same as dividing all the euros by all the litres.',priceChart:'Price per litre in each entry',avg:'average',del:'Delete'};
+ return (lang==='el'?el:en)[k];
+}
+const FUEL_SAVE_ICON='<svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M12 7v6M9 10h6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>';
+const FUEL_SAVED_ICON='<svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M9 10l2 2 4-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const FUEL_LOG_ICON='<svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="4" cy="6" r="1.4" fill="currentColor"/><circle cx="4" cy="12" r="1.4" fill="currentColor"/><circle cx="4" cy="18" r="1.4" fill="currentColor"/></svg>';
+function fuelCurrent(){const d=liveToolNumber('fuelD'),c=liveToolNumber('fuelC'),p=liveToolNumber('fuelP');return d>0&&c>0&&p>0?{d,c,p}:null}
+const fuelKey=v=>v?v.d+'|'+v.c+'|'+v.p:'';
+function fuelStats(list){
+ const km=list.reduce((s,e)=>s+e.d,0),litres=list.reduce((s,e)=>s+e.d*e.c/100,0),cost=list.reduce((s,e)=>s+e.d*e.c/100*e.p,0);
+ return{n:list.length,km,litres,cost,price:litres?cost/litres:0,cons:km?litres/km*100:0,perKm:km?cost/km:0};
+}
+// The save and saved-entries buttons sit next to "?" in Fuel mode, so the screen does not get taller.
+function syncFuelButtons(){
+ const row=document.querySelector('#calculatorDisplay .expression-row');if(!row)return;
+ let s=document.getElementById('fuelSaveButton'),l=document.getElementById('fuelLogButton');
+ if(!s){
+  s=document.createElement('button');s.id='fuelSaveButton';s.type='button';s.className='how-button fuel-btn fuel-save hidden';s.addEventListener('click',fuelSaveCurrent);
+  l=document.createElement('button');l.id='fuelLogButton';l.type='button';l.className='how-button fuel-btn fuel-log hidden';l.innerHTML=FUEL_LOG_ICON;l.addEventListener('click',showFuelLog);
+  const first=row.querySelector('.how-button');row.insertBefore(s,first);row.insertBefore(l,first);
+ }
+ const on=mode==='fuel';s.classList.toggle('hidden',!on);l.classList.toggle('hidden',!on);if(!on)return;
+ const cur=fuelCurrent(),done=cur&&fuelKey(cur)===fuelLastSaved;
+ s.disabled=!cur||done;s.classList.toggle('done',!!done);s.innerHTML=done?FUEL_SAVED_ICON:FUEL_SAVE_ICON;
+ s.setAttribute('aria-label',fText(done?'saved':'save'));s.title=fText(done?'saved':'save');
+ const n=fuelLog().length;l.setAttribute('aria-label',fText('log'));l.title=fText('log');if(n)l.dataset.count=n>99?'99+':String(n);else delete l.dataset.count;
+}
+function fuelSaveCurrent(){
+ const cur=fuelCurrent();if(!cur||fuelKey(cur)===fuelLastSaved)return;
+ const list=fuelLog();list.unshift({id:Date.now()+Math.random(),t:Date.now(),...cur});fuelLogSet(list);fuelLastSaved=fuelKey(cur);syncFuelButtons();
+}
+function showFuelLog(){fuelClearArmed=false;$('#howTitle').textContent=fText('title');renderFuelLog();$('#howModal').classList.remove('hidden');requestAnimationFrame(drawFuelLogChart)}
+function renderFuelLog(){
+ const box=$('#howContent'),list=fuelLog();if(!box)return;
+ if(!list.length){box.innerHTML='<div class="empty">'+esc(fText('empty'))+'</div>';return}
+ const st=fuelStats(list),dateFmt=new Intl.DateTimeFormat(lang==='el'?'el-GR':'en-GB',{day:'numeric',month:'short'});
+ const stat=(label,value,cls='')=>'<div class="fuel-stat '+cls+'"><span>'+esc(label)+'</span><strong>'+esc(value)+'</strong></div>';
+ box.innerHTML='<div class="fuel-stats">'+stat(fText('avgPrice'),chNum(st.price,3)+' €/L','main')+stat(fText('avgCons'),chNum(st.cons,2)+' L/100 km')+stat(fText('avgKm'),chNum(st.perKm,3)+' €/km')+stat(fText('total'),fText('trips')(st.n)+' · '+chNum(st.km,1)+' km · '+chMoney(st.cost),'wide')+'</div>'+
+  '<button class="fuel-use" data-fuel-use="1" type="button">'+esc(fText('use'))+' ('+esc(chNum(st.price,3))+' €/L)</button>'+
+  (list.length>1?'<div class="chart-heading">'+esc(fText('priceChart'))+'</div><canvas id="fuelLogChart" class="fuel-log-chart"></canvas>':'')+
+  '<div class="fuel-list">'+list.map(e=>'<div class="fuel-item"><div class="fuel-item-main"><span class="fuel-item-date">'+esc(dateFmt.format(new Date(e.t)))+'</span><span>'+esc(chNum(e.d,1)+' km · '+chNum(e.c,2)+' L/100 · '+chNum(e.p,3)+' €/L')+'</span></div><strong>'+esc(chMoney(e.d*e.c/100*e.p))+'</strong><button class="history-delete" data-fuel-del="'+e.id+'" type="button" aria-label="'+esc(fText('del'))+'">×</button></div>').join('')+'</div>'+
+  '<p class="chart-note">'+esc(fText('note'))+'</p><button class="fuel-clear'+(fuelClearArmed?' armed':'')+'" data-fuel-clear="1" type="button">'+esc(fText(fuelClearArmed?'clearSure':'clear'))+'</button>';
+}
+function drawFuelLogChart(){
+ const cv=document.getElementById('fuelLogChart');if(!cv)return;const list=fuelLog().slice().reverse();if(list.length<2)return;
+ const C=chColors(),avg=fuelStats(list).price,ps=list.map(e=>e.p);
+ chLineChart(cv,{series:[{pts:[[0,avg],[list.length-1,avg]],color:C.series[1],width:1.6,dash:[5,5]},{pts:list.map((e,i)=>[i,e.p]),color:C.series[0],width:2.2,dots:true}],xMin:0,xMax:list.length-1,yMin:Math.min(...ps,avg),yMax:Math.max(...ps,avg),xTicks:false,yFmt:v=>chNum(v,3)+' €'});
+}
+document.getElementById('howContent')?.addEventListener('click',e=>{
+ const del=e.target.closest('[data-fuel-del]'),use=e.target.closest('[data-fuel-use]'),clear=e.target.closest('[data-fuel-clear]');
+ if(del){fuelLogSet(fuelLog().filter(x=>String(x.id)!==del.dataset.fuelDel));fuelLastSaved='';fuelClearArmed=false;renderFuelLog();drawFuelLogChart();syncFuelButtons();return}
+ if(clear){if(!fuelClearArmed){fuelClearArmed=true;renderFuelLog();drawFuelLogChart();return}fuelLogSet([]);fuelLastSaved='';fuelClearArmed=false;renderFuelLog();syncFuelButtons();return}
+ if(use){const st=fuelStats(fuelLog());if(!st.price||mode!=='fuel')return;const input=document.getElementById('fuelP');if(!input)return;
+  input.value=String(Math.round(st.price*1000)/1000).replace('.',',');input.dispatchEvent(new Event('input',{bubbles:true}));closeHow()}
+});
