@@ -19,6 +19,10 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # Records each deploy under Deployments on the repo page (the green tick / red X there).
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -26,10 +30,16 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
+      # Publish only the app's files, the same ones server.py serves in Docker.
+      - name: Collect site files
+        run: |
+          mkdir _site
+          cp index.html app.js charts.js history-interaction.js styles.css icon.svg manifest.webmanifest _site/
+
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
 
       - name: Deploy to GitHub Pages
         id: deployment
