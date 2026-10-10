@@ -14,11 +14,18 @@ html[data-theme="light"],[data-theme-preview="light"]{color-scheme:light;--bg:#f
 html[data-theme="black"],[data-theme-preview="black"]{color-scheme:dark;--bg:#000;--card:#000;--card2:#0c0c0d;--key:#1a1a1c;--key-hover:#262629;--text:#f5f5f7;--muted:#8e8e93;--accent:#6ea8fe;--accent2:#8bb9ff;--border:rgba(255,255,255,.12);--danger:#ff6666;--on-accent:#07101c;--unit-result:#5c5c62;--series1:#6ea8fe;--series2:#f5a65b;--series3:#4cd38a}
 /* Paper: warm cream and brown, terracotta accent; easy on the eyes in daylight */
 html[data-theme="paper"],[data-theme-preview="paper"]{color-scheme:light;--bg:#f3ede3;--card:#fbf8f2;--card2:#f3ece1;--key:#ebe2d4;--key-hover:#e1d6c5;--text:#2b2118;--muted:#76685a;--accent:#a8521f;--accent2:#8f4416;--border:rgba(60,40,20,.12);--danger:#c43c3c;--on-accent:#fff;--unit-result:#b0a290;--series1:#a8521f;--series2:#2f7d6d;--series3:#5a5fb0}
-/* Graphite: soft greys, gentler than Dark */
-html[data-theme="graphite"],[data-theme-preview="graphite"]{color-scheme:dark;--bg:#1e1f22;--card:#2b2d31;--card2:#313338;--key:#3a3c42;--key-hover:#45474e;--text:#f2f3f5;--muted:#a3a7ae;--accent:#7ab0ff;--accent2:#9cc3ff;--border:rgba(255,255,255,.07);--danger:#ff6b6b;--on-accent:#0b1424;--unit-result:#6d7179;--series1:#7ab0ff;--series2:#f5a65b;--series3:#5bd69a}
-/* Retro: green on black, like an old calculator display (and the UC logo) */
-html[data-theme="retro"],[data-theme-preview="retro"]{color-scheme:dark;--bg:#030603;--card:#081008;--card2:#0c160c;--key:#122012;--key-hover:#1a2c1a;--text:#c9f7d2;--muted:#79a383;--accent:#3fdc72;--accent2:#6be795;--border:rgba(120,255,160,.12);--danger:#ff6b6b;--on-accent:#021006;--unit-result:#41664b;--series1:#3fdc72;--series2:#e9c54a;--series3:#5fc6ef}
-html[data-theme="retro"] .result{text-shadow:0 0 14px rgba(63,220,114,.35)}
+/* Rose: soft pink and white, raspberry accent */
+html[data-theme="rose"],[data-theme-preview="rose"]{color-scheme:light;--bg:#fbf1f3;--card:#fffafb;--card2:#fbeef1;--key:#f5e3e8;--key-hover:#eed5dc;--text:#2a1820;--muted:#86697a;--accent:#c13a6e;--accent2:#a92f5e;--border:rgba(90,30,50,.1);--danger:#c43c3c;--on-accent:#fff;--unit-result:#c2a3b0;--series1:#c13a6e;--series2:#3b8fc9;--series3:#2a8a63}
+/* Sky: pale blue, petrol-blue accent */
+html[data-theme="sky"],[data-theme-preview="sky"]{color-scheme:light;--bg:#eef6fb;--card:#fbfdff;--card2:#eef5fa;--key:#e1edf6;--key-hover:#d3e4f0;--text:#0f2233;--muted:#5d7488;--accent:#077a99;--accent2:#066a86;--border:rgba(15,50,80,.1);--danger:#c43c3c;--on-accent:#fff;--unit-result:#9db3c4;--series1:#077a99;--series2:#c4661a;--series3:#5b5fc7}
+/* Ocean: deep navy, turquoise accent */
+html[data-theme="ocean"],[data-theme-preview="ocean"]{color-scheme:dark;--bg:#04111c;--card:#0a1c2b;--card2:#0e2436;--key:#13304a;--key-hover:#1a3c5a;--text:#eaf6ff;--muted:#86a6bf;--accent:#2ec5d3;--accent2:#5fd9e4;--border:rgba(120,200,255,.12);--danger:#ff6b6b;--on-accent:#021418;--unit-result:#4d6a80;--series1:#2ec5d3;--series2:#f5a65b;--series3:#9d8cff}
+/* Violet: dark indigo, lavender accent */
+html[data-theme="violet"],[data-theme-preview="violet"]{color-scheme:dark;--bg:#0e0a1a;--card:#181228;--card2:#1f1833;--key:#2a2142;--key-hover:#352a52;--text:#f3efff;--muted:#a49cc0;--accent:#b18cff;--accent2:#c9adff;--border:rgba(200,170,255,.12);--danger:#ff6b6b;--on-accent:#150a2a;--unit-result:#655c80;--series1:#b18cff;--series2:#ff8fb1;--series3:#5fd9c4}
+/* Ember: warm near-black, orange accent */
+html[data-theme="ember"],[data-theme-preview="ember"]{color-scheme:dark;--bg:#120c08;--card:#1c140f;--card2:#241a13;--key:#30231a;--key-hover:#3d2d21;--text:#fbf1e8;--muted:#b39c88;--accent:#ff9a3d;--accent2:#ffb46e;--border:rgba(255,190,140,.11);--danger:#ff6b6b;--on-accent:#1e0e02;--unit-result:#73604f;--series1:#ff9a3d;--series2:#ffd25e;--series3:#6fc3ff}
+/* Forest: deep green-teal, mint accent */
+html[data-theme="forest"],[data-theme-preview="forest"]{color-scheme:dark;--bg:#07120f;--card:#0e1d18;--card2:#132520;--key:#1a3029;--key-hover:#223d34;--text:#eaf7f1;--muted:#8fb0a3;--accent:#5fd3a3;--accent2:#86e1bb;--border:rgba(150,255,210,.1);--danger:#ff6b6b;--on-accent:#03140d;--unit-result:#557264;--series1:#5fd3a3;--series2:#f2c35b;--series3:#7fb6ff}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;width:100%;height:100%;min-height:100%;background:var(--bg);color:var(--text);overscroll-behavior:none;overflow:hidden}
 body{min-height:calc(100dvh / var(--z,1));touch-action:none;-webkit-user-select:none;user-select:none}

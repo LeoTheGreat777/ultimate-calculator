@@ -2,7 +2,7 @@
 // After a result, the next calculation starts from its full-precision value (carry). On screen that value shows rounded, like the result did.
 function formatExpressionDisplay(s){
  s=String(s??'');
- if(carry&&carry.raw&&s.startsWith(carry.raw))return carry.shown+formatInputDisplay(s.slice(carry.raw.length));
+ if(carry&&carry.raw&&s.startsWith(carry.raw))return negativeInBrackets(carry.shown)+formatInputDisplay(s.slice(carry.raw.length));
  return formatInputDisplay(s);
 }
 let lastShown='';// how the finished calculation (lastExpression) is shown above the result
@@ -10,26 +10,28 @@ let lastShown='';// how the finished calculation (lastExpression) is shown above
 function carryText(r,digits){const abs=r.n<0n?{n:-r.n,d:r.d}:r,raw=ratToDecimal(r,digits);carry={text:ratToDecimal(abs,digits),value:abs,raw,shown:fmt(r),plain:ratToRoundedDecimal(r,6)};return raw}
 function explanationForExpression(input,result){
  let tokens;try{tokens=tokenize(input)}catch{return null}let pos=0;
- const primary=()=>{if(tokens[pos]?.type==='('){pos++;const child=additive();if(tokens[pos]?.type!==')')throw Error();pos++;return{type:'group',child}}const x=tokens[pos++];if(!x||x.type!=='number')throw Error();return{type:'number',value:x.value,percent:x.percent,raw:x.raw}};
+ // a minus in front of a number or a bracket makes it negative: 3×-5, -(2+3)
+ const primary=()=>{if(tokens[pos]?.type==='-'){pos++;const c=primary();return c.type==='number'?{...c,value:ratMul(c.value,rat(-1n)),raw:'-'+c.raw}:{type:'neg',child:c}}if(tokens[pos]?.type==='('){pos++;const child=additive();if(tokens[pos]?.type!==')')throw Error();pos++;return{type:'group',child}}const x=tokens[pos++];if(!x||x.type!=='number')throw Error();return{type:'number',value:x.value,percent:x.percent,raw:x.raw}};
  const mult=()=>{let left=primary();while(tokens[pos]&&['*','/'].includes(tokens[pos].type)){const op=tokens[pos++].type;left={type:'op',op,left,right:primary()}}return left};
  const additive=()=>{let left=mult();while(tokens[pos]&&['+','-'].includes(tokens[pos].type)){const op=tokens[pos++].type;left={type:'op',op,left,right:mult()}}return left};
  let tree;try{tree=additive();if(pos!==tokens.length)throw Error()}catch{return null}
- const renderNode=n=>n.type==='number'?n.raw:n.type==='group'?'('+renderNode(n.child)+')':renderNode(n.left)+n.op+renderNode(n.right);
- const steps=[];
+ const renderNode=n=>n.type==='number'?n.raw:n.type==='neg'?'-'+renderNode(n.child):n.type==='group'?'('+renderNode(n.child)+')':renderNode(n.left)+n.op+renderNode(n.right);
+ const steps=[],num=v=>negativeInBrackets(formatRat(v));// numbers in a step: 3 × (−5) = −15
  const walk=n=>{
    if(n.type==='number')return n.value;
    if(n.type==='group')return walk(n.child);
+   if(n.type==='neg')return ratMul(walk(n.child),rat(-1n));
    const l=walk(n.left),r=walk(n.right),percent=n.right.type==='number'&&n.right.percent;
    const rv=percent&&['+','-'].includes(n.op)?ratMul(l,r):r;
    const v=n.op==='+'?ratAdd(l,rv):n.op==='-'?ratSub(l,rv):n.op==='*'?ratMul(l,rv):ratDiv(l,rv);
    const op=({'+':'+','-':'−','*':'×','/':'÷'})[n.op];
    if(percent&&['+','-'].includes(n.op)){
      const pct=ratDiv(r,ratFromString('0.01'));
-     steps.push({title:lang==='el'?'Υπολόγισε το ποσοστό':'Calculate the percentage',text:formatRat(l)+' × '+formatRat(pct)+' ÷ 100 = '+formatRat(rv)});
-     steps.push({title:lang==='el'?'Έπειτα':'Then',text:formatRat(l)+' '+op+' '+formatRat(rv)+' = '+formatRat(v)});
+     steps.push({title:lang==='el'?'Υπολόγισε το ποσοστό':'Calculate the percentage',text:num(l)+' × '+num(pct)+' ÷ 100 = '+formatRat(rv)});
+     steps.push({title:lang==='el'?'Έπειτα':'Then',text:num(l)+' '+op+' '+num(rv)+' = '+formatRat(v)});
    }else{
      const title=lang==='el'?(steps.length===0?'Πρώτα':n===tree?'Τέλος':'Στη συνέχεια'):(steps.length===0?'First':n===tree?'Finally':'Next');
-     steps.push({title,text:formatRat(l)+' '+op+' '+formatRat(rv)+' = '+formatRat(v)});
+     steps.push({title,text:num(l)+' '+op+' '+num(rv)+' = '+formatRat(v)});
    }
    return v;
  };
@@ -183,14 +185,14 @@ function percent(){resetHow();if(!current||currentIsPercent)return;current+='%';
 function parseLastOperation(full){const m=String(full).match(/^(.*?)([+\-×÷])(-?\d+(?:[.,]\d+)?%?)$/);return m?{op:m[2],rhs:m[3]}:null}
 function repeatEquals(){
  if(!justCalculated||!lastOperation)return false;
- try{const rhs=lastOperation.rhs,base=carryText(lastResult,24),full=base+lastOperation.op+rhs,value=evalExpr(full);lastExpression=full;lastShown=formatExpressionDisplay(full);lastResult=value;justCalculated=true;howData=explanationForExpression(full,value)||{formula:pretty(full),steps:[`${pretty(full)} = ${fmt(value)}`],result:fmt(value)};calcHowData=howData;saveHistory({expression:full,result:value,how:howData});render();return true}catch{return false}
+ try{const rhs=lastOperation.rhs,base=carryText(lastResult,24),full=base+lastOperation.op+rhs,value=evalExpr(full);lastExpression=full;lastShown=formatExpressionDisplay(full);lastResult=value;justCalculated=true;howData=explanationForExpression(full,value)||{formula:formatExpressionDisplay(full),steps:[`${formatExpressionDisplay(full)} = ${fmt(value)}`],result:fmt(value)};calcHowData=howData;saveHistory({expression:full,result:value,how:howData});render();return true}catch{return false}
 }
 function equals(){
  if(justCalculated&&repeatEquals())return;
  let full=expression+current;if(!full||/[+\-×÷]$/.test(full))return;
  if(/[()]/.test(full)){full=tidyParens(full);expression=full;current=''}// close what is open, drop brackets that change nothing
  if(!full||/[+\-×÷(]$/.test(full))return;
- try{const value=evalExpr(full);lastExpression=full;lastShown=formatExpressionDisplay(full);lastResult=value;lastOperation=parseLastOperation(full);justCalculated=true;currentIsPercent=false;howData=explanationForExpression(full,value)||{formula:pretty(full),steps:[`${pretty(full)} = ${fmt(value)}`],result:fmt(value)};saveHistory({expression:full,result:value,how:howData});render()}
+ try{const value=evalExpr(full);lastExpression=full;lastShown=formatExpressionDisplay(full);lastResult=value;lastOperation=parseLastOperation(full);justCalculated=true;currentIsPercent=false;howData=explanationForExpression(full,value)||{formula:formatExpressionDisplay(full),steps:[`${formatExpressionDisplay(full)} = ${fmt(value)}`],result:fmt(value)};saveHistory({expression:full,result:value,how:howData});render()}
  catch{current='Error';currentIsPercent=false;render();setTimeout(()=>{if(current==='Error'){current='';render()}},900)}
 }
 function renderCalcKeypad(){

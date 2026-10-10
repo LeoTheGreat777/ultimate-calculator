@@ -100,7 +100,7 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   `window.__uiZoom`, CSS var `--z`). Viewport units must be written `calc(100dvh / var(--z,1))`, and any code that
   turns screen coordinates (clientX/Y, getBoundingClientRect, innerHeight) into CSS sizes must divide by
   `window.__uiZoom` (see `chZoom` in charts.js, `Z` in history.js).
-- **Themes:** Auto (follows the device), Light, Paper, Dark, Graphite, Black (OLED), Retro (green). Every colour is a token in the theme blocks at the
+- **Themes:** Auto (follows the device); light: Light, Paper, Rose, Sky; dark: Dark, Black (OLED), Ocean, Violet, Ember, Forest. Every colour is a token in the theme blocks at the
   top of styles.css (`html[data-theme]`); never write a colour into a rule, add a token instead. The `<head>` script and
   `applyTheme` (ui.js) set `data-theme`; the theme button opens a menu (`THEMES`, `openThemeMenu`), each swatch shows the
   theme's real colours via `[data-theme-preview]`. A new theme: a block in styles.css, its name in `THEMES`, texts in
@@ -111,7 +111,9 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   native pickers. While a dropdown has focus the global keydown handler leaves keys to it.
 - **± and holding keys:** holding ⌫ clears everything, holding − flips the sign (`negate`, Units: `unitKeyInput('negate')`);
   F9 does ± on a keyboard. A tap on − is always minus. Negative numbers inside a calculation display as `5×(−25)`
-  (`formatInputDisplay`). Units has the same keypad as the calculator, including ( ).
+  (`formatInputDisplay`), and one at the start as `(−5)` (`negativeInBrackets`), in every calculation shown (typing,
+  the line above a result, History, explanation steps, the typed Units value); finished results stay plain (`-15`).
+  Units has the same keypad as the calculator, including ( ).
 - **Tips:** a sheet per mode (`HELP`, `showHelp`), opened from the footer "Tips" link or the ? key; its keyboard
   shortcuts section only shows on devices with a keyboard. When behaviour changes, update the tips in both languages.
 - **Copying:** tapping a finished result copies it (calculator and tools), so the copy button can be hidden

@@ -103,6 +103,21 @@ async def desktop(browser, url, lang, theme):
     await p.keyboard.press('F9')
     check(L + 'F9 changes the sign', (await p.evaluate(state))[0] == '5+-3')
 
+    # a negative number in a calculation shows in brackets: (−5), (−5)×3; a finished result stays plain
+    await p.keyboard.press('Escape')
+    await p.keyboard.type('5')
+    await p.keyboard.press('F9')
+    check(L + '5 then ± shows (−5)', await p.evaluate(R) == '(−5)', await p.evaluate(R))
+    await p.keyboard.type('*3')
+    await p.keyboard.press('Enter')
+    check(L + '(−5)×3 = -15, shown with brackets above', await p.evaluate(R) == '-15' and await p.evaluate(X) == '(−5)×3',
+          [await p.evaluate(R), await p.evaluate(X)])
+    await p.keyboard.type('+2')
+    check(L + 'carrying a negative result: (−15)+2', await p.evaluate(R) == '(−15)+2', await p.evaluate(R))
+    await p.keyboard.press('Enter')
+    steps = await p.evaluate("howData.steps.map(s=>s.text||s).join(' | ')")
+    check(L + 'explanation step: (−15) + 2 = -13', '(−15) + 2 = -13' in steps, steps)
+
     # history
     await calc(p, '7*6')
     saved = await p.evaluate("historyItems()[0]")
@@ -123,6 +138,10 @@ async def desktop(browser, url, lang, theme):
     check(L + 'Units converts an expression', await p.evaluate('unitValueTo.value') == '1.200', await p.evaluate('unitValueTo.value'))
     await p.keyboard.press('Delete')
     check(L + 'Units Delete = C', await p.evaluate('unitExpressions.from') == '(1+2)*')
+    await p.keyboard.press('Escape')
+    await p.keyboard.type('5')
+    await p.keyboard.press('F9')
+    check(L + 'Units: typed negative shows (−5)', await p.evaluate('unitValueFrom.value') == '(−5)', await p.evaluate('unitValueFrom.value'))
 
     # tools
     await p.evaluate("switchMode('vat')")
@@ -219,9 +238,10 @@ async def phone(browser, url, lang, theme, size):
     check(L + 'theme menu fits on the screen', all(menu[:3]), menu)
     if menu[3]:
         await p.evaluate("themeMenu.scrollTop=themeMenu.scrollHeight")
-    await p.tap('[data-theme-pick="retro"]')
+    last = await p.evaluate('THEMES[THEMES.length-1]')
+    await p.tap(f'[data-theme-pick="{last}"]')
     await p.wait_for_timeout(300)
-    check(L + 'last theme in the menu can be picked', await p.evaluate('document.documentElement.dataset.theme') == 'retro')
+    check(L + 'last theme in the menu can be picked', await p.evaluate('document.documentElement.dataset.theme') == last)
     check(L + 'no JavaScript errors', not p.errors, p.errors)
     await p.context.close()
 
