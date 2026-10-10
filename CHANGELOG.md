@@ -6,6 +6,15 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.7.2 – 2026-10-10
+
+### Changed
+- Changing tab now starts the tab you leave over, so switching is a quick way to clear: the numbers and results
+  are gone when you come back (your calculations stay in History). Going from the Calculator to Units still takes
+  the number along. The same for Percent's Discount / Change / Tip.
+- Typed values are no longer kept after closing the app. Your choices are (units picked, VAT add/remove,
+  Percent's kind), and so are Graph's functions and the fuel log.
+
 ## 0.7.1 – 2026-10-10
 
 ### Fixed

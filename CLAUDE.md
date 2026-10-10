@@ -99,13 +99,15 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   Change them in all places together.
 - **Tool modes** are `TOOL_MODES` (core.js): use it rather than listing them. Defaults (VAT rate 24, tip 10% for 1 person)
   are `TOOL_DEFAULTS`, filled in on entering the mode and after AC. Percent has three kinds (`pctAction`: discount,
-  change, tip), each with its own fields (`PCT_FIELDS`); switching kinds re-renders only the fields, AC clears only
-  the kind on screen. Fields in `WHOLE_NUMBER_FIELDS` (People) refuse , . and −. A tip split between people is rounded
+  change, tip), each with its own fields (`PCT_FIELDS`); switching kinds re-renders only the fields, AC (and changing kind)
+  clears the kind on screen. Fields in `WHOLE_NUMBER_FIELDS` (People) refuse , . and −. A tip split between people is rounded
   up to the cent (`ratCentsUp`) so the shares cover the bill.
 - **Switches** (VAT add/remove, Percent's kinds) are one generic segmented control: `TOGGLES`, `toggleHtml`,
   `renderToggles`, `setupToggleSlide` (tap, drag, swipe, ← →), `.seg-toggle` in styles.css (`--n` options, `--i` chosen).
-- **Tools** (fuel, energy, VAT, percent, units) remember their values per tool in localStorage
-  (`saveTools`/`loadTools`); AC clears a tool. Field values are stored under the field's `id`.
+- **Changing mode clears the mode you leave** (`resetModeInput`, called by `switchMode`): numbers typed and results
+  go, in every mode (Percent: also changing kind). Only Calculator -> Units carries the number. Kept: choices (units
+  picked, VAT add/remove, Percent's kind, Deg/Rad, f(x)), Graph's functions, History, the fuel log. Typed values are
+  not saved across visits; `saveTools`/`loadTools` keep only those choices. AC clears a tool.
 - **Storage:** all in the browser (`uc-history`, `uc-tools`, `uc-fuel-log`, `uc-graph`, `uc-lang`,
   `uc-theme`). Use `store.get/set` – localStorage can throw.
 - **Tool fields on a computer** edit like text boxes: a focused field keeps the browser's own Backspace, Delete and

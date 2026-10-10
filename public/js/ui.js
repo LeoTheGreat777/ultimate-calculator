@@ -133,7 +133,7 @@ function renderTool(){
 function setMode(next){
  if(mode==='calc')calcHowData=howData;mode=next;howData=next==='calc'?calcHowData:null;toolResult=null;
  if(next==='calc')refreshCalcHow();
- // Tools keep what was typed in them; only an empty VAT rate, tip rate or people goes back to its default.
+ // A tool starts empty (resetModeInput cleared it on the way out), with its defaults: VAT rate, tip rate and people.
  fillToolDefaults(next);
  if(next==='units'){unitActiveInput=unitSource;unitReplaceOnNextKey=true;window._unitCategory=window._unitCategory||'length';}
  renderTool();
@@ -173,7 +173,16 @@ function switchMode(next){
    clearAll();
   }
  }
+ resetModeInput(mode);
  setMode(next);
+}
+// Changing mode starts the one you leave over: the numbers typed and the results go, so a tab is a quick way to clear.
+// Choices stay (units picked, VAT add/remove, Percent's kind, Deg/Rad, f(x)), and so do Graph's functions,
+// History and the fuel log. Calculator -> Units moves the number across first (switchMode).
+function resetModeInput(m){
+ if(m==='calc'){clearAll();return}
+ if(m==='units'){unitError='';unitExpressions={from:'0',to:'0'};unitSourceTyped=false;unitReplaceOnNextKey=true;unitActiveInput=unitSource;return}
+ if(toolState[m]){toolState[m].inputs={};toolState[m].result=null}
 }
 // The calculator's current number: the result, or what is being typed (an unfinished calculation is worked out). null if none.
 function calcNumberForUnits(){

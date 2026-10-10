@@ -60,7 +60,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 
-<link rel="stylesheet" href="styles.css?v=0.7.1">
+<link rel="stylesheet" href="styles.css?v=0.7.2">
 <title>Ultimate Calculator</title>
 </head>
 <body>
@@ -73,24 +73,24 @@
 <div id="keypad" class="keypad"><button class="key utility" data-action="backspace" type="button" aria-label="Delete">⌫</button><button id="clearButton" class="key utility" data-action="clear" type="button">AC</button><button class="key utility" data-value="%" type="button">%</button><button class="key operator" data-value="/" type="button">÷</button><button class="key" data-value="7" type="button">7</button><button class="key" data-value="8" type="button">8</button><button class="key" data-value="9" type="button">9</button><button class="key operator" data-value="*" type="button">×</button><button class="key" data-value="4" type="button">4</button><button class="key" data-value="5" type="button">5</button><button class="key" data-value="6" type="button">6</button><button class="key operator" data-value="-" type="button">−</button><button class="key" data-value="1" type="button">1</button><button class="key" data-value="2" type="button">2</button><button class="key" data-value="3" type="button">3</button><button class="key operator" data-value="+" type="button">+</button><button class="key utility" data-action="paren" type="button" aria-label="Parentheses">( )</button><button class="key" data-value="0" type="button">0</button><button class="key" data-value="," type="button">,</button><button class="key equals" data-action="equals" type="button">=</button></div>
 <div class="bottom-actions"><button id="copyButton" class="secondary-button" type="button">Copy result</button></div>
 </section>
-<footer class="app-footer"><div class="footer-line">Ultimate Calculator <span id="footerVersion">v0.7.1</span><span class="footer-dot" aria-hidden="true">·</span><button id="helpButton" class="help-link" type="button"><span class="help-link-icon" aria-hidden="true">?</span><span id="helpLabel">Tips</span></button></div><span id="createdBy">Created by <span class="author">Leonidas Kampaxis</span> &amp; <span class="author">Efstathios Konstantinos Tsakiris</span></span></footer>
+<footer class="app-footer"><div class="footer-line">Ultimate Calculator <span id="footerVersion">v0.7.2</span><span class="footer-dot" aria-hidden="true">·</span><button id="helpButton" class="help-link" type="button"><span class="help-link-icon" aria-hidden="true">?</span><span id="helpLabel">Tips</span></button></div><span id="createdBy">Created by <span class="author">Leonidas Kampaxis</span> &amp; <span class="author">Efstathios Konstantinos Tsakiris</span></span></footer>
 </main>
 <div id="historyBackdrop" class="sheet-backdrop hidden"></div>
 <section id="historyPanel" class="history-panel hidden" aria-label="History"><div class="sheet-handle" aria-hidden="true"></div><div class="section-heading"><h2 id="historyTitle">History</h2><div id="historyClearWrap" class="history-clear-wrap"><button id="historyChartButton" class="modal-close history-chart-toggle" type="button" aria-label="Chart" title="Chart" aria-pressed="false"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M4 18l5-6 4 3 7-9" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button id="clearHistory" class="text-button" type="button">Clear all</button><div id="historyConfirm" class="history-confirm hidden" role="group"><span id="historyConfirmText"></span><button id="historyConfirmYes" class="danger-inline" type="button">Delete</button></div><button id="closeHistory" class="modal-close history-close" type="button" aria-label="Close">×</button></div></div><div id="historyChartWrap" class="history-chart hidden"><canvas id="historyChart"></canvas><div id="historyChartReadout" class="history-chart-readout"></div></div><div id="historyList" class="history-list"></div></section>
 <div id="howModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="howTitle"><div class="modal-card how-modal-card"><div class="section-heading"><h2 id="howTitle">How was this calculated?</h2><button id="closeHow" class="modal-close" type="button" aria-label="Close">×</button></div><div id="howContent" class="how-content"></div></div></div>
 <!-- Plain scripts sharing globals, in this order (main.js last); the ?v= makes browsers load new versions. -->
-<script src="js/core.js?v=0.7.1"></script>
-<script src="js/i18n.js?v=0.7.1"></script>
-<script src="js/numbers.js?v=0.7.1"></script>
-<script src="js/charts.js?v=0.7.1"></script>
-<script src="js/graph.js?v=0.7.1"></script>
-<script src="js/calculator.js?v=0.7.1"></script>
-<script src="js/history.js?v=0.7.1"></script>
-<script src="js/units.js?v=0.7.1"></script>
-<script src="js/tools.js?v=0.7.1"></script>
-<script src="js/layout.js?v=0.7.1"></script>
-<script src="js/ui.js?v=0.7.1"></script>
-<script src="js/help.js?v=0.7.1"></script>
-<script src="js/main.js?v=0.7.1"></script>
+<script src="js/core.js?v=0.7.2"></script>
+<script src="js/i18n.js?v=0.7.2"></script>
+<script src="js/numbers.js?v=0.7.2"></script>
+<script src="js/charts.js?v=0.7.2"></script>
+<script src="js/graph.js?v=0.7.2"></script>
+<script src="js/calculator.js?v=0.7.2"></script>
+<script src="js/history.js?v=0.7.2"></script>
+<script src="js/units.js?v=0.7.2"></script>
+<script src="js/tools.js?v=0.7.2"></script>
+<script src="js/layout.js?v=0.7.2"></script>
+<script src="js/ui.js?v=0.7.2"></script>
+<script src="js/help.js?v=0.7.2"></script>
+<script src="js/main.js?v=0.7.2"></script>
 </body>
 </html>

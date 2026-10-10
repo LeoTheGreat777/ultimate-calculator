@@ -1,30 +1,26 @@
 // The VAT, Percent (discount, % change, tip), Fuel and Energy tools: their fields, saved values, calculations and keypad input.
 // (Their charts and the fuel log are in charts.js.)
-// Tools remember what was typed in them (per tool, kept across mode switches and visits); AC clears a tool.
+// What was typed in a tool is forgotten when the mode changes (resetModeInput in ui.js) and isn't kept across visits;
+// only the choices are saved: VAT add/remove, Percent's kind, the unit category and units picked, the Units side.
 const TOOLS_KEY='uc-tools';
 let unitPick={};// last chosen from/to units per unit category
 function saveTools(){
  const cat=$('#unitCategory')?.value,from=$('#unitFrom')?.value,to=$('#unitTo')?.value;
  if(cat&&units[cat]&&units[cat][from]!==undefined&&units[cat][to]!==undefined)unitPick[cat]={from,to};
- store.set(TOOLS_KEY,JSON.stringify({inputs:{fuel:toolState.fuel.inputs,energy:toolState.energy.inputs,vat:toolState.vat.inputs,pct:toolState.pct.inputs},vatAction,pctAction,units:{category:window._unitCategory||'length',pick:unitPick,expr:unitExpressions,source:unitSource}}));
+ store.set(TOOLS_KEY,JSON.stringify({vatAction,pctAction,units:{category:window._unitCategory||'length',pick:unitPick,source:unitSource}}));
 }
 function loadTools(){
  try{
   const s=JSON.parse(store.get(TOOLS_KEY)||'null');if(!s||typeof s!=='object')return;
-  const numeric=v=>typeof v==='string'&&/^-?[0-9.,]*$/.test(v);
-  for(const k of TOOL_MODES){const inp=s.inputs?.[k];if(!inp||typeof inp!=='object')continue;const clean={};TOOL_LABEL_KEYS[k].forEach(id=>{if(numeric(inp[id]))clean[id]=inp[id]});toolState[k].inputs=clean}
   if(TOGGLES.vat.options.includes(s.vatAction))vatAction=s.vatAction;
   if(TOGGLES.pct.options.includes(s.pctAction))pctAction=s.pctAction;
   const u=s.units;if(!u||typeof u!=='object')return;
   if(units[u.category])window._unitCategory=u.category;
   if(u.pick&&typeof u.pick==='object')Object.entries(u.pick).forEach(([c,p])=>{if(units[c]&&units[c][p?.from]!==undefined&&units[c][p?.to]!==undefined)unitPick[c]={from:p.from,to:p.to}});
-  const expr=v=>typeof v==='string'&&v.length<20100&&/^[-−0-9.,+*/%()]*$/.test(v);// a stored value can be long (ratToStoreDecimal)
-  if(expr(u.expr?.from)&&expr(u.expr?.to))unitExpressions={from:u.expr.from,to:u.expr.to};
   if(u.source==='from'||u.source==='to')unitSource=unitActiveInput=u.source;
  }catch{}
 }
 
-const TOOL_LABEL_KEYS={fuel:['fuelD','fuelC','fuelP'],energy:['energyP','energyH','energyD','energyR'],vat:['amount','vatRate'],pct:['pctPrice','pctOff','pctFrom','pctTo','tipBill','tipRate','tipPeople']};
 function renderToolDisplay(){
  const d=$('#calculatorDisplay');
  d.classList.add('tool-display');
@@ -69,6 +65,8 @@ function renderToggles(){
 function setVatAction(next){if(!TOGGLES.vat.options.includes(next))return;vatAction=next;renderToggles();window._runVat?.(vatAction==='add');saveTools()}
 function setPctAction(next){
  if(!TOGGLES.pct.options.includes(next)||next===pctAction)return;
+ // like changing mode: the kind you leave starts over
+ PCT_FIELDS[pctAction].forEach(id=>delete toolState.pct.inputs[id]);
  pctAction=next;renderToggles();renderPctFields();window._runPct?.();saveTools();
 }
 // Only the fields change, so the switch keeps its slide animation.
