@@ -45,10 +45,11 @@ function gPretty(src){
 
 /* ---------- Graph mode: state ---------- */
 const GRAPH_NAMES=['f','g','h'];
-function graphLoad(){try{const s=JSON.parse(localStorage.getItem('uc-graph')||'null');if(s&&Array.isArray(s.fns)&&s.fns.length&&s.fns.length<=3&&s.fns.every(f=>typeof f==='string'))return{fns:s.fns,active:Math.min(Math.max(0,s.active|0),s.fns.length-1),view:null}}catch{}return{fns:['x^2-2x-3'],active:0,view:null}}
-let graph=graphLoad();
+// Graph starts with one example function, after a visit and after changing mode (resetModeInput); nothing is saved.
+const graphDefault=()=>({fns:['x^2-2x-3'],active:0,view:null});
+store.del('uc-graph');// saved by older versions
+let graph=graphDefault();
 let graphTrace=null,graphPts=[],graphRaf=0;
-function graphSave(){try{localStorage.setItem('uc-graph',JSON.stringify({fns:graph.fns,active:graph.active}))}catch{}}
 function gText(k){
  const el={zoomIn:'Μεγέθυνση',zoomOut:'Σμίκρυνση',fit:'Προσαρμογή ύψους στην καμπύλη',home:'Αρχική θέση',points:'Σημεία',save:'Αποθήκευση εικόνας',add:'Πρόσθεσε συνάρτηση',del:'Διαγραφή',clearFn:'Καθαρισμός',empty:'γράψε μια συνάρτηση του x',invalid:'Δεν καταλαβαίνω τον τύπο',root:'Ρίζα',min:'Ελάχιστο',max:'Μέγιστο',yint:'Τομή με τον άξονα y',cross:'Τομή',pointsTitle:'Σημεία του γραφήματος',none:'Δεν βρέθηκαν σημεία στο κομμάτι που φαίνεται.',pointsNote:'Τα σημεία αφορούν το κομμάτι του γραφήματος που φαίνεται τώρα. Μετακίνησε ή άλλαξε ζουμ για να δεις άλλα.',saved:'Αποθηκεύτηκε'};
  const en={zoomIn:'Zoom in',zoomOut:'Zoom out',fit:'Fit height to the curve',home:'Reset view',points:'Key points',save:'Save image',add:'Add function',del:'Delete',clearFn:'Clear',empty:'type a function of x',invalid:"I can't read this formula",root:'Root',min:'Minimum',max:'Maximum',yint:'y-intercept',cross:'Intersection',pointsTitle:'Key points',none:'No points in the part that is visible.',pointsNote:'Points cover the part of the graph you can see now. Move or zoom to see others.',saved:'Saved'};
@@ -90,7 +91,7 @@ function renderGraphKeypad(){
  k.innerHTML=GRAPH_KEYS.map(([label,g])=>{const cls=/^\d$|^[.]$/.test(g)?'':['/','*','-','+'].includes(g)?' operator':['back','clear','paren'].includes(g)?' utility':' fn-key';
   const aria=g==='back'?' aria-label="'+esc(t('deleteKey'))+'"':'';return '<button class="key'+cls+'" data-g="'+esc(g)+'" type="button"'+aria+'>'+esc(label)+'</button>'}).join('');
 }
-function graphChanged(){graphTrace=null;graphSave();renderGraphFns();drawGraphSoon()}
+function graphChanged(){graphTrace=null;renderGraphFns();drawGraphSoon()}
 function graphKey(k){
  if(k==null)return;
  let s=graph.fns[graph.active]??'';

@@ -105,10 +105,10 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
 - **Switches** (VAT add/remove, Percent's kinds) are one generic segmented control: `TOGGLES`, `toggleHtml`,
   `renderToggles`, `setupToggleSlide` (tap, drag, swipe, ← →), `.seg-toggle` in styles.css (`--n` options, `--i` chosen).
 - **Changing mode clears the mode you leave** (`resetModeInput`, called by `switchMode`): numbers typed and results
-  go, in every mode (Percent: also changing kind). Only Calculator -> Units carries the number. Kept: choices (units
-  picked, VAT add/remove, Percent's kind, Deg/Rad, f(x)), Graph's functions, History, the fuel log. Typed values are
+  go, in every mode (Percent: also changing kind; Graph goes back to `graphDefault`). Only Calculator -> Units carries
+  the number. Kept: choices (units picked, VAT add/remove, Percent's kind, Deg/Rad, f(x)), History, the fuel log. Typed values are
   not saved across visits; `saveTools`/`loadTools` keep only those choices. AC clears a tool.
-- **Storage:** all in the browser (`uc-history`, `uc-tools`, `uc-fuel-log`, `uc-graph`, `uc-lang`,
+- **Storage:** all in the browser (`uc-history`, `uc-tools`, `uc-fuel-log`, `uc-lang`,
   `uc-theme`). Use `store.get/set` – localStorage can throw.
 - **Tool fields on a computer** edit like text boxes: a focused field keeps the browser's own Backspace, Delete and
   cursor (selection respected); the global handler only takes over when no field has the focus (keys go to the

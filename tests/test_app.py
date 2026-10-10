@@ -489,6 +489,9 @@ async def limits(browser, url, lang, theme, phone=False):
     got = await p.evaluate("(()=>{switchMode('graph');graphKey('clear');for(let i=0;i<100;i++){graphKey('x');graphKey('+')}graph.view={cx:1e15,cy:0,ux:1e9,uy:40};drawGraph();return [graph.fns[graph.active].length,graph.view.cx,graph.view.ux]})()")
     check(L + 'Graph: 120 characters, view limited', got[0] <= 120 and got[1] == 1e12 and got[2] <= 0.1, got)
     await p.evaluate("graphKey('clear');graph.view=null")
+    await p.evaluate("graphKey('x');switchMode('calc');switchMode('graph')")
+    st = await p.evaluate("[graph.fns.join('|'), localStorage.getItem('uc-graph')]")
+    check(L + 'mode change: Graph goes back to its example', st == ['x^2-2x-3', None], st)
     check(L + 'no JavaScript errors', not p.errors, p.errors)
     await p.context.close()
 
