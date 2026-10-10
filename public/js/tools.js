@@ -36,7 +36,7 @@ function renderToolDisplay(){
  d.classList.toggle('tool-empty',!toolResult);
  fitDisplayText($('#result'),24);
 }
-const FIELD_EXAMPLES={fuelD:'250',fuelC:'7,2',fuelP:'1,85',energyP:'100',energyH:'8',energyD:'30',energyR:'0,20',amount:'100',vatRate:'24%',pctPrice:'80',pctOff:'25%',pctFrom:'80',pctTo:'100',tipBill:'60',tipRate:'10%',tipPeople:'3',loanAmount:'10.000',loanRate:'4%',loanYears:'5',saveStart:'1.000',saveMonthly:'100',saveRate:'3%',saveYears:'10',dateFrom:()=>t('today'),dateTo:'25/12/2026',dateStart:()=>t('today'),dateDays:'30',dateBirth:'15/03/1990',dateOn:()=>t('today'),value:'10'};
+const FIELD_EXAMPLES={fuelD:'250',fuelC:'7,2',fuelP:'1,85',energyP:'100',energyH:'8',energyD:'30',energyR:'0,20',amount:'100',vatRate:'24%',pctPrice:'80',pctOff:'25%',pctFrom:'80',pctTo:'100',tipBill:'60',tipRate:'10%',tipPeople:'3',loanAmount:'10.000',payAmount:'10.000',payRate:'4%',payMonthly:'300',loanRate:'4%',loanYears:'5',saveStart:'1.000',saveMonthly:'100',saveRate:'3%',saveYears:'10',dateFrom:()=>t('today'),dateTo:'25/12/2026',dateStart:()=>t('today'),dateDays:'30',dateBirth:'15/03/1990',dateOn:()=>t('today'),value:'10'};
 let vatAction='add';
 const liveToolNumber=id=>{const raw=normalizeNumericInput($('#'+id)?.value??'');if(raw==='')return null;const n=Number(raw);return Number.isFinite(n)?n:null};
 // On phones the fields are filled only from the app's own keypad, so the native keyboard never opens.
@@ -48,9 +48,9 @@ function setToolResult(main,detail='',how=null){toolResult={main,detail,how};if(
 // Tools with kinds on a switch above their fields (Percent, Interest): each kind has its own fields.
 // Tip has defaults like the VAT rate. People is a whole number. The tip's three short fields share one row.
 const KIND_FIELDS={pct:{discount:['pctPrice','pctOff'],change:['pctFrom','pctTo'],tip:['tipBill','tipRate','tipPeople']},
- loan:{loan:['loanAmount','loanRate','loanYears'],savings:['saveStart','saveMonthly','saveRate','saveYears']},
+ loan:{loan:['loanAmount','loanRate','loanYears'],payoff:['payAmount','payRate','payMonthly'],savings:['saveStart','saveMonthly','saveRate','saveYears']},
  dates:{between:['dateFrom','dateTo'],add:['dateStart','dateDays'],age:['dateBirth','dateOn']}};
-const KIND_LABELS={pct:['pctDiscount','pctChange','pctTip'],loan:['loanLoan','loanSavings'],dates:['dateBetween','dateAdd','dateAge']};
+const KIND_LABELS={pct:['pctDiscount','pctChange','pctTip'],loan:['loanLoan','loanPayoff','loanSavings'],dates:['dateBetween','dateAdd','dateAge']};
 const ONE_ROW_KINDS=new Set(['tip']);
 let toolKind={pct:'discount',loan:'loan',dates:'between'};
 const kindFields=(m=mode)=>KIND_FIELDS[m]?.[toolKind[m]]||[];
@@ -168,7 +168,9 @@ function vatNumbers(add=vatAction==='add'){
 // Loan: equal monthly payments (rounded to cents) over Years × 12 months. Savings: interest added every month,
 // deposits at the end of each month; an empty starting amount or monthly deposit counts as 0.
 function loanNumbers(){
- const n=liveToolNumber,kind=toolKind.loan,R=n(kind==='loan'?'loanRate':'saveRate'),Y=n(kind==='loan'?'loanYears':'saveYears');
+ const n=liveToolNumber,kind=toolKind.loan;
+ if(kind==='payoff')return payoffNumbers();
+ const R=n(kind==='loan'?'loanRate':'saveRate'),Y=n(kind==='loan'?'loanYears':'saveYears');
  if(R===null||Y===null||R<0)return null;
  const months=Math.round(Y*12),i=R/100/12;
  if(months<1||months>1200)return null;
@@ -183,6 +185,24 @@ function loanNumbers(){
  const grow=m=>{const g=Math.pow(1+i,m);return S*g+(i?D*(g-1)/i:D*m)};
  const fromStart=cents(S*Math.pow(1+i,months)),final=cents(grow(months)),fromDeposits=cents(final-fromStart),deposited=cents(S+D*months);
  return {kind,S,D,R,Y,months,i,fromStart,fromDeposits,final,deposited,interest:cents(final-deposited),grow};
+}
+// Payoff time: how many monthly payments of a given amount pay a loan off. The last one is smaller.
+// {never:true} when the payment doesn't even cover the first month's interest (or it would take over 100 years).
+function payoffNumbers(){
+ const n=liveToolNumber,P=n('payAmount'),R=n('payRate'),M=n('payMonthly');
+ if(P===null||R===null||M===null||P<=0||M<=0||R<0)return null;
+ const i=R/100/12,cents=x=>Math.round(x*100)/100;
+ if(i&&M<=P*i)return {kind:'payoff',never:true,P,R,M,i};
+ const exact=i?-Math.log(1-P*i/M)/Math.log(1+i):P/M,months=Math.max(1,Math.ceil(exact-1e-9));
+ if(months>1200)return {kind:'payoff',never:true,P,R,M,i};
+ const g=Math.pow(1+i,months-1),left=i?P*g-M*(g-1)/i:P-M*(months-1),last=cents(left*(1+i));
+ const total=cents(M*(months-1)+last);
+ return {kind:'payoff',P,R,M,i,exact,months,last,total,interest:cents(total-P)};
+}
+// 38 months -> "3 years, 2 months"
+function monthsText(m){
+ const el=lang==='el',y=Math.floor(m/12),r=m%12,w=(k,v)=>fmt(v)+' '+(el?{y:['χρόνος','χρόνια'],m:['μήνας','μήνες']}:{y:['year','years'],m:['month','months']})[k][v===1?0:1];
+ return [y&&w('y',y),(r||!y)&&w('m',r)].filter(Boolean).join(', ');
 }
 function bindTools(){
  // Money is shown in cents; litres, kWh and per-km prices with a few decimals.
@@ -264,6 +284,15 @@ function bindTools(){
   const v=loanNumbers(),el=lang==='el',pc=num(6);
   if(!v){setToolResult('','',null);return}
   const rateStep={title:el?'Μηνιαίο επιτόκιο':'Monthly rate',text:fmt(v.R)+'% ÷ 12 = '+pc(v.R/12)+'%'};
+  if(v.kind==='payoff'){
+   if(v.never){setToolResult('—',t('payTooLow')+(v.i?' ('+money(v.P*v.i)+')':''),null);return}
+   const how={formula:money(v.P)+(el?' με ':' at ')+fmt(v.R)+'%, '+money(v.M)+(el?' τον μήνα':' a month'),steps:[rateStep,
+    {title:el?'Μήνες':'Months',text:(v.i?'−ln(1 − '+money(v.P)+' × i ÷ '+money(v.M)+') ÷ ln(1 + i)':money(v.P)+' ÷ '+money(v.M))+' = '+pc(v.exact)+' → '+v.months},
+    {title:el?'Η τελευταία δόση':'The last payment',text:money(v.last)},
+    {title:el?'Σύνολο που πληρώνεις':'Total you pay',text:money(v.M)+' × '+(v.months-1)+' + '+money(v.last)+' = '+money(v.total)},
+    {title:el?'Τόκοι':'Interest',text:money(v.total)+' − '+money(v.P)+' = '+money(v.interest)}],result:monthsText(v.months)};
+   setToolResult(monthsText(v.months),t('paymentsN').replace('{n}',fmt(v.months))+' · '+t('interestTotal')+': '+money(v.interest),how);return;
+  }
   const monthsStep={title:el?'Μήνες':'Months',text:fmt(v.Y)+' × 12 = '+v.months};
   if(v.kind==='loan'){
    const how={formula:money(v.P)+(el?' με ':' at ')+fmt(v.R)+'% '+(el?'για ':'for ')+fmt(v.Y)+(el?' χρόνια':' years'),steps:[rateStep,monthsStep,

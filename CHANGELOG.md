@@ -6,6 +6,18 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.10.0 – 2026-10-10
+
+### Added
+- Interest: a new **Payoff time** kind. Enter a loan, its interest rate and the monthly payment you can afford to see
+  how long you'll pay (10.000 € at 4% with 300 € a month: 3 years) and the total interest. If the payment doesn't
+  even cover the interest, it says so.
+- When the tabs don't all fit, a slim bar under them shows there are more: it appears while they move and for a
+  moment when the app opens. With a mouse, ‹ › buttons appear at the edges.
+
+### Changed
+- Interest's kinds are now Payment, Payoff time and Savings.
+
 ## 0.9.0 – 2026-10-10
 
 ### Added

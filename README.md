@@ -43,7 +43,7 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 - VAT add/remove calculator (VAT rounded to cents, as on invoices)
 - Percent: price after a discount, % change between two values, and a tip calculator that splits the bill between people
 - Dates: days between two dates with Greek working days, a date plus or minus days, and age with the next birthday
-- Interest: a loan's monthly payment and total interest, and what savings grow to with monthly deposits, with charts
+- Interest: a loan's monthly payment and total interest, how long a loan takes with the payment you can afford, and what savings grow to with monthly deposits, with charts
 - Charts and step-by-step explanations for every tool
 - Each tool remembers the values typed in it; AC clears them
 

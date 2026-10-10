@@ -160,7 +160,19 @@ function syncModeTabs(instant){
  syncTabEdges();
 }
 // soft edges show that there are more tabs to scroll to
-function syncTabEdges(){const track=$('#modeTabs .mode-tabs-track');if(!track)return;track.classList.toggle('at-start',track.scrollLeft<=2);track.classList.toggle('at-end',track.scrollLeft+track.clientWidth>=track.scrollWidth-2)}
+function syncTabEdges(){
+ const nav=$('#modeTabs'),track=$('#modeTabs .mode-tabs-track');if(!track)return;
+ const start=track.scrollLeft<=2,end=track.scrollLeft+track.clientWidth>=track.scrollWidth-2;
+ track.classList.toggle('at-start',start);track.classList.toggle('at-end',end);
+ nav.classList.toggle('at-start',start);nav.classList.toggle('at-end',end);nav.classList.toggle('all-fit',start&&end);
+ // the slim bar under the tabs: as wide as the part in view, where the view is
+ const bar=nav.querySelector('.tabs-scrollbar'),thumb=bar?.firstElementChild;if(!thumb||start&&end)return;
+ const ratio=track.clientWidth/track.scrollWidth,room=bar.clientWidth,w=Math.max(24,room*ratio);
+ thumb.style.width=w+'px';thumb.style.transform='translateX('+((room-w)*track.scrollLeft/Math.max(1,track.scrollWidth-track.clientWidth))+'px)';
+}
+// The bar shows while the tabs move (and for a moment when the app opens, to say there are more), then fades away.
+let tabsBarTimer=0;
+function flashTabsBar(ms=1200){const nav=$('#modeTabs');if(!nav||nav.classList.contains('all-fit'))return;nav.classList.add('show-bar');clearTimeout(tabsBarTimer);tabsBarTimer=setTimeout(()=>nav.classList.remove('show-bar'),ms)}
 // Choosing a mode. Calculator -> Units moves the calculator's number into Units (into the value you last typed in
 // there) and the calculator starts fresh; nothing comes back the other way (Units does its own math).
 function switchMode(next){
@@ -313,7 +325,11 @@ try{matchMedia('(display-mode: standalone)').addEventListener('change',syncInsta
 
 // Mode tabs
 $('#modeTabs').addEventListener('click',e=>{const b=e.target.closest('.mode-tab');if(b)switchMode(b.dataset.mode)});
-$('#modeTabs .mode-tabs-track').addEventListener('scroll',syncTabEdges,{passive:true});
+$('#modeTabs .mode-tabs-track').addEventListener('scroll',()=>{syncTabEdges();flashTabsBar()},{passive:true});
+// ‹ › on the edges (devices with a mouse): a page of tabs at a time
+$$('#modeTabs .tabs-arrow').forEach(b=>b.addEventListener('click',()=>{const t=$('#modeTabs .mode-tabs-track');t.scrollBy({left:(b.classList.contains('tabs-prev')?-1:1)*t.clientWidth*.7,behavior:reducedMotion()?'auto':'smooth'})}));
+addEventListener('load',()=>setTimeout(()=>{syncTabEdges();flashTabsBar(1800)},400));
+addEventListener('resize',()=>syncTabEdges());
 // a mouse wheel over the tabs scrolls them sideways (when they don't all fit)
 $('#modeTabs').addEventListener('wheel',e=>{const t=$('#modeTabs .mode-tabs-track');if(t.scrollWidth<=t.clientWidth)return;e.preventDefault();t.scrollLeft+=Math.abs(e.deltaY)>Math.abs(e.deltaX)?e.deltaY:e.deltaX},{passive:false});
 // arrow keys move between tabs when one has keyboard focus

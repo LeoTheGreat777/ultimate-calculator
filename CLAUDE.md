@@ -100,14 +100,15 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   Change them in all places together.
 - **Tool modes** are `TOOL_MODES` (core.js): use it rather than listing them. Defaults (VAT rate 24, tip 10% for 1 person)
   are `TOOL_DEFAULTS`, filled in on entering the mode and after AC. Percent (discount, change, tip), Interest (`loan`:
-  loan, savings) and Dates (between, add, age) have kinds on a switch above their fields: `KIND_FIELDS`, `KIND_LABELS`, `toolKind[mode]`, `setToolKind`,
+  loan, payoff, savings) and Dates (between, add, age) have kinds on a switch above their fields: `KIND_FIELDS`, `KIND_LABELS`, `toolKind[mode]`, `setToolKind`,
   `kindPanelHtml`; switching kinds re-renders only the fields, AC (and changing kind) clears the kind on screen. In
   landscape a kind's fields share one row (`.kind-grid`, `--f`, one-line labels); the tip always does (`ONE_ROW_KINDS`). `FIELD_TYPE` marks fields that aren't plain numbers:
   'count' (People: digits only), 'int' (Dates' days: may be negative), 'date' (digits only, shown DD/MM/YYYY by
   `formatDateDigits`; an empty field with the placeholder "Today" means today). The , key is dimmed for those. A tip split between people is rounded
   up to the cent (`ratCentsUp`) so the shares cover the bill. Interest (`loanNumbers`, floats like Fuel/Energy): yearly
   rate, interest monthly, months = round(years × 12) up to 1200; a loan's payment is rounded to cents; savings deposits
-  come at the end of each month, an empty starting amount or deposit counts as 0. Dates (dates.js) count days in UTC
+  come at the end of each month, an empty starting amount or deposit counts as 0. Payoff (`payoffNumbers`): months to
+  pay a loan with a given payment (the last one smaller), or `never` when the payment doesn't cover a month's interest. Dates (dates.js) count days in UTC
   (`dayNumber`), years 1000–9999; working days are Monday–Friday without Greek public holidays (`greekHolidays`,
   `orthodoxEaster`), both dates counted; a 29 February birthday falls on 28 February in other years.
 - **Switches** (VAT add/remove, the kinds of Percent, Interest and Dates) are one generic segmented control: `TOGGLES`, `toggleHtml`,
@@ -136,7 +137,9 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   stays exact where the answer is exact and rounds floats to 15 digits otherwise. Shown with superscripts and sin⁻¹
   (`sciPretty`). Keyboard: ^ and !.
 - **Modes are tabs:** a strip of tabs at the top of the card (`MODE_LABELS`, `renderModeTabs`, `switchMode`), one tap
-  each, scrolling sideways when they don't fit; Alt+1…9 on a keyboard. Add a new mode to `MODE_LABELS`, `ICONS`
+  each, scrolling sideways when they don't fit; Alt+1…9 on a keyboard. When they don't all fit, a slim bar under them
+  (`.tabs-scrollbar`, `syncTabEdges`, `flashTabsBar`) shows while they move and briefly on start, and with a mouse
+  ‹ › buttons appear on hover at the edges that have more tabs. Add a new mode to `MODE_LABELS`, `ICONS`
   and `MODE_TRANSLATIONS`. Units is its own tab after Calculator. Going Calculator -> Units moves the calculator's
   number into the Units value last typed in (`unitSource`) and resets the calculator; nothing moves back.
 - **Big screens:** on large desktop screens the whole app is scaled with CSS `zoom` on `<html>` (`applyUiZoom`,
