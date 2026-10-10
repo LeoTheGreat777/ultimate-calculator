@@ -1,4 +1,4 @@
-const VERSION='0.4.131';
+const VERSION='0.4.132';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 // localStorage can throw (blocked storage, private mode, quota full). Never let that break the app.
@@ -882,6 +882,7 @@ function syncModeButton(){
  if(button){button.dataset.mode=mode;button.setAttribute('aria-label',t(mode));}
  renderModeMenu();
  renderSideTips();
+ syncQuickMode();
 }
 // Side columns on wide desktop screens (shown by CSS only): keyboard shortcuts on the left, tips for the current mode on the right.
 // Each shortcut is [keys, text]; keys are shown as separate key caps.
@@ -896,12 +897,12 @@ const SIDE_KEYS={
        en:[[['Tab'],'Next field'],[['Shift','Tab'],'Previous field'],[['0–9'],'Type in the field'],[[',','.'],'Decimal point'],[['Backspace'],'Delete last'],[['Esc'],'Close open windows']]}
 };
 const SIDE_TIPS={
- calc:{el:['Το κουμπί ( ) καταλαβαίνει μόνο του αν ανοίγει ή κλείνει παρένθεση. Όσες ξεχάσεις ανοιχτές, τις κλείνει το =.','Για αρνητικό αριθμό πάτα − αμέσως μετά από × ή ÷. Το 2 × − 3 δίνει −6.','Το 50 + 10% δίνει 55, γιατί το ποσοστό παίρνεται από τον προηγούμενο αριθμό.','Πάτα ξανά = για να επαναλάβεις την τελευταία πράξη. Το 2 + 3 = = δίνει 8.','Μετά το αποτέλεσμα, το ? δείχνει βήμα βήμα πώς βγήκε.','Στο Ιστορικό, πάτα έναν υπολογισμό για να τον ξαναφέρεις.'],
-       en:['The ( ) key works out on its own whether to open or close a parenthesis. Any you leave open, = closes for you.','For a negative number, press − right after × or ÷. 2 × − 3 gives −6.','50 + 10% gives 55, because the percent is taken from the previous number.','Press = again to repeat the last operation. 2 + 3 = = gives 8.','After a result, the ? button shows step by step how it was worked out.','In History, click a calculation to bring it back.']},
+ calc:{el:['Το κουμπί ( ) καταλαβαίνει μόνο του αν ανοίγει ή κλείνει παρένθεση. Όσες ξεχάσεις ανοιχτές, τις κλείνει το =.','Για αρνητικό αριθμό πάτα − αμέσως μετά από × ή ÷. Το 2 × − 3 δίνει −6.','Το 50 + 10% δίνει 55, γιατί το ποσοστό παίρνεται από τον προηγούμενο αριθμό.','Πάτα ξανά = για να επαναλάβεις την τελευταία πράξη. Το 2 + 3 = = δίνει 8.','Μετά το αποτέλεσμα, το ? δείχνει βήμα βήμα πώς βγήκε.','Στο Ιστορικό, πάτα έναν υπολογισμό για να τον ξαναφέρεις.','Κράτα πατημένο το ⌫ για να τα σβήσεις όλα, όπως το AC.','Το κουμπί ↔ δίπλα στη λειτουργία ανοίγει αμέσως τις Μονάδες.'],
+       en:['The ( ) key works out on its own whether to open or close a parenthesis. Any you leave open, = closes for you.','For a negative number, press − right after × or ÷. 2 × − 3 gives −6.','50 + 10% gives 55, because the percent is taken from the previous number.','Press = again to repeat the last operation. 2 + 3 = = gives 8.','After a result, the ? button shows step by step how it was worked out.','In History, click a calculation to bring it back.','Hold ⌫ to clear everything, like AC.','The ↔ button next to the mode opens Units straight away.']},
  graph:{el:['Έως τρεις συναρτήσεις μαζί. Το + δίπλα στη συνάρτηση προσθέτει νέα.','Σύρε το γράφημα για να το μετακινήσεις. Ζουμ με τη ρόδα του ποντικιού, τα + − ή με δύο δάχτυλα.','Οι τελείες δείχνουν ρίζες, ελάχιστα, μέγιστα και τομές. Πάτα μία για να δεις τις τιμές της, ή το ? για λίστα.','Το ⤢ προσαρμόζει το ύψος στην καμπύλη και το ⌂ γυρίζει στην αρχή. Το ⤓ το αποθηκεύει ως εικόνα.','Το 2x σημαίνει 2 × x και το sin x σημαίνει sin(x). Οι γωνίες είναι σε ακτίνια.'],
         en:['Up to three functions at once. The + next to a function adds a new one.','Drag the graph to move it. Zoom with the mouse wheel, the + − buttons or two fingers.','The dots mark roots, minima, maxima and intersections. Click one to see its values, or ? for a list.','⤢ fits the height to the curve and ⌂ goes back to the start. ⤓ saves it as an image.','2x means 2 × x and sin x means sin(x). Angles are in radians.']},
- units:{el:['Πάτα την πάνω ή την κάτω τιμή για να γράψεις εκεί. Η άλλη μετατρέπεται αμέσως.','Το ⇄ αλλάζει θέση στις δύο μονάδες.','Μπορείς να γράψεις και πράξη, π.χ. 12 + 8, και να πατήσεις =.','Από το μενού πάνω από τις τιμές διαλέγεις κατηγορία: μήκος, βάρος, θερμοκρασία, δεδομένα και άλλα.','Το Εμβαδόν έχει και στρέμματα.'],
-        en:['Click the top or bottom value to type there. The other one converts right away.','⇄ swaps the two units.','You can type a calculation too, e.g. 12 + 8, then press =.','The menu above the values picks the category: length, mass, temperature, data and more.','Area includes the Greek stremma.']},
+ units:{el:['Πάτα την πάνω ή την κάτω τιμή για να γράψεις εκεί. Η άλλη μετατρέπεται αμέσως.','Το ⇄ αλλάζει θέση στις δύο μονάδες.','Μπορείς να γράψεις και πράξη, π.χ. 12 + 8, και να πατήσεις =.','Από το μενού πάνω από τις τιμές διαλέγεις κατηγορία: μήκος, βάρος, θερμοκρασία, δεδομένα και άλλα.','Το Εμβαδόν έχει και στρέμματα.','Το κουμπί ▦ δίπλα στη λειτουργία γυρίζει αμέσως στην Αριθμομηχανή.'],
+        en:['Click the top or bottom value to type there. The other one converts right away.','⇄ swaps the two units.','You can type a calculation too, e.g. 12 + 8, then press =.','The menu above the values picks the category: length, mass, temperature, data and more.','Area includes the Greek stremma.','The ▦ button next to the mode goes straight back to the Calculator.']},
  vat:{el:['«Πρόσθεσε ΦΠΑ»: από την καθαρή τιμή βρίσκεις την τελική.','«Αφαίρεσε ΦΠΑ»: από την τελική τιμή βρίσκεις την καθαρή και πόσος ήταν ο ΦΠΑ.','Ο συντελεστής ξεκινά στο 24%. Άλλαξέ τον αν χρειάζεσαι άλλον.','Σύρε τον διακόπτη ή πάτα ← → πάνω του για να αλλάξεις πρόσθεση και αφαίρεση.','Το ? δείχνει πώς βγήκε το ποσό και το κουμπί με τις στήλες το δείχνει σε διάγραμμα.'],
       en:['"Add VAT": from the net price you get the final price.','"Remove VAT": from the final price you get the net price and how much VAT it had.','The rate starts at 24%. Change it if you need another one.','Drag the switch, or press ← → on it, to change between add and remove.','The ? button shows how the amount was worked out, and the bars button shows it as a chart.']},
  fuel:{el:['Συμπλήρωσε απόσταση, κατανάλωση και τιμή. Το κόστος βγαίνει αμέσως.','Την κατανάλωση σε L/100 km τη δείχνει ο υπολογιστής ταξιδιού του αυτοκινήτου.','Για ταξίδι με επιστροφή, βάλε διπλή απόσταση.','Κάτω από το κόστος βλέπεις πόσα λίτρα θα κάψεις και πόσο κοστίζει κάθε km.','Το κουμπί με τις στήλες δείχνει πώς αλλάζει το κόστος με την απόσταση.','Ο σελιδοδείκτης αποθηκεύει τον υπολογισμό. Η λίστα δίπλα δείχνει μέση τιμή και σύνολα.'],
@@ -921,6 +922,31 @@ function renderSideTips(){
 // Line the side columns up with the top of the calculator card.
 function placeSideTips(){const card=$('#calculatorCard');if(card)document.documentElement.style.setProperty('--side-top',Math.round(card.getBoundingClientRect().top)+'px')}
 window.addEventListener('resize',placeSideTips);
+// Quick switch between Calculator and Units (they share the same keypad): one tap, next to the mode button.
+function syncQuickMode(){
+ const b=$('#quickModeButton');if(!b)return;
+ const show=mode==='calc'||mode==='units';b.classList.toggle('hidden',!show);if(!show)return;
+ const target=mode==='calc'?'units':'calc';
+ b.dataset.target=target;$('#quickModeIcon').textContent=modeIcon(target);
+ b.setAttribute('aria-label',modeText(target));b.title=modeText(target);
+}
+// Holding ⌫ clears everything, the same as AC, in every mode.
+function clearEverything(){if(mode==='calc')clearAll();else if(mode==='units')toolKeyInput('clear');else if(mode==='graph')graphKey('clear');else clearToolFields()}
+function setupHoldToClear(){
+ const pad=$('#keypad');let timer=0,fired=false,key=null;
+ const backKey=t=>t?.closest?.('[data-action="backspace"],[data-g="back"]');
+ const cancel=()=>{clearTimeout(timer);timer=0;key?.classList.remove('holding');key=null};
+ pad.addEventListener('pointerdown',e=>{
+  const b=backKey(e.target);if(!b||e.button>0)return;
+  cancel();fired=false;key=b;b.classList.add('holding');
+  timer=setTimeout(()=>{timer=0;fired=true;b.classList.remove('holding');clearEverything();try{navigator.vibrate?.(15)}catch{}const k=backKey(document.elementFromPoint(e.clientX,e.clientY))||b;k.classList.add('held');setTimeout(()=>k.classList.remove('held'),300)},500);
+ });
+ pad.addEventListener('pointerup',cancel);pad.addEventListener('pointercancel',cancel);
+ pad.addEventListener('pointerleave',e=>{if(key&&e.target===key)cancel()},true);
+ // the click that ends a long press must not also delete one character
+ pad.addEventListener('click',e=>{if(fired&&backKey(e.target)){fired=false;e.stopImmediatePropagation();e.preventDefault()}},true);
+ pad.addEventListener('contextmenu',e=>{if(backKey(e.target))e.preventDefault()});
+}
 function toggleModeMenu(){
  const menu=$('#modeMenu'),control=$('.mode-control'),button=$('#modeButton');
  if(!menu||!control||!button)return;
@@ -1113,6 +1139,8 @@ $('#langButton').addEventListener('click',e=>{
 $('#themeButton').addEventListener('click',toggleTheme);
 $('#installButton')?.addEventListener('click',installApp);
 $('#modeButton').addEventListener('click',e=>{e.stopPropagation();toggleModeMenu()});
+$('#quickModeButton')?.addEventListener('click',e=>{e.stopPropagation();closeModeMenu();setMode(e.currentTarget.dataset.target==='units'?'units':'calc')});
+setupHoldToClear();
  document.addEventListener('click',e=>{if(!e.target.closest('#modeButton')&&!e.target.closest('#modeMenu'))closeModeMenu();if(!e.target.closest('.unit-select')&&!e.target.closest('.unit-select-menu'))closeUnitMenus();if(historyClearConfirm&&!e.target.closest('#historyClearWrap'))clearHistoryConfirm()});
 $('#clearHistory').addEventListener('click',clearHistoryConfirm);$('#historyConfirmYes').addEventListener('click',deleteAllHistory);
 window.addEventListener('keydown',e=>{

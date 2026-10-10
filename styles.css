@@ -237,3 +237,12 @@ body.fit .unit-row{height:var(--urow,70px)!important;min-height:0!important;flex
 @media (pointer:fine){.calculator-card.mobile-tool .tool-field input{caret-color:auto}}
 html.page-scroll,html.page-scroll body{height:auto!important;min-height:100%;overflow-y:auto!important}
 html.page-scroll body{touch-action:pan-y!important}
+/* Quick Calculator <-> Units button, left of the mode button */
+.quick-mode{width:40px;padding:0;justify-content:center;margin-left:auto;margin-right:7px;flex:0 0 auto}
+.quick-mode.hidden{display:none}
+.quick-mode .toolbar-icon{font-size:16px}
+@media(max-width:480px){.quick-mode{width:38px;margin-right:6px}}
+/* Hold ⌫ to clear everything: the key fills while held, then flashes */
+#keypad [data-action="backspace"],#keypad [data-g="back"]{-webkit-touch-callout:none}
+#keypad .holding{background:color-mix(in srgb,var(--key) 55%,var(--accent))!important;transition:background .5s linear}
+#keypad .held{background:var(--accent)!important;color:#07101c!important;transition:none}
