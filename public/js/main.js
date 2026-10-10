@@ -84,3 +84,15 @@ setupHistoryGestures();
 document.addEventListener('keydown',e=>{if(/^F(?:[1-8]|1[0-2])$/.test(e.key))e.stopImmediatePropagation()},true);
 // Works offline: sw.js keeps a copy of the app on the device (the page still comes from the network first).
 if('serviceWorker' in navigator&&location.protocol!=='file:')addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+// A phone keeps the app open in the background for days, so a new version would only show after closing it completely.
+// Whenever the app comes back to the screen (at most once a minute), ask the server which version is current and
+// reload if it differs. Offline, or if the check fails, nothing happens. no-store: past every cache, sw.js included.
+let lastVersionCheck=0;
+function checkForUpdate(){
+ if(location.protocol==='file:'||Date.now()-lastVersionCheck<60000)return;
+ lastVersionCheck=Date.now();
+ fetch('./',{cache:'no-store'}).then(r=>r.ok?r.text():'').then(html=>{const v=html.match(/id="footerVersion">v(\d+\.\d+\.\d+)</)?.[1];if(v&&v!==VERSION)location.reload()}).catch(()=>{});
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkForUpdate()});
+addEventListener('pageshow',e=>{if(e.persisted)checkForUpdate()});
+addEventListener('focus',checkForUpdate);

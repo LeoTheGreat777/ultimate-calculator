@@ -6,6 +6,12 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.7.4 – 2026-10-10
+
+### Fixed
+- An app left open in the background (on a phone, or a browser tab) now updates to the new version when you come
+  back to it, instead of only after closing it completely.
+
 ## 0.7.3 – 2026-10-10
 
 ### Changed

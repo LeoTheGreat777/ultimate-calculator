@@ -158,7 +158,9 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   comes from the network first (`no-cache`), the saved copy only offline or after 3 s; `?v=` files from the saved copy
   first; each fresh page saves the files it links to and deletes other versions' `?v=` files. Nothing to update per
   version, but every file the app needs must be linked from index.html with `?v=`, and the app must not fetch anything
-  else it needs to start. Test with `offline()` in tests/test_app.py.
+  else it needs to start. Coming back to the screen (`visibilitychange`, `focus`, bfcache `pageshow`) runs
+  `checkForUpdate` (main.js, at most once a minute): it fetches the page with `no-store` (sw.js leaves those alone) and
+  reloads if its footer version differs from `VERSION`. Test with `offline()` in tests/test_app.py.
 - **Keyboard:** desktop typing is handled in the `window` `keydown` listener in `main.js`.
   Keys that do nothing in a mode are ignored.
 

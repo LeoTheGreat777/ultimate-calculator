@@ -563,6 +563,13 @@ async def offline(browser):
     html = (folder / 'index.html').read_text().replace(f'?v={VERSION}"', '?v=9.9.9"').replace(f'>v{VERSION}<', '>v9.9.9<')
     (folder / 'index.html').write_text(html)
     (folder / 'js/core.js').write_text((folder / 'js/core.js').read_text().replace(f"VERSION='{VERSION}'", "VERSION='9.9.9'"))
+    # an app left open (a phone in the background) updates when it comes back to the screen
+    await p.evaluate("document.dispatchEvent(new Event('visibilitychange'))")
+    await p.wait_for_function("document.querySelector('#footerVersion').textContent==='v9.9.9'", timeout=5000)
+    check('offline: an app left open updates when it comes back to the screen', await works('9.9.9'))
+    await p.evaluate("window.__stayed=1;document.dispatchEvent(new Event('visibilitychange'))")
+    await p.wait_for_timeout(800)
+    check('offline: no reload when the version is current', await p.evaluate("window.__stayed===1&&lastVersionCheck>0"))
     await p.reload()
     check('offline: a new version shows on the next load', await works('9.9.9'))
     await p.wait_for_timeout(500)

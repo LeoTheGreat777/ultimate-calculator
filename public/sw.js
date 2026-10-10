@@ -25,7 +25,7 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   const request = event.request;
-  if (request.method !== 'GET') return;
+  if (request.method !== 'GET' || request.cache === 'no-store') return;  // no-store: the app's version check (main.js)
   const url = new URL(request.url);
   if (url.origin !== SCOPE.origin || !url.pathname.startsWith(SCOPE.pathname)) return;
   const isPage = request.mode === 'navigate' && (url.pathname === SCOPE.pathname || url.pathname === SCOPE.pathname + 'index.html');
