@@ -51,7 +51,7 @@ and the file checks in `publish-image.yml`, or it works locally and 404s in prod
   `formatExpressionDisplay`, `money`), never `toString()` or `toFixed()` for anything shown.
   Money is always 2 decimals (`money`). VAT is rounded to cents like invoices (`vatNumbers`).
 - **Text:** every visible string needs Greek and English. Most live in `T.el`/`T.en` (use `t(key)`);
-  some modes have their own small tables (`gText`, `cText`, `fText`, `SIDE_TIPS`, `SIDE_KEYS`).
+  some modes have their own small tables (`gText`, `cText`, `fText`, and `HELP` for Tips & shortcuts).
   Switching language happens in place (`setLanguage` -> `applyLanguage`), no reload: anything that shows text
   must be re-rendered by `applyLanguage`, and a new text must look the same after a live switch as after a fresh load.
 - **Credits:** the footer names come from `AUTHORS` in `app.js`; the same names are in `index.html`
@@ -76,6 +76,11 @@ and the file checks in `publish-image.yml`, or it works locally and 404s in prod
 - **Theme change:** circle reveal from the theme button (View Transitions), fade fallback, instant with reduced motion.
 - **Dropdowns:** on desktop Chrome/Edge the unit menus use `appearance: base-select`, styled like the app; phones keep
   native pickers. While a dropdown has focus the global keydown handler leaves keys to it.
+- **± and holding keys:** holding ⌫ clears everything, holding − flips the sign (`negate`, units: `toolKeyInput('negate')`);
+  F9 does ± on a keyboard. A tap on − is always minus. Negative numbers inside a calculation display as `5×(−25)`
+  (`formatInputDisplay`). Units has the same keypad as the calculator, including ( ).
+- **Tips & shortcuts:** a sheet per mode (`HELP`, `showHelp`), opened from the footer link or the ? key; the keyboard
+  part only shows on devices with a keyboard. When behaviour changes, update the tips in both languages.
 - **Copying:** tapping a finished result copies it (calculator and tools), so the copy button can be hidden
   on short screens.
 - **Keyboard:** desktop typing is handled in the `window` `keydown` listener at the end of `app.js`.

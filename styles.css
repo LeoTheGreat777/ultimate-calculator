@@ -76,24 +76,23 @@
 .calculator-card:not(.tool-mode) .keypad .key{height:var(--k);min-height:var(--k)}
 .calculator-card:not(.tool-mode) #calculatorDisplay{height:clamp(92px,calc(calc(100dvh / var(--z,1)) - 249px - 5 * var(--k)),205px)}
 
-/* Side columns with keyboard shortcuts and tips: wide desktop screens only (s7) */
-.side-tips{display:none}
-@media (min-width:1200px) and (hover:hover) and (pointer:fine){
- .side-tips{display:block;position:fixed;top:var(--side-top,60px);width:min(290px,calc((calc(100vw / var(--z,1)) - 680px) / 2 - 56px));max-height:calc(calc(100dvh / var(--z,1)) - var(--side-top,60px) - 20px);overflow-y:auto;scrollbar-width:none;padding:16px 18px;background:var(--card);border:1px solid var(--border);border-radius:22px;color:var(--text);-webkit-user-select:text;user-select:text}
- .side-tips::-webkit-scrollbar{display:none}
- .side-left{right:calc(50% + 368px)}
- .side-right{left:calc(50% + 368px)}
- .side-title{margin:0 0 12px;font-size:11px;font-weight:750;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
- .side-keys,.side-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
- .side-keys li{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:7px 0;border-top:1px solid var(--border);font-size:13px}
- .side-keys li:first-child,.side-list li:first-child{border-top:0;padding-top:0}
- .side-caps{display:flex;flex-wrap:wrap;gap:4px;flex:0 0 auto;min-width:76px}
- .side-key-text{flex:1 1 84px;min-width:0;color:var(--muted);line-height:1.35}
- .side-tips kbd{min-width:24px;height:24px;padding:0 7px;display:inline-grid;place-items:center;border-radius:7px;background:var(--key);border-bottom:2px solid var(--border);color:var(--accent2);font:600 12px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
- .side-list li{position:relative;padding:9px 0 9px 16px;border-top:1px solid var(--border);font-size:13.5px;line-height:1.45}
- .side-list li::before{content:'';position:absolute;left:1px;top:16px;width:6px;height:6px;border-radius:50%;background:var(--accent)}
- .side-list li:first-child::before{top:7px}
-}
+/* Tips & shortcuts: a link in the footer opens them in the dialog (showHelp in app.js) */
+.footer-line{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:2px 6px}
+.footer-dot{opacity:.6}
+.help-link{display:inline-flex;align-items:center;gap:5px;border:0;background:transparent;color:var(--accent2);font:inherit;font-size:11px;font-weight:650;padding:2px 7px 2px 3px;border-radius:999px;cursor:pointer;opacity:1}
+.help-link:hover{background:var(--card2)}
+.help-link:focus-visible{outline:2px solid var(--accent2);outline-offset:1px}
+.help-link-icon{width:15px;height:15px;border-radius:50%;display:inline-grid;place-items:center;border:1.5px solid currentColor;font-size:9.5px;font-weight:800;line-height:1}
+.modal.help-open .modal-card{width:min(520px,calc(calc(100vw / var(--z,1)) - 32px))}
+.help{display:flex;flex-direction:column;gap:18px}
+.help-heading{margin:0 0 6px;font-size:11px;font-weight:750;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.help-tips,.help-keys{list-style:none;margin:0;padding:0}
+.help-tips li{position:relative;padding:9px 0 9px 18px;border-top:1px solid var(--border);font-size:14px;line-height:1.5}
+.help-tips li:first-child,.help-keys li:first-child{border-top:0}
+.help-tips li::before{content:'';position:absolute;left:2px;top:17px;width:6px;height:6px;border-radius:50%;background:var(--accent)}
+.help-keys li{display:flex;align-items:center;gap:12px;padding:7px 0;border-top:1px solid var(--border);font-size:13.5px;color:var(--muted)}
+.help-caps{display:flex;flex-wrap:wrap;gap:4px;flex:0 0 132px}
+.help kbd{min-width:26px;height:26px;padding:0 8px;display:inline-grid;place-items:center;border-radius:7px;background:var(--key);border:1px solid var(--border);border-bottom-width:2px;color:var(--accent2);font:650 12px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
 
 /* ---------- Graph mode, tool charts and history chart (s8) ---------- */
 body.graph-on .app-shell{height:calc(100dvh / var(--z,1))}
@@ -280,3 +279,7 @@ html.theme-fade *,html.theme-fade *::before,html.theme-fade *::after{transition:
   .unit-display .unit-unit::picker(select){position-area:bottom span-left;min-width:190px}
  }
 }
+/* the footer text is muted; the Tips link keeps its full colour */
+.app-footer{opacity:1}
+.app-footer .footer-line,.app-footer #createdBy{color:color-mix(in srgb,var(--muted) 72%,transparent)}
+.modal.help-open .modal-card{max-height:min(calc(86dvh / var(--z,1)),780px)}

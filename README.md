@@ -7,6 +7,7 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 ### Calculator
 - Standard arithmetic with operator precedence and brackets
 - Calculator-style percentages
+- Change sign (±): hold − on the keypad, or F9 on a keyboard
 - Decimal and negative number support
 - Calculation history
 - Copy results
@@ -43,6 +44,7 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 - Mobile-friendly calculator controls
 - Clean, compact UI with dedicated mode navigation
 - Calculation explanations presented in a readable step-by-step view
+- Tips & shortcuts for every mode, from the footer (or ? on a keyboard)
 
 ## Authors
 
