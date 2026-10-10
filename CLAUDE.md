@@ -18,11 +18,16 @@ Two people work on this repo, each with their own Claude sessions, and both push
 - Keep scratch files (one-off test scripts, screenshots) out of the repo; use a temp/scratch folder.
 - Commit messages: a short summary line, then what changed and why in plain words.
 
-## Version
+## Version and changelog
 
-Once per push that changes app files (not for docs-only changes): `python3 tools/bump-version.py`
-(0.4.141 -> 0.4.142). It updates `VERSION` in `public/js/core.js`, the footer and every `?v=` in
-`public/index.html` (the `?v=` makes browsers load the new files). `--check` only checks they all match.
+Versions are `MAJOR.MINOR.PATCH` (semantic versioning). Once per push that changes app files (not for docs-only
+changes), pick one: `python3 tools/bump-version.py patch` for fixes and small tweaks (0.5.0 -> 0.5.1),
+`minor` for a new feature (0.5.1 -> 0.6.0), `major` only when the owner says (1.0.0 = ready for everyone).
+It updates `VERSION` in `public/js/core.js`, the footer and every `?v=` in `public/index.html` (the `?v=` makes
+browsers load the new files), and adds a `## X.Y.Z – date` heading to `CHANGELOG.md`. Under it, write what changed
+for the people using the app (not the code), in `### Added` / `### Changed` / `### Fixed`; keep it short.
+Every push of app changes gets its own version and entry. `--check` (run by GitHub before
+deploying) fails if the versions disagree or the changelog has no entry for the current version.
 
 ## Files
 

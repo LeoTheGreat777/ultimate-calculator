@@ -110,9 +110,11 @@ Every push to `main` runs one GitHub Actions workflow (`.github/workflows/deploy
 
 If the tests fail, nothing is deployed and the live site stays as it was. If two pushes land within seconds of each other, the older run is cancelled and only the newest one deploys.
 
-## Versioning
+## Versioning and changelog
 
-Run `python3 tools/bump-version.py` once per release. It sets the version in `public/js/core.js` and in `public/index.html` (the footer and the `?v=` on every script and stylesheet, which makes browsers load the new files).
+Versions follow `MAJOR.MINOR.PATCH`: a new feature raises the middle number, a fix the last one; the version shows
+in the app's footer. What changed in each version is in [CHANGELOG.md](CHANGELOG.md).
+`python3 tools/bump-version.py patch|minor|major` sets the version everywhere and starts its changelog section.
 
 ## Project Direction
 
