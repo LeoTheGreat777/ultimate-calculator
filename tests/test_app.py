@@ -146,7 +146,7 @@ async def desktop(browser, url, lang, theme):
     other = 'en' if lang == 'el' else 'el'
     await p.evaluate(f"switchMode('calc');setLanguage('{other}')")
     await p.wait_for_timeout(400)
-    names = 'Λεωνίδας Κάμπαξης' if other == 'el' else 'Leonidas Kampaxis'
+    names = 'Δημιουργοί: Λεωνίδας Κάμπαξης' if other == 'el' else 'Created by Leonidas Kampaxis'
     check(L + 'language switches in place', names in await p.inner_text('#createdBy') and await p.evaluate('lang') == other)
     await p.keyboard.press('?')
     await p.wait_for_timeout(150)
@@ -171,6 +171,9 @@ async def phone(browser, url, lang, theme, size):
               return r.width&&r.height&&getComputedStyle(e).visibility!=='hidden'&&(r.right>vw+1||(!scroll&&r.bottom>vh+1))&&!e.closest('#modeTabs,#historyPanel,.modal')});
             return out.slice(0,3).map(e=>e.className||e.tagName)}""", list(size))
         check(L + f'{m}: nothing outside the screen', not fits, fits)
+        if size[0] > size[1] and size[1] <= 500:
+            st = await p.evaluate("[document.documentElement.classList.contains('landscape'), document.documentElement.dataset.fitOver]")
+            check(L + f'{m}: landscape layout fits without scrolling', st == [True, '0'], st)
     width = await p.evaluate('document.documentElement.scrollWidth')
     check(L + 'no sideways scrolling', width <= size[0], width)
     check(L + 'no JavaScript errors', not p.errors, p.errors)
@@ -183,7 +186,8 @@ async def main():
         browser = await pw.chromium.launch()
         for lang, theme in [('en', 'dark'), ('el', 'light')]:
             await desktop(browser, url, lang, theme)
-        for lang, theme, size in [('en', 'dark', (390, 844)), ('el', 'light', (360, 740)), ('en', 'light', (820, 1180))]:
+        for lang, theme, size in [('en', 'dark', (390, 844)), ('el', 'light', (360, 740)), ('en', 'light', (820, 1180)),
+                                  ('el', 'dark', (844, 390)), ('en', 'light', (740, 360))]:  # the last two: phones held sideways
             await phone(browser, url, lang, theme, size)
         await browser.close()
     print(f'{sum(results)}/{len(results)} checks passed')

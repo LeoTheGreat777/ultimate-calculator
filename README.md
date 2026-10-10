@@ -39,7 +39,7 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 - Each tool remembers the values typed in it; AC clears them
 
 ### Interface
-- Responsive desktop and mobile layouts
+- Responsive desktop and mobile layouts, in portrait and landscape (keypad beside the display when a phone is turned sideways)
 - Dark and light themes
 - English and Greek language support
 - Installable on phones: an install button opens the install dialog on Android, and shows a short Add to Home Screen guide on iPhone

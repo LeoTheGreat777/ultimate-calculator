@@ -89,7 +89,9 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
 - **Fitting the screen:** `fitLayout()` sizes keys (`--k`) and the display (`--disp`) to the screen in every
   mode, and switches the tools to their compact layout when needed; only if nothing fits does the page scroll
   (`html.page-scroll`). Don't add fixed pixel heights per screen size or device; let `fitLayout` handle it,
-  and call it after anything that changes the layout's height.
+  and call it after anything that changes the layout's height. Phones held sideways (any window wider than tall and
+  at most 500px high) get the landscape layout: keypad on the right, the rest on the left (`fitLandscape`,
+  `html.landscape` in styles.css). The app is not locked to portrait (iPhones can't be), so both must work.
 - **Modes are tabs:** a strip of tabs at the top of the card (`MODE_LABELS`, `renderModeTabs`, `switchMode`), one tap
   each, scrolling sideways when they don't fit; Alt+1…6 on a keyboard. Add a new mode to `MODE_LABELS`, `ICONS`
   and `MODE_TRANSLATIONS`. Units is its own tab after Calculator. Going Calculator -> Units moves the calculator's

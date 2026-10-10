@@ -55,6 +55,24 @@ function applyUiZoom(){
  root.style.zoom=z===1?'':String(z);root.style.setProperty('--z',String(z));
  return true;
 }
+// A phone held sideways (or any short, wide window): the keypad goes on the right and everything else on the left
+// (styles.css, html.landscape). The keys get the height there is, and the display takes what is left beside them.
+const LANDSCAPE='(orientation: landscape) and (max-height: 500px)';
+function fitLandscape(card,root,avail,need,tool,setToolLayout){
+ if(tool)setToolLayout(true);
+ const graph=mode==='graph',v=graph?'--gk':'--k',[kMax,kMin]=graph?[56,28]:tool?[56,32]:[68,34];
+ const rows=new Set([...$('#keypad').children].map(b=>b.offsetTop)).size||5;
+ let k=kMin;card.style.setProperty(v,k+'px');
+ card.style.setProperty('--disp','auto');// the display fills the height beside the keys
+ if(mode==='units')card.style.setProperty('--urow','36px');// the unit rows grow afterwards, into the room beside the keys
+ // twice: if the left side is the taller one, the first pass leaves room the keys can still use
+ for(let i=0;i<2;i++){const spare=avail-need();if(spare<=0)break;k=Math.min(kMax,k+Math.floor(spare/rows));card.style.setProperty(v,k+'px')}
+ if(mode==='units'){const h=$('#calculatorDisplay').getBoundingClientRect().height/window.__uiZoom;card.style.setProperty('--urow',Math.max(36,Math.min(70,Math.floor((h-61)/2)))+'px')}
+ let over=need()-avail;
+ if(over>0){card.classList.add('fit-no-copy');over=need()-avail}
+ if(over>0)root.classList.add('page-scroll');
+ root.dataset.fitOver=Math.max(0,over);
+}
 let fitRaf=0;
 function fitLayoutSoon(){if(!fitRaf)fitRaf=requestAnimationFrame(()=>{fitRaf=0;fitLayout()})}
 function fitLayout(){
@@ -69,6 +87,9 @@ function fitLayout(){
  const tool=['fuel','energy','vat'].includes(mode),touchTool=tool&&isMobileDevice();
  const setToolLayout=compact=>{card.classList.toggle('mobile-tool',compact);document.body.classList.toggle('mobile-tool-on',compact)};
  if(tool)setToolLayout(touchTool);
+ const land=matchMedia(LANDSCAPE).matches;root.classList.toggle('landscape',land);
+ if(land){fitLandscape(card,root,avail,need,tool,setToolLayout);return}
+ card.style.removeProperty('--gk');// back in portrait, Graph keys size themselves again (styles.css)
  if(mode==='graph'){if(avail<FIT.graphMin){root.classList.add('page-scroll');shell.style.height=FIT.graphMin+'px'}return}
  const attempt=spec=>{
   let [k,kMin]=spec.k,[d,dMin]=spec.d;
