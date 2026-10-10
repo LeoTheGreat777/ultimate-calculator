@@ -2,9 +2,10 @@
 // After a result, the next calculation starts from its full-precision value (carry). On screen that value shows rounded, like the result did.
 function formatExpressionDisplay(s){
  s=String(s??'');
- if(carry&&carry.raw&&s.startsWith(carry.raw))return negativeInBrackets(carry.shown)+formatInputDisplay(s.slice(carry.raw.length));
+ if(carry&&carry.raw&&s.startsWith(carry.raw))return carry.shown+formatInputDisplay(s.slice(carry.raw.length));
  return formatInputDisplay(s);
 }
+let resultNegated=false;// the finished result was turned negative with ± (so carrying it on shows it in brackets)
 let lastShown='';// how the finished calculation (lastExpression) is shown above the result
 
 function carryText(r,digits){const abs=r.n<0n?{n:-r.n,d:r.d}:r,raw=ratToDecimal(r,digits);carry={text:ratToDecimal(abs,digits),value:abs,raw,shown:fmt(r),plain:ratToRoundedDecimal(r,6)};return raw}
@@ -16,7 +17,7 @@ function explanationForExpression(input,result){
  const additive=()=>{let left=mult();while(tokens[pos]&&['+','-'].includes(tokens[pos].type)){const op=tokens[pos++].type;left={type:'op',op,left,right:mult()}}return left};
  let tree;try{tree=additive();if(pos!==tokens.length)throw Error()}catch{return null}
  const renderNode=n=>n.type==='number'?n.raw:n.type==='neg'?'-'+renderNode(n.child):n.type==='group'?'('+renderNode(n.child)+')':renderNode(n.left)+n.op+renderNode(n.right);
- const steps=[],num=v=>negativeInBrackets(formatRat(v));// numbers in a step: 3 × (−5) = −15
+ const steps=[],num=v=>formatRat(v),rnum=v=>{const t=formatRat(v);return /^-/.test(t)?'(−'+t.slice(1)+')':t};// 3 × (−5) = -15
  const walk=n=>{
    if(n.type==='number')return n.value;
    if(n.type==='group')return walk(n.child);
@@ -27,11 +28,11 @@ function explanationForExpression(input,result){
    const op=({'+':'+','-':'−','*':'×','/':'÷'})[n.op];
    if(percent&&['+','-'].includes(n.op)){
      const pct=ratDiv(r,ratFromString('0.01'));
-     steps.push({title:lang==='el'?'Υπολόγισε το ποσοστό':'Calculate the percentage',text:num(l)+' × '+num(pct)+' ÷ 100 = '+formatRat(rv)});
-     steps.push({title:lang==='el'?'Έπειτα':'Then',text:num(l)+' '+op+' '+num(rv)+' = '+formatRat(v)});
+     steps.push({title:lang==='el'?'Υπολόγισε το ποσοστό':'Calculate the percentage',text:num(l)+' × '+rnum(pct)+' ÷ 100 = '+formatRat(rv)});
+     steps.push({title:lang==='el'?'Έπειτα':'Then',text:num(l)+' '+op+' '+rnum(rv)+' = '+formatRat(v)});
    }else{
      const title=lang==='el'?(steps.length===0?'Πρώτα':n===tree?'Τέλος':'Στη συνέχεια'):(steps.length===0?'First':n===tree?'Finally':'Next');
-     steps.push({title,text:num(l)+' '+op+' '+num(rv)+' = '+formatRat(v)});
+     steps.push({title,text:num(l)+' '+op+' '+rnum(rv)+' = '+formatRat(v)});
    }
    return v;
  };
@@ -69,7 +70,7 @@ function render(){
    if(r)fitDisplayText(r,32);
  });
 }
-function clearAll(){carry=null;expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null;lastOperation=null;resetHow();render()}
+function clearAll(){carry=null;resultNegated=false;expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null;lastOperation=null;resetHow();render()}
 function clearCurrent(){resetHow();if(current){current='';currentIsPercent=false;render();return}clearAll()}
 function clearButtonAction(){
  if(justCalculated){clearAll();return}
@@ -78,7 +79,7 @@ function clearButtonAction(){
  if(expression){clearAll();return}
  clearAll();
 }
-function backspace(){resetHow();if(justCalculated){clearAll();return}if(!current&&carry&&expression===carry.raw){expression=carry.plain;carry=null}if(current){current=current.slice(0,-1);currentIsPercent=false}else if(expression)expression=expression.slice(0,-1);render()}
+function backspace(){resetHow();if(justCalculated){clearAll();return}if(!current&&carry&&expression===carry.raw){expression=carry.plain;carry=null}if(current){current=current.slice(0,-1);if(current==='−')current='-';currentIsPercent=false}else if(expression)expression=expression.slice(0,-1);render()}
 function digit(v){
  if(v===',')v='.';
  resetHow();
@@ -96,7 +97,7 @@ function digit(v){
 // Works on calculator (× ÷) and Units (* /) expressions.
 function uselessParen(inner,before){
  if(/^\d+(?:\.\d*)?$/.test(inner))return true;
- if(/^-\d+(?:\.\d*)?$/.test(inner))return !/[+\-]$/.test(before);
+ if(/^[-−]\d+(?:\.\d*)?$/.test(inner))return !/[+\-]$/.test(before);
  if(inner[0]==='('&&inner.at(-1)===')'){let d=0;for(let i=0;i<inner.length;i++){d+=inner[i]==='('?1:inner[i]===')'?-1:0;if(d===0)return i===inner.length-1}}
  return false;
 }
@@ -139,14 +140,15 @@ function parenthesis(ch){
    if(opens<=closes||/[+\-×÷(]$/.test(expression))return false;
    expression=closeParen(expression);
    // brackets around a single number were dropped: the number is the one being typed again (± and % work on it)
-   if(!/\)$/.test(expression)){const m=expression.match(/(^|[×÷(])?(-?)(\d+(?:\.\d*)?)$/);if(m){const num=(m[1]!==undefined?m[2]:'')+m[3];current=num;expression=expression.slice(0,-num.length)}}
+   if(!/\)$/.test(expression)){const m=expression.match(/([-−]?)(\d+(?:\.\d*)?)$/);if(m){const before=expression.slice(0,-m[0].length),num=(m[1]&&(before===''||/[×÷(]$/.test(before))?m[1]:'')+m[2];current=num;expression=expression.slice(0,-num.length)}/* the minus is the number's own at the start or after × ÷ (, otherwise it is subtraction */}
  }
  render();
  return true;
 }
 function operator(op){
  resetHow();
- if(justCalculated){expression=carryText(lastResult,18);current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null}
+ if(justCalculated){expression=carryText(lastResult,18);if(resultNegated&&lastResult.n<0n)carry.shown='(−'+fmt(carry.value)+')';// turned negative with ±: (−84)+…
+  resultNegated=false;current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null}
  if(current==='-'&&expression){current=''}
  if(op==='-'&&!current&&/[×÷(]$/.test(expression)){current='-';render();return}
  if(!current&&!expression){if(op==='-'){current='-';render()}return;}if(!current&&/\($/.test(expression))return;
@@ -162,13 +164,14 @@ function negate(){
  if(justCalculated){
   if(!lastResult)return;
   const prevShown=lastShown||formatExpressionDisplay(lastExpression);
-  carry=null;lastResult=ratMul(lastResult,rat(-1n));lastExpression='-('+lastExpression+')';lastShown='−('+prevShown+')';lastOperation=null;
+  carry=null;resultNegated=!resultNegated;lastResult=ratMul(lastResult,rat(-1n));lastExpression='-('+lastExpression+')';lastShown='−('+prevShown+')';lastOperation=null;
   howData=explanationForExpression(lastExpression,lastResult)||{formula:lastShown,steps:[lastShown+' = '+fmt(lastResult)],result:fmt(lastResult)};
   if(howData)howData.formula=lastShown;calcHowData=howData;
   render();return;
  }
- if(current==='-')current='';
- else if(current)current=current.startsWith('-')?current.slice(1):'-'+current;
+ // a minus made here is "−", so the display shows the number in brackets: 5 -> (−5) (formatInputDisplay)
+ if(current==='-'||current==='−')current='';
+ else if(current)current=/^[-−]/.test(current)?current.slice(1):'−'+current;
  else if(!expression||/[+\-×÷(]$/.test(expression))current='-';
  else return;
  render();
@@ -182,17 +185,17 @@ function smartParen(){
  parenthesis('(')
 }
 function percent(){resetHow();if(!current||currentIsPercent)return;current+='%';currentIsPercent=true;render()}
-function parseLastOperation(full){const m=String(full).match(/^(.*?)([+\-×÷])(-?\d+(?:[.,]\d+)?%?)$/);return m?{op:m[2],rhs:m[3]}:null}
+function parseLastOperation(full){const m=String(full).match(/^(.*?)([+\-×÷])([-−]?\d+(?:[.,]\d+)?%?)$/);return m?{op:m[2],rhs:m[3]}:null}
 function repeatEquals(){
  if(!justCalculated||!lastOperation)return false;
- try{const rhs=lastOperation.rhs,base=carryText(lastResult,24),full=base+lastOperation.op+rhs,value=evalExpr(full);lastExpression=full;lastShown=formatExpressionDisplay(full);lastResult=value;justCalculated=true;howData=explanationForExpression(full,value)||{formula:formatExpressionDisplay(full),steps:[`${formatExpressionDisplay(full)} = ${fmt(value)}`],result:fmt(value)};calcHowData=howData;saveHistory({expression:full,result:value,how:howData});render();return true}catch{return false}
+ try{const rhs=lastOperation.rhs,base=carryText(lastResult,24),full=base+lastOperation.op+rhs,value=evalExpr(full);lastExpression=full;lastShown=formatExpressionDisplay(full);lastResult=value;justCalculated=true;resultNegated=false;howData=explanationForExpression(full,value)||{formula:formatExpressionDisplay(full),steps:[`${formatExpressionDisplay(full)} = ${fmt(value)}`],result:fmt(value)};calcHowData=howData;saveHistory({expression:full,result:value,how:howData});render();return true}catch{return false}
 }
 function equals(){
  if(justCalculated&&repeatEquals())return;
  let full=expression+current;if(!full||/[+\-×÷]$/.test(full))return;
  if(/[()]/.test(full)){full=tidyParens(full);expression=full;current=''}// close what is open, drop brackets that change nothing
  if(!full||/[+\-×÷(]$/.test(full))return;
- try{const value=evalExpr(full);lastExpression=full;lastShown=formatExpressionDisplay(full);lastResult=value;lastOperation=parseLastOperation(full);justCalculated=true;currentIsPercent=false;howData=explanationForExpression(full,value)||{formula:formatExpressionDisplay(full),steps:[`${formatExpressionDisplay(full)} = ${fmt(value)}`],result:fmt(value)};saveHistory({expression:full,result:value,how:howData});render()}
+ try{const value=evalExpr(full);lastExpression=full;lastShown=formatExpressionDisplay(full);lastResult=value;lastOperation=parseLastOperation(full);justCalculated=true;resultNegated=false;currentIsPercent=false;howData=explanationForExpression(full,value)||{formula:formatExpressionDisplay(full),steps:[`${formatExpressionDisplay(full)} = ${fmt(value)}`],result:fmt(value)};saveHistory({expression:full,result:value,how:howData});render()}
  catch{current='Error';currentIsPercent=false;render();setTimeout(()=>{if(current==='Error'){current='';render()}},900)}
 }
 function renderCalcKeypad(){

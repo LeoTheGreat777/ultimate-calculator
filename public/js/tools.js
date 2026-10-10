@@ -17,7 +17,7 @@ function loadTools(){
   const u=s.units;if(!u||typeof u!=='object')return;
   if(units[u.category])window._unitCategory=u.category;
   if(u.pick&&typeof u.pick==='object')Object.entries(u.pick).forEach(([c,p])=>{if(units[c]&&units[c][p?.from]!==undefined&&units[c][p?.to]!==undefined)unitPick[c]={from:p.from,to:p.to}});
-  const expr=v=>typeof v==='string'&&v.length<200&&/^[-0-9.,+*/%]*$/.test(v);
+  const expr=v=>typeof v==='string'&&v.length<200&&/^[-−0-9.,+*/%]*$/.test(v);
   if(expr(u.expr?.from)&&expr(u.expr?.to))unitExpressions={from:u.expr.from,to:u.expr.to};
   if(u.source==='from'||u.source==='to')unitSource=unitActiveInput=u.source;
  }catch{}

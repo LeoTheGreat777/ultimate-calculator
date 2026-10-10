@@ -39,17 +39,18 @@ function formatGroupedNumber(raw){
  const decimal=',';
  return sign+grouped+(frac!==undefined?decimal+frac:'');
 }
+// Negative numbers in a calculation being shown. Inside the calculation a minus made with ± (hold −, F9) is written "−"
+// and one typed with the − key is "-"; both mean the same to evalExpr (tokenize reads − as -).
+// - after an operator, any negative number shows in brackets, like the iPhone: 5×(−25); after "(" just −
+// - at the start, only one made with ± does: 5, hold − -> (−5); typing − then 5 stays -5
+// Finished results are shown plain (-15).
 function formatInputDisplay(s){
- return negativeInBrackets(pretty(String(s)).replace(/\d+(?:\.\d*)?/g,m=>formatGroupedNumber(m))
-  // a negative number after an operator shows in brackets, like the iPhone: 5×(−25); after "(" just −
-  .replace(/([×÷+\-])-(\d[\d.,]*%?)/g,'$1(−$2)').replace(/\(-(?=\d)/g,'(−'));
+ return pretty(String(s)).replace(/\d+(?:\.\d*)?/g,m=>formatGroupedNumber(m))
+  .replace(/([×÷+\-])[-−](\d[\d.,]*%?)/g,'$1(−$2)').replace(/\([-−](?=\d)/g,'(−')
+  .replace(/^−(\d[\d.,]*%?)/,'(−$1)');
 }
-// A negative number at the start of a calculation shows in brackets too: (−5), (−5)×3; "-(" becomes "−(".
-// Only for calculations being shown (typing, the line above a result, History, explanations, the typed Units value);
-// a finished result stays plain, like −6.
-const negativeInBrackets=s=>String(s).replace(/^-(\d[\d.,]*%?)/,'(−$1)').replace(/^-\(/,'−(');
 function tokenize(input){
- const s=String(input).replace(/×/g,'*').replace(/÷/g,'/').replace(/\s+/g,'');const tokens=[];let i=0;
+ const s=String(input).replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-').replace(/\s+/g,'');const tokens=[];let i=0;// − is a minus made with ± (see formatInputDisplay)
  while(i<s.length){const ch=s[i];
   if(/[0-9.]/.test(ch)){const start=i;let dots=0;while(i<s.length&&/[0-9.]/.test(s[i])){if(s[i]==='.')dots++;i++}if(dots>1)throw Error('NUMBER');let raw=s.slice(start,i);if(s[i]==='%'){i++;tokens.push({type:'number',value:ratPercent(ratFromString(raw)),percent:true,raw:raw+'%'});}else{const exact=carry&&raw===carry.text&&(start===0||(start===1&&s[0]==='-'));tokens.push({type:'number',value:exact?carry.value:ratFromString(raw),percent:false,raw})}continue}
   if('+-*/()'.includes(ch)){tokens.push({type:ch});i++;continue}throw Error('CHAR')

@@ -1,7 +1,7 @@
 // Units mode: unit data and names, converting, the two values and their keypad input.
 const units={length:{mm:'0.001',cm:'0.01',m:'1',km:'1000',in:'0.0254',ft:'0.3048',yd:'0.9144',mi:'1609.344',nmi:'1852'},area:{'mm²':'0.000001','cm²':'0.0001','m²':'1','km²':'1000000','in²':'0.00064516','ft²':'0.09290304',stremma:'1000',acre:'4046.8564224',ha:'10000'},mass:{mg:'0.000001',g:'0.001',kg:'1',oz:'0.028349523125',lb:'0.45359237',t:'1000'},volume:{ml:'0.001',l:'1','m³':'1000',tsp:'0.00492892159375',tbsp:'0.01478676478125',cup:'0.2365882365',gal:'3.785411784',qt:'0.946352946',pt:'0.473176473'},speed:{'m/s':'1','km/h':'0.27777777777777777778',mph:'0.44704',knot:'0.51444444444444444444'},time:{ms:'0.001',s:'1',min:'60',h:'3600',day:'86400',week:'604800'},data:{bit:'1',kbit:'1000',Mbit:'1000000',Gbit:'1000000000',Tbit:'1000000000000',B:'8',kB:'8000',MB:'8000000',GB:'8000000000',TB:'8000000000000',KiB:'8192',MiB:'8388608',GiB:'8589934592',TiB:'8796093022208'},energy:{J:'1',kJ:'1000',Wh:'3600',kWh:'3600000',cal:'4.184',kcal:'4184'},power:{W:'1',kW:'1000',MW:'1000000',hp:'745.69987158227022'},pressure:{Pa:'1',kPa:'1000',bar:'100000',psi:'6894.757293168',atm:'101325'},angle:{deg:'1',rad:'57.2957795130823208768',grad:'0.9'},temperature:{'°C':'1','°F':'1',K:'1'}};
 function normalizeUnitExpression(expr){
- return String(expr??'').trim().replace(/×/g,'*').replace(/÷/g,'/').replace(/-?\d[\d.,]*/g,m=>{
+ return String(expr??'').trim().replace(/−/g,'-').replace(/×/g,'*').replace(/÷/g,'/').replace(/-?\d[\d.,]*/g,m=>{
   const sign=m.startsWith('-')?'-':'';
   let token=sign?m.slice(1):m;
   if(token.includes(',')){
@@ -124,8 +124,9 @@ function unitEntry(){
  const v=unitExpressions[unitActiveInput==='to'?'to':'from']||'';
  if(v==='0')return null;
  if(/(^|[*/(])-$/.test(v))return '-';
- const m=v.match(/(^|[*/(])?(-?)([\d.]+%?)$/);
- return m?(m[1]!==undefined?m[2]:'')+m[3]:null;
+ const m=v.match(/([-−]?)([\d.]+%?)$/);if(!m)return null;
+ const before=v.slice(0,-m[0].length);// the minus is the number's own at the start or after × ÷ (, otherwise it is subtraction
+ return (m[1]&&(before===''||/[*/(]$/.test(before))?m[1]:'')+m[2];
 }
 function updateUnitsDisplay(){
  const from=$('#unitValueFrom'),to=$('#unitValueTo');
@@ -215,8 +216,8 @@ function unitKeyInput(key){
  else if(key==='negate'){
    // ±: flip the sign of the last number, or start a negative one (works on a carried or finished value too)
    if(value==='0')value='';
-   const m=value.match(/(^|[+*/(-])(-?)([\d.]+%?)$/);
-   if(m)value=value.slice(0,value.length-m[0].length)+m[1]+(m[2]?'':'-')+m[3];
+   const m=value.match(/(^|[+*/(-])([-−]?)([\d.]+%?)$/);// a minus made with ± is "−" (shown in brackets)
+   if(m)value=value.slice(0,value.length-m[0].length)+m[1]+(m[2]?'':'−')+m[3];
    else if(/-$/.test(value)&&opener.test(value.slice(0,-1)))value=value.slice(0,-1);
    else if(value===''||/[+*/(-]$/.test(value))value+='-';
    else return false;
@@ -241,7 +242,7 @@ function unitKeyInput(key){
      value+='%';
    }else if(key==='-'){
      // like the calculator: − after × ÷ ( starts a negative number; after + or − it replaces / toggles
-     if(value==='')value='-';
+     if(value===''||value==='0')value='-';
      else if(/[*/(]$/.test(value))value+='-';
      else if(/[+-]$/.test(value)){
        if(value.endsWith('-'))value=value.slice(0,-1);

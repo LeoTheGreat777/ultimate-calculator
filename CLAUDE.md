@@ -110,9 +110,10 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
 - **Dropdowns:** on desktop Chrome/Edge the unit menus use `appearance: base-select`, styled like the app; phones keep
   native pickers. While a dropdown has focus the global keydown handler leaves keys to it.
 - **± and holding keys:** holding ⌫ clears everything, holding − flips the sign (`negate`, Units: `unitKeyInput('negate')`);
-  F9 does ± on a keyboard. A tap on − is always minus. Negative numbers inside a calculation display as `5×(−25)`
-  (`formatInputDisplay`), and one at the start as `(−5)` (`negativeInBrackets`), in every calculation shown (typing,
-  the line above a result, History, explanation steps, the typed Units value); finished results stay plain (`-15`).
+  F9 does ± on a keyboard. A tap on − is always minus. A minus made with ± is stored as `−` (U+2212), one typed with
+  the − key as `-`; the maths reads both the same (`tokenize`, `normalizeUnitExpression`). Display (`formatInputDisplay`):
+  after an operator any negative number is in brackets, `5×(−25)`; at the start only a ± one is, `(−5)`, a typed one
+  stays `-5`. A result turned negative with ± carries on as `(−84)+2` (`resultNegated`). Finished results stay plain.
   Units has the same keypad as the calculator, including ( ).
 - **Tips:** a sheet per mode (`HELP`, `showHelp`), opened from the footer "Tips" link or the ? key; its keyboard
   shortcuts section only shows on devices with a keyboard. When behaviour changes, update the tips in both languages.

@@ -101,9 +101,10 @@ async def desktop(browser, url, lang, theme):
     check(L + 'C clears only the number, then shows AC', await p.evaluate(state) == ['5+', 'AC'])
     await p.keyboard.type('3')
     await p.keyboard.press('F9')
-    check(L + 'F9 changes the sign', (await p.evaluate(state))[0] == '5+-3')
+    check(L + 'F9 changes the sign: 5+(−3)', await p.evaluate(R) == '5+(−3)', await p.evaluate(R))
 
-    # a negative number in a calculation shows in brackets: (−5), (−5)×3; a finished result stays plain
+    # negative numbers: one made with ± (hold −, F9) shows in brackets, (−5); one typed with − first stays -5;
+    # after an operator always in brackets, 5×(−3); finished results plain
     await p.keyboard.press('Escape')
     await p.keyboard.type('5')
     await p.keyboard.press('F9')
@@ -113,10 +114,23 @@ async def desktop(browser, url, lang, theme):
     check(L + '(−5)×3 = -15, shown with brackets above', await p.evaluate(R) == '-15' and await p.evaluate(X) == '(−5)×3',
           [await p.evaluate(R), await p.evaluate(X)])
     await p.keyboard.type('+2')
-    check(L + 'carrying a negative result: (−15)+2', await p.evaluate(R) == '(−15)+2', await p.evaluate(R))
+    check(L + 'a computed negative result carries on plain: -15+2', await p.evaluate(R) == '-15+2', await p.evaluate(R))
     await p.keyboard.press('Enter')
     steps = await p.evaluate("howData.steps.map(s=>s.text||s).join(' | ')")
-    check(L + 'explanation step: (−15) + 2 = -13', '(−15) + 2 = -13' in steps, steps)
+    check(L + 'explanation step: -15 + 2 = -13', '-15 + 2 = -13' in steps, steps)
+    await p.keyboard.press('Escape')
+    await p.keyboard.type('-5*-3')
+    check(L + 'typed − first: -5×(−3)', await p.evaluate(R) == '-5×(−3)', await p.evaluate(R))
+    await p.keyboard.press('Escape')
+    await p.keyboard.type('12*7=')
+    await p.keyboard.press('F9')
+    await p.keyboard.type('+2')
+    check(L + 'a result turned negative with ± carries on in brackets: (−84)+2', await p.evaluate(R) == '(−84)+2', await p.evaluate(R))
+    await p.keyboard.press('Escape')
+    await p.keyboard.type('(5')
+    await p.keyboard.press('F9')
+    await p.keyboard.type(')')
+    check(L + '( 5 ± ) keeps the ± number together', await p.evaluate('[expression,current]') == ['', '−5'], await p.evaluate('[expression,current]'))
 
     # history
     await calc(p, '7*6')
@@ -141,7 +155,10 @@ async def desktop(browser, url, lang, theme):
     await p.keyboard.press('Escape')
     await p.keyboard.type('5')
     await p.keyboard.press('F9')
-    check(L + 'Units: typed negative shows (−5)', await p.evaluate('unitValueFrom.value') == '(−5)', await p.evaluate('unitValueFrom.value'))
+    check(L + 'Units: 5 then ± shows (−5)', await p.evaluate('unitValueFrom.value') == '(−5)', await p.evaluate('unitValueFrom.value'))
+    await p.keyboard.press('Escape')
+    await p.keyboard.type('-5')
+    check(L + 'Units: typed − first stays -5', await p.evaluate('unitValueFrom.value') == '-5', await p.evaluate('unitValueFrom.value'))
 
     # tools
     await p.evaluate("switchMode('vat')")
