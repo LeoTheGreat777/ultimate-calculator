@@ -6,6 +6,13 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.7.1 – 2026-10-10
+
+### Fixed
+- In the VAT, Percent, Fuel and Energy fields on a computer, Backspace now deletes the selected text, or the digit
+  before the cursor, instead of always the last digit. A comma typed over a selection replaces it, and − changes
+  the sign instead of landing in the middle of the number.
+
 ## 0.7.0 – 2026-10-10
 
 ### Added

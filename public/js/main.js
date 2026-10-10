@@ -48,9 +48,12 @@ window.addEventListener('keydown',e=>{
  if(mode==='calc'&&nothingOpen&&(e.key==='^'||e.key==='!'||(e.key==='Dead'&&G_DEAD_CARET.includes(e.code)))){e.preventDefault();sciKey(e.key==='!'?'fact':'pow');return}
  if(mode==='calc'&&e.key.length===1&&!/^[0-9+\-*/%.,()=]$/.test(e.key)){e.preventDefault();e.stopImmediatePropagation();return}
  if(mode==='graph'&&e.key!=='Escape'){if($('#howModal').classList.contains('hidden')&&$('#historyPanel').classList.contains('hidden')&&graphKeydown(e))e.preventDefault();return}
+ // In a tool field that has the focus, Backspace is the browser's own: it deletes the selection, or the character before the cursor.
+ const toolFieldFocused=document.activeElement?.matches('#toolPanel input[data-tool-input]');
+ if((e.key==='Backspace'||e.code==='Backspace')&&toolFieldFocused)return;
  if(e.key==='Backspace'||e.code==='Backspace'){e.preventDefault();if(mode==='calc')backspace();else toolKeyInput('backspace');return;}
  if(e.key==='%'&&mode==='units'){e.preventDefault();toolKeyInput('%');return}
- if(e.key===','||e.key==='.'||e.key==='Decimal'){e.preventDefault();if(mode==='calc')digit('.');else if(document.activeElement?.matches('#toolPanel input')){const input=document.activeElement;if(WHOLE_NUMBER_FIELDS.has(input.id)||/[.,]/.test(input.value)){refuseKey(input);return}const pos=input.selectionStart??input.value.length;input.setRangeText(',',pos,pos,'end');input.dispatchEvent(new Event('input',{bubbles:true}))}else toolKeyInput('.');return}
+ if(e.key===','||e.key==='.'||e.key==='Decimal'){e.preventDefault();if(mode==='calc')digit('.');else if(toolFieldFocused){const input=document.activeElement,end=input.value.length,a=input.selectionStart??end,b=input.selectionEnd??a;if(WHOLE_NUMBER_FIELDS.has(input.id)||/[.,]/.test(input.value.slice(0,a)+input.value.slice(b))){refuseKey(input);return}input.setRangeText(',',a,b,'end');input.dispatchEvent(new Event('input',{bubbles:true}))}else toolKeyInput('.');return}
  if(mode==='calc'&&(e.key==='('||e.key===')')){e.preventDefault();parenthesis(e.key);return}
  // Delete = the C key: clears the number being typed (Esc clears everything)
  if(e.key==='Delete'&&nothingOpen&&(mode==='calc'||mode==='units')){e.preventDefault();if(mode==='calc')clearButtonAction();else toolKeyInput('clearEntry');return}

@@ -108,6 +108,9 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   (`saveTools`/`loadTools`); AC clears a tool. Field values are stored under the field's `id`.
 - **Storage:** all in the browser (`uc-history`, `uc-tools`, `uc-fuel-log`, `uc-graph`, `uc-lang`,
   `uc-theme`). Use `store.get/set` – localStorage can throw.
+- **Tool fields on a computer** edit like text boxes: a focused field keeps the browser's own Backspace, Delete and
+  cursor (selection respected); the global handler only takes over when no field has the focus (keys go to the
+  highlighted field, at the end). Comma and − are still the app's (one comma; − changes the sign).
 - **Phones:** the app's own keypad replaces the native keyboard (tool inputs are `readonly` with
   `inputmode="none"` on touch devices). Don't let the native keyboard open.
 - **Fitting the screen:** `fitLayout()` sizes keys (`--k`) and the display (`--disp`) to the screen in every

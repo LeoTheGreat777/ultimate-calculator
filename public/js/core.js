@@ -1,6 +1,6 @@
 // Shared basics: version, DOM and storage helpers, the saved language and theme, and the app's state.
 // Loaded first; every other script uses these globals.
-const VERSION='0.7.0';
+const VERSION='0.7.1';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 // localStorage can throw (blocked storage, private mode, quota full). Never let that break the app.

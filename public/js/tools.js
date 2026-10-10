@@ -296,6 +296,8 @@ $('#toolPanel').addEventListener('keydown',e=>{
  if(!e.target.matches('input'))return;
  if(e.ctrlKey||e.metaKey||e.altKey)return;
  if(WHOLE_NUMBER_FIELDS.has(e.target.id)&&/^[.,-]$/.test(e.key)){e.preventDefault();refuseKey(e.target);return}
+ // − changes the sign, as on the keypad (typed into the middle it would make the number unreadable)
+ if(e.key==='-'){e.preventDefault();setActiveToolInput(e.target);toolKeyInput('-');return}
  if(!/^[0-9.,-]$/.test(e.key)&&!['Backspace','Delete','ArrowLeft','ArrowRight','Home','End','Tab','Enter','Escape'].includes(e.key))e.preventDefault();
 });
 $('#toolPanel').addEventListener('input',e=>{
