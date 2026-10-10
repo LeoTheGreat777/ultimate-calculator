@@ -172,7 +172,13 @@ async def desktop(browser, url, lang, theme):
     T = 'document.documentElement.dataset.theme'
     check(L + f'theme on start is {theme}', await p.evaluate(T) == theme)
     await p.click('#themeButton')
-    check(L + 'theme menu lists 4 themes', await p.locator('#themeMenu .theme-option').count() == 4)
+    check(L + 'theme menu lists every theme', await p.locator('#themeMenu .theme-option').count() == await p.evaluate('THEMES.length'))
+    for name in await p.evaluate("THEMES.filter(n=>n!=='auto')"):
+        await p.click(f'[data-theme-pick="{name}"]')
+        await p.wait_for_timeout(650)
+        got = await p.evaluate("[document.documentElement.dataset.theme, getComputedStyle(document.body).backgroundColor, getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()]")
+        check(L + f'theme {name} applies', got[0] == name and got[2] != '', got)
+        await p.click('#themeButton')
     await p.click('[data-theme-pick="black"]')
     await p.wait_for_timeout(700)
     await p.reload()
@@ -208,6 +214,14 @@ async def phone(browser, url, lang, theme, size):
             check(L + f'{m}: landscape layout fits without scrolling', st == [True, '0'], st)
     width = await p.evaluate('document.documentElement.scrollWidth')
     check(L + 'no sideways scrolling', width <= size[0], width)
+    await p.tap('#themeButton')
+    menu = await p.evaluate("(()=>{const r=themeMenu.getBoundingClientRect();return [r.top>=0,r.right<=innerWidth+1,r.bottom<=innerHeight+1,themeMenu.scrollHeight>themeMenu.clientHeight]})()")
+    check(L + 'theme menu fits on the screen', all(menu[:3]), menu)
+    if menu[3]:
+        await p.evaluate("themeMenu.scrollTop=themeMenu.scrollHeight")
+    await p.tap('[data-theme-pick="retro"]')
+    await p.wait_for_timeout(300)
+    check(L + 'last theme in the menu can be picked', await p.evaluate('document.documentElement.dataset.theme') == 'retro')
     check(L + 'no JavaScript errors', not p.errors, p.errors)
     await p.context.close()
 

@@ -15,7 +15,7 @@ function chColors(){
  const s=getComputedStyle(document.body),v=n=>s.getPropertyValue(n).trim(),light=chIsLight(v('--card'));
  return{light,text:v('--text'),muted:v('--muted'),card:v('--card'),card2:v('--card2'),key:v('--key'),accent:v('--accent'),danger:v('--danger')||'#ff6666',
   grid:light?'rgba(17,23,34,.07)':'rgba(255,255,255,.06)',axis:light?'rgba(17,23,34,.38)':'rgba(255,255,255,.34)',
-  series:light?['#3478e5','#e07b1a','#1f9d5a']:['#6ea8fe','#f5a65b','#4cd38a']};
+  series:[1,2,3].map(i=>v('--series'+i)).every(Boolean)?[1,2,3].map(i=>v('--series'+i)):light?['#3478e5','#e07b1a','#1f9d5a']:['#6ea8fe','#f5a65b','#4cd38a']};// line colours come from the theme
 }
 // On big screens the app is scaled up (app.js, window.__uiZoom): screen pixels / zoom = CSS pixels.
 const chZoom=()=>window.__uiZoom||1;

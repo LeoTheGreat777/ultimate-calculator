@@ -100,11 +100,12 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   `window.__uiZoom`, CSS var `--z`). Viewport units must be written `calc(100dvh / var(--z,1))`, and any code that
   turns screen coordinates (clientX/Y, getBoundingClientRect, innerHeight) into CSS sizes must divide by
   `window.__uiZoom` (see `chZoom` in charts.js, `Z` in history.js).
-- **Themes:** Auto (follows the device), Light, Dark, Black (OLED). Every colour is a token in the theme blocks at the
+- **Themes:** Auto (follows the device), Light, Paper, Dark, Graphite, Black (OLED), Retro (green). Every colour is a token in the theme blocks at the
   top of styles.css (`html[data-theme]`); never write a colour into a rule, add a token instead. The `<head>` script and
   `applyTheme` (ui.js) set `data-theme`; the theme button opens a menu (`THEMES`, `openThemeMenu`), each swatch shows the
   theme's real colours via `[data-theme-preview]`. A new theme: a block in styles.css, its name in `THEMES`, texts in
-  `T` (`themeX`). Charts read the tokens (`chColors`). Changing theme: circle reveal from the theme button (View
+  `T` (`themeX`). Charts and graph lines read the tokens (`chColors`, `--series1..3`).
+  Check a new theme's contrast (text on card and keys, text on the accent) and look at it in every mode. Changing theme: circle reveal from the theme button (View
   Transitions), fade fallback, instant with reduced motion.
 - **Dropdowns:** on desktop Chrome/Edge the unit menus use `appearance: base-select`, styled like the app; phones keep
   native pickers. While a dropdown has focus the global keydown handler leaves keys to it.

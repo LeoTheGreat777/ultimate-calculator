@@ -2,7 +2,8 @@
 // copying, holding keys, and installing on a phone.
 // Themes. The colours are in styles.css (html[data-theme]); a new theme is a block there, a name here and its texts.
 // The theme button opens a small menu with a preview of each theme.
-const THEMES=['auto','light','dark','black'];
+const THEMES=['auto','light','paper','dark','graphite','black','retro'];
+const LIGHT_THEMES=['light','paper'];// the others are dark (the button shows ☀ or ☾)
 const prefersLight=matchMedia('(prefers-color-scheme: light)');
 const resolveTheme=name=>name==='auto'?(prefersLight.matches?'light':'dark'):name;
 function resolvedTheme(){return resolveTheme(theme)}
@@ -10,7 +11,7 @@ function applyTheme(){
  const root=document.documentElement,shown=resolvedTheme();
  root.dataset.theme=shown;
  const b=$('#themeButton');
- if(b){b.textContent=shown==='light'?'☀':'☾';b.setAttribute('aria-label',t('theme'));b.title=t('theme')}
+ if(b){b.textContent=LIGHT_THEMES.includes(shown)?'☀':'☾';b.setAttribute('aria-label',t('theme'));b.title=t('theme')}
  // the browser's own bar (Android, installed app) takes the theme's background
  $('meta[name="theme-color"]')?.setAttribute('content',getComputedStyle(root).getPropertyValue('--bg').trim()||'#0b0f14');
  redrawCharts();
@@ -42,14 +43,15 @@ function renderThemeMenu(){
   m.addEventListener('click',e=>{const b=e.target.closest('[data-theme-pick]');if(!b)return;closeThemeMenu();setTheme(b.dataset.themePick)});
  }
  m.setAttribute('aria-label',t('theme'));
- const name={auto:'themeAuto',light:'themeLight',dark:'themeDark',black:'themeBlack'},note={auto:'themeAutoNote',black:'themeBlackNote'};
+ const key=n=>'theme'+n[0].toUpperCase()+n.slice(1),note={auto:1,paper:1,graphite:1,black:1,retro:1};
  m.innerHTML=THEMES.map(n=>{
   // each swatch carries the theme's own colours (data-theme-preview), so it shows the real thing
   const swatch=n==='auto'
    ?'<span class="theme-swatch theme-swatch-auto" aria-hidden="true"><span data-theme-preview="light"><i></i></span><span data-theme-preview="dark"><i></i></span></span>'
    :'<span class="theme-swatch" data-theme-preview="'+n+'" aria-hidden="true"><i></i></span>';
   return '<button type="button" class="theme-option" role="menuitemradio" aria-checked="'+(theme===n)+'" data-theme-pick="'+n+'">'+swatch+
-   '<span class="theme-option-text"><span>'+esc(t(name[n]))+'</span>'+(note[n]?'<small>'+esc(t(note[n]))+'</small>':'')+'</span><span class="theme-check" aria-hidden="true">✓</span></button>';
+   '<span class="theme-option-text"><span>'+esc(t(key(n)))+'</span>'+(note[n]?'<small>'+esc(t(key(n)+'Note'))+'</small>':'')+'</span><span class="theme-check" aria-hidden="true">✓</span></button>'+
+   (n==='auto'||n==='paper'?'<hr>':'');// lines between Auto, the light themes and the dark ones
  }).join('');
 }
 function openThemeMenu(){
