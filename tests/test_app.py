@@ -11,8 +11,10 @@ import asyncio
 import functools
 import http.server
 import re
+import shutil
 import socketserver
 import sys
+import tempfile
 import threading
 from pathlib import Path
 
@@ -30,11 +32,11 @@ def check(name, ok, detail=''):
         print(('PASS ' if ok else 'FAIL ') + name + (f'  | {detail}' if detail != '' else ''))
 
 
-def serve():
+def serve(directory=PUBLIC):
     class Quiet(http.server.SimpleHTTPRequestHandler):
         def log_message(self, *args):
             pass
-    handler = functools.partial(Quiet, directory=str(PUBLIC))
+    handler = functools.partial(Quiet, directory=str(directory))
     server = socketserver.TCPServer(('127.0.0.1', 0), handler)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     return f'http://127.0.0.1:{server.server_address[1]}/'
@@ -435,6 +437,51 @@ async def phone(browser, url, lang, theme, size):
     await p.context.close()
 
 
+async def offline(browser):
+    """The app opens without internet (sw.js), and still updates: a new version replaces the saved copy."""
+    folder = Path(tempfile.mkdtemp())
+    shutil.copytree(PUBLIC, folder, dirs_exist_ok=True)
+    url = serve(folder)
+    ctx = await browser.new_context(viewport={'width': 1280, 'height': 860})
+    await ctx.add_init_script(SEED % ('en', 'dark'))
+    p = await ctx.new_page()
+    errors = []
+    p.on('pageerror', lambda e: errors.append(str(e)))
+    await p.goto(url)
+    await p.evaluate("navigator.serviceWorker.ready")
+    await p.wait_for_function("navigator.serviceWorker.controller!==null", timeout=5000)
+    saved = "caches.open('uc-app').then(c=>c.keys()).then(k=>k.map(r=>r.url.replace(location.origin,'')))"
+    await p.wait_for_function(f"{saved}.then(k=>k.some(u=>u.includes('main.js')))", timeout=5000)
+
+    async def works(want_version):
+        await p.wait_for_timeout(300)
+        footer = await p.inner_text('.app-footer')
+        r = await calc(p, '6*7')
+        return ('v' + want_version) in footer and r == '42'
+
+    await ctx.set_offline(True)
+    await p.reload()
+    check('offline: the app opens and calculates', await works(VERSION))
+    await ctx.set_offline(False)
+
+    # A new version on the server: the next load (online) shows it, and the old version's files are deleted.
+    html = (folder / 'index.html').read_text().replace(f'?v={VERSION}"', '?v=9.9.9"').replace(f'>v{VERSION}<', '>v9.9.9<')
+    (folder / 'index.html').write_text(html)
+    (folder / 'js/core.js').write_text((folder / 'js/core.js').read_text().replace(f"VERSION='{VERSION}'", "VERSION='9.9.9'"))
+    await p.reload()
+    check('offline: a new version shows on the next load', await works('9.9.9'))
+    await p.wait_for_timeout(500)
+    keys = await p.evaluate(saved)
+    check('offline: old versions are removed from the saved copy',
+          not any(f'v={VERSION}' in k for k in keys) and any('v=9.9.9' in k for k in keys), keys)
+    await ctx.set_offline(True)
+    await p.reload()
+    check('offline: the new version opens offline too', await works('9.9.9'))
+    check('offline: no JavaScript errors', not errors, errors)
+    await ctx.close()
+    shutil.rmtree(folder, ignore_errors=True)
+
+
 async def main():
     url = serve()
     async with async_playwright() as pw:
@@ -447,6 +494,7 @@ async def main():
         for lang, theme, size in [('en', 'dark', (390, 844)), ('el', 'light', (360, 740)), ('en', 'light', (820, 1180)),
                                   ('el', 'dark', (844, 390)), ('en', 'light', (740, 360))]:  # the last two: phones held sideways
             await phone(browser, url, lang, theme, size)
+        await offline(browser)
         await browser.close()
     print(f'{sum(results)}/{len(results)} checks passed')
     sys.exit(0 if all(results) else 1)

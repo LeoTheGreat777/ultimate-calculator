@@ -14,6 +14,7 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 - Calculation history
 - Copy results
 - Keyboard support
+- Works offline once opened: the app keeps a copy on the device and updates it when online
 - Step-by-step explanations of how a result was worked out
 - Brackets that change nothing are tidied away; C clears the number being typed, AC everything
 

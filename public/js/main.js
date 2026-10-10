@@ -79,3 +79,5 @@ window.__UC_VERSION=VERSION;$('#footerVersion').textContent=`v${VERSION}`;loadTo
 setupHistoryGestures();
 // The browser's own F-keys (help, search, full screen ...) stay out of the app's way; F9 is ± in the app.
 document.addEventListener('keydown',e=>{if(/^F(?:[1-8]|1[0-2])$/.test(e.key))e.stopImmediatePropagation()},true);
+// Works offline: sw.js keeps a copy of the app on the device (the page still comes from the network first).
+if('serviceWorker' in navigator&&location.protocol!=='file:')addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));

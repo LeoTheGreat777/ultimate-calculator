@@ -142,6 +142,11 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   shortcuts section only shows on devices with a keyboard. When behaviour changes, update the tips in both languages.
 - **Copying:** tapping a finished result copies it (calculator and tools), so the copy button can be hidden
   on short screens.
+- **Offline:** `public/sw.js` (registered at the end of main.js) keeps a copy of the app in the cache `uc-app`. The page
+  comes from the network first (`no-cache`), the saved copy only offline or after 3 s; `?v=` files from the saved copy
+  first; each fresh page saves the files it links to and deletes other versions' `?v=` files. Nothing to update per
+  version, but every file the app needs must be linked from index.html with `?v=`, and the app must not fetch anything
+  else it needs to start. Test with `offline()` in tests/test_app.py.
 - **Keyboard:** desktop typing is handled in the `window` `keydown` listener in `main.js`.
   Keys that do nothing in a mode are ignored.
 
