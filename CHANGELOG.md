@@ -6,6 +6,31 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.5.1 – 2026-10-10
+
+### Changed
+- A number can have up to 15 digits, and a calculation up to 150 characters, in every mode. A key that can't add
+  more gives a small shake instead of doing nothing silently.
+- Very large and very small numbers show with a proper power of ten, 1,234567 × 10²⁹, in results, Units, the tools and
+  graph labels. Results show up to 16 digits in full.
+- When a calculation can't be done, the reason shows (Can't divide by 0, Too large, Too small, Error) with the
+  calculation above it. It stays until the next key, so you can fix it with ⌫ or start over with AC.
+- Results above 10¹⁰⁰⁰⁰ say "Too large", as on Windows' calculator. 3248! is the largest factorial.
+
+### Fixed
+- Long calculations no longer disappear off the edge: the text gets smaller, then the end you're typing stays in view
+  and the start fades out (swipe to see it). The same for the calculation above a result, Units values and tool fields.
+- 10^−99999 showed "× 10^0", and very small values in Units showed "0,".
+- e^1000 and similar large powers made the app pause for about 2 seconds; they're now instant.
+- "Error" disappeared after a moment and took the last number typed with it.
+- Huge amounts in VAT, Fuel and Energy showed "∞ €" or 40-digit figures.
+- Units: 1 ÷ 0 kept showing the previous conversion.
+- Graph: axis labels overlapped when zoomed far out, and labels hid behind the buttons; far from 0 curves turned
+  into steps. Pan and zoom now stop where the graph is still accurate.
+- History and the explanation wrap long calculations instead of cutting them off.
+- x², xʸ and x! now apply to the whole value: −3 then x² gave −9 instead of 9, and x² three times on 9 gave 9¹⁶
+  instead of 9⁸.
+
 ## 0.5.0 – 2026-10-10
 
 ### Added

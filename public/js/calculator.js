@@ -7,8 +7,15 @@ function formatExpressionDisplay(s){
 }
 let resultNegated=false;// the finished result was turned negative with ± (so carrying it on shows it in brackets)
 let lastShown='';// how the finished calculation (lastExpression) is shown above the result
+// A calculation that cannot be worked out shows why ("Can't divide by 0", "Too large" …) in place of the result,
+// with the calculation above it; the next key goes on from the calculation, so it can be fixed. ''=no error.
+let calcError='';
+const ERROR_TEXT={DIV0:'errDiv0',BIG:'errBig',SMALL:'errSmall'};
+const calcErrorKind=e=>ERROR_TEXT[e?.message]?e.message:'MATH';
+// how long the calculation being typed is (a carried result counts as one character), for MAX_INPUT
+function inputLength(){const s=expression+current;return s.length-(carry&&carry.raw&&s.includes(carry.raw)?carry.raw.length-1:0)}
 
-function carryText(r,digits){const abs=r.n<0n?{n:-r.n,d:r.d}:r,raw=ratToDecimal(r,digits);carry={text:ratToDecimal(abs,digits),value:abs,raw,shown:fmt(r),plain:ratToRoundedDecimal(r,6)};return raw}
+function carryText(r,digits){const abs=r.n<0n?{n:-r.n,d:r.d}:r,places=digits+Math.max(0,r.d.toString().length-abs.n.toString().length),raw=ratToDecimal(r,places);/* tiny values keep their digits too */carry={text:ratToDecimal(abs,places),value:abs,raw,shown:fmt(r)};carry.plain=/×/.test(carry.shown)?'':ratToRoundedDecimal(r,6);/* what ⌫ edits; one shown as × 10ⁿ is deleted whole */return raw}
 function explanationForExpression(input,result){
  let tokens;try{tokens=tokenize(input)}catch{return null}let pos=0;
  // a minus in front of a number or a bracket makes it negative: 3×-5, -(2+3)
@@ -40,41 +47,35 @@ function explanationForExpression(input,result){
  return{formula:formatExpressionDisplay(input),steps,result:formatRat(result)}
 }
 
-function resetHow(){howData=null;calcHowData=null;$('#howButton')?.classList.add('hidden')}
+function resetHow(){calcError='';howData=null;calcHowData=null;$('#howButton')?.classList.add('hidden')}
 function render(){
  if(mode!=='calc')return;
  renderSciBar();
  const raw=expression+current;
- const display=current==='Error'?'Error':justCalculated?fmt(lastResult):(raw?formatExpressionDisplay(raw):'0');
+ const display=calcError?t(ERROR_TEXT[calcError]||'errMath'):justCalculated?fmt(lastResult):(raw?formatExpressionDisplay(raw):'0');
  $('#calculatorDisplay').classList.remove('tool-display','tool-empty');
  $('#calculatorDisplay').classList.toggle('calculated',justCalculated);
- $('#expression').textContent=justCalculated?(lastShown||formatExpressionDisplay(lastExpression)):'';
+ $('#calculatorDisplay').classList.toggle('error',Boolean(calcError));
+ $('#expression').textContent=justCalculated?(lastShown||formatExpressionDisplay(lastExpression)):calcError?formatExpressionDisplay(raw):'';
  const exprEl=$('#expression');
  $('#result').textContent=display;
  $('#result').classList.remove('long-value','near-limit');
  const hasEntry=Boolean(raw);
- $('#clearButton').textContent=current&&!justCalculated?'C':'AC';// C clears the number being typed; with none, the key clears everything
+ $('#clearButton').textContent=current&&!justCalculated&&!calcError?'C':'AC';// C clears the number being typed; with none, the key clears everything
  $('#howButton').classList.toggle('hidden',!howData);
  $('#chartButton')?.classList.add('hidden');
  syncFuelButtons();
  requestAnimationFrame(()=>{
-   if(exprEl){
-     if(justCalculated){
-       exprEl.style.fontSize='';
-       exprEl.style.letterSpacing='';
-       exprEl.scrollLeft=0;
-     }else{
-       fitDisplayText(exprEl,14);
-     }
-   }
+   // too long to fit: the text gets smaller, then shows its end (what was typed last); the start fades out
+   if(exprEl)fitDisplayText(exprEl,12,true);
    const r=$('#result');
-   if(r)fitDisplayText(r,32);
+   if(r)fitDisplayText(r,32,!justCalculated&&!calcError);
  });
 }
 function clearAll(){carry=null;resultNegated=false;expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null;lastOperation=null;resetHow();render()}
 function clearCurrent(){resetHow();if(current){current='';currentIsPercent=false;render();return}clearAll()}
 function clearButtonAction(){
- if(justCalculated){clearAll();return}
+ if(justCalculated||calcError){clearAll();return}// the key shows AC then
 
  if(current){clearCurrent();return}
  if(expression){clearAll();return}
@@ -83,6 +84,7 @@ function clearButtonAction(){
 function backspace(){resetHow();if(justCalculated){clearAll();return}if(!current&&carry&&expression===carry.raw){expression=carry.plain;carry=null}if(current){current=current.slice(0,-1);if(current==='−')current='-';currentIsPercent=false}else if(expression){const f=expression.match(/(?:asin|acos|atan|sin|cos|tan|ln|log|√|∛)\($/);expression=expression.slice(0,-(f?f[0].length:1))}render()}
 function digit(v){
  if(v===',')v='.';
+ if(!justCalculated&&(digitCount(current)>=MAX_DIGITS&&!currentIsPercent||inputLength()>=MAX_INPUT)){refuseKey();return}// 15 digits a number, 150 characters
  resetHow();
  if(justCalculated){expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null}
  // after a closed bracket or a percent, a new number is multiplied: (8+9)5 → (8+9)×5, 10%5 → 10%×5 (as in Units)
@@ -93,13 +95,13 @@ function digit(v){
  render()
 }
 // Brackets that change nothing are dropped, so the screen never fills with ((((5)))).
-// A pair is useless when it holds only one number – (5), or (−5) after × ÷ ( or at the start –
+// A pair is useless when it holds only one number – (5), or (−5) after × ÷ ( or at the start when no power or ! follows –
 // or when it holds exactly one other bracket pair – ((2+3)). Brackets with % inside are kept (50+(10%) ≠ 50+10%).
 // Works on calculator (× ÷) and Units (* /) expressions.
-function uselessParen(inner,before){
+function uselessParen(inner,before,after=''){
  if(/(?:sin|cos|tan|ln|log|√|∛)$/.test(before)&&!(inner[0]==='('&&inner.at(-1)===')'))return false;// sin(5) keeps its brackets
  if(/^\d+(?:\.\d*)?$/.test(inner))return true;
- if(/^[-−]\d+(?:\.\d*)?$/.test(inner))return !/[+\-]$/.test(before);
+ if(/^[-−]\d+(?:\.\d*)?$/.test(inner))return !/[+\-]$/.test(before)&&!/^[\^!]/.test(after);// (−3)² needs them
  if(inner[0]==='('&&inner.at(-1)===')'){let d=0;for(let i=0;i<inner.length;i++){d+=inner[i]==='('?1:inner[i]===')'?-1:0;if(d===0)return i===inner.length-1}}
  return false;
 }
@@ -122,7 +124,7 @@ function tidyParens(expr){
   for(let j=0;j<s.length;j++){
    if(s[j]==='(')stack.push(j);
    else if(s[j]===')'){const i=stack.pop();if(i===undefined)continue;
-    if((i===0&&j===s.length-1)||uselessParen(s.slice(i+1,j),s.slice(0,i))){s=s.slice(0,i)+s.slice(i+1,j)+s.slice(j+1);changed=true;break}}
+    if((i===0&&j===s.length-1)||uselessParen(s.slice(i+1,j),s.slice(0,i),s.slice(j+1))){s=s.slice(0,i)+s.slice(i+1,j)+s.slice(j+1);changed=true;break}}
   }
  }
  return s;
@@ -161,7 +163,6 @@ function operator(op){
 // ± (hold − on the keypad, F9 on a keyboard): flips the sign of the number being typed, or of the result.
 // With no number started yet it starts a negative one (the same as − after × or ÷).
 function negate(){
- if(current==='Error')return;
  resetHow();
  if(justCalculated){
   if(!lastResult)return;
@@ -180,7 +181,6 @@ function negate(){
 }
 // One "( )" key: closes a parenthesis when one is open and a number was just typed, otherwise opens one (after a number it adds × first).
 function smartParen(){
- if(current==='Error')return;
  const full=justCalculated?'':expression+current,open=(full.match(/\(/g)||[]).length-(full.match(/\)/g)||[]).length,afterValue=/[0-9.%)πe!]$/.test(full);
  if(open>0&&afterValue){parenthesis(')');return}
  if(afterValue)operator('×');
@@ -190,15 +190,17 @@ function percent(){resetHow();if(!current||currentIsPercent)return;current+='%';
 function parseLastOperation(full){const m=String(full).match(/^(.*?)([+\-×÷])([-−]?\d+(?:[.,]\d+)?%?)$/);return m?{op:m[2],rhs:m[3]}:null}
 function repeatEquals(){
  if(!justCalculated||!lastOperation)return false;
- try{const rhs=lastOperation.rhs,base=carryText(lastResult,24),full=base+lastOperation.op+rhs,value=evalExpr(full);lastExpression=full;lastShown=formatExpressionDisplay(full);lastResult=value;justCalculated=true;resultNegated=false;howData=explanationForExpression(full,value)||{formula:formatExpressionDisplay(full),steps:[`${formatExpressionDisplay(full)} = ${fmt(value)}`],result:fmt(value)};calcHowData=howData;saveHistory({expression:full,result:value,how:howData});render();return true}catch{return false}
+ resetHow();
+ try{const rhs=lastOperation.rhs,base=carryText(lastResult,24),full=base+lastOperation.op+rhs,value=evalExpr(full);lastExpression=full;lastShown=formatExpressionDisplay(full);lastResult=value;justCalculated=true;resultNegated=false;howData=explanationForExpression(full,value)||{formula:formatExpressionDisplay(full),steps:[`${formatExpressionDisplay(full)} = ${fmt(value)}`],result:fmt(value)};calcHowData=howData;saveHistory({expression:full,result:value,how:howData});render();return true}catch(e){calcError=calcErrorKind(e);render();return true}
 }
 function equals(){
  if(justCalculated&&repeatEquals())return;
+ resetHow();
  let full=expression+current;if(!full||/[+\-×÷^]$/.test(full))return;
  if(/[()]/.test(full)){full=tidyParens(full);expression=full;current=''}// close what is open, drop brackets that change nothing
  if(!full||/[+\-×÷(^]$/.test(full))return;
  try{const value=evalExpr(full);lastExpression=full;lastShown=formatExpressionDisplay(full);lastResult=value;lastOperation=parseLastOperation(full);justCalculated=true;resultNegated=false;currentIsPercent=false;howData=explanationForExpression(full,value)||{formula:formatExpressionDisplay(full),steps:[`${formatExpressionDisplay(full)} = ${fmt(value)}`],result:fmt(value)};saveHistory({expression:full,result:value,how:howData});render()}
- catch{current='Error';currentIsPercent=false;render();setTimeout(()=>{if(current==='Error'){current='';render()}},900)}
+ catch(e){calcError=calcErrorKind(e);render()}
 }
 // ---------- Scientific ----------
 // Basic or Scientific is a view of the same calculator (the switch on the display, saved as uc-sci): the same
@@ -252,7 +254,6 @@ function lastValueStart(s){
  return i;
 }
 function sciKey(k){
- if(current==='Error')return;
  resetHow();
  if(k==='2nd'){sciSecond=!sciSecond;renderCalcKeypad();fitLayout();return}
  if(k==='angle'){angleUnit=angleUnit==='deg'?'rad':'deg';store.set('uc-angle',angleUnit);renderCalcKeypad();render();return}
@@ -264,19 +265,27 @@ function sciKey(k){
  const grouped=v=>{if(v[0]!=='(')return false;let d=0;for(let i=0;i<v.length;i++){d+=v[i]==='('?1:v[i]===')'?-1:0;if(d===0)return i===v.length-1}return false};
  const wrap=v=>grouped(v)?v:'('+v+')';
  const plainNumber=v=>/^[0-9.]+$/.test(v);
+ // x², xʸ, x! … apply to the whole value: a negative one or a power gets brackets first, (−3)² = 9 and (9²)² = 9⁴
+ // (without them −3^2 would be −9 and 9^2^2 would be 9^(2^2))
+ const topLevel=v=>{let t=v;for(let u;(u=t.replace(/\([^()]*\)/g,''))!==t;)t=u;return t};
+ const whole=v=>/^[-−]/.test(v)||/\^/.test(topLevel(v))?'('+v+')':v;
  if(SCI_FN[k]){expression=value?head+SCI_FN[k]+wrap(value):expression+SCI_FN[k]+'(';}
  else if(k==='exp'||k==='pow10'){const b=k==='exp'?'e':'10';expression=value?head+b+'^'+(plainNumber(value)?value:wrap(value)):expression+b+'^(';}
  else if(k==='inv'){expression=value?head+'(1÷'+(plainNumber(value)||value==='π'||value==='e'?value:wrap(value))+')':expression+'1÷(';}
  else if(k==='pi'||k==='e'){const c=k==='pi'?'π':'e';expression+=(value?'×':'')+c;}
  else if(!value)return;// the rest need a value before them
- else if(k==='sq')expression+='^2';
- else if(k==='cube')expression+='^3';
- else if(k==='pow')expression+='^';
- else if(k==='root')expression+='^(1÷';
- else if(k==='fact')expression+='!';
+ else if(k==='sq')expression=head+whole(value)+'^2';
+ else if(k==='cube')expression=head+whole(value)+'^3';
+ else if(k==='pow')expression=head+whole(value)+'^';
+ else if(k==='root')expression=head+whole(value)+'^(1÷';
+ else if(k==='fact')expression=head+whole(value)+'!';
  else if(k==='ee')expression+='×10^';
  render();
 }
+// A key that would make the calculation longer than MAX_INPUT does nothing (with a small shake of the display).
+function keepShort(fn){return(...args)=>{const was=[expression,current,currentIsPercent],before=inputLength(),out=fn(...args);
+ if(inputLength()>MAX_INPUT&&inputLength()>before){[expression,current,currentIsPercent]=was;refuseKey();render();return false}return out}}
+operator=keepShort(operator);parenthesis=keepShort(parenthesis);percent=keepShort(percent);sciKey=keepShort(sciKey);
 function renderCalcKeypad(){
  const sci=mode==='calc'&&sciMode;
  $('#keypad').className='keypad'+(sci?' sci':'');

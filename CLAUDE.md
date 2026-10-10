@@ -49,7 +49,7 @@ Everything the app serves is in `public/` (the web root for both GitHub Pages an
 | `history.js` | saved calculations, the History sheet and its gestures |
 | `units.js` | unit data and names, conversion, the two values, `unitKeyInput` |
 | `tools.js` | VAT, Fuel, Energy: fields, saved values, calculations, `toolKeyInput`, tool field events |
-| `layout.js` | `fitLayout` (fits every mode to the screen), long results, zoom on big screens |
+| `layout.js` | `fitLayout` (fits every mode to the screen), long text (`fitDisplayText`, `refuseKey`), zoom on big screens |
 | `ui.js` | theme, `setLanguage`/`applyLanguage`, modes and tabs (`switchMode`, `renderTool`), dialogs, hold keys, install |
 | `help.js` | Tips & shortcuts text (`HELP`) and `showHelp` |
 | `main.js` | keypad and button wiring, the desktop keyboard handler, start-up. Loaded last |
@@ -65,7 +65,19 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
 
 - **Exact math:** the calculator uses fractions (`rat`, `ratAdd`, ... with BigInt), never floats.
   `evalExpr` parses with operator precedence; `50+10%` = 55, `50×10%` = 5. Results show rounded to
-  6 decimals (`formatRat`), with scientific notation for very small/large values.
+  6 decimals and at most 16 significant digits (`formatRat`); from 10¹⁶ up, and for values that would round to 0,
+  `1,234567 × 10²⁰` (`ratScientific`, superscript exponent). The same in Units, tools (`money`) and charts (`chNum`).
+- **Limits** (numbers.js, as on Windows' calculator): typed numbers have at most 15 digits (`MAX_DIGITS`, `digitCount`)
+  in every mode, a calculation at most 150 characters (`MAX_INPUT`; Graph functions 120), and every step of a
+  calculation must stay below 10¹⁰⁰⁰⁰ and (unless 0) above 10⁻¹⁰⁰⁰⁰ (`ratLimit`), else "Too large"/"Too small".
+  That also keeps everything fast: exact powers only up to 40000 bits, beyond that logarithms (`ratPowApprox`).
+  A key that can't do more calls `refuseKey()` (a small shake, a short vibration) and does nothing.
+- **Errors:** `calcError` ('DIV0', 'BIG', 'SMALL', 'MATH'; texts `errDiv0`… via `ERROR_TEXT`) shows the reason in place
+  of the result with the calculation above it, until the next key, which goes on from the calculation (AC clears).
+  Units shows the reason on the other value (`unitError`). Never put "Error" into `current`.
+- **Long text:** `fitDisplayText(el,minSize,showEnd)` shrinks text to minSize, then scrolls it: a result shows its
+  start, a calculation (typed or above a result) its end; the cut-off side fades (`fade-start`/`fade-end`). Used for the result and
+  expression lines, Units values and tool fields.
 - **Carry:** continuing after a result uses its full-precision value (`carryText`, `carry`), but the
   screen shows it rounded via `formatExpressionDisplay`. Use that function to display expressions.
 - **Brackets:** useless ones are dropped (`tidyParens`, `closeParen`): `((5))` -> `5`, open ones at the end
@@ -99,7 +111,7 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   `html.landscape` in styles.css). The app is not locked to portrait (iPhones can't be), so both must work.
 - **Scientific:** a view of the Calculator, not a mode: the f(x) switch on the display (`sciMode`, `uc-sci`) adds 15
   keys above the basic ones (beside them in landscape; `sciKeysHtml`, `.keypad.sci`). Functions apply to the value
-  just typed / the result / the bracket just closed (`sciKey`, `lastValueStart`), else open `sin(`. 2nd swaps keys
+  just typed / the result / the bracket just closed (`sciKey`, `lastValueStart`), else open `sin(`. x², xʸ, ʸ√x and x! take the whole value, so a negative one or a power gets brackets: (−3)², (9²)². 2nd swaps keys
   for inverses; Deg/Rad is `angleUnit` (`uc-angle`). The engine (numbers.js: `evalExpr`, `ratPow`, `sciFunction`)
   stays exact where the answer is exact and rounds floats to 15 digits otherwise. Shown with superscripts and sin⁻¹
   (`sciPretty`). Keyboard: ^ and !.

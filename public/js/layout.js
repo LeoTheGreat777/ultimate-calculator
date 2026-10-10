@@ -1,21 +1,36 @@
 // Fitting the app to the screen: key and display sizes (fitLayout), long results, and zoom on big screens.
-function fitDisplayText(el,minSize){
+// Text too long for its line (a result, a calculation, a Units value, a tool field): first a smaller font, down to
+// minSize; if it still does not fit, it scrolls sideways (swipe) and shows its start, or with showEnd its end –
+// what was typed last. The side that is cut off fades out (fade-start / fade-end).
+function fitDisplayText(el,minSize,showEnd=false){
  if(!el)return;
  el.classList.remove('near-limit');
- el.style.fontSize='';
- el.style.letterSpacing='';
- el.scrollLeft=0;
+ el.style.removeProperty('font-size');
+ el.style.removeProperty('letter-spacing');
+ el.dataset.fit='1';
  requestAnimationFrame(()=>{
    if(!el.isConnected)return;
-   const width=el.clientWidth;
-   const contentWidth=el.scrollWidth;
-   if(!width||contentWidth<=width+2)return;
-   const base=parseFloat(getComputedStyle(el).fontSize);
-   const target=Math.max(minSize,base*(width/contentWidth)*0.97);
-   el.style.fontSize=target+'px';
-   el.style.letterSpacing='-0.04em';
-   el.scrollLeft=0;
+   const width=el.clientWidth,contentWidth=el.scrollWidth;
+   if(width&&contentWidth>width+2){
+     const base=parseFloat(getComputedStyle(el).fontSize);
+     el.style.setProperty('font-size',Math.max(minSize,base*(width/contentWidth)*0.97)+'px','important');// beats the !important sizes of .unit-value
+     el.style.setProperty('letter-spacing','-0.04em','important');
+   }
+   el.scrollLeft=showEnd?el.scrollWidth:0;
+   fitFade(el);
  });
+}
+function fitFade(el){
+ const max=el.scrollWidth-el.clientWidth;
+ el.classList.toggle('fade-start',max>2&&el.scrollLeft>2);
+ el.classList.toggle('fade-end',max>2&&el.scrollLeft<max-2);
+}
+document.addEventListener('scroll',e=>{if(e.target?.dataset?.fit)fitFade(e.target)},true);
+// A key that cannot do anything more (the number or the calculation is as long as it can be): a small shake, and on
+// phones that support it a short vibration. el: what shakes (the result line by default).
+function refuseKey(el=$('#result')){
+ if(el){el.classList.remove('refused');void el.offsetWidth;el.classList.add('refused')}
+ try{navigator.vibrate?.(10)}catch{}
 }
 // Fit the app to the screen, the same way in every mode and on every device. Step by step, only as far as needed:
 // a shorter display, smaller keys, the most compact display, the tools' compact layout (the one phones use),

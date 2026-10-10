@@ -287,8 +287,7 @@ async def scientific(browser, url, lang, theme):
     await p.click('[data-sci="angle"]')
     # mistakes give Error, not nonsense
     got = await keys('1', '±', 'sci:sqrt', '=')
-    check(L + '√(−1) = Error', got[1] == 'Error', got)
-    await p.wait_for_timeout(950)
+    check(L + '√(−1) = Error', got[1] == ('Σφάλμα' if lang == 'el' else 'Error'), got)
     # backspace takes a function away whole
     await keys('sci:sin')
     await p.click('.key[data-action="backspace"]')
@@ -316,6 +315,87 @@ async def scientific(browser, url, lang, theme):
     await p.wait_for_timeout(150)
     await p.click('[data-bar="sci"]')
     check(L + 'f(x) again: back to Basic', await p.locator('.sci-key').count() == 0)
+    check(L + 'no JavaScript errors', not p.errors, p.errors)
+    await p.context.close()
+
+
+async def limits(browser, url, lang, theme, phone=False):
+    """Someone trying to break it: very long numbers and calculations, huge and tiny results, errors, in every mode."""
+    p = await new_page(browser, url, lang, theme, phone=phone)
+    L = f'[limits {lang} {theme}{" phone" if phone else ""}] '
+    el = lang == 'el'
+    T = lambda key: p.evaluate(f"t('{key}')")
+    run = lambda js: p.evaluate(f"(()=>{{switchMode('calc');clearAll();{js};return [{X},{R}]}})()")
+    # a number has at most 15 digits; a 16th digit (or a comma after it) shakes the display and does nothing
+    got = await run("for(let i=0;i<20;i++)digit('7');digit(',');digit('5')")
+    check(L + '15 digits at most', got[1] == '777.777.777.777.777', got)
+    check(L + 'a refused key shakes the display', await p.evaluate("document.querySelector('#result').classList.contains('refused')"))
+    # a calculation has at most 150 characters; while typing, its end stays in view and the start fades
+    await run("for(let i=0;i<60;i++){digit('9');digit('9');digit('9');operator('+')}")
+    await p.wait_for_timeout(120)
+    st = await p.evaluate("[inputLength(),(()=>{const r=document.querySelector('#result');return [r.scrollLeft+r.clientWidth>=r.scrollWidth-2,r.classList.contains('fade-start')]})()]")
+    check(L + 'calculation stops at 150 characters', st[0] <= 150, st)
+    check(L + 'long calculation shows its end, start faded', st[1] == [True, True], st)
+    # results: up to 16 digits in full, then × 10ⁿ
+    for js, want in [("for(const c of '999999999999999')digit(c);operator('+');digit('1');equals()", '1.000.000.000.000.000'),
+                     ("for(const c of '999999999999999')digit(c);operator('×');for(const c of '999999999999999')digit(c);equals()", '1 × 10³⁰'),
+                     ("digit('1');operator('÷');for(const c of '7000000')digit(c);equals()", '1,428571 × 10⁻⁷')]:
+        got = await run(js)
+        check(L + f'result {want}', got[1] == want, got)
+    # errors say why, keep the calculation on screen, and the next key goes on from it
+    got = await run("digit('8');operator('÷');digit('0');equals()")
+    check(L + "8÷0: can't divide by 0, calculation stays", got == ['8÷0', await T('errDiv0')], got)
+    check(L + 'error: the key is AC', await p.evaluate("document.querySelector('#clearButton').textContent") == 'AC')
+    if phone:
+        fits = await p.evaluate("document.documentElement.scrollHeight<=innerHeight+1&&!document.documentElement.classList.contains('page-scroll')")
+        check(L + 'the error and its calculation fit the screen', fits)
+    await p.evaluate("setLanguage('" + ('en' if el else 'el') + "')")
+    await p.wait_for_timeout(400)
+    check(L + 'error text follows a language switch', await p.evaluate(R) == await T('errDiv0'), await p.evaluate(R))
+    await p.evaluate(f"setLanguage('{lang}')")
+    await p.wait_for_timeout(400)
+    got = await p.evaluate(f"(()=>{{backspace();digit('2');equals();return [{X},{R}]}})()")
+    check(L + 'after the error: ⌫ 2 = gives 8÷2 = 4', got == ['8÷2', '4'], got)
+    # scientific: too large, too small, big but fine, powers of negatives and of powers
+    await p.evaluate("sciMode||toggleSci()")
+    for js, want in [("for(const c of '3249')digit(c);sciKey('fact');equals()", await T('errBig')),
+                     ("for(const c of '3248')digit(c);sciKey('fact');equals()", '1,973634 × 10⁹⁹⁹⁷'),
+                     ("digit('1');digit('0');sciKey('pow');operator('-');for(const c of '99999')digit(c);equals()", await T('errSmall')),
+                     ("digit('9');sciKey('pow');smartParen();digit('9');sciKey('pow');digit('9');equals()", await T('errBig')),
+                     ("digit('9');sciKey('pow');digit('9');sciKey('pow');digit('9');equals()", '1,966271 × 10⁷⁷'),  # (9⁹)⁹, like a calculator
+                     ("for(const c of '1000')digit(c);sciKey('exp');equals()", '1,970071 × 10⁴³⁴'),
+                     ("digit('3');negate();sciKey('sq');equals()", '9'),
+                     ("digit('9');sciKey('sq');sciKey('sq');sciKey('sq');equals()", '43.046.721'),
+                     ("digit('0');operator('-');digit('8');digit('4');equals();sciKey('sq');equals()", '7.056')]:
+        got = await run(js)
+        check(L + f'{js[:40]}… = {want}', got[1] == want, got)
+    got = await run("digit('3');negate();sciKey('sq')")
+    check(L + '(−3)² is shown with its brackets', got[1] == '(−3)²', got)
+    # a tiny result carries on exactly and is kept in History with its digits
+    got = await run("digit('1');operator('÷');digit('1');digit('0');sciKey('pow');digit('4');digit('0');equals();operator('+');digit('0');equals()")
+    check(L + 'tiny result + 0 stays 1 × 10⁻⁴⁰', got[1] == '1 × 10⁻⁴⁰', got)
+    check(L + 'History keeps a tiny result', await p.evaluate("ratFromString(historyItems()[0].result).n!==0n"))
+    # ⌫ on a huge carried result removes it whole
+    got = await run("digit('2');sciKey('pow');digit('2');digit('0');digit('0');equals();operator('+');backspace();backspace()")
+    check(L + '⌫ removes a huge carried result whole', got[1] == '0', got)
+    await p.evaluate("toggleSci()")
+    # Units: the same limits; huge values as × 10ⁿ; an error shows on the other side
+    unit = lambda keys: p.evaluate("(keys)=>{switchMode('units');toolKeyInput('clear');for(const k of keys)toolKeyInput(k);return [unitValueFrom.value,unitValueTo.value]}", list(keys))
+    await p.evaluate("(()=>{switchMode('units');const c=document.querySelector('#unitCategory');c.value='length';c.dispatchEvent(new Event('change'));unitFrom.value='km';unitFrom.dispatchEvent(new Event('change'));unitTo.value='mm';unitTo.dispatchEvent(new Event('change'))})()")
+    got = await unit('9' * 20)
+    check(L + 'Units: 15 digits, huge result as × 10ⁿ', got == ['999.999.999.999.999', '1 × 10²¹'], got)
+    got = await unit('1/0')
+    check(L + "Units: 1÷0 says can't divide by 0", got[1] == await T('errDiv0'), got)
+    got = await unit('(' * 200)
+    check(L + 'Units: 150 characters at most', len(got[0]) <= 150, len(got[0]))
+    # tools: 15 digits a field; huge money as × 10ⁿ, never ∞
+    await p.evaluate("(()=>{switchMode('vat');clearToolFields();setActiveToolInput(document.querySelector('#amount'));for(let i=0;i<40;i++)toolKeyInput('9')})()")
+    got = await p.evaluate(f"[document.querySelector('#amount').value,{R}]")
+    check(L + 'VAT: 15 digits, total as × 10ⁿ', got == ['999999999999999', '1,24 × 10¹⁵ €'], got)
+    # Graph: functions of up to 120 characters; the view stays where numbers are precise
+    got = await p.evaluate("(()=>{switchMode('graph');graphKey('clear');for(let i=0;i<100;i++){graphKey('x');graphKey('+')}graph.view={cx:1e15,cy:0,ux:1e9,uy:40};drawGraph();return [graph.fns[graph.active].length,graph.view.cx,graph.view.ux]})()")
+    check(L + 'Graph: 120 characters, view limited', got[0] <= 120 and got[1] == 1e12 and got[2] <= 0.1, got)
+    await p.evaluate("graphKey('clear');graph.view=null")
     check(L + 'no JavaScript errors', not p.errors, p.errors)
     await p.context.close()
 
@@ -362,6 +442,8 @@ async def main():
         for lang, theme in [('en', 'dark'), ('el', 'light')]:
             await desktop(browser, url, lang, theme)
             await scientific(browser, url, lang, theme)
+            await limits(browser, url, lang, theme)
+        await limits(browser, url, 'en', 'dark', phone=True)
         for lang, theme, size in [('en', 'dark', (390, 844)), ('el', 'light', (360, 740)), ('en', 'light', (820, 1180)),
                                   ('el', 'dark', (844, 390)), ('en', 'light', (740, 360))]:  # the last two: phones held sideways
             await phone(browser, url, lang, theme, size)

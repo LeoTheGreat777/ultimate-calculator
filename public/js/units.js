@@ -14,18 +14,21 @@ function normalizeUnitExpression(expr){
   return sign+parts.join('.');
  });
 }
+// Why the value being typed cannot be converted (DIV0 …, see ERROR_TEXT); the other value shows it. '' = none.
+let unitError='';
 function unitEvaluate(expr){
+ unitError='';
  let raw=normalizeUnitExpression(expr);
  if(!raw||/[-+*/.(]$/.test(raw)||!/^[0-9+*/().\s%-]+$/.test(raw))return null;
  const open=(raw.match(/\(/g)||[]).length-(raw.match(/\)/g)||[]).length;if(open>0)raw+=')'.repeat(open);// still typing: close them
- try{return evalExpr(raw)}catch{return null}
+ try{return evalExpr(raw)}catch(e){if(ERROR_TEXT[e.message])unitError=e.message;return null}
 }
 function unitFactor(value){
  return ratFromString(String(value));
 }
 function unitValueFormat(value){
  if(!value||typeof value!=='object'||!('n'in value&&'d'in value))return '';
- return ratToDecimal(value,24);
+ return ratToStoreDecimal(value);
 }
 function formatUnitDisplayValue(value){
  const s=String(value??'').trim();
@@ -106,15 +109,19 @@ function formatUnitResult(s){
  const raw=String(s??'').trim();
  if(!/^-?\d+(?:\.\d+)?$/.test(raw))return formatUnitDisplayValue(raw);
  const r=ratFromString(raw);if(r.n===0n)return '0';
- const abs=Math.abs(Number(raw)),dec=abs<1?Math.min(12,Math.max(6,Math.ceil(-Math.log10(abs))+5)):6;
+ // like the calculator's results: at most 16 significant digits, else the power-of-ten form (formatRat)
+ const intDigits=raw.replace(/^-/,'').split('.')[0].replace(/^0+/,'').length;
+ if(intDigits>MAX_SHOWN_DIGITS)return ratScientific(r);
+ const abs=Math.abs(Number(raw)),dec=abs<1?Math.min(12,Math.max(6,Math.ceil(-Math.log10(abs))+5)):Math.min(6,MAX_SHOWN_DIGITS-intDigits);
  const rounded=ratToRoundedDecimal(r,dec);
- return rounded==='0'||rounded==='-0'?formatScientific(ratToDecimal(r,200)):formatGroupedNumber(rounded);
+ return rounded==='0'||rounded.replace(/^-/,'').split('.')[0].length>MAX_SHOWN_DIGITS?ratScientific(r):formatGroupedNumber(rounded);
 }
 // Only what you are typing shows exactly as typed; every other value (converted, finished with =, brought from
 // the calculator, swapped) is shown rounded. unitSourceTyped says whether the source side was typed by hand.
 let unitSourceTyped=false;
 function unitSideText(side){
  const expr=unitExpressions[side]??'0';
+ if(unitError&&side!==unitSource)return t(ERROR_TEXT[unitError]);
  return side===unitSource&&unitSourceTyped&&!unitReplaceOnNextKey?formatUnitDisplayValue(expr):formatUnitResult(expr);
 }
 // The number being typed at the end of the Units value, which C clears (like the calculator's C).
@@ -136,6 +143,9 @@ function updateUnitsDisplay(){
  to.value=unitSideText('to');
  saveTools();
  const active=unitActiveInput==='to'?'to':'from';
+ // too long: smaller, then the side being typed shows its end
+ const typing=unitSourceTyped&&!unitReplaceOnNextKey;
+ fitDisplayText(from,20,typing&&unitSource==='from');fitDisplayText(to,20,typing&&unitSource==='to');
  unitActiveInput=active;
  from.classList.toggle('unit-active-value',active==='from');
  from.classList.toggle('unit-result-value',active==='to');
@@ -209,7 +219,7 @@ function populateUnits(preserve=true){
 function unitKeyInput(key){
  const side=unitActiveInput||'from';
  let value=unitExpressions[side]||'';
- if(key==='clear'){unitExpressions={from:'0',to:'0'};unitSource=side;unitReplaceOnNextKey=true;unitSourceTyped=false;updateUnitsDisplay();return true}
+ if(key==='clear'){unitError='';unitExpressions={from:'0',to:'0'};unitSource=side;unitReplaceOnNextKey=true;unitSourceTyped=false;updateUnitsDisplay();return true}
  if(key==='clearEntry'){const e=unitEntry();if(!e)return unitKeyInput('clear');value=value.slice(0,-e.length)||'0';unitExpressions[side]=value;unitSource=side;convertUnitExpression(side);return true}
  const afterValue=/[\d.%)]$/,opener=/(^|[+*/(])$/;
  if(key==='backspace'){unitReplaceOnNextKey=false;value=value.slice(0,-1)||'0'}
@@ -251,6 +261,7 @@ function unitKeyInput(key){
    }else if(/^[0-9]$/.test(key)){
      if(value==='0')value=key;
      else if(/(?:^|[+*/(-])0$/.test(value))value=value.slice(0,-1)+key;
+     else if(numberFull(value)){refuseKey(unitValueEl(side));return false}// 15 digits a number
      else if(/\)$/.test(value))value+='*'+key;
      else value+=key;
    }
@@ -261,5 +272,7 @@ function unitKeyInput(key){
      else value+=key;
    }else return false;
  }
+ if(value.length>MAX_INPUT&&value.length>(unitExpressions[side]||'').length){refuseKey(unitValueEl(side));return false}// 150 characters
  unitExpressions[side]=value;unitSource=side;unitSourceTyped=true;convertUnitExpression(side);return true;
 }
+const unitValueEl=side=>$(side==='to'?'#unitValueTo':'#unitValueFrom');

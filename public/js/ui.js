@@ -120,6 +120,7 @@ function renderTool(){
  if(mode==='vat')html='<div class="tool-grid">'+field('amount',T[lang].amount)+field('vatRate',T[lang].vatRate)+'</div><div class="vat-toggle" role="radiogroup" data-active="'+vatAction+'"><span class="vat-thumb" aria-hidden="true"></span><button type="button" role="radio" data-vat-mode="add">'+esc(T[lang].addVat)+'</button><button type="button" role="radio" data-vat-mode="remove">'+esc(T[lang].removeVat)+'</button></div>';
 
  $('#toolPanel').innerHTML=html;
+ $$('#toolPanel input[data-tool-input]').forEach(i=>fitDisplayText(i,12));
  setActiveToolInput($('#toolPanel input[data-tool-input]'));
  renderVatToggle();
  renderToolKeypad();
@@ -174,7 +175,7 @@ function switchMode(next){
 }
 // The calculator's current number: the result, or what is being typed (an unfinished calculation is worked out). null if none.
 function calcNumberForUnits(){
- if(current==='Error')return null;
+ if(calcError)return null;
  try{
   let value;
   if(justCalculated&&lastResult)value=lastResult;

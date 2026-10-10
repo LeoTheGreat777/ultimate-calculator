@@ -17,7 +17,7 @@ function loadTools(){
   const u=s.units;if(!u||typeof u!=='object')return;
   if(units[u.category])window._unitCategory=u.category;
   if(u.pick&&typeof u.pick==='object')Object.entries(u.pick).forEach(([c,p])=>{if(units[c]&&units[c][p?.from]!==undefined&&units[c][p?.to]!==undefined)unitPick[c]={from:p.from,to:p.to}});
-  const expr=v=>typeof v==='string'&&v.length<200&&/^[-−0-9.,+*/%]*$/.test(v);
+  const expr=v=>typeof v==='string'&&v.length<20100&&/^[-−0-9.,+*/%()]*$/.test(v);// a stored value can be long (ratToStoreDecimal)
   if(expr(u.expr?.from)&&expr(u.expr?.to))unitExpressions={from:u.expr.from,to:u.expr.to};
   if(u.source==='from'||u.source==='to')unitSource=unitActiveInput=u.source;
  }catch{}
@@ -36,6 +36,7 @@ function renderToolDisplay(){
  $('#result').textContent=toolResult?.main||'0';
  $('#result').classList.toggle('long-value',String(toolResult?.main??'').length>18);
  d.classList.toggle('tool-empty',!toolResult);
+ fitDisplayText($('#result'),24);
 }
 const FIELD_EXAMPLES={fuelD:'250',fuelC:'7,2',fuelP:'1,85',energyP:'100',energyH:'8',energyD:'30',energyR:'0,20',amount:'100',vatRate:'24%',value:'10'};
 let vatAction='add';
@@ -110,7 +111,9 @@ function vatNumbers(add=vatAction==='add'){
 }
 function bindTools(){
  // Money is shown in cents; litres, kWh and per-km prices with a few decimals.
- const L=v=>new Intl.NumberFormat(NUMBER_LOCALE,{maximumFractionDigits:2}).format(v),kWh=v=>new Intl.NumberFormat(NUMBER_LOCALE,{maximumFractionDigits:3}).format(v),perKm=v=>new Intl.NumberFormat(NUMBER_LOCALE,{maximumFractionDigits:3}).format(v);
+ // (from 10¹⁵ up, the power-of-ten form, as in the calculator)
+ const num=d=>v=>Math.abs(v)>=1e15||!Number.isFinite(v)?numScientific(v):new Intl.NumberFormat(NUMBER_LOCALE,{maximumFractionDigits:d}).format(v);
+ const L=num(2),kWh=num(3),perKm=num(3);
  const fuelCalculate=()=>{
   const d=liveToolNumber('fuelD'),c=liveToolNumber('fuelC'),p=liveToolNumber('fuelP');
   if(d===null||c===null||p===null||d===0){setToolResult('','',null);return}
@@ -159,7 +162,7 @@ function renderToolKeypad(){
 }
 function clearToolFields(){
  if(mode==='units'){
-   unitExpressions={from:'0',to:'0'};unitSourceTyped=false;
+   unitError='';unitExpressions={from:'0',to:'0'};unitSourceTyped=false;
    unitSource=unitActiveInput==='to'?'to':'from';
    unitReplaceOnNextKey=true;
    updateUnitsDisplay();
@@ -186,7 +189,7 @@ function toolKeyInput(key){
  else if(key==='backspace')value=value.slice(0,-1);
  else if(key==='.'||key===','){if(!/[.,]/.test(value))value+=(value===''||value==='-')?'0,':','}
  else if(key==='-')value=value.startsWith('-')?value.slice(1):'-'+value;
- else if(/^\d$/.test(key))value=value==='0'?key:value+key;
+ else if(/^\d$/.test(key)){if(value!=='0'&&digitCount(value)>=MAX_DIGITS){refuseKey(input);return false}value=value==='0'?key:value+key}// 15 digits, as everywhere
  else return false;
  input.value=value;
  input.dispatchEvent(new Event('input',{bubbles:true}));
@@ -223,10 +226,12 @@ $('#toolPanel').addEventListener('input',e=>{
  const key=input.id;
  if(!key)return;
  let raw=input.value;
+ if(digitCount(raw)>MAX_DIGITS){input.value=toolState[mode]?.inputs?.[key]??'';refuseKey(input);return}// typed or pasted on a keyboard: 15 digits at most
  if(/^0\d/.test(raw))raw=raw.replace(/^0+(?=\d)/,'');
  if(raw!==input.value)input.value=raw;
  toolState[mode]??={inputs:{},result:null};
  toolState[mode].inputs[key]=raw;
+ fitDisplayText(input,12,true);
  saveTools();
  runActiveTool();
 });

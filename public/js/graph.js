@@ -82,7 +82,7 @@ function renderGraphFns(){
   return '<div class="graph-fn'+(i===graph.active?' active':'')+(ok?'':' invalid')+'" data-grow="'+i+'" role="button" tabindex="-1"><span class="graph-fn-dot" style="background:'+C.series[i]+'"></span><span class="graph-fn-name">'+GRAPH_NAMES[i]+'(x) =</span><span class="graph-fn-src'+(src?'':' empty')+'" title="'+(ok?'':esc(gText('invalid')))+'">'+esc(src?gPretty(src):gText('empty'))+'</span>'+
    '<button class="graph-fn-btn" data-gdel="'+i+'" type="button" aria-label="'+esc(gText(graph.fns.length>1?'del':'clearFn'))+'">×</button>'+(last&&graph.fns.length<3?'<button class="graph-fn-btn graph-fn-add" data-gadd="1" type="button" aria-label="'+esc(gText('add'))+'" title="'+esc(gText('add'))+'">+</button>':'')+'</div>';
  }).join('');
- box.querySelectorAll('.graph-fn-src').forEach(el=>el.scrollLeft=el.scrollWidth);
+ box.querySelectorAll('.graph-fn-src').forEach(el=>{el.scrollLeft=el.scrollWidth;el.dataset.fit='1';fitFade(el)});// long: shows its end, the start fades
 }
 const GRAPH_KEYS=[['x','x'],['x²','^2'],['xʸ','^'],['√','√('],['⌫','back'],['sin','sin('],['cos','cos('],['tan','tan('],['( )','paren'],['÷','/'],['7','7'],['8','8'],['9','9'],['π','π'],['×','*'],['4','4'],['5','5'],['6','6'],['e','e'],['−','-'],['1','1'],['2','2'],['3','3'],['ln','ln('],['+','+'],['AC','clear'],['0','0'],[',','.'],['log','log('],['|x|','abs(']];
 function renderGraphKeypad(){
@@ -96,8 +96,10 @@ function graphKey(k){
  let s=graph.fns[graph.active]??'';
  if(k==='back'){const m=s.match(/(?:asin|acos|atan|sqrt|sin|cos|tan|abs|exp|log|ln|√)\($/);s=m?s.slice(0,-m[0].length):s.slice(0,-1)}
  else if(k==='clear')s='';
+ // a function of up to 120 characters, numbers of up to 15 digits (as in the calculator)
+ else if(s.length>=120||/^\d$/.test(k)&&numberFull(s)){refuseKey($('#graphFns .graph-fn.active .graph-fn-src'));return}
  else if(k==='paren'){const open=(s.match(/\(/g)||[]).length-(s.match(/\)/g)||[]).length;s+=open>0&&/[0-9.xπe)]$/.test(s)?')':'('}
- else if(s.length<120)s+=k;
+ else s+=k;
  graph.fns[graph.active]=s;graphChanged();
 }
 // Desktop keyboard in Graph mode. Returns true when the key was used.
@@ -119,9 +121,14 @@ function graphKeydown(e){
 }
 
 /* ---------- Graph mode: view, pan and zoom ---------- */
+// Pan and zoom stay where numbers are precise enough to draw smooth curves and tell the grid lines apart:
+// the centre within ±10¹², and zoomed in at most to where a pixel is 10⁻¹¹ of the distance from 0 (and 10⁻⁹ near 0).
 function graphView(w){
  let v=graph.view;
  if(!v||![v.cx,v.cy,v.ux,v.uy].every(Number.isFinite)||v.ux<=0||v.uy<=0)v=graph.view={cx:0,cy:0,ux:Math.max(8,w/20),uy:Math.max(8,w/20)};
+ const maxU=c=>Math.min(1e9,1e11/Math.max(1,Math.abs(c)));
+ v.cx=Math.max(-1e12,Math.min(1e12,v.cx));v.cy=Math.max(-1e12,Math.min(1e12,v.cy));
+ v.ux=Math.min(v.ux,maxU(v.cx));v.uy=Math.min(v.uy,maxU(v.cy));
  return v;
 }
 function graphZoomAt(px,py,f){
@@ -223,7 +230,10 @@ function drawGraph(){
  const x0=v.cx-w/2/v.ux,x1=v.cx+w/2/v.ux,y0=v.cy-h/2/v.uy,y1=v.cy+h/2/v.uy;
  ctx.fillStyle=C.card2;ctx.fillRect(0,0,w,h);
  // grid
- const sx=chStep(x1-x0,w/72),sy=chStep(y1-y0,h/56);ctx.lineWidth=1;ctx.strokeStyle=C.grid;ctx.beginPath();
+ // grid steps: about every 72 px across (or wider, so the labels never overlap) and 56 px down
+ ctx.font=CH_FONT;let sx=chStep(x1-x0,w/72);const sy=chStep(y1-y0,h/56);
+ for(let i=0;i<20;i++){const a=Math.ceil(x0/sx)*sx,b=Math.floor(x1/sx)*sx,lw=Math.max(ctx.measureText(chTick(a,sx)).width,ctx.measureText(chTick(b,sx)).width);if(lw+16<=sx*v.ux)break;sx=chStep(sx*2.2,1)}
+ ctx.lineWidth=1;ctx.strokeStyle=C.grid;ctx.beginPath();
  for(let x=Math.ceil(x0/sx)*sx;x<=x1;x+=sx){const p=Math.round(PX(x))+.5;ctx.moveTo(p,0);ctx.lineTo(p,h)}
  for(let y=Math.ceil(y0/sy)*sy;y<=y1;y+=sy){const p=Math.round(PY(y))+.5;ctx.moveTo(0,p);ctx.lineTo(w,p)}
  ctx.stroke();
@@ -232,9 +242,9 @@ function drawGraph(){
  if(ax>=0&&ax<=w){ctx.moveTo(Math.round(ax)+.5,0);ctx.lineTo(Math.round(ax)+.5,h)}
  if(ay>=0&&ay<=h){ctx.moveTo(0,Math.round(ay)+.5);ctx.lineTo(w,Math.round(ay)+.5)}
  ctx.stroke();
- // tick labels, kept inside the canvas when the axis is off-screen
+ // tick labels, kept inside the canvas when the axis is off-screen (at the top, clear of the buttons at the bottom)
  ctx.fillStyle=C.muted;ctx.font=CH_FONT;
- const lyTop=Math.min(Math.max(ay+5,4),h-18);ctx.textAlign='center';ctx.textBaseline='top';
+ const lyTop=ay+5>=4&&ay+5<=h-18?ay+5:4;ctx.textAlign='center';ctx.textBaseline='top';
  for(let x=Math.ceil(x0/sx)*sx;x<=x1;x+=sx){if(Math.abs(x)<sx/2)continue;const p=PX(x);if(p<14||p>w-14)continue;ctx.fillText(chTick(x,sx),p,lyTop)}
  const yl=[];for(let y=Math.ceil(y0/sy)*sy;y<=y1;y+=sy)if(Math.abs(y)>=sy/2)yl.push(y);
  const yw=Math.max(0,...yl.map(y=>ctx.measureText(chTick(y,sy)).width)),right=ax+6+yw>w-4;
@@ -253,7 +263,8 @@ function drawGraph(){
  });
  // key points
  graphPts=graphKeyPoints(fs,x0,x1,Math.min(1200,Math.max(200,Math.round(w))));
- graphPts.forEach(pt=>{const x=PX(pt.x),y=PY(pt.y);if(x<-6||x>w+6||y<-6||y>h+6)return;ctx.beginPath();ctx.arc(x,y,pt.type==='cross'?4.5:3.6,0,Math.PI*2);ctx.fillStyle=pt.type==='cross'?C.text:C.card2;ctx.fill();ctx.lineWidth=2;ctx.strokeStyle=pt.type==='cross'?C.card2:C.series[pt.i];ctx.stroke()});
+ // (not drawn when there are too many to tell apart, like sin(x) zoomed far out)
+ if(graphPts.length<=w/8)graphPts.forEach(pt=>{const x=PX(pt.x),y=PY(pt.y);if(x<-6||x>w+6||y<-6||y>h+6)return;ctx.beginPath();ctx.arc(x,y,pt.type==='cross'?4.5:3.6,0,Math.PI*2);ctx.fillStyle=pt.type==='cross'?C.text:C.card2;ctx.fill();ctx.lineWidth=2;ctx.strokeStyle=pt.type==='cross'?C.card2:C.series[pt.i];ctx.stroke()});
  // trace under the pointer
  const ro=$('#graphReadout');
  if(graphTrace){

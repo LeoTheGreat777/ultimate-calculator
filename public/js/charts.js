@@ -32,15 +32,20 @@ function chStep(range,target){
  const p=10**Math.floor(Math.log10(raw)),m=raw/p;
  return (m<1.5?1:m<3.5?2:m<7.5?5:10)*p;
 }
-function chNum(v,maxDec=4){
+function chNum(v,maxDec=4,sig=3){
  if(!Number.isFinite(v))return '–';
  if(Math.abs(v)<1e-12)v=0;
  const a=Math.abs(v);
- if(a>=1e9||(a<1e-4&&v!==0))return v.toExponential(2).replace('.',',').replace('e','×10^').replace('^+','^');
+ if(a>=1e9||(a<1e-4&&v!==0))return numScientific(v,sig).replace(' × ','×');// 1,5×10⁹
  return new Intl.NumberFormat(NUMBER_LOCALE,{maximumFractionDigits:maxDec}).format(v);
 }
-function chTick(v,step){const dec=Math.max(0,Math.min(8,-Math.floor(Math.log10(step)+1e-9)));return chNum(Math.abs(v)<step*1e-6?0:v,dec)}
-const chMoney=v=>new Intl.NumberFormat(NUMBER_LOCALE,{minimumFractionDigits:2,maximumFractionDigits:2}).format(v)+' €';
+// a grid label: as many digits as tell it apart from its neighbours `step` away
+function chTick(v,step){
+ if(Math.abs(v)<step*1e-6)v=0;
+ const dec=Math.max(0,Math.min(8,-Math.floor(Math.log10(step)+1e-9))),sig=Math.min(15,Math.max(3,Math.floor(Math.log10(Math.abs(v)||1))-Math.floor(Math.log10(step)+1e-9)+1));
+ return chNum(v,dec,sig);
+}
+const chMoney=v=>money(v);
 function chLegend(items){return items.map(i=>'<div class="chart-legend-item"><span class="chart-dot" style="background:'+i.color+'"></span><span>'+esc(i.label)+'</span>'+(i.value?'<strong>'+esc(i.value)+'</strong>':'')+'</div>').join('')}
 function chRoundRect(ctx,x,y,w,h,r){r=Math.min(r,w/2,h/2);ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
 

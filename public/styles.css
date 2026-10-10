@@ -50,15 +50,26 @@ input,select{-webkit-user-select:text;user-select:text}
 .display-wrap.tool-display{height:205px;padding-bottom:7px}
 .display-wrap.tool-display .expression{opacity:1;height:auto;line-height:1.35;font-size:15px;white-space:normal;overflow:hidden;text-overflow:ellipsis;max-height:42px;margin-bottom:3px}
 .display-wrap.tool-display .result{font-size:clamp(46px,14vw,76px)}
-.display-wrap:not(.tool-display):not(.calculated) .expression-row{height:0;overflow:visible}
+.display-wrap:not(.tool-display):not(.calculated):not(.error) .expression-row{height:0;overflow:visible}
 .expression-row{height:34px;display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0;position:relative}
 .expression{height:34px;flex:1;min-width:0;color:var(--muted);font-size:22px;line-height:34px;overflow-x:auto;overflow-y:hidden;white-space:nowrap;opacity:0;text-overflow:clip;scrollbar-width:none}
 .expression::-webkit-scrollbar{display:none}
 .display-wrap.calculated .expression{opacity:1}
+.display-wrap.error .expression{opacity:1}
 .how-button{position:absolute;right:0;bottom:calc(100% + 7px);width:34px;height:34px;border:1px solid var(--border);border-radius:50%;background:var(--card2);color:var(--accent2);font-size:17px;font-weight:750;cursor:pointer;z-index:3}
 .how-button.hidden{display:none}
 .result{font-size:clamp(46px,14vw,76px);line-height:1.05;font-weight:400;letter-spacing:-.055em;overflow-x:auto;overflow-y:hidden;white-space:nowrap;scrollbar-width:none;padding:0 3px 2px 0}
 .result::-webkit-scrollbar{display:none}
+/* text too long for its line (fitDisplayText): the cut-off side fades out; the mask's colour only sets opacity */
+.fade-start{-webkit-mask-image:linear-gradient(to right,transparent,#000 28px);mask-image:linear-gradient(to right,transparent,#000 28px)}
+.fade-end{-webkit-mask-image:linear-gradient(to left,transparent,#000 28px);mask-image:linear-gradient(to left,transparent,#000 28px)}
+.fade-start.fade-end{-webkit-mask-image:linear-gradient(to right,transparent,#000 28px,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(to right,transparent,#000 28px,#000 calc(100% - 28px),transparent)}
+/* a key that cannot do more (refuseKey): a small shake */
+@keyframes refuse{0%,100%{translate:0}25%{translate:-5px}75%{translate:5px}}
+.refused{animation:refuse .16s ease-in-out 2}
+@media (prefers-reduced-motion:reduce){
+  .refused{animation:none}
+}
 .result.long-value{font-size:clamp(30px,8vw,54px);letter-spacing:-.035em}
 .keypad{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .key{border:0;border-radius:14px;height:68px;min-height:68px;background:var(--key);color:var(--text);font-size:22px;font-weight:450;cursor:pointer;transition:background .1s,transform .05s}
@@ -114,8 +125,8 @@ input,select{-webkit-user-select:text;user-select:text}
 .history-list.is-scrolling::-webkit-scrollbar-thumb{background:rgba(143,155,171,.65);border-radius:999px}
 .history-item{padding:9px 2px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px;flex:0 0 auto}
 .history-main{flex:1;text-align:left;border:0;background:transparent;color:inherit;padding:4px 0;cursor:pointer}
-.history-expression{color:var(--muted);font-size:13px}
-.history-result{font-size:19px;margin-top:3px}
+.history-expression{color:var(--muted);font-size:13px;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;line-clamp:3;overflow:hidden}
+.history-result{font-size:19px;margin-top:3px;overflow-wrap:anywhere}
 .history-delete{border:0;background:transparent;color:var(--muted);font-size:24px;padding:4px 8px;cursor:pointer}
 .history-delete:hover{color:var(--danger)}
 .empty{color:var(--muted);font-size:14px;padding:18px 2px}
@@ -125,7 +136,7 @@ input,select{-webkit-user-select:text;user-select:text}
 .modal-close{width:34px;height:34px;border:0;border-radius:50%;background:var(--card2);color:var(--muted);font-size:24px;line-height:1;cursor:pointer}
 .how-content{display:flex;flex-direction:column;gap:8px;margin-top:14px}
 .how-step{background:var(--card2);border-radius:14px;padding:14px}
-.how-formula{font-size:17px;font-weight:650;margin-bottom:12px}
+.how-formula{font-size:17px;font-weight:650;margin-bottom:12px;overflow-wrap:anywhere}
 .how-line{display:flex;gap:10px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--border);font-size:14px;line-height:1.5}
 .how-line span{flex:0 0 26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:var(--on-accent);font-size:12px;font-weight:800}
 .how-line strong{display:block;font-size:12px;color:var(--muted);margin-bottom:3px}

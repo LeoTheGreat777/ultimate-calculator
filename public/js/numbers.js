@@ -10,25 +10,37 @@ function normalizeNumericInput(s){
 }
 function ratFromString(s){s=normalizeNumericInput(s);let sign=1n;if(s[0]==='-'){sign=-1n;s=s.slice(1)}const [whole,frac='']=s.split('.');const digits=(whole||'0')+(frac||'');const scale=10n**BigInt(frac.length);return rat(sign*BigInt(digits||'0'),scale)}
 function ratPercent(a){return rat(a.n,a.d*100n)}
-function ratToDecimal(a,max=18){let sign=a.n<0n?'-':'';let n=a.n<0n?-a.n:a.n,d=a.d;const whole=n/d;let rem=n%d;if(rem===0n)return sign+whole.toString();let out='';for(let i=0;i<max&&rem;i++){rem*=10n;out+=String(rem/d);rem%=d}out=out.replace(/0+$/,'');return sign+whole.toString()+'.'+out}
+// truncated to `max` decimals ("0.333…"); one big division, so it stays fast for huge numbers
+function ratToDecimal(a,max=18){const neg=a.n<0n,n=neg?-a.n:a.n,d=a.d,whole=n/d,rem=n%d;const frac=rem&&max>0?(rem*10n**BigInt(max)/d).toString().padStart(max,'0').replace(/0+$/,''):'';return (neg&&(whole||frac)?'-':'')+whole+(frac?'.'+frac:'')}
+// for storing a value as text (History, Units): at least 24 significant digits, even for tiny values
+function ratToStoreDecimal(a){const n=a.n<0n?-a.n:a.n;return ratToDecimal(a,24+Math.max(0,a.d.toString().length-n.toString().length+1))}
 function ratToRoundedDecimal(a,max=6){const neg=a.n<0n,n=neg?-a.n:a.n,scale=10n**BigInt(max);let q=n*scale/a.d;if(2n*((n*scale)%a.d)>=a.d)q++;if(q===0n)return '0';let digits=q.toString().padStart(max+1,'0');const whole=digits.slice(0,digits.length-max),frac=digits.slice(digits.length-max).replace(/0+$/,'');return (neg?'-':'')+whole+(frac?'.'+frac:'')}
 function ratToNumber(a){const s=ratToDecimal(a,18);return Number(s)}
-function formatScientific(raw){
- const neg=raw[0]==='-';const body=neg?raw.slice(1):raw;const [w,f='']=body.split('.');
- const exp=w.replace(/^0+/,'')?w.replace(/^0+/,'').length-1:-(f.search(/[1-9]/)+1);
- const digits=(w+f).replace(/^0+/,'').replace(/0+$/,'');
- const mant=digits.length>1?digits[0]+','+digits.slice(1,7).replace(/0+$/,''):digits;
- return (neg?'-':'')+mant.replace(/,$/,'')+' × 10^'+exp;
+// Very large and very small numbers: 7 significant digits and a power of ten, 1,234567 × 10³⁴ (Greek decimal comma).
+const supNum=e=>(e<0?'⁻':'')+[...String(Math.abs(e))].map(c=>'⁰¹²³⁴⁵⁶⁷⁸⁹'[c]).join('');
+function ratScientific(a,sig=7){
+ const neg=a.n<0n,n=neg?-a.n:a.n,d=a.d;if(n===0n)return '0';
+ let e=n.toString().length-d.toString().length;// 10^e ≤ |a| < 10^(e+1), after the check below
+ if(e>=0?n<d*10n**BigInt(e):n*10n**BigInt(-e)<d)e--;
+ const k=sig-1-e,num=k>=0?n*10n**BigInt(k):n,den=k>=0?d:d*10n**BigInt(-k);
+ let q=num/den;if(2n*(num%den)>=den)q++;
+ if(q>=10n**BigInt(sig)){q/=10n;e++}// 9,9999999 rounded up to 10
+ const digits=q.toString(),mant=digits[0]+(','+digits.slice(1)).replace(/,?0+$/,'');
+ return (neg?'-':'')+mant+(e?' × 10'+supNum(e):'');
 }
+function numScientific(v,sig=7){return Number.isFinite(v)?ratScientific(ratFromFloat(v),sig):'–'}
+// Results: rounded to `max` decimals and at most 16 significant digits; from 10¹⁶ up, and for values that would
+// round to 0, the power-of-ten form.
+const MAX_SHOWN_DIGITS=16;
 function formatRat(a,max=6){
- const s=ratToRoundedDecimal(a,max),num=Number(s);
- // Non-zero values too small for `max` decimals would round to "0": show them in scientific notation.
- if(a.n!==0n&&num===0)return formatScientific(ratToDecimal(a,200));
- if(Number.isFinite(num)&&Math.abs(num)<1e15)return new Intl.NumberFormat(NUMBER_LOCALE,{maximumFractionDigits:max}).format(num);
- if(s.length<=24)return formatGroupedNumber(s);
- return formatScientific(s);
+ if(a.n===0n)return '0';
+ const n=a.n<0n?-a.n:a.n,whole=n/a.d,intDigits=whole?whole.toString().length:0;
+ if(intDigits>MAX_SHOWN_DIGITS)return ratScientific(a);
+ const s=ratToRoundedDecimal(a,Math.min(max,MAX_SHOWN_DIGITS-intDigits));
+ if(s==='0'||s.replace(/^-/,'').split('.')[0].length>MAX_SHOWN_DIGITS)return ratScientific(a);
+ return formatGroupedNumber(s);
 }
-const fmt=n=>n&&typeof n==='object'&&'n'in n?formatRat(n,6):Number.isFinite(Number(n))?new Intl.NumberFormat(NUMBER_LOCALE,{maximumFractionDigits:6}).format(Number(n)):'Error';
+const fmt=n=>n&&typeof n==='object'&&'n'in n?formatRat(n,6):Number.isFinite(Number(n))?(Math.abs(Number(n))>=1e15?numScientific(Number(n)):new Intl.NumberFormat(NUMBER_LOCALE,{maximumFractionDigits:6}).format(Number(n))):'Error';
 const pretty=s=>String(s).replace(/\*/g,'×').replace(/\//g,'÷');
 function formatGroupedNumber(raw){
  const s=String(raw);
@@ -53,6 +65,21 @@ function formatInputDisplay(s){
   .replace(/([×÷+\-])[-−](\d[\d.,]*%?)/g,'$1(−$2)').replace(/\([-−](?=\d)/g,'(−')
   .replace(/^−(\d[\d.,]*%?)/,'(−$1)');
 }
+// ---------- Limits ----------
+// What can be typed: numbers of up to 15 digits (as on Windows' calculator; a leading "0," does not count) and
+// calculations of up to 150 characters. Results must stay below 10^10000 and, unless 0, above 10^−10000 (as on
+// Windows' calculator), otherwise "Too large" / "Too small"; that also keeps every calculation fast.
+const MAX_DIGITS=15,MAX_INPUT=150,MAX_BITS=33220;// 2^33220 ≈ 10^10000
+const digitCount=s=>String(s).replace(/^[-−]?0(?=[.,])/,'').replace(/\D/g,'').length;
+// the number at the end of a typed text is full: no more digits fit
+const numberFull=s=>digitCount((String(s).match(/[\d.,]+$/)||[''])[0])>=MAX_DIGITS;
+const LIMIT_POW=10n**10000n;
+function ratLimit(r){
+ if(r.n===0n)return r;const n=r.n<0n?-r.n:r.n,diff=bitLen(n)-bitLen(r.d);
+ if(diff>=MAX_BITS-2&&n>=r.d*LIMIT_POW)throw Error('BIG');
+ if(-diff>=MAX_BITS-2&&n*LIMIT_POW<r.d)throw Error('SMALL');
+ return r;
+}
 // ---------- Expressions: + − × ÷ %, brackets, and the scientific parts (functions, π, e, ^, !) ----------
 // Functions are written in the expression as a name and "(": sin( cos( tan( asin( acos( atan( ln( log( √( ∛(
 const FN_NAMES=['asin','acos','atan','sin','cos','tan','ln','log','√','∛'];
@@ -69,17 +96,18 @@ function tokenize(input){
 // Precedence: + − < × ÷ < sign < ^ (right to left, so 2^3^2 = 2^9) < ! < numbers, brackets, functions. −2^2 = −4.
 function evalExpr(input){
  const tokens=tokenize(input);let pos=0;const peek=()=>tokens[pos];
+ const lim=v=>(ratLimit(v.value),v);// every step stays within the limits
  function primary(){const tok=tokens[pos++];if(!tok)throw Error('INCOMPLETE');
   if(tok.type==='('){const v=additive();if(!peek()||peek().type!==')')throw Error('PAREN');pos++;return{value:v.value,percent:false}}
   if(tok.type==='number')return{value:tok.value,percent:tok.percent};
-  if(tok.type==='fn'){const arg=peek()?.type==='('?primary():postfix();return{value:sciFunction(tok.name,arg.value),percent:false}}
+  if(tok.type==='fn'){const arg=peek()?.type==='('?primary():postfix();return lim({value:sciFunction(tok.name,arg.value),percent:false})}
   throw Error('SYNTAX')}
- function postfix(){let v=primary();while(peek()?.type==='!'){pos++;v={value:ratFactorial(v.value),percent:false}}return v}
- function power(){const base=postfix();if(peek()?.type==='^'){pos++;const exp=unary();return{value:ratPow(base.value,exp.value),percent:false}}return base}
+ function postfix(){let v=primary();while(peek()?.type==='!'){pos++;v=lim({value:ratFactorial(v.value),percent:false})}return v}
+ function power(){const base=postfix();if(peek()?.type==='^'){pos++;const exp=unary();return lim({value:ratPow(base.value,exp.value),percent:false})}return base}
  function unary(){const tok=peek();if(tok&&(tok.type==='+'||tok.type==='-')){pos++;const v=unary();return{value:tok.type==='-'?ratMul(rat(-1n),v.value):v.value,percent:v.percent}}return power()}
- function mult(){let left=unary();while(peek()&&['*','/'].includes(peek().type)){const op=tokens[pos++].type,right=unary();left={value:op==='*'?ratMul(left.value,right.value):ratDiv(left.value,right.value),percent:false}}return left}
- function additive(){let left=mult();while(peek()&&['+','-'].includes(peek().type)){const op=tokens[pos++].type,right=mult();const rv=right.percent?ratMul(left.value,right.value):right.value;left={value:op==='+'?ratAdd(left.value,rv):ratSub(left.value,rv),percent:false}}return left}
- const out=additive();if(pos!==tokens.length)throw Error('SYNTAX');return out.value
+ function mult(){let left=unary();while(peek()&&['*','/'].includes(peek().type)){const op=tokens[pos++].type,right=unary();left=lim({value:op==='*'?ratMul(left.value,right.value):ratDiv(left.value,right.value),percent:false})}return left}
+ function additive(){let left=mult();while(peek()&&['+','-'].includes(peek().type)){const op=tokens[pos++].type,right=mult();const rv=right.percent?ratMul(left.value,right.value):right.value;left=lim({value:op==='+'?ratAdd(left.value,rv):ratSub(left.value,rv),percent:false})}return left}
+ const out=additive();if(pos!==tokens.length)throw Error('SYNTAX');return ratLimit(out.value)
 }
 
 // ---------- Scientific maths ----------
@@ -95,6 +123,18 @@ function ratFromFloat(x){
  return +e>=0?ratMul(r,rat(10n**k)):ratDiv(r,rat(10n**k));
 }
 const bitLen=n=>(n<0n?-n:n).toString(2).length;
+// natural log of a whole number ≥ 1 of any size (Math.log alone gives Infinity above 10^308)
+const lnBig=n=>{if(bitLen(n)<1000)return Math.log(Number(n));const s=n.toString();return (s.length-17)*Math.LN10+Math.log(Number(s.slice(0,17)))};
+const ratLn=a=>lnBig(a.n<0n?-a.n:a.n)-lnBig(a.d);// ln|a|, a ≠ 0
+// |a|^b and its sign when the exact way is too big: floating point, or logarithms beyond its range (e^1000)
+function ratPowApprox(a,b,negative){
+ const x=ratToFloat(a),direct=Math.pow(Math.abs(x),b);
+ if(Number.isFinite(x)&&x!==0&&Number.isFinite(direct)&&direct!==0)return ratFromFloat(negative?-direct:direct);
+ const L=ratLn(a)*b/Math.LN10;if(!Number.isFinite(L))throw Error(L>0?'BIG':'MATH');
+ if(L>10000)throw Error('BIG');if(L<-10000)throw Error('SMALL');
+ const e=Math.floor(L),m=ratFromFloat(Math.pow(10,L-e)*(negative?-1:1)),t=rat(10n**BigInt(Math.abs(e)));
+ return e>=0?ratMul(m,t):ratDiv(m,t);
+}
 function bigRoot(n,k){// whole k-th root of n ≥ 0 if there is one, else null
  if(n<2n)return n;
  if(bitLen(n)<1000){const x=BigInt(Math.round(Math.pow(Number(n),1/Number(k))));for(const c of [x-1n,x,x+1n])if(c>=0n&&c**k===n)return c;return null}
@@ -103,23 +143,26 @@ function bigRoot(n,k){// whole k-th root of n ≥ 0 if there is one, else null
  x=1n<<BigInt(Math.ceil(bitLen(n)/Number(k)));for(;;){const y=((k-1n)*x+n/x**(k-1n))/k;if(y>=x)break;x=y}return x**k===n?x:null;
 }
 function ratPow(a,b){
+ const unit=(a.n===a.d||a.n===-a.d)&&a.d===1n;// 1 and −1 to any whole power
  if(b.d===1n){
   const e=b.n;
   if(a.n===0n){if(e<0n)throw Error('DIV0');return e===0n?rat(1n):rat(0n)}
+  if(unit)return rat(a.n<0n&&e%2n!==0n?-1n:1n);
   const abs=e<0n?-e:e;
-  if(abs<=100000n&&BigInt(Math.max(bitLen(a.n),bitLen(a.d)))*abs<=400000n){const r=rat(a.n**abs,a.d**abs);return e<0n?ratDiv(rat(1n),r):r}
-  return ratFromFloat(Math.pow(ratToFloat(a),Number(e)));
+  // exact while the answer has at most 40000 bits (10^12000); a and b are in lowest terms, so are their powers
+  if(abs<=100000n&&BigInt(Math.max(bitLen(a.n),bitLen(a.d)))*abs<=40000n){const r=e<0n?{n:a.d**abs,d:a.n**abs}:{n:a.n**abs,d:a.d**abs};if(r.d<0n){r.n=-r.n;r.d=-r.d}return r}
+  return ratPowApprox(a,Number(e),a.n<0n&&e%2n!==0n);
  }
  // a fractional power: exact when the root is exact (8^(1/3) = 2); a negative base only with an odd root
  const neg=a.n<0n;
  if(neg&&b.d%2n===0n)throw Error('MATH');
- const k=b.d,rn=bigRoot(neg?-a.n:a.n,k),rd=bigRoot(a.d,k);
+ if(a.n===0n){if(b.n<0n)throw Error('DIV0');return rat(0n)}
+ const k=b.d,rn=bitLen(a.n)<=40000&&bitLen(a.d)<=40000?bigRoot(neg?-a.n:a.n,k):null,rd=rn===null?null:bigRoot(a.d,k);
  if(rn!==null&&rd!==null&&(b.n<0n?-b.n:b.n)<=10000n)return ratPow(rat(neg?-rn:rn,rd),rat(b.n));
- const mag=Math.pow(ratToFloat(neg?rat(-a.n,a.d):a),ratToFloat(b));
- return ratFromFloat(neg&&(b.n%2n!==0n)?-mag:mag);
+ return ratPowApprox(neg?rat(-a.n,a.d):a,ratToFloat(b),neg&&(b.n%2n!==0n));
 }
 function ratFactorial(a){
- if(a.d!==1n||a.n<0n||a.n>5000n)throw Error('MATH');
+ if(a.d!==1n||a.n<0n)throw Error('MATH');if(a.n>3248n)throw Error('BIG');// 3249! > 10^10000
  let r=1n;for(let i=2n;i<=a.n;i++)r*=i;return rat(r);
 }
 function sciFunction(name,a){
@@ -139,10 +182,11 @@ function sciFunction(name,a){
  if(name==='atan'){const v=Math.atan(x);return ratFromFloat(deg?v*180/Math.PI:v)}
  if(name==='ln'||name==='log'){if(a.n<=0n)throw Error('MATH');
   if(name==='log'){const r=ratToDecimal(a,0),m=/^1(0*)$/.exec(r);if(a.d===1n&&m)return rat(BigInt(m[1].length))}// log of 10, 100, 1000 … exactly
-  return ratFromFloat(name==='ln'?Math.log(x):Math.log10(x))}
+  const ln=ratLn(a);return ratFromFloat(name==='ln'?ln:ln/Math.LN10)}
  if(name==='√'){if(a.n<0n)throw Error('MATH');return ratPow(a,rat(1n,2n))}
  if(name==='∛')return ratPow(a,rat(1n,3n));
  throw Error('FN');
 }
 
-const money=v=>new Intl.NumberFormat(NUMBER_LOCALE,{minimumFractionDigits:2,maximumFractionDigits:2}).format(v)+' €';
+// Money: always 2 decimals; from 10 trillion up (where cents stop being exact) the power-of-ten form.
+const money=v=>!Number.isFinite(v)?'– €':Math.abs(v)>=1e13?numScientific(v)+' €':new Intl.NumberFormat(NUMBER_LOCALE,{minimumFractionDigits:2,maximumFractionDigits:2}).format(v)+' €';
