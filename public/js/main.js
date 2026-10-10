@@ -36,6 +36,8 @@ window.addEventListener('keydown',e=>{
  // Alt+1…9 jumps to a mode (Alt+← / → are left alone: browsers use them for Back / Forward)
  if(e.altKey&&!e.ctrlKey&&!e.metaKey&&/^Digit[1-9]$/.test(e.code)){const n=MODE_LABELS[+e.code.slice(5)-1];if(n){e.preventDefault();switchMode(n)}return}
  if(e.ctrlKey||e.metaKey||e.altKey)return;
+ // A date picker handles its own keys (digits, arrows, Backspace); Esc still clears.
+ if(document.activeElement?.matches?.('input[type=date]')&&e.key!=='Escape')return;
  // An open (or focused) dropdown handles its own keys: arrows, Enter, typing to jump to an item.
  if(document.activeElement?.closest?.('select'))return;
  const nothingOpen=$('#howModal').classList.contains('hidden')&&$('#historyPanel').classList.contains('hidden');

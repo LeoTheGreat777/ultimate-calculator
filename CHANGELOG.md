@@ -6,6 +6,18 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.11.0 – 2026-10-10
+
+### Changed
+- **Dates** redesigned. Dates are picked with your device's own calendar (the scroll wheels on iPhone, a calendar
+  on Android and on computers) instead of being typed, and the start is today.
+  - **Between:** the days between two dates, with a list of the details where the keypad was: weeks, months,
+    working days, weekend days and the public holidays inside.
+  - **Add days:** the date so many days later; the ± key goes back.
+  - A **Working days** switch on the display counts only Monday to Friday without public holidays, in both:
+    "10 working days from Friday" skips the weekend and 28 October.
+- Age was removed from Dates.
+
 ## 0.10.0 – 2026-10-10
 
 ### Added

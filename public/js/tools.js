@@ -7,7 +7,7 @@ let unitPick={};// last chosen from/to units per unit category
 function saveTools(){
  const cat=$('#unitCategory')?.value,from=$('#unitFrom')?.value,to=$('#unitTo')?.value;
  if(cat&&units[cat]&&units[cat][from]!==undefined&&units[cat][to]!==undefined)unitPick[cat]={from,to};
- store.set(TOOLS_KEY,JSON.stringify({vatAction,kinds:toolKind,units:{category:window._unitCategory||'length',pick:unitPick,source:unitSource}}));
+ store.set(TOOLS_KEY,JSON.stringify({vatAction,kinds:toolKind,dateCount,units:{category:window._unitCategory||'length',pick:unitPick,source:unitSource}}));
 }
 function loadTools(){
  try{
@@ -15,6 +15,7 @@ function loadTools(){
   if(TOGGLES.vat.options.includes(s.vatAction))vatAction=s.vatAction;
   const kinds=s.kinds||{pct:s.pctAction};// pctAction: saved by 0.7.x
   Object.keys(KIND_FIELDS).forEach(m=>{if(KIND_FIELDS[m][kinds?.[m]])toolKind[m]=kinds[m]});
+  if(s.dateCount==='work')dateCount='work';
   const u=s.units;if(!u||typeof u!=='object')return;
   if(units[u.category])window._unitCategory=u.category;
   if(u.pick&&typeof u.pick==='object')Object.entries(u.pick).forEach(([c,p])=>{if(units[c]&&units[c][p?.from]!==undefined&&units[c][p?.to]!==undefined)unitPick[c]={from:p.from,to:p.to}});
@@ -31,35 +32,39 @@ function renderToolDisplay(){
  $('#chartButton')?.classList.toggle('hidden',!toolChartAvailable());
  $('#chartButton')?.setAttribute('aria-label',t('chart'));
  syncFuelButtons();
+ renderDateBar();
  $('#result').textContent=toolResult?.main||'0';
  $('#result').classList.toggle('long-value',String(toolResult?.main??'').length>18);
  d.classList.toggle('tool-empty',!toolResult);
  fitDisplayText($('#result'),24);
 }
-const FIELD_EXAMPLES={fuelD:'250',fuelC:'7,2',fuelP:'1,85',energyP:'100',energyH:'8',energyD:'30',energyR:'0,20',amount:'100',vatRate:'24%',pctPrice:'80',pctOff:'25%',pctFrom:'80',pctTo:'100',tipBill:'60',tipRate:'10%',tipPeople:'3',loanAmount:'10.000',payAmount:'10.000',payRate:'4%',payMonthly:'300',loanRate:'4%',loanYears:'5',saveStart:'1.000',saveMonthly:'100',saveRate:'3%',saveYears:'10',dateFrom:()=>t('today'),dateTo:'25/12/2026',dateStart:()=>t('today'),dateDays:'30',dateBirth:'15/03/1990',dateOn:()=>t('today'),value:'10'};
+const FIELD_EXAMPLES={fuelD:'250',fuelC:'7,2',fuelP:'1,85',energyP:'100',energyH:'8',energyD:'30',energyR:'0,20',amount:'100',vatRate:'24%',pctPrice:'80',pctOff:'25%',pctFrom:'80',pctTo:'100',tipBill:'60',tipRate:'10%',tipPeople:'3',loanAmount:'10.000',payAmount:'10.000',payRate:'4%',payMonthly:'300',loanRate:'4%',loanYears:'5',saveStart:'1.000',saveMonthly:'100',saveRate:'3%',saveYears:'10',dateDays:'30',value:'10'};
 let vatAction='add';
 const liveToolNumber=id=>{const raw=normalizeNumericInput($('#'+id)?.value??'');if(raw==='')return null;const n=Number(raw);return Number.isFinite(n)?n:null};
 // On phones the fields are filled only from the app's own keypad, so the native keyboard never opens.
-const field=(id,label)=>{const value=toolState[mode]?.inputs?.[id]??'';const touch=isMobileDevice();return '<label class="tool-field"><span>'+esc(label)+'</span><input id="'+id+'" type="text" inputmode="'+(touch?'none':'decimal')+'"'+(touch?' readonly':'')+' autocomplete="off" spellcheck="false" value="'+esc(value)+'" placeholder="'+esc(String(typeof FIELD_EXAMPLES[id]==='function'?FIELD_EXAMPLES[id]():FIELD_EXAMPLES[id]??''))+'" data-tool-input="true"></label>'};
+const field=(id,label)=>{const value=toolState[mode]?.inputs?.[id]??'';
+ if(FIELD_TYPE[id]==='date')return '<label class="tool-field"><span>'+esc(label)+'</span><input id="'+id+'" type="date" min="1000-01-01" max="9999-12-31" value="'+esc(value)+'" data-date-input="true"></label>';const touch=isMobileDevice();return '<label class="tool-field"><span>'+esc(label)+'</span><input id="'+id+'" type="text" inputmode="'+(touch?'none':'decimal')+'"'+(touch?' readonly':'')+' autocomplete="off" spellcheck="false" value="'+esc(value)+'" placeholder="'+esc(String(typeof FIELD_EXAMPLES[id]==='function'?FIELD_EXAMPLES[id]():FIELD_EXAMPLES[id]??''))+'" data-tool-input="true"></label>'};
 function setActiveToolInput(input){toolActiveInput=input||null;$$('#toolPanel input[data-tool-input]').forEach(i=>i.classList.toggle('tool-active',i===toolActiveInput));
- // the , key is dimmed for a field that takes no decimals (People, Dates)
- $('#keypad .tool-key[data-value=","]')?.classList.toggle('key-off',!!toolActiveInput&&noDecimalField(toolActiveInput.id))}
+ // the , key is ± for a whole number that may be negative (Dates' days), dimmed for other fields without decimals (People)
+ const k=$('#keypad .tool-key[data-value=","]'),type=toolActiveInput&&FIELD_TYPE[toolActiveInput.id];
+ if(k){k.textContent=type==='int'?'±':',';k.classList.toggle('key-off',!!type&&type!=='int')}}
 function setToolResult(main,detail='',how=null){toolResult={main,detail,how};if(toolState[mode])toolState[mode].result=toolResult;howData=how;renderToolDisplay();}
 // Tools with kinds on a switch above their fields (Percent, Interest): each kind has its own fields.
 // Tip has defaults like the VAT rate. People is a whole number. The tip's three short fields share one row.
 const KIND_FIELDS={pct:{discount:['pctPrice','pctOff'],change:['pctFrom','pctTo'],tip:['tipBill','tipRate','tipPeople']},
  loan:{loan:['loanAmount','loanRate','loanYears'],payoff:['payAmount','payRate','payMonthly'],savings:['saveStart','saveMonthly','saveRate','saveYears']},
- dates:{between:['dateFrom','dateTo'],add:['dateStart','dateDays'],age:['dateBirth','dateOn']}};
-const KIND_LABELS={pct:['pctDiscount','pctChange','pctTip'],loan:['loanLoan','loanPayoff','loanSavings'],dates:['dateBetween','dateAdd','dateAge']};
+ dates:{between:['dateFrom','dateTo'],add:['dateStart','dateDays']}};
+const KIND_LABELS={pct:['pctDiscount','pctChange','pctTip'],loan:['loanLoan','loanPayoff','loanSavings'],dates:['dateBetween','dateAdd']};
 const ONE_ROW_KINDS=new Set(['tip']);
 let toolKind={pct:'discount',loan:'loan',dates:'between'};
+let dateCount='all';// Dates: count all days, or working days only
 const kindFields=(m=mode)=>KIND_FIELDS[m]?.[toolKind[m]]||[];
-const TOOL_DEFAULTS={vat:{vatRate:'24'},pct:{tipRate:'10',tipPeople:'1'}};
-// Fields that aren't plain numbers: 'count' (People: digits only), 'int' (whole, may be negative: Dates' days),
-// 'date' (digits only, shown DD/MM/YYYY with the slashes added: formatDateDigits in dates.js).
-const FIELD_TYPE={tipPeople:'count',dateDays:'int',dateFrom:'date',dateTo:'date',dateStart:'date',dateBirth:'date',dateOn:'date'};
+const TOOL_DEFAULTS={vat:{vatRate:'24'},pct:{tipRate:'10',tipPeople:'1'},dates:{dateFrom:()=>isoDate(todayNumber()),dateStart:()=>isoDate(todayNumber())}};
+// Fields that aren't plain numbers: 'count' (People: digits only), 'int' (whole, may be negative: Dates' days; the
+// , key becomes ±), 'date' (the device's own date picker, <input type="date">, value YYYY-MM-DD; not typed on the keypad).
+const FIELD_TYPE={tipPeople:'count',dateDays:'int',dateFrom:'date',dateTo:'date',dateStart:'date'};
 const noDecimalField=id=>!!FIELD_TYPE[id],noSignField=id=>FIELD_TYPE[id]==='count'||FIELD_TYPE[id]==='date';
-function fillToolDefaults(m){const d=TOOL_DEFAULTS[m];if(d&&toolState[m])Object.entries(d).forEach(([id,v])=>{if(!toolState[m].inputs[id])toolState[m].inputs[id]=v})}
+function fillToolDefaults(m){const d=TOOL_DEFAULTS[m];if(d&&toolState[m])Object.entries(d).forEach(([id,v])=>{if(!toolState[m].inputs[id])toolState[m].inputs[id]=typeof v==='function'?v():v})}
 // Segmented switches (VAT add/remove, Percent discount/change/tip) work like iOS: tap a side, drag the thumb, or swipe.
 const TOGGLES={vat:{options:['add','remove'],labels:['addVat','removeVat'],get:()=>vatAction,set:v=>setVatAction(v)}};
 Object.keys(KIND_FIELDS).forEach(m=>{TOGGLES[m]={options:Object.keys(KIND_FIELDS[m]),labels:KIND_LABELS[m],get:()=>toolKind[m],set:v=>setToolKind(m,v)}});
@@ -80,7 +85,7 @@ function setToolKind(m,next){
  // like changing mode: the kind you leave starts over
  kindFields(m).forEach(id=>delete toolState[m].inputs[id]);
  toolKind[m]=next;renderToggles();
- if(mode===m){renderKindFields();runActiveTool()}
+ if(mode===m){fillToolDefaults(m);renderKindFields();if(m==='dates'){renderToolKeypad();setActiveToolInput(toolActiveInput);fitLayout()}runActiveTool()}
  saveTools();
 }
 // The switch and the fields of a tool with kinds. Changing kind replaces only the fields, so the switch keeps its slide animation.
@@ -312,6 +317,8 @@ function bindTools(){
  populateUnits();
 }
 function renderToolKeypad(){
+ // Dates "between" has only date pickers: the space of the keypad shows the details instead (dates.js)
+ if(mode==='dates'&&toolKind.dates==='between'){$('#keypad').className='date-details';$('#keypad').innerHTML='';window._runDates?.();return}
  $('#keypad').className='tool-keypad';
  $('#keypad').innerHTML=
    '<button class="tool-key tool-utility" data-action="backspace" type="button" aria-label="'+esc(t('deleteKey'))+'">⌫</button><button class="tool-key tool-utility" data-action="clear-all" type="button">AC</button><button class="tool-key tool-utility" data-action="clear" type="button">C</button>'+
@@ -342,21 +349,14 @@ function clearToolFields(){
 }
 function toolKeyInput(key){
  if(mode==='units')return unitKeyInput(key);
- const input=toolActiveInput&&toolActiveInput.matches('#toolPanel input')?toolActiveInput:$('#toolPanel input');
+ const input=toolActiveInput&&toolActiveInput.matches('#toolPanel input[data-tool-input]')?toolActiveInput:$('#toolPanel input[data-tool-input]');
  if(!input)return false;
  if(!isMobileDevice())input.focus();
  setActiveToolInput(input);
  let value=input.value;
- if(FIELD_TYPE[input.id]==='date'){
-   // a date takes digits only; the slashes come by themselves (10102026 -> 10/10/2026)
-   let d=value.replace(/\D/g,'');
-   if(key==='clear')d='';else if(key==='backspace')d=d.slice(0,-1);
-   else if(/^\d$/.test(key)&&d.length<8)d+=key;
-   else{refuseKey(input);return false}
-   input.value=formatDateDigits(d);input.dispatchEvent(new Event('input',{bubbles:true}));return true;
- }
  if(key==='clear')value='';
  else if(key==='backspace')value=value.slice(0,-1);
+ else if(FIELD_TYPE[input.id]==='int'&&(key==='.'||key===','))value=value.startsWith('-')?value.slice(1):'-'+value;// the ± key
  else if((noDecimalField(input.id)&&(key==='.'||key===','))||(noSignField(input.id)&&key==='-')){refuseKey(input);return false}
  else if(key==='.'||key===','){if(!/[.,]/.test(value))value+=(value===''||value==='-')?'0,':','}
  else if(key==='-')value=value.startsWith('-')?value.slice(1):'-'+value;
@@ -381,14 +381,14 @@ $('#toolPanel').addEventListener('click',e=>{
  const button=e.target.closest('[data-choice]'),c=TOGGLES[button?.closest('.seg-toggle')?.dataset.toggle];
  if(button&&c)c.set(button.dataset.choice);
 });
-$('#toolPanel').addEventListener('focusin',e=>{if(e.target.matches('input'))setActiveToolInput(e.target)});
-$('#toolPanel').addEventListener('click',e=>{const input=e.target.closest('.tool-field')?.querySelector('input');if(input)setActiveToolInput(input)});
+$('#toolPanel').addEventListener('focusin',e=>{if(e.target.matches('input[data-tool-input]'))setActiveToolInput(e.target)});
+$('#toolPanel').addEventListener('click',e=>{const input=e.target.closest('.tool-field')?.querySelector('input[data-tool-input]');if(input)setActiveToolInput(input)});
 $('#toolPanel').addEventListener('beforeinput',e=>{
- if(!e.target.matches('input')||e.inputType?.startsWith('delete'))return;
+ if(!e.target.matches('input[data-tool-input]')||e.inputType?.startsWith('delete'))return;
  if(e.data&&!(noSignField(e.target.id)?/^[0-9]+$/:noDecimalField(e.target.id)?/^[0-9-]+$/:/^[0-9.,-]+$/).test(e.data))e.preventDefault();
 });
 $('#toolPanel').addEventListener('keydown',e=>{
- if(!e.target.matches('input'))return;
+ if(!e.target.matches('input[data-tool-input]'))return;// date pickers keep all their keys
  if(e.ctrlKey||e.metaKey||e.altKey)return;
  if((noDecimalField(e.target.id)&&/^[.,]$/.test(e.key))||(noSignField(e.target.id)&&e.key==='-')){e.preventDefault();refuseKey(e.target);return}
  // − changes the sign, as on the keypad (typed into the middle it would make the number unreadable)
@@ -396,19 +396,15 @@ $('#toolPanel').addEventListener('keydown',e=>{
  if(!/^[0-9.,-]$/.test(e.key)&&!['Backspace','Delete','ArrowLeft','ArrowRight','Home','End','Tab','Enter','Escape'].includes(e.key))e.preventDefault();
 });
 $('#toolPanel').addEventListener('input',e=>{
+ if(e.target.matches('input[data-date-input]')){toolState[mode].inputs[e.target.id]=e.target.value;runActiveTool();return}// a date picked
  if(!e.target.matches('input'))return;
  if(mode==='units')return;
  const input=e.target;
  const key=input.id;
  if(!key)return;
  let raw=input.value;
- if(FIELD_TYPE[key]==='date'){
-   // typed on a keyboard: keep the digits and put the slashes back; deleting only a slash deletes the digit before it
-   const before=(toolState[mode]?.inputs?.[key]??'').replace(/\D/g,'');let d=raw.replace(/\D/g,'').slice(0,8);
-   if(e.inputType?.startsWith('delete')&&d===before)d=d.slice(0,-1);
-   raw=formatDateDigits(d);
- }else if(digitCount(raw)>MAX_DIGITS){input.value=toolState[mode]?.inputs?.[key]??'';refuseKey(input);return}// typed or pasted on a keyboard: 15 digits at most
- if(!FIELD_TYPE[key]?.startsWith('date')&&/^0\d/.test(raw))raw=raw.replace(/^0+(?=\d)/,'');
+  if(digitCount(raw)>MAX_DIGITS){input.value=toolState[mode]?.inputs?.[key]??'';refuseKey(input);return}// typed or pasted on a keyboard: 15 digits at most
+ if(/^0\d/.test(raw))raw=raw.replace(/^0+(?=\d)/,'');
  if(raw!==input.value)input.value=raw;
  toolState[mode]??={inputs:{},result:null};
  toolState[mode].inputs[key]=raw;

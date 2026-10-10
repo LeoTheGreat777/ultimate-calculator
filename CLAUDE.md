@@ -49,7 +49,7 @@ Everything the app serves is in `public/` (the web root for both GitHub Pages an
 | `history.js` | saved calculations, the History sheet and its gestures |
 | `units.js` | unit data and names, conversion, the two values, `unitKeyInput` |
 | `tools.js` | VAT, Percent, Interest, Fuel, Energy: fields, saved values, calculations, switches, `toolKeyInput`, tool field events |
-| `dates.js` | Dates: day numbers, date fields, Orthodox Easter and Greek public holidays, working days, the Dates calculations |
+| `dates.js` | Dates: day numbers, date pickers, Orthodox Easter and Greek public holidays, working days, the details list, the Working days chip |
 | `layout.js` | `fitLayout` (fits every mode to the screen), long text (`fitDisplayText`, `refuseKey`), zoom on big screens |
 | `ui.js` | theme, `setLanguage`/`applyLanguage`, modes and tabs (`switchMode`, `renderTool`), dialogs, hold keys, install |
 | `help.js` | Tips & shortcuts text (`HELP`) and `showHelp` |
@@ -100,17 +100,19 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   Change them in all places together.
 - **Tool modes** are `TOOL_MODES` (core.js): use it rather than listing them. Defaults (VAT rate 24, tip 10% for 1 person)
   are `TOOL_DEFAULTS`, filled in on entering the mode and after AC. Percent (discount, change, tip), Interest (`loan`:
-  loan, payoff, savings) and Dates (between, add, age) have kinds on a switch above their fields: `KIND_FIELDS`, `KIND_LABELS`, `toolKind[mode]`, `setToolKind`,
+  loan, payoff, savings) and Dates (between, add) have kinds on a switch above their fields: `KIND_FIELDS`, `KIND_LABELS`, `toolKind[mode]`, `setToolKind`,
   `kindPanelHtml`; switching kinds re-renders only the fields, AC (and changing kind) clears the kind on screen. In
   landscape a kind's fields share one row (`.kind-grid`, `--f`, one-line labels); the tip always does (`ONE_ROW_KINDS`). `FIELD_TYPE` marks fields that aren't plain numbers:
-  'count' (People: digits only), 'int' (Dates' days: may be negative), 'date' (digits only, shown DD/MM/YYYY by
-  `formatDateDigits`; an empty field with the placeholder "Today" means today). The , key is dimmed for those. A tip split between people is rounded
+  'count' (People: digits only; the , key is dimmed), 'int' (Dates' days: may be negative; the , key becomes ±),
+  'date' (the device's own date picker, `<input type="date">`, value YYYY-MM-DD, not on the keypad). A tip split between people is rounded
   up to the cent (`ratCentsUp`) so the shares cover the bill. Interest (`loanNumbers`, floats like Fuel/Energy): yearly
   rate, interest monthly, months = round(years × 12) up to 1200; a loan's payment is rounded to cents; savings deposits
   come at the end of each month, an empty starting amount or deposit counts as 0. Payoff (`payoffNumbers`): months to
   pay a loan with a given payment (the last one smaller), or `never` when the payment doesn't cover a month's interest. Dates (dates.js) count days in UTC
-  (`dayNumber`), years 1000–9999; working days are Monday–Friday without Greek public holidays (`greekHolidays`,
-  `orthodoxEaster`), both dates counted; a 29 February birthday falls on 28 February in other years.
+  (`dayNumber`), years 1000–9999; From and Date start at today (`TOOL_DEFAULTS`). The "Working days" chip on the
+  display (`renderDateBar`, `dateCount`, saved as a choice) counts Monday–Friday without Greek public holidays
+  (`greekHolidays`, `orthodoxEaster`): "between" counts both dates, "add" skips non-working days from the day after.
+  "Between" has no number to type, so `#keypad.date-details` shows a details list instead of keys.
 - **Switches** (VAT add/remove, the kinds of Percent, Interest and Dates) are one generic segmented control: `TOGGLES`, `toggleHtml`,
   `renderToggles`, `setupToggleSlide` (tap, drag, swipe, ← →), `.seg-toggle` in styles.css (`--n` options, `--i` chosen).
 - **Changing mode clears the mode you leave** (`resetModeInput`, called by `switchMode`): numbers typed and results

@@ -90,6 +90,20 @@ input,select{-webkit-user-select:text;user-select:text}
 /* the tip's three short fields in one row, so switching kinds in Percent doesn't change the height */
 .tool-grid.cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
 .tool-key.key-off{opacity:.35}
+/* Dates "between": the details take the keypad's place */
+.date-details{display:flex;flex-direction:column;gap:10px;padding:4px 2px 2px}
+.date-rows{margin:0;display:grid;gap:0}
+.date-rows div{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 4px;border-bottom:1px solid var(--border)}
+.date-rows div:last-child{border-bottom:0}
+.date-rows dt{color:var(--muted);font-size:14px;flex:0 0 auto}
+.date-rows dd{margin:0;color:var(--text);font-size:15px;font-weight:600;text-align:right;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.date-note{margin:0;color:var(--muted);font-size:12.5px;line-height:1.4;padding:0 4px}
+.tool-field input[type=date]{min-height:44px;-webkit-appearance:none;appearance:none;text-align:left;font:inherit}
+.tool-field input[type=date]::-webkit-date-and-time-value{text-align:left}
+html.landscape .date-rows div{padding:6px 4px}
+html.landscape .date-rows dt{font-size:13px}
+html.landscape .date-rows dd{font-size:14px}
+html.landscape .date-note{display:none}
 html.landscape .tool-grid.kind-grid{grid-template-columns:repeat(var(--f,2),minmax(0,1fr))}
 /* one line per label there, so a long one can't make the row taller */
 html.landscape .tool-grid.kind-grid .tool-field span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -606,6 +620,9 @@ html.landscape .calculator-card.graph-mode .keypad .key{height:auto!important;mi
 /* ---------- Scientific (calculator.js): the f(x) switch and DEG/RAD on the display, 15 keys above the basic ones ---------- */
 .sci-bar{position:absolute;top:8px;left:8px;z-index:3;display:flex;gap:6px}
 .calculator-card.tool-mode .sci-bar,.calculator-card.graph-mode .sci-bar{display:none}
+.date-bar{position:absolute;top:8px;left:8px;z-index:3;display:flex}
+.date-bar.hidden{display:none}
+.display-wrap.has-date-bar .expression{padding-left:104px}
 .sci-chip{height:28px;min-width:40px;padding:0 10px;border:1px solid var(--border);border-radius:999px;background:var(--card2);color:var(--muted);font:inherit;font-size:12px;font-weight:750;letter-spacing:.03em;cursor:pointer}
 .sci-chip.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .sci-chip:focus{outline:none}
