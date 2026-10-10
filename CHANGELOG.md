@@ -6,6 +6,21 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.7.0 – 2026-10-10
+
+### Added
+- **Percent** tab, with three kinds on a switch:
+  - **Discount:** the price after a discount, and how much you save.
+  - **Change:** how much a value went up or down, in percent (80 → 100 is +25%).
+  - **Tip:** the tip on a bill and, for more than one person, what each pays. It starts at 10% for one person;
+    shares are rounded up to the cent so the bill is covered.
+
+### Changed
+- The VAT tab's icon is now €, since % is the new Percent tab. Alt+1–7 switches tabs on a keyboard.
+
+### Fixed
+- Typing a second decimal comma into a VAT, Fuel or Energy field on a keyboard no longer gives a wrong number.
+
 ## 0.6.0 – 2026-10-10
 
 ### Added

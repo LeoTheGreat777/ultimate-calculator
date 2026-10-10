@@ -1,6 +1,6 @@
 # Ultimate Calculator – notes for Claude
 
-An all-in-one calculator web app: calculator, graph, unit converter, VAT, fuel and energy tools.
+An all-in-one calculator web app: calculator, graph, unit converter, VAT, percent/discount/tip, fuel and energy tools.
 Plain HTML/CSS/vanilla JS, no framework, no build step, no backend. English and Greek; new users start
 in English and dark theme (people who used the app before keep Greek / their theme, see the script in the
 `<head>` of `public/index.html`). Numbers always use Greek formatting: `1.234,56`.
@@ -48,7 +48,7 @@ Everything the app serves is in `public/` (the web root for both GitHub Pages an
 | `calculator.js` | calculator keys (`digit`, `operator`, brackets, `negate`, `equals`, C/AC), display, explanation |
 | `history.js` | saved calculations, the History sheet and its gestures |
 | `units.js` | unit data and names, conversion, the two values, `unitKeyInput` |
-| `tools.js` | VAT, Fuel, Energy: fields, saved values, calculations, `toolKeyInput`, tool field events |
+| `tools.js` | VAT, Percent, Fuel, Energy: fields, saved values, calculations, switches, `toolKeyInput`, tool field events |
 | `layout.js` | `fitLayout` (fits every mode to the screen), long text (`fitDisplayText`, `refuseKey`), zoom on big screens |
 | `ui.js` | theme, `setLanguage`/`applyLanguage`, modes and tabs (`switchMode`, `renderTool`), dialogs, hold keys, install |
 | `help.js` | Tips & shortcuts text (`HELP`) and `showHelp` |
@@ -97,7 +97,14 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
 - **Credits:** the footer names come from `AUTHORS` in `i18n.js`, in Greek and English (first name first in both);
   the English names are also in `index.html` (footer and `<meta name="author">`) and both in the README.
   Change them in all places together.
-- **Tools** (fuel, energy, VAT, units) remember their values per tool in localStorage
+- **Tool modes** are `TOOL_MODES` (core.js): use it rather than listing them. Defaults (VAT rate 24, tip 10% for 1 person)
+  are `TOOL_DEFAULTS`, filled in on entering the mode and after AC. Percent has three kinds (`pctAction`: discount,
+  change, tip), each with its own fields (`PCT_FIELDS`); switching kinds re-renders only the fields, AC clears only
+  the kind on screen. Fields in `WHOLE_NUMBER_FIELDS` (People) refuse , . and −. A tip split between people is rounded
+  up to the cent (`ratCentsUp`) so the shares cover the bill.
+- **Switches** (VAT add/remove, Percent's kinds) are one generic segmented control: `TOGGLES`, `toggleHtml`,
+  `renderToggles`, `setupToggleSlide` (tap, drag, swipe, ← →), `.seg-toggle` in styles.css (`--n` options, `--i` chosen).
+- **Tools** (fuel, energy, VAT, percent, units) remember their values per tool in localStorage
   (`saveTools`/`loadTools`); AC clears a tool. Field values are stored under the field's `id`.
 - **Storage:** all in the browser (`uc-history`, `uc-tools`, `uc-fuel-log`, `uc-graph`, `uc-lang`,
   `uc-theme`). Use `store.get/set` – localStorage can throw.
@@ -116,7 +123,7 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   stays exact where the answer is exact and rounds floats to 15 digits otherwise. Shown with superscripts and sin⁻¹
   (`sciPretty`). Keyboard: ^ and !.
 - **Modes are tabs:** a strip of tabs at the top of the card (`MODE_LABELS`, `renderModeTabs`, `switchMode`), one tap
-  each, scrolling sideways when they don't fit; Alt+1…6 on a keyboard. Add a new mode to `MODE_LABELS`, `ICONS`
+  each, scrolling sideways when they don't fit; Alt+1…7 on a keyboard. Add a new mode to `MODE_LABELS`, `ICONS`
   and `MODE_TRANSLATIONS`. Units is its own tab after Calculator. Going Calculator -> Units moves the calculator's
   number into the Units value last typed in (`unitSource`) and resets the calculator; nothing moves back.
 - **Big screens:** on large desktop screens the whole app is scaled with CSS `zoom` on `<html>` (`applyUiZoom`,

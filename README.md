@@ -41,6 +41,7 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 - Fuel cost calculator, with saved entries and their averages
 - Electricity/energy cost calculator
 - VAT add/remove calculator (VAT rounded to cents, as on invoices)
+- Percent: price after a discount, % change between two values, and a tip calculator that splits the bill between people
 - Charts and step-by-step explanations for every tool
 - Each tool remembers the values typed in it; AC clears them
 
@@ -50,7 +51,7 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 - English and Greek language support
 - Installable on phones: an install button opens the install dialog on Android, and shows a short Add to Home Screen guide on iPhone
 - Mobile-friendly calculator controls
-- One-tap mode tabs (Calculator, Units, Graph, VAT, Fuel, Energy); Alt+1–6 on a keyboard
+- One-tap mode tabs (Calculator, Units, Graph, VAT, Percent, Fuel, Energy); Alt+1–7 on a keyboard
 - Calculation explanations presented in a readable step-by-step view
 - Tips for every mode, with keyboard shortcuts on computers, from the footer (or ? on a keyboard)
 

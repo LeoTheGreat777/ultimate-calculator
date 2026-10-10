@@ -117,12 +117,14 @@ function renderTool(){
  let html='';
  if(mode==='fuel')html='<div class="tool-grid">'+field('fuelD',T[lang].fuelD)+field('fuelC',T[lang].fuelC)+field('fuelP',T[lang].fuelP)+'</div>';
  if(mode==='energy')html='<div class="tool-grid">'+field('energyP',T[lang].energyP)+field('energyH',T[lang].energyH)+field('energyD',T[lang].energyD)+field('energyR',T[lang].energyR)+'</div>';
- if(mode==='vat')html='<div class="tool-grid">'+field('amount',T[lang].amount)+field('vatRate',T[lang].vatRate)+'</div><div class="vat-toggle" role="radiogroup" data-active="'+vatAction+'"><span class="vat-thumb" aria-hidden="true"></span><button type="button" role="radio" data-vat-mode="add">'+esc(T[lang].addVat)+'</button><button type="button" role="radio" data-vat-mode="remove">'+esc(T[lang].removeVat)+'</button></div>';
+ if(mode==='vat')html='<div class="tool-grid">'+field('amount',T[lang].amount)+field('vatRate',T[lang].vatRate)+'</div>'+toggleHtml('vat');
+ // Percent: the switch goes above the fields, since it decides which fields there are
+ if(mode==='pct')html=toggleHtml('pct',true)+'<div class="tool-grid'+(PCT_FIELDS[pctAction].length===3?' cols-3':'')+'">'+pctFieldsHtml()+'</div>';
 
  $('#toolPanel').innerHTML=html;
  $$('#toolPanel input[data-tool-input]').forEach(i=>fitDisplayText(i,12));
  setActiveToolInput($('#toolPanel input[data-tool-input]'));
- renderVatToggle();
+ renderToggles();
  renderToolKeypad();
  fitLayout();
 
@@ -131,15 +133,15 @@ function renderTool(){
 function setMode(next){
  if(mode==='calc')calcHowData=howData;mode=next;howData=next==='calc'?calcHowData:null;toolResult=null;
  if(next==='calc')refreshCalcHow();
- // Tools keep what was typed in them; only an empty VAT rate goes back to the default.
- if(next==='vat'&&!toolState.vat.inputs.vatRate)toolState.vat.inputs.vatRate='24';
+ // Tools keep what was typed in them; only an empty VAT rate, tip rate or people goes back to its default.
+ fillToolDefaults(next);
  if(next==='units'){unitActiveInput=unitSource;unitReplaceOnNextKey=true;window._unitCategory=window._unitCategory||'length';}
  renderTool();
  if(next!=='calc'&&next!=='graph'){runActiveTool();if(next!=='units')renderToolDisplay()}
  syncModeTabs();
 }
 // The modes, one tap each: a strip of tabs at the top of the card (scrolls sideways when they don't all fit).
-const MODE_LABELS=['calc','units','graph','vat','fuel','energy'];
+const MODE_LABELS=['calc','units','graph','vat','pct','fuel','energy'];
 function renderModeTabs(){
  const track=$('#modeTabs .mode-tabs-track');if(!track)return;
  track.innerHTML=MODE_LABELS.map(m=>'<button class="mode-tab" role="tab" type="button" data-mode="'+m+'"><span class="mode-tab-icon" aria-hidden="true">'+modeIcon(m)+'</span><span class="mode-tab-label">'+esc(modeText(m))+'</span></button>').join('');
@@ -234,13 +236,10 @@ function applyLanguage(){
    if(toolState[mode])toolState[mode].inputs[id]=value;
    const input=$('#'+id);if(input)input.value=value;
  });
- if(mode==='fuel')window._runFuel?.();
- else if(mode==='energy')window._runEnergy?.();
- else if(mode==='vat')window._runVat?.(vatAction==='add');
- else if(mode==='units')window._runUnits?.();
+ if(mode==='units'||TOOL_MODES.includes(mode))runActiveTool();
  else render();
  syncModeTabs();
- renderVatToggle();
+ renderToggles();
 }
 // Holding ⌫ clears everything, the same as AC, in every mode.
 function clearEverything(){if(mode==='calc')clearAll();else if(mode==='units')toolKeyInput('clear');else if(mode==='graph')graphKey('clear');else clearToolFields()}

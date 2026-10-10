@@ -100,7 +100,7 @@ function fitLayout(){
  const avail=fitAvailHeight()/Z;
  const need=()=>Math.ceil((footer.getBoundingClientRect().bottom+window.scrollY)/Z+(parseFloat(getComputedStyle(shell).paddingBottom)||0));
  root.classList.remove('page-scroll');shell.style.height='';card.classList.remove('compact-display','fit-no-copy');
- const tool=['fuel','energy','vat'].includes(mode),touchTool=tool&&isMobileDevice();
+ const tool=TOOL_MODES.includes(mode),touchTool=tool&&isMobileDevice();
  const setToolLayout=compact=>{card.classList.toggle('mobile-tool',compact);document.body.classList.toggle('mobile-tool-on',compact)};
  if(tool)setToolLayout(touchTool);
  const land=matchMedia(LANDSCAPE).matches;root.classList.toggle('landscape',land);

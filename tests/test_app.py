@@ -60,6 +60,10 @@ async def new_page(browser, url, lang='en', theme='dark', phone=False, size=None
     return page
 
 
+def t(en, el, lang):
+    return el if lang == 'el' else en
+
+
 async def calc(page, keys):
     await page.keyboard.press('Escape')
     await page.keyboard.type(keys)
@@ -176,6 +180,48 @@ async def desktop(browser, url, lang, theme):
         await p.keyboard.press('Tab')
     await p.wait_for_timeout(50)
     check(L + 'fuel cost', await p.evaluate(R) == '33,30 €', await p.evaluate(R))
+    # VAT switch still slides between add and remove
+    await p.evaluate("switchMode('vat')")
+    await p.click('[data-choice="remove"]')
+    check(L + 'VAT switch: remove', await p.evaluate('vatAction') == 'remove' and await p.evaluate(R) == '995,61 €', await p.evaluate(R))
+    await p.click('[data-choice="add"]')
+    # Percent: discount, % change, tip
+    await p.evaluate("switchMode('pct');setPctAction('discount')")
+    await p.click('.tool-key[data-action="clear-all"]')
+    await p.keyboard.type('80')
+    await p.keyboard.press('Tab')
+    await p.keyboard.type('25')
+    check(L + 'Percent: 25% off 80', [await p.evaluate(R), await p.evaluate(X)] == ['60,00 €', t('You save: 20,00 €', 'Κερδίζεις: 20,00 €', lang)],
+          [await p.evaluate(R), await p.evaluate(X)])
+    box = await p.locator('.seg-toggle').bounding_box()
+    await p.mouse.move(box['x'] + 40, box['y'] + box['height'] / 2)
+    await p.mouse.down()
+    await p.mouse.move(box['x'] + 120, box['y'] + box['height'] / 2, steps=8)
+    await p.wait_for_timeout(150)
+    await p.mouse.up()
+    check(L + 'Percent: dragging the switch picks Change', await p.evaluate('pctAction') == 'change' and await p.locator('#pctFrom').count() == 1)
+    await p.click('#pctFrom')
+    await p.keyboard.type('80')
+    await p.keyboard.press('Tab')
+    await p.keyboard.type('100')
+    check(L + 'Percent: 80 to 100 is +25%', await p.evaluate(R) == '+25%', await p.evaluate(R))
+    await p.keyboard.press('Control+a')
+    await p.keyboard.type('60')
+    check(L + 'Percent: 80 to 60 is -25%', await p.evaluate(R) == '-25%', await p.evaluate(R))
+    await p.click('[data-choice="tip"]')
+    await p.click('#tipBill')
+    await p.keyboard.type('100')
+    check(L + 'Tip: 10% on 100 for one', await p.evaluate(R) == '110,00 €', await p.evaluate(R))
+    await p.click('#tipPeople')
+    await p.keyboard.press('Backspace')
+    await p.keyboard.type('3,5')
+    check(L + 'Tip: people take whole numbers only', await p.evaluate('tipPeople.value') == '35', await p.evaluate('tipPeople.value'))
+    await p.keyboard.press('Backspace')
+    check(L + 'Tip: split 3 ways rounds up to the cent', await p.evaluate(R) == '36,67 €', await p.evaluate(R))
+    await p.click('.tool-key[data-action="clear-all"]')
+    st = await p.evaluate("[tipBill.value,tipRate.value,tipPeople.value,toolState.pct.inputs.pctFrom]")
+    check(L + 'Percent: AC clears only the kind on screen', st == ['', '10', '1', '80'], st)
+    await p.evaluate("setPctAction('discount')")
     await p.evaluate("switchMode('graph')")
     await p.wait_for_timeout(150)
     check(L + 'graph has a canvas', await p.evaluate('graphCanvas.clientHeight > 100'))
@@ -409,9 +455,10 @@ async def phone(browser, url, lang, theme, size):
         await p.tap(f'.key[data-value="{key}"]')
     await p.tap('.key[data-action="equals"]')
     check(L + 'keypad works', await p.evaluate(R) == '8')
-    for m in ['calc', 'sci', 'units', 'graph', 'vat', 'fuel', 'energy']:
+    for m in ['calc', 'sci', 'units', 'graph', 'vat', 'pct', 'tip', 'fuel', 'energy']:
         # 'sci' is the Calculator with the scientific keys on
-        await p.evaluate("switchMode('calc');if(!sciMode)toggleSci()" if m == 'sci' else f"switchMode('{m}')")
+        # 'tip' is Percent's tip, the kind with the most fields
+        await p.evaluate("switchMode('calc');if(!sciMode)toggleSci()" if m == 'sci' else "switchMode('pct');setPctAction('tip')" if m == 'tip' else f"switchMode('{m}')")
         await p.wait_for_timeout(200)
         # compared with the real screen size: a phone browser widens the page to fit content that is too wide
         fits = await p.evaluate("""([vw,vh])=>{const scroll=document.documentElement.classList.contains('page-scroll');

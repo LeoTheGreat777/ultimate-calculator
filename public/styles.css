@@ -87,6 +87,8 @@ input,select{-webkit-user-select:text;user-select:text}
 .calculator-card.tool-mode .tool-panel{margin-top:0}
 .tool-mode{padding-bottom:10px}
 .tool-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+/* the tip's three short fields in one row, so switching kinds in Percent doesn't change the height */
+.tool-grid.cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
 .tool-field{display:flex;flex-direction:column;gap:6px}
 .tool-field span{font-size:12px;color:var(--muted)}
 .tool-field input,.tool-field select,.unit-select{width:100%;border:1px solid var(--border);border-radius:11px;background:var(--card);color:var(--text);padding:11px 12px;outline:none}
@@ -184,9 +186,9 @@ input,select{-webkit-user-select:text;user-select:text}
   .key,.tool-keypad button,.secondary-button{-webkit-tap-highlight-color:transparent}
   .key:active,.tool-keypad button:active{transform:none}
 }
-.vat-toggle{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:10px;padding:4px;background:var(--card);border:1px solid var(--border);border-radius:13px}
-.vat-toggle button{min-height:38px;border:0;border-radius:9px;background:transparent;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer}
-.vat-toggle button.active{color:var(--text)}
+.seg-toggle{display:grid;grid-template-columns:repeat(var(--n,2),minmax(0,1fr));gap:5px;margin-top:10px;padding:4px;background:var(--card);border:1px solid var(--border);border-radius:13px}
+.seg-toggle button{min-width:0;min-height:38px;border:0;border-radius:9px;background:transparent;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer}
+.seg-toggle button.active{color:var(--text)}
 .conversion-category{flex:1;min-height:42px;border:1px solid var(--border);border-radius:13px;background:var(--card);color:var(--text);padding:9px 12px;outline:none;font-weight:650}
 .conversion-swap{width:42px;height:42px;flex:0 0 42px;border:1px solid var(--border);border-radius:13px;background:var(--card);color:var(--accent2);font-size:20px;cursor:pointer}
 .conversion-swap:active{transform:scale(.96)}
@@ -257,12 +259,13 @@ input,select{-webkit-user-select:text;user-select:text}
 .history-clear-wrap{gap:6px}
 .history-close{flex:0 0 32px;width:32px;height:32px;font-size:22px}
 /* VAT add/remove: sliding thumb (tap, drag or swipe) */
-.vat-toggle{position:relative;touch-action:none;-webkit-user-select:none;user-select:none}
-.vat-toggle button{position:relative;z-index:1;transition:color .2s}
-.vat-thumb{position:absolute;z-index:0;top:4px;bottom:4px;left:4px;width:calc((100% - 13px) / 2);border-radius:9px;background:var(--card2);box-shadow:0 1px 5px rgba(0,0,0,.16);transform:translateX(var(--vat-thumb-x,0px));transition:transform .24s cubic-bezier(.2,.8,.2,1);pointer-events:none}
-/* the % in calc() resolves against the thumb's own width; an inline --vat-thumb-x (set while dragging) wins */
-.vat-toggle[data-active="remove"]{--vat-thumb-x:calc(100% + 5px)}
-.vat-toggle.sliding .vat-thumb{transition:none}
+.seg-toggle{--seg-x:calc((100% + 5px) * var(--i,0));position:relative;touch-action:none;-webkit-user-select:none;user-select:none}
+.seg-toggle button{position:relative;z-index:1;transition:color .2s}
+.seg-thumb{position:absolute;z-index:0;top:4px;bottom:4px;left:4px;width:calc((100% - 8px - (var(--n,2) - 1) * 5px) / var(--n,2));border-radius:9px;background:var(--card2);box-shadow:0 1px 5px rgba(0,0,0,.16);transform:translateX(var(--seg-x));transition:transform .24s cubic-bezier(.2,.8,.2,1);pointer-events:none}
+/* --i is the chosen option (set by renderToggles); the % in --seg-x resolves against the thumb's own width.
+   An inline --seg-x (set while dragging) wins. A switch above the fields (Percent) has its gap below instead. */
+.seg-toggle.seg-top{margin:0 0 10px}
+.seg-toggle.sliding .seg-thumb{transition:none}
 /* Calculator keypad: key and display heights follow the screen height so the whole keypad stays visible on phones. */
 .calculator-card{--k:clamp(44px,calc((calc(100dvh / var(--z,1)) - 380px) / 5),68px)}
 .calculator-card:not(.tool-mode) .keypad .key{height:var(--k);min-height:var(--k)}
@@ -391,7 +394,8 @@ body.mobile-tool-on .app-shell{height:calc(100dvh / var(--z,1))}
   .calculator-card.mobile-tool .tool-field span{font-size:11.5px}
   .calculator-card.mobile-tool .tool-field input{padding:8px 10px}
   .calculator-card.mobile-tool .tool-grid{gap:6px}
-  .calculator-card.mobile-tool .vat-toggle{margin-top:7px}
+  .calculator-card.mobile-tool .seg-toggle{margin-top:7px}
+  .calculator-card.mobile-tool .seg-toggle.seg-top{margin:0 0 7px}
 }
 /* On short phones the copy button would not fit; tapping the result copies it instead */
 @media (max-height:720px){
@@ -559,7 +563,8 @@ html.landscape .calculator-card.mobile-tool .display-wrap.tool-display{height:au
   html.landscape .calculator-card.mobile-tool .tool-panel{padding:7px 9px}
   html.landscape .calculator-card.mobile-tool .tool-field{gap:2px}
   html.landscape .calculator-card.mobile-tool .tool-field input{padding:6px 9px}
-  html.landscape .calculator-card.mobile-tool .vat-toggle{margin-top:5px}
+  html.landscape .calculator-card.mobile-tool .seg-toggle{margin-top:5px}
+  html.landscape .calculator-card.mobile-tool .seg-toggle.seg-top{margin:0 0 5px}
   html.landscape .calculator-card.mobile-tool .display-wrap.tool-display .result{font-size:clamp(30px,10vh,46px)}
 }
 html.landscape .calculator-card.graph-mode #keypad{align-self:stretch;grid-auto-rows:minmax(0,1fr)}
