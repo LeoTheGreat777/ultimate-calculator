@@ -48,7 +48,7 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 
 ## Authors
 
-Leonidas Kampaxis and Efstathios Konstantinos Tsakiris
+Leonidas Kampaxis and Efstathios Konstantinos Tsakiris (Λεωνίδας Κάμπαξης και Ευστάθιος Κωνσταντίνος Τσακίρης)
 
 ## Technology
 

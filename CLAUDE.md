@@ -57,8 +57,9 @@ and the file checks in `publish-image.yml`, or it works locally and 404s in prod
 - **Logo:** `icon.svg` is the source of the app icons; the PNGs (`icon-192/512.png`, `icon-maskable-512.png`,
   `apple-touch-icon.png`) are rendered from it, so regenerate them together after changing it. The small logo by
   the title is an inline SVG in `index.html` coloured by theme tokens (`.bm-*` classes), so new themes recolour it.
-- **Credits:** the footer names come from `AUTHORS` in `app.js`; the same names are in `index.html`
-  (footer and `<meta name="author">`) and the README. Change them in all places together.
+- **Credits:** the footer names come from `AUTHORS` in `app.js`, in Greek and English (first name first in both);
+  the English names are also in `index.html` (footer and `<meta name="author">`) and both in the README.
+  Change them in all places together.
 - **Tools** (fuel, energy, VAT, units) remember their values per tool in localStorage
   (`saveTools`/`loadTools`); AC clears a tool. Field values are stored under the field's `id`.
 - **Storage:** all in the browser (`uc-history`, `uc-tools`, `uc-fuel-log`, `uc-graph`, `uc-lang`,
