@@ -2,7 +2,16 @@
    Order matters: the base styles come first and the later sections refine them (a later rule wins a tie),
    so add a change to the section it belongs to, or at the end. Colours are theme tokens (--bg, --card, --accent ...)
    set on :root for each theme. Sizes that depend on the screen come from fitLayout (layout.js) as --k and --disp. */
-:root{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Inter,system-ui,sans-serif;color-scheme:dark;--bg:#070a0f;--card:#10151d;--card2:#171d26;--key:#1d2530;--key-hover:#293442;--text:#f5f7fa;--muted:#8f9bab;--accent:#6ea8fe;--accent2:#8bb9ff;--border:rgba(255,255,255,.08);--danger:#ff6666}
+:root{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Inter,system-ui,sans-serif}
+/* ---------- Themes ----------
+   Every colour in the app comes from these tokens. html[data-theme] picks the theme (set before the first paint
+   by the <head> script, and by applyTheme in ui.js; "auto" becomes light or dark from the device setting).
+   [data-theme-preview] gives an element a theme's colours of its own (the swatches in the theme menu).
+   A new theme is one more block here plus its name in THEMES (ui.js) and in the texts. */
+:root,[data-theme-preview="dark"]{color-scheme:dark;--bg:#070a0f;--card:#10151d;--card2:#171d26;--key:#1d2530;--key-hover:#293442;--text:#f5f7fa;--muted:#8f9bab;--accent:#6ea8fe;--accent2:#8bb9ff;--border:rgba(255,255,255,.08);--danger:#ff6666;--on-accent:#07101c;--unit-result:#596575}
+html[data-theme="light"],[data-theme-preview="light"]{color-scheme:light;--bg:#f2f4f7;--card:#fff;--card2:#f5f7fa;--key:#e9edf2;--key-hover:#dde3ea;--text:#111722;--muted:#687384;--border:rgba(17,23,34,.1);--accent:#3478e5;--accent2:#2866c7;--danger:#ff6666;--on-accent:#07101c;--unit-result:#a3acb9}
+/* Black: true black for OLED screens (black pixels are off), neutral greys, the same blue */
+html[data-theme="black"],[data-theme-preview="black"]{color-scheme:dark;--bg:#000;--card:#000;--card2:#0c0c0d;--key:#1a1a1c;--key-hover:#262629;--text:#f5f5f7;--muted:#8e8e93;--accent:#6ea8fe;--accent2:#8bb9ff;--border:rgba(255,255,255,.12);--danger:#ff6666;--on-accent:#07101c;--unit-result:#5c5c62}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;width:100%;height:100%;min-height:100%;background:var(--bg);color:var(--text);overscroll-behavior:none;overflow:hidden}
 body{min-height:calc(100dvh / var(--z,1));touch-action:none;-webkit-user-select:none;user-select:none}
@@ -43,7 +52,7 @@ input,select{-webkit-user-select:text;user-select:text}
 .key:focus{outline:none;box-shadow:none}
 .key:focus-visible{outline:2px solid var(--accent2);outline-offset:1px}
 .key.utility,.key.operator{color:var(--accent2)}
-.key.equals{background:var(--accent);color:#07101c;font-weight:800}
+.key.equals{background:var(--accent);color:var(--on-accent);font-weight:800}
 .key.wide{grid-column:span 2}
 .bottom-actions{display:flex;gap:8px;margin-top:9px}
 .secondary-button{width:100%;border:1px solid var(--border);border-radius:12px;padding:9px;background:transparent;color:var(--muted);cursor:pointer}
@@ -104,7 +113,7 @@ input,select{-webkit-user-select:text;user-select:text}
 .how-step{background:var(--card2);border-radius:14px;padding:14px}
 .how-formula{font-size:17px;font-weight:650;margin-bottom:12px}
 .how-line{display:flex;gap:10px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--border);font-size:14px;line-height:1.5}
-.how-line span{flex:0 0 26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:#07101c;font-size:12px;font-weight:800}
+.how-line span{flex:0 0 26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:var(--on-accent);font-size:12px;font-weight:800}
 .how-line strong{display:block;font-size:12px;color:var(--muted);margin-bottom:3px}
 .how-line div div{overflow-wrap:anywhere}
 .how-result{display:flex;flex-direction:column;align-items:flex-start;gap:5px;margin-top:6px;padding:16px 2px 2px;border-top:1px solid var(--border);color:var(--accent2);overflow-wrap:anywhere}
@@ -137,12 +146,6 @@ input,select{-webkit-user-select:text;user-select:text}
   .modal{padding:12px}
   .modal-card{width:calc(calc(100vw / var(--z,1)) - 24px);border-radius:20px;padding:15px}
 }
-@media(prefers-color-scheme:light){
-  :root:not(.force-dark):not(.force-light){color-scheme:light;--bg:#f2f4f7;--card:#fff;--card2:#f5f7fa;--key:#e9edf2;--key-hover:#dde3ea;--text:#111722;--muted:#687384;--border:rgba(17,23,34,.1);--accent:#3478e5;--accent2:#2866c7}
-}
-body.light{--bg:#f2f4f7;--card:#fff;--card2:#f5f7fa;--key:#e9edf2;--key-hover:#dde3ea;--text:#111722;--muted:#687384;--border:rgba(17,23,34,.1);--accent:#3478e5;--accent2:#2866c7;color-scheme:light}
-:root.force-dark{color-scheme:dark;--bg:#070a0f;--card:#10151d;--card2:#171d26;--key:#1d2530;--key-hover:#293442;--text:#f5f7fa;--muted:#8f9bab;--accent:#6ea8fe;--accent2:#8bb9ff;--border:rgba(255,255,255,.08);--danger:#ff6666}
-:root.force-light{color-scheme:light;--bg:#f2f4f7;--card:#fff;--card2:#f5f7fa;--key:#e9edf2;--key-hover:#dde3ea;--text:#111722;--muted:#687384;--border:rgba(17,23,34,.1);--accent:#3478e5;--accent2:#2866c7}
 .unit-display{height:275px;padding:5px 3px 4px}
 .unit-display-toolbar{margin:0 2px 6px}
 .unit-row{height:95px;min-height:95px;padding:0 5px}
@@ -218,12 +221,6 @@ body.light{--bg:#f2f4f7;--card:#fff;--card2:#f5f7fa;--key:#e9edf2;--key-hover:#d
   .unit-value{font-size:clamp(36px,10vw,48px)!important}
   .unit-unit{min-width:70px!important;font-size:15px!important}
 }
-/* Converted (inactive) value in the unit converter, per theme */
-:root{--unit-result:#596575}
-@media(prefers-color-scheme:light){
-  :root:not(.force-dark):not(.force-light){--unit-result:#a3acb9}
-}
-:root.force-light,body.light{--unit-result:#a3acb9}
 /* Tools on phones: the app keypad replaces the native keyboard, so make room for it */
 .tool-field input.tool-active{border-color:var(--accent)}
 .calculator-card.mobile-tool .display-wrap.tool-display{height:108px!important}
@@ -337,7 +334,7 @@ body.graph-on .bottom-actions{display:none}
 .how-button.fuel-save.done{color:var(--accent);border-color:var(--accent)}
 .calculator-card.mobile-tool .how-button.fuel-btn{left:auto}
 .calculator-card.mobile-tool .how-button.fuel-log{position:relative;inset:auto}
-.how-button.fuel-log[data-count]::after{content:attr(data-count);position:absolute;top:-6px;right:-7px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--accent);color:#07101c;font-size:10px;font-weight:800;line-height:17px;text-align:center}
+.how-button.fuel-log[data-count]::after{content:attr(data-count);position:absolute;top:-6px;right:-7px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--accent);color:var(--on-accent);font-size:10px;font-weight:800;line-height:17px;text-align:center}
 .fuel-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
 .fuel-stat{background:var(--card2);border-radius:14px;padding:11px 12px;display:flex;flex-direction:column;gap:4px;min-width:0}
 .fuel-stat span{font-size:11.5px;color:var(--muted)}
@@ -345,7 +342,7 @@ body.graph-on .bottom-actions{display:none}
 .fuel-stat.main,.fuel-stat.wide{grid-column:1/-1}
 .fuel-stat.main strong{font-size:28px;letter-spacing:-.02em;color:var(--accent2)}
 .fuel-stat.wide strong{font-size:14px;font-weight:650}
-.fuel-use{width:100%;margin-top:10px;border:0;border-radius:12px;padding:11px;background:var(--accent);color:#07101c;font-weight:750;cursor:pointer}
+.fuel-use{width:100%;margin-top:10px;border:0;border-radius:12px;padding:11px;background:var(--accent);color:var(--on-accent);font-weight:750;cursor:pointer}
 .fuel-log-chart{display:block;width:100%;height:150px}
 .fuel-list{display:flex;flex-direction:column;margin-top:12px}
 .fuel-item{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--border)}
@@ -422,7 +419,7 @@ html.page-scroll body{touch-action:pan-y!important}
 /* Hold ⌫ to clear everything: the key fills while held, then flashes */
 #keypad [data-action="backspace"],#keypad [data-g="back"]{-webkit-touch-callout:none}
 #keypad .holding{background:color-mix(in srgb,var(--key) 55%,var(--accent))!important;transition:background .5s linear}
-#keypad .held{background:var(--accent)!important;color:#07101c!important;transition:none}
+#keypad .held{background:var(--accent)!important;color:var(--on-accent)!important;transition:none}
 /* Units switched on: the ↔ button stays lit, like a pressed key */
 /* ---------- Theme and language changes ---------- */
 /* Theme: the new theme grows in a circle from the theme button (toggleTheme); no cross-fade underneath */
@@ -476,8 +473,8 @@ html.theme-fade *,html.theme-fade *::before,html.theme-fade *::after{transition:
 .mode-tab:hover{color:var(--text)}
 .mode-tab:focus-visible{outline:2px solid var(--accent2);outline-offset:-2px}
 .mode-tab-icon{color:var(--accent2);font-size:14px;line-height:1}
-.mode-tab.active{background:var(--accent);border-color:var(--accent);color:#07101c}
-.mode-tab.active .mode-tab-icon{color:#07101c}
+.mode-tab.active{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.mode-tab.active .mode-tab-icon{color:var(--on-accent)}
 @media (prefers-reduced-motion:reduce){
   .mode-tab{transition:none}
 }
@@ -491,7 +488,7 @@ html.theme-fade *,html.theme-fade *::before,html.theme-fade *::after{transition:
 .bm-key{fill:var(--key)}
 .bm-lit{fill:var(--accent)}
 .bm-sym{stroke:var(--accent2);fill:none}
-.bm-ink{stroke:#07101c;fill:none}
+.bm-ink{stroke:var(--on-accent);fill:none}
 @media(max-width:480px){
   .topbar h1.brand{gap:7px;font-size:min(21px,5.4vw)}
   .brand-mark{width:24px;height:24px}
@@ -542,3 +539,22 @@ html.landscape .calculator-card.mobile-tool .display-wrap.tool-display{height:au
 }
 html.landscape .calculator-card.graph-mode #keypad{align-self:stretch;grid-auto-rows:minmax(0,1fr)}
 html.landscape .calculator-card.graph-mode .keypad .key{height:auto!important;min-height:0!important}
+/* ---------- Theme menu: opens from the theme button (ui.js, openThemeMenu) ---------- */
+.top-actions{position:relative}
+.topbar.menu-open{position:relative;z-index:70}
+.theme-menu{position:absolute;top:calc(100% + 8px);right:0;z-index:70;width:228px;padding:6px;display:flex;flex-direction:column;gap:2px;background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,.35)}
+.theme-menu.hidden{display:none}
+.theme-option{display:flex;align-items:center;gap:11px;width:100%;min-height:46px;padding:7px 10px;border:0;border-radius:11px;background:transparent;color:var(--text);font:inherit;font-size:14px;font-weight:650;text-align:left;cursor:pointer}
+.theme-option:hover{background:var(--key)}
+.theme-option:focus{outline:none}
+.theme-option:focus-visible{outline:2px solid var(--accent2);outline-offset:-2px}
+.theme-option[aria-checked="true"]{background:var(--card2)}
+.theme-option-text{display:flex;flex-direction:column;flex:1;min-width:0;line-height:1.25}
+.theme-option-text small{font-size:11.5px;font-weight:500;color:var(--muted)}
+.theme-check{color:var(--accent2);font-weight:800;visibility:hidden}
+.theme-option[aria-checked="true"] .theme-check{visibility:visible}
+.theme-swatch{flex:0 0 30px;width:30px;height:30px;border-radius:9px;background:var(--bg);border:1px solid var(--border);display:grid;place-items:center;overflow:hidden}
+.theme-swatch i{width:16px;height:10px;border-radius:3px;background:var(--key);box-shadow:inset -6px 0 0 var(--accent)}
+.theme-swatch-auto{display:flex}
+.theme-swatch-auto span{flex:1;align-self:stretch;display:grid;place-items:center;background:var(--bg)}
+.theme-swatch-auto i{width:8px;box-shadow:none;background:var(--accent)}

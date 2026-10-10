@@ -40,7 +40,7 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 
 ### Interface
 - Responsive desktop and mobile layouts, in portrait and landscape (keypad beside the display when a phone is turned sideways)
-- Dark and light themes
+- Themes: Dark, Light, Black (true black for OLED screens), or Auto to follow the device
 - English and Greek language support
 - Installable on phones: an install button opens the install dialog on Android, and shows a short Add to Home Screen guide on iPhone
 - Mobile-friendly calculator controls

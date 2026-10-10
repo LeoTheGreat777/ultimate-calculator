@@ -1,6 +1,6 @@
 // Shared basics: version, DOM and storage helpers, the saved language and theme, and the app's state.
 // Loaded first; every other script uses these globals.
-const VERSION='0.4.144';
+const VERSION='0.4.145';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 // localStorage can throw (blocked storage, private mode, quota full). Never let that break the app.
@@ -13,8 +13,9 @@ function readLanguage(){
  return stored==='en'||stored==='el'?stored:'en';
 }
 let lang=readLanguage();
-// New users start in dark theme; 'auto' (follow the system) is kept for people who used the app before it became the default.
-let theme=store.get('uc-theme')==='light'?'light':store.get('uc-theme')==='auto'?'auto':'dark';
+// The chosen theme: auto (follow the device), light, dark or black. New users start in dark; people who used the app
+// before dark became the default keep auto. What is on screen is resolvedTheme() (ui.js).
+let theme=['light','black','auto'].includes(store.get('uc-theme'))?store.get('uc-theme'):'dark';
 let carry=null;
 let mode='calc',expression='',current='',currentIsPercent=false,justCalculated=false,lastExpression='',lastResult=null,howData=null,calcHowData=null,lastOperation=null,historyClearConfirm=false,toolResult=null,toolActiveInput=null,unitActiveInput='from',unitSource='from',unitReplaceOnNextKey=false,unitExpressions={from:'',to:''},toolState={fuel:{inputs:{},result:null},energy:{inputs:{},result:null},vat:{inputs:{},result:null}};
 store.del('uc-mode');

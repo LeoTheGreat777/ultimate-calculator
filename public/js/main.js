@@ -23,13 +23,15 @@ $('#historyButton').addEventListener('click',openHistory);$('#closeHistory').add
 // Tapping a result copies it too (on short screens the copy button is hidden to make room for the keypad).
 $('#calculatorDisplay').addEventListener('click',e=>{if(mode==='units'||mode==='graph'||!e.target.closest('#result'))return;if(mode==='calc'?!justCalculated:!toolResult?.main)return;copyResult();const r=$('#result');r.classList.add('copied');setTimeout(()=>r.classList.remove('copied'),700)});
 $('#langButton').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();setLanguage(lang==='el'?'en':'el')});
-$('#themeButton').addEventListener('click',toggleTheme);
+$('#themeButton').addEventListener('click',toggleThemeMenu);
 $('#installButton')?.addEventListener('click',installApp);
 $('#helpButton')?.addEventListener('click',showHelp);
 setupHoldKeys();
- document.addEventListener('click',e=>{if(historyClearConfirm&&!e.target.closest('#historyClearWrap'))clearHistoryConfirm()});
+// a click anywhere else closes the theme menu and the History "clear all?" question
+ document.addEventListener('click',e=>{if(themeMenuOpen()&&!e.target.closest('#themeMenu,#themeButton'))closeThemeMenu();if(historyClearConfirm&&!e.target.closest('#historyClearWrap'))clearHistoryConfirm()});
 $('#clearHistory').addEventListener('click',clearHistoryConfirm);$('#historyConfirmYes').addEventListener('click',deleteAllHistory);
 window.addEventListener('keydown',e=>{
+ if(themeMenuKeydown(e))return;
  // Alt+1…6 jumps to a mode (Alt+← / → are left alone: browsers use them for Back / Forward)
  if(e.altKey&&!e.ctrlKey&&!e.metaKey&&/^Digit[1-9]$/.test(e.code)){const n=MODE_LABELS[+e.code.slice(5)-1];if(n){e.preventDefault();switchMode(n)}return}
  if(e.ctrlKey||e.metaKey||e.altKey)return;

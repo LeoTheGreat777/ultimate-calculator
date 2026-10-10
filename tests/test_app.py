@@ -166,6 +166,23 @@ async def desktop(browser, url, lang, theme):
     await p.keyboard.press('?')
     await p.wait_for_timeout(150)
     check(L + 'tips open with ?', not await p.evaluate("howModal.classList.contains('hidden')"))
+    await p.keyboard.press('Escape')
+
+    # themes: the menu from the theme button; Black is kept after a reload
+    T = 'document.documentElement.dataset.theme'
+    check(L + f'theme on start is {theme}', await p.evaluate(T) == theme)
+    await p.click('#themeButton')
+    check(L + 'theme menu lists 4 themes', await p.locator('#themeMenu .theme-option').count() == 4)
+    await p.click('[data-theme-pick="black"]')
+    await p.wait_for_timeout(700)
+    await p.reload()
+    await p.wait_for_timeout(300)
+    check(L + 'Black theme kept after reload', await p.evaluate(T) == 'black'
+          and await p.evaluate('getComputedStyle(document.body).backgroundColor') == 'rgb(0, 0, 0)')
+    await p.click('#themeButton')
+    await p.click(f'[data-theme-pick="{theme}"]')
+    await p.wait_for_timeout(700)
+    check(L + 'back to the first theme', await p.evaluate(T) == theme and not await p.evaluate('themeMenuOpen()'))
     check(L + 'no JavaScript errors', not p.errors, p.errors)
     await p.context.close()
 
