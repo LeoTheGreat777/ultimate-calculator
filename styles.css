@@ -307,6 +307,9 @@ html.theme-fade *,html.theme-fade *::before,html.theme-fade *::after{transition:
 .topbar h1.brand{display:flex;align-items:center;gap:9px;min-width:0;white-space:nowrap}
 .brand-mark{width:28px;height:28px;flex:0 0 auto;display:block}
 .brand-name{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.bm-screen{fill:var(--card2)}
+.bm-edge{fill:none;stroke:var(--border)}
+.bm-seg{stroke:var(--accent2);fill:none}
 .bm-key{fill:var(--key)}
 .bm-lit{fill:var(--accent)}
 .bm-sym{stroke:var(--accent2);fill:none}
