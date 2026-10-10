@@ -1,8 +1,8 @@
 FROM nginx:alpine
 
-# Only the app's files go into the web root, so nothing else in the repo is ever served.
+# The web root is exactly public/, so nothing else in the repo is ever served.
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY index.html app.js charts.js history-interaction.js styles.css icon.svg icon-192.png icon-512.png icon-maskable-512.png apple-touch-icon.png manifest.webmanifest /usr/share/nginx/html/
+COPY public/ /usr/share/nginx/html/
 
 EXPOSE 80
 

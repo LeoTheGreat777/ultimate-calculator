@@ -1,5 +1,4 @@
-.git
-.github
-README.md
-docker-compose.yml
-CLAUDE.md
+# The image needs only these; everything else stays out of the build.
+*
+!nginx.conf
+!public/

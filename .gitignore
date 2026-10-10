@@ -1,0 +1,6 @@
+# Python caches from the tests
+__pycache__/
+# Editor and OS files
+.DS_Store
+.vscode/
+.idea/

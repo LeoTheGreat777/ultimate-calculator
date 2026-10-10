@@ -1,0 +1,59 @@
+// Tips & shortcuts: one sheet per mode, opened from the footer (or ? on a keyboard).
+// Tips: one sheet for the current mode, opened from the footer (or ? on a keyboard); keyboard shortcuts are a section in it.
+// Tips are [Greek, English]; keyboard rows are [[keys], Greek, English]. The keyboard part shows only on devices with a keyboard and mouse.
+const HELP={
+ calc:{tips:[
+  ['Πάτα ένα αποτέλεσμα για να το αντιγράψεις.','Tap a result to copy it.'],
+  ['Το ( ) ανοίγει ή κλείνει παρένθεση μόνο του. Όσες μείνουν ανοιχτές, τις κλείνει το =, και όσες δεν αλλάζουν τίποτα, όπως ((5)), φεύγουν.','( ) opens or closes a parenthesis on its own. Any left open are closed by =, and ones that change nothing, like ((5)), are removed.'],
+  ['Κράτα πατημένο το − για να αλλάξεις πρόσημο (±), στον αριθμό που γράφεις ή στο αποτέλεσμα.','Hold − to change the sign (±) of the number you are typing, or of the result.'],
+  ['Για αρνητικό αριθμό μέσα στην πράξη, πάτα − αμέσως μετά από × ή ÷: το 2 × − 3 δίνει −6.','For a negative number inside a calculation, press − right after × or ÷: 2 × − 3 gives −6.'],
+  ['Το 50 + 10% δίνει 55: το ποσοστό παίρνεται από τον προηγούμενο αριθμό. Το 50 × 10% δίνει 5.','50 + 10% gives 55: the percent is taken from the number before it. 50 × 10% gives 5.'],
+  ['Πάτα ξανά = για να επαναλάβεις την τελευταία πράξη: το 2 + 3 = = δίνει 8.','Press = again to repeat the last operation: 2 + 3 = = gives 8.'],
+  ['Το C σβήνει τον αριθμό που γράφεις. Όταν δεν γράφεις αριθμό γίνεται AC και τα σβήνει όλα, όπως και το ⌫ αν το κρατήσεις πατημένο.','C clears the number you are typing. When there is none it shows AC and clears everything, as does holding ⌫.'],
+  ['Όταν πας στις Μονάδες, ο αριθμός που φαίνεται μεταφέρεται εκεί και η Αριθμομηχανή ξεκινά από την αρχή.','Going to Units moves the number on screen there, and the Calculator starts fresh.'],
+  ['Μετά από ένα αποτέλεσμα, το ? δείχνει βήμα βήμα πώς βγήκε. Στο Ιστορικό, πάτα έναν υπολογισμό για να τον ξαναφέρεις.','After a result, ? shows step by step how it was worked out. In History, tap a calculation to bring it back.']],
+  keys:[[['0–9'],'Αριθμοί','Numbers'],[['+','−','×','÷'],'Πράξεις (και * /)','Operators (also * /)'],[[',','.'],'Υποδιαστολή','Decimal point'],[['(',')'],'Παρενθέσεις','Parentheses'],[['%'],'Ποσοστό','Percent'],[['F9'],'Αλλαγή προσήμου (±)','Change sign (±)'],[['Enter','='],'Αποτέλεσμα','Result'],[['Backspace'],'Σβήνει το τελευταίο','Delete the last character'],[['Delete'],'Σβήνει τον αριθμό που γράφεις (C)','Clear the number you are typing (C)'],[['Esc'],'Καθαρίζει την πράξη (AC)','Clear the calculation (AC)'],[['Alt','1–6'],'Αλλαγή λειτουργίας','Switch mode'],[['?'],'Αυτές οι συμβουλές','These tips']]},
+ units:{tips:[
+  ['Πάτα την πάνω ή την κάτω τιμή για να γράψεις εκεί. Η άλλη μετατρέπεται αμέσως.','Tap the top or bottom value to type there. The other one converts right away.'],
+  ['Μπορείς να κάνεις πράξεις μέσα στην τιμή, με παρενθέσεις και ποσοστά, π.χ. (12 + 8) × 2.','You can calculate inside a value, with parentheses and percentages, e.g. (12 + 8) × 2.'],
+  ['Το ⇄ αλλάζει θέση στις δύο μονάδες.','⇄ swaps the two units.'],
+  ['Από το μενού πάνω από τις τιμές διαλέγεις κατηγορία. Ο αριθμός μένει όταν αλλάζεις κατηγορία. Το Εμβαδόν έχει και στρέμματα.','The menu above the values picks the category. The number stays when you change category. Area includes the Greek stremma.'],
+  ['Κράτα πατημένο το − για αλλαγή προσήμου (±).','Hold − to change the sign (±).'],
+  ['Το C σβήνει τον αριθμό που γράφεις. Όταν δεν γράφεις αριθμό γίνεται AC και σβήνει και τις δύο τιμές, όπως και το ⌫ αν το κρατήσεις πατημένο.','C clears the number you are typing. When there is none it shows AC and clears both values, as does holding ⌫.'],
+  ['Ένας αριθμός από την Αριθμομηχανή μπαίνει στην τιμή όπου έγραψες τελευταία, πάνω ή κάτω.','A number from the Calculator goes into the value you last typed in, top or bottom.']],
+  keys:[[['0–9'],'Αριθμοί','Numbers'],[['+','−','×','÷'],'Πράξη μέσα στην τιμή','Math inside the value'],[['(',')'],'Παρενθέσεις','Parentheses'],[[',','.'],'Υποδιαστολή','Decimal point'],[['%'],'Ποσοστό','Percent'],[['F9'],'Αλλαγή προσήμου (±)','Change sign (±)'],[['Enter','='],'Ολοκλήρωση','Finish'],[['Backspace'],'Σβήνει το τελευταίο','Delete the last character'],[['Delete'],'Σβήνει τον αριθμό που γράφεις (C)','Clear the number you are typing (C)'],[['Esc'],'Καθαρίζει τις τιμές (AC)','Clear both values (AC)'],[['Alt','1–6'],'Αλλαγή λειτουργίας','Switch mode'],[['?'],'Αυτές οι συμβουλές','These tips']]},
+ graph:{tips:[
+  ['Έως τρεις συναρτήσεις μαζί. Το + δίπλα στη συνάρτηση προσθέτει νέα.','Up to three functions at once. The + next to a function adds a new one.'],
+  ['Σύρε το γράφημα για να το μετακινήσεις. Ζουμ με τη ροδέλα του ποντικιού, τα − + ή με δύο δάχτυλα.','Drag the graph to move it. Zoom with the mouse wheel, the − + buttons or two fingers.'],
+  ['Οι τελείες δείχνουν ρίζες, ελάχιστα, μέγιστα και τομές. Πάτα μία για τις τιμές της ή το ? για λίστα.','The dots mark roots, minima, maxima and intersections. Tap one for its values, or ? for a list.'],
+  ['Το ⤢ προσαρμόζει το ύψος στην καμπύλη, το ⌂ γυρίζει στην αρχή και το ⤓ το αποθηκεύει ως εικόνα.','⤢ fits the height to the curve, ⌂ goes back to the start and ⤓ saves it as an image.'],
+  ['Το 2x σημαίνει 2 × x και το sin x σημαίνει sin(x). Οι γωνίες είναι σε ακτίνια.','2x means 2 × x and sin x means sin(x). Angles are in radians.']],
+  keys:[[['x'],'Η μεταβλητή x','The variable x'],[['^'],'Δύναμη, π.χ. x^3','Power, e.g. x^3'],[['sin','sqrt','ln'],'Συναρτήσεις: γράψε το όνομα','Functions: type the name'],[['Enter'],'Επόμενη συνάρτηση','Next function'],[['↑','↓'],'Αλλαγή συνάρτησης','Switch function'],[['←','→'],'Μετακίνηση γραφήματος','Move the graph'],[['Backspace'],'Σβήνει το τελευταίο','Delete the last character'],[['Esc'],'Καθαρίζει τη συνάρτηση','Clear the function'],[['Alt','1–6'],'Αλλαγή λειτουργίας','Switch mode'],[['?'],'Αυτές οι συμβουλές','These tips']]},
+ vat:{tips:[
+  ['«Πρόσθεσε ΦΠΑ»: από την καθαρή τιμή βρίσκεις την τελική. «Αφαίρεσε ΦΠΑ»: από την τελική βρίσκεις την καθαρή και τον ΦΠΑ που είχε.','“Add VAT”: from the net price you get the final price. “Remove VAT”: from the final price you get the net price and the VAT in it.'],
+  ['Ο συντελεστής ξεκινά στο 24%. Άλλαξέ τον αν χρειάζεσαι άλλον.','The rate starts at 24%. Change it if you need another one.'],
+  ['Ο ΦΠΑ στρογγυλεύεται σε λεπτά, όπως στα τιμολόγια, οπότε τα ποσά πάντα συμφωνούν.','VAT is rounded to cents, as on invoices, so the amounts always add up.'],
+  ['Σύρε τον διακόπτη ή πάτα ← → πάνω του για να αλλάξεις πρόσθεση και αφαίρεση.','Slide the switch, or press ← → on it, to change between add and remove.'],
+  ['Το ? δείχνει πώς βγήκε το ποσό και το κουμπί με τις στήλες το δείχνει σε διάγραμμα. Πάτα το αποτέλεσμα για να το αντιγράψεις.','? shows how the amount was worked out and the bars button shows it as a chart. Tap the result to copy it.']]},
+ fuel:{tips:[
+  ['Συμπλήρωσε απόσταση, κατανάλωση και τιμή. Το κόστος βγαίνει αμέσως.','Fill in distance, consumption and price. The cost shows up right away.'],
+  ['Την κατανάλωση σε L/100 km τη δείχνει ο υπολογιστής ταξιδιού του αυτοκινήτου. Για ταξίδι με επιστροφή, βάλε διπλή απόσταση.','The car’s trip computer shows consumption in L/100 km. For a round trip, enter double the distance.'],
+  ['Ο σελιδοδείκτης αποθηκεύει τον υπολογισμό. Η λίστα δίπλα δείχνει μέση τιμή, μέση κατανάλωση και σύνολα.','The bookmark saves the calculation. The list next to it shows the average price, average consumption and totals.'],
+  ['Το κουμπί με τις στήλες δείχνει πώς αλλάζει το κόστος με την απόσταση. Πάτα το αποτέλεσμα για να το αντιγράψεις.','The bars button shows how the cost changes with distance. Tap the result to copy it.']]},
+ energy:{tips:[
+  ['Την ισχύ σε W τη γράφει το ταμπελάκι ή το κουτί της συσκευής. Η τιμή ανά kWh είναι στον λογαριασμό του ρεύματος.','The power in W is on the device’s label or box. The price per kWh is on your electricity bill.'],
+  ['Βάλε 30 ημέρες για το κόστος ενός μήνα ή 365 για έναν χρόνο.','Use 30 days for a month’s cost, or 365 for a year.'],
+  ['Για συσκευές που ανάβουν και σβήνουν μόνες τους, όπως το ψυγείο, οι ώρες είναι κατά προσέγγιση.','For devices that switch on and off by themselves, like a fridge, the hours are an estimate.'],
+  ['Το κουμπί με τις στήλες δείχνει το κόστος ανά ημέρα, εβδομάδα, μήνα και χρόνο. Πάτα το αποτέλεσμα για να το αντιγράψεις.','The bars button shows the cost per day, week, month and year. Tap the result to copy it.']]}
+};
+const HELP_TOOL_KEYS=[[['Tab'],'Επόμενο πεδίο','Next field'],[['Shift','Tab'],'Προηγούμενο πεδίο','Previous field'],[['0–9'],'Αριθμοί στο πεδίο','Type in the field'],[[',','.'],'Υποδιαστολή','Decimal point'],[['Backspace'],'Σβήνει το τελευταίο','Delete the last character'],[['Esc'],'Κλείνει ανοιχτά παράθυρα','Close open windows'],[['Alt','1–6'],'Αλλαγή λειτουργίας','Switch mode'],[['?'],'Αυτές οι συμβουλές','These tips']];
+const hasKeyboard=()=>matchMedia('(hover:hover) and (pointer:fine)').matches;
+function syncHelpButton(){const l=$('#helpLabel');if(l)l.textContent=t('tips')}
+function showHelp(){
+ const h=HELP[mode]||HELP.calc,i=lang==='el'?0:1,keys=h.keys||HELP_TOOL_KEYS;
+ $('#howTitle').textContent=t('tips')+' · '+modeText(mode);
+ $('#howContent').innerHTML='<div class="help"><section class="help-section"><ul class="help-tips">'+h.tips.map(x=>'<li>'+esc(x[i])+'</li>').join('')+'</ul></section>'+
+  (hasKeyboard()?'<section class="help-section"><h3 class="help-heading">'+esc(t('keyboard'))+'</h3><ul class="help-keys">'+keys.map(([k,el,en])=>'<li><span class="help-caps">'+k.map(x=>'<kbd>'+esc(x)+'</kbd>').join('')+'</span><span>'+esc(i?en:el)+'</span></li>').join('')+'</ul></section>':'')+'</div>';
+ $('#howModal').classList.add('help-open');$('#howModal').classList.remove('hidden');
+ $('#howContent').scrollTop=0;
+}

@@ -1,4 +1,35 @@
-(() => {
+// History: saved calculations, the bottom sheet that lists them, and its gestures.
+function historyItems(){try{return JSON.parse(store.get('uc-history')||'[]')}catch{return[]}}
+function saveHistory(item){const list=historyItems();const stored={...item,shown:item.shown||formatExpressionDisplay(item.expression),result:item.result&&typeof item.result==='object'&&'n'in item.result?ratToDecimal(item.result,24):String(item.result)};list.unshift({id:Date.now()+Math.random(),...stored});store.set('uc-history',JSON.stringify(list.slice(0,100)));renderHistory()}
+function renderHistory(){const list=historyItems();$('#historyList').innerHTML=list.length?list.map(x=>`<div class="history-item"><button class="history-main" data-history="${x.id}" type="button"><div class="history-expression">${esc(x.shown||formatInputDisplay(x.expression))}</div><div class="history-result">${esc(fmt(x.result&&typeof x.result==='string'?ratFromString(x.result):x.result))}</div></button><button class="history-delete" data-delete="${x.id}" type="button" aria-label="${esc(t('delete'))}">×</button></div>`).join(''):`<div class="empty">${esc(t('none'))}</div>`;historyChartRefresh()}
+
+function openHistory(){const p=$('#historyPanel'),b=$('#historyBackdrop');renderHistory();p.classList.remove('hidden');b.classList.remove('hidden');requestAnimationFrame(()=>{p.classList.add('open');b.classList.add('open')});p.classList.remove('expanded');$('#historyList').scrollTop=0}
+function closeHistory(){const p=$('#historyPanel'),b=$('#historyBackdrop');p.classList.remove('open','expanded');b.classList.remove('open');setTimeout(()=>{if(!p.classList.contains('open')){p.classList.add('hidden');b.classList.add('hidden')}},220)}
+function setupHistorySheet(){
+ const p=$('#historyPanel'),handle=$('.sheet-handle'),list=$('#historyList');let startY=0,tracking=false;
+ // Only tracks swipes to expand/collapse. The handle drag itself lives in history-interaction.js;
+ // adding .dragging here disabled the list (pointer-events:none) and stopped it scrolling.
+ let startScroll=0;
+ const start=e=>{startY=e.touches[0].clientY;startScroll=list.scrollTop;tracking=true};
+ // Swipe up expands the sheet (only when it is not expanded yet, otherwise it is a normal scroll).
+ // Swipe down collapses it only if the list was already at the top when the touch began.
+ const end=e=>{if(!tracking)return;const dy=e.changedTouches[0].clientY-startY;tracking=false;if(dy<-35&&!p.classList.contains('expanded')){p.classList.add('expanded');list.scrollTop=0}else if(dy>35&&startScroll<=2){p.classList.remove('expanded')}startY=0};
+ [p,handle].forEach(el=>{el.addEventListener('touchstart',start,{passive:true});el.addEventListener('touchend',end,{passive:true})});
+ let timer;list.addEventListener('scroll',()=>{list.classList.add('is-scrolling');clearTimeout(timer);timer=setTimeout(()=>list.classList.remove('is-scrolling'),650)},{passive:true})
+}
+function clearHistoryConfirm(){
+ historyClearConfirm=!historyClearConfirm;const wrap=$('#historyClearWrap'),btn=$('#clearHistory'),confirm=$('#historyConfirm');
+ if(historyClearConfirm){btn.classList.add('hidden');confirm.classList.remove('hidden');$('#historyConfirmText').textContent=t('confirm')}else{btn.classList.remove('hidden');confirm.classList.add('hidden')}
+ wrap.classList.toggle('confirming',historyClearConfirm)
+}
+function deleteAllHistory(){store.del('uc-history');historyClearConfirm=false;$('#clearHistory').classList.remove('hidden');$('#historyConfirm').classList.add('hidden');$('#historyClearWrap').classList.remove('confirming');renderHistory()}
+function historyClick(e){
+ const del=e.target.closest('[data-delete]'),item=e.target.closest('[data-history]');
+ if(del){store.set('uc-history',JSON.stringify(historyItems().filter(x=>String(x.id)!==del.dataset.delete)));renderHistory();return}
+ if(item){const x=historyItems().find(x=>String(x.id)===item.dataset.history);if(!x)return;closeHistory();setMode('calc');carry=null;lastExpression=x.expression;lastShown=x.shown||formatInputDisplay(x.expression);lastResult=ratFromString(String(x.result));justCalculated=true;expression='';current='';currentIsPercent=false;howData=explanationForExpression(x.expression,lastResult)||x.how||null;if(howData&&lastShown)howData.formula=lastShown;calcHowData=howData;lastOperation=parseLastOperation(x.expression);render();syncModeTabs()}
+}
+// History sheet gestures: drag the handle to resize or close it; wheel and keys scroll it from anywhere.
+function setupHistoryGestures() {
   // Version is owned by app.js; this interaction layer must never overwrite it.
 
   const panel = document.querySelector('#historyPanel');
@@ -14,32 +45,6 @@
     el?.addEventListener('touchcancel', e => e.stopImmediatePropagation(), {capture:true, passive:true});
   });
 
-  const style = document.createElement('style');
-  style.textContent = `
-    #historyPanel {
-      will-change: height, transform;
-      transform: translate(-50%, 100%);
-      transition: transform .26s cubic-bezier(.22,.61,.36,1), height .26s cubic-bezier(.22,.61,.36,1);
-      overscroll-behavior: contain;
-    }
-    #historyPanel.open { transform: translate(-50%, 0); }
-    #historyPanel.dragging { transition: none !important; }
-    #historyPanel .sheet-handle,
-    #historyPanel .section-heading {
-      touch-action: none;
-      cursor: grab;
-      -webkit-user-select: none;
-      user-select: none;
-    }
-    #historyPanel.dragging .sheet-handle,
-    #historyPanel.dragging .section-heading { cursor: grabbing; }
-    #historyPanel.dragging .history-list { pointer-events: none; }
-    #historyPanel.expanded { height: min(calc(92dvh / var(--z,1)), 780px); }
-    @media (max-width: 480px) {
-      #historyPanel.expanded { height: calc(100dvh / var(--z,1)); border-radius: 20px 20px 0 0; }
-    }
-  `;
-  document.head.appendChild(style);
 
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   // On big screens the app is scaled up (app.js, window.__uiZoom): screen pixels / zoom = CSS pixels.
@@ -217,4 +222,4 @@
     if (pointerId !== null) return;
     if (panel.classList.contains('expanded')) panel.style.height = '';
   });
-})();
+}

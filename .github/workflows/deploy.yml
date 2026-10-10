@@ -1,0 +1,118 @@
+name: Test and deploy
+
+# Every push to main: run the browser tests, then (only if they pass) publish the site to GitHub Pages
+# and the Docker image to ghcr.io. If the tests fail, nothing is deployed and the live versions stay as they are.
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# If two pushes land close together, only the newest one deploys.
+concurrency:
+  group: deploy
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Playwright and Chromium
+        run: |
+          pip install playwright==1.56.0
+          python -m playwright install --with-deps chromium
+
+      - name: Version is the same everywhere
+        run: python3 tools/bump-version.py --check
+
+      - name: Browser tests
+        run: python3 tests/test_app.py
+
+  pages:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    # Records each deploy under Deployments on the repo page (the green tick / red X there).
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      # The site is exactly the public/ folder, the same files the Docker image serves.
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  docker:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t ghcr.io/leothegreat777/ultimate-calculator:latest .
+
+      # Start the image and check it before publishing: if anything fails, the current image stays live.
+      - name: Test image
+        run: |
+          docker run -d --name uc -p 8080:80 ghcr.io/leothegreat777/ultimate-calculator:latest
+          for i in $(seq 1 20); do curl -fs http://localhost:8080/api/health >/dev/null && break; sleep 1; done
+          code() { curl -s -o /dev/null -w '%{http_code}' "http://localhost:8080$1"; }
+          fail=0
+          check() { if [ "$2" = "$3" ]; then echo "ok   $1"; else echo "FAIL $1: expected $3, got $2"; fail=1; fi; }
+          version=$(grep -o "VERSION='[^']*'" public/js/core.js | cut -d"'" -f2)
+          check "/ is served" "$(code /)" 200
+          for f in $(cd public && find . -type f | sed 's|^\.||'); do
+            check "$f is served" "$(code "$f")" 200
+          done
+          for f in /Dockerfile /nginx.conf /README.md /CLAUDE.md /tests/test_app.py /.git/config /missing; do
+            check "$f is not served" "$(code "$f")" 404
+          done
+          check "page shows v$version" "$(curl -s http://localhost:8080/ | grep -c "v$version")" 1
+          check "health check" "$(curl -s http://localhost:8080/api/health)" '{"ok":true}'
+          check "manifest type" "$(curl -sI http://localhost:8080/manifest.webmanifest | grep -i '^content-type' | tr -d '\r' | cut -d' ' -f2)" "application/manifest+json"
+          check "page not cached" "$(curl -sI http://localhost:8080/ | grep -ci '^cache-control: no-store')" 1
+          check "scripts revalidated" "$(curl -sI http://localhost:8080/js/main.js | grep -ci '^cache-control: no-cache')" 1
+          docker logs uc
+          docker rm -f uc >/dev/null
+          exit $fail
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish image
+        run: docker push ghcr.io/leothegreat777/ultimate-calculator:latest

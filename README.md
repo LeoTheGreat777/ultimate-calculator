@@ -2,6 +2,8 @@
 
 A fast, modern, privacy-friendly all-in-one calculator for everyday calculations. Built as a lightweight client-side web app with a responsive interface that works on desktop and mobile.
 
+**Live:** https://uc.kampaxis.com
+
 ## Features
 
 ### Calculator
@@ -12,8 +14,8 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 - Calculation history
 - Copy results
 - Keyboard support
-- Step-by-step calculation explanations
-- Intermediate results are shown so complex calculations are easy to understand
+- Step-by-step explanations of how a result was worked out
+- Brackets that change nothing are tidied away; C clears the number being typed, AC everything
 
 ### Unit Converter
 - Length, area (including stremma), mass, volume, speed, time, data, energy, power, pressure, angle and temperature conversions
@@ -52,27 +54,31 @@ Leonidas Kampaxis and Efstathios Konstantinos Tsakiris (Λεωνίδας Κάμ�
 
 ## Technology
 
-Ultimate Calculator is intentionally lightweight: plain HTML, CSS and vanilla JavaScript, with no framework, no build step and no backend.
+Ultimate Calculator is intentionally lightweight: plain HTML, CSS and vanilla JavaScript, with no framework, no build step and no backend. Calculations happen in the browser, and history and settings are stored in the browser (localStorage). There are no accounts and nothing is sent to a server.
 
-- `index.html`, `styles.css` – the page and its styles
-- `app.js` – calculator engine (exact fractions), modes, tools, history, translations
-- `charts.js` – Graph mode, tool charts, the History chart and the fuel log (canvas, no libraries)
-- `history-interaction.js` – the History sheet's drag and scroll gestures
-- `Dockerfile`, `nginx.conf` – the Docker image: nginx serving only the app's files
+```
+public/              the website, exactly as it is served
+  index.html         page shell
+  styles.css         all styles and themes
+  js/                the app, one file per area (calculator, units, tools, graph, history, ...)
+  manifest.webmanifest, icons
+tests/test_app.py    browser tests (Playwright)
+tools/bump-version.py  sets the version everywhere it appears
+Dockerfile, nginx.conf the Docker image: nginx serving public/
+docker-compose.yml   for running the image yourself
+```
 
-Calculations happen in the browser, and history and settings are stored in the browser (localStorage). There are no accounts and nothing is sent to a server.
+The scripts in `public/js/` are plain scripts that share globals, loaded in a fixed order by `index.html`. `CLAUDE.md` describes what each one contains and how the code works.
 
 ## Run locally
 
-This is a static web app, so it can be served by any static web server.
-
-### Any static web server
+It is a static site, so any static web server works:
 
 ```bash
-python3 -m http.server 8080
+python3 -m http.server 8080 -d public
 ```
 
-### Docker
+or with Docker:
 
 ```bash
 docker build -t ultimate-calculator .
@@ -81,18 +87,27 @@ docker run --rm -p 8080:80 ultimate-calculator
 
 Then open `http://localhost:8080`.
 
+## Tests
+
+```bash
+pip install playwright && python3 -m playwright install chromium   # once
+python3 tests/test_app.py
+```
+
+The tests open the app in Chromium at desktop and phone sizes, in both languages and themes, and check the calculator, brackets, Units, the tools, History, the mode tabs, the language switch and that nothing is cut off on phones.
+
 ## Deployment
 
-Every push to `main` runs two GitHub Actions workflows, so both deployments always get the same version:
+Every push to `main` runs one GitHub Actions workflow (`.github/workflows/deploy.yml`): the tests first, and only if they pass,
 
-- **GitHub Pages** – the static site
-- **Docker image** – `ghcr.io/leothegreat777/ultimate-calculator:latest` (see `docker-compose.yml`). Pull it again (`docker compose pull && docker compose up -d`) to update a self-hosted copy.
+- **GitHub Pages** – the site at https://uc.kampaxis.com
+- **Docker image** – `ghcr.io/leothegreat777/ultimate-calculator:latest`, tested before it is published. To update a self-hosted copy: `docker compose pull && docker compose up -d`.
 
-If two pushes land within seconds of each other, the older run is cancelled and only the newest one deploys. A cancelled run in the Actions tab is expected in that case.
+If the tests fail, nothing is deployed and the live site stays as it was. If two pushes land within seconds of each other, the older run is cancelled and only the newest one deploys.
 
 ## Versioning
 
-The version is written in `app.js` (`VERSION`) and in `index.html` (the footer and the `?v=` on each script and stylesheet, which makes browsers load the new files). Bump all of them together.
+Run `python3 tools/bump-version.py` once per release. It sets the version in `public/js/core.js` and in `public/index.html` (the footer and the `?v=` on every script and stylesheet, which makes browsers load the new files).
 
 ## Project Direction
 
@@ -118,4 +133,4 @@ Planned areas include:
 
 ## Self-hosting
 
-The application is designed to be easy to self-host. It is a static site, so it runs on GitHub Pages, behind Nginx or any static web server, or from the Docker image, with no database or application backend.
+The application is designed to be easy to self-host. It is a static site (the `public/` folder), so it runs on GitHub Pages, behind Nginx or any static web server, or from the Docker image, with no database or application backend.

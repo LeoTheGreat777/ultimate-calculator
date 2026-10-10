@@ -2,7 +2,7 @@
   "id": "./",
   "name": "Ultimate Calculator",
   "short_name": "Calculator",
-  "description": "A universal everyday calculator for arithmetic, percentages, money, fuel, energy, VAT, units and more.",
+  "description": "Calculator, unit converter, graphs, and VAT, fuel and energy cost calculators in one fast app.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
