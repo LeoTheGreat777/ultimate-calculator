@@ -43,14 +43,14 @@ function renderThemeMenu(){
   m.addEventListener('click',e=>{const b=e.target.closest('[data-theme-pick]');if(!b)return;closeThemeMenu();setTheme(b.dataset.themePick)});
  }
  m.setAttribute('aria-label',t('theme'));
- const key=n=>'theme'+n[0].toUpperCase()+n.slice(1),note=n=>!['light','dark'].includes(n);
+ const key=n=>'theme'+n[0].toUpperCase()+n.slice(1);
  m.innerHTML=THEMES.map(n=>{
   // each swatch carries the theme's own colours (data-theme-preview), so it shows the real thing
   const swatch=n==='auto'
    ?'<span class="theme-swatch theme-swatch-auto" aria-hidden="true"><span data-theme-preview="light"><i></i></span><span data-theme-preview="dark"><i></i></span></span>'
    :'<span class="theme-swatch" data-theme-preview="'+n+'" aria-hidden="true"><i></i></span>';
   return '<button type="button" class="theme-option" role="menuitemradio" aria-checked="'+(theme===n)+'" data-theme-pick="'+n+'">'+swatch+
-   '<span class="theme-option-text"><span>'+esc(t(key(n)))+'</span>'+(note(n)?'<small>'+esc(t(key(n)+'Note'))+'</small>':'')+'</span><span class="theme-check" aria-hidden="true">✓</span></button>'+
+   '<span class="theme-option-text">'+esc(t(key(n)))+'</span><span class="theme-check" aria-hidden="true">✓</span></button>'+
    (n==='auto'||n===LIGHT_THEMES[LIGHT_THEMES.length-1]?'<hr>':'');// lines between Auto, the light themes and the dark ones
  }).join('');
 }
