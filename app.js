@@ -1,4 +1,4 @@
-const VERSION='0.4.135';
+const VERSION='0.4.136';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 // localStorage can throw (blocked storage, private mode, quota full). Never let that break the app.
@@ -40,14 +40,12 @@ function loadTools(){
 }
 
 const T={
-el:{calc:'Αριθμομηχανή',fuel:'Καύσιμα',energy:'Ενέργεια',vat:'ΦΠΑ',units:'Μονάδες',how:'Πώς υπολογίστηκε',history:'Ιστορικό',copy:'Αντιγραφή αποτελέσματος',copied:'Αντιγράφηκε',clear:'Διαγραφή όλων',confirm:'Διαγραφή όλου του ιστορικού;',confirmYes:'Διαγραφή',none:'Δεν υπάρχουν υπολογισμοί ακόμη.',hint:'Πληκτρολόγησε μια πράξη για να ξεκινήσεις.',delete:'Διαγραφή',created:'Δημιουργήθηκε από',fuelD:'Απόσταση (km)',fuelC:'Κατανάλωση (L/100 km)',fuelP:'Τιμή καυσίμου / L',fuelGo:'Υπολογισμός κόστους καυσίμου',fuelUsed:'Καύσιμο που χρησιμοποιήθηκε',costKm:'Κόστος ανά km',energyP:'Ισχύς (W)',energyH:'Ώρες / ημέρα',energyD:'Ημέρες',energyR:'Τιμή / kWh',energyGo:'Υπολογισμός κόστους ρεύματος',energyUsed:'Ενέργεια',amount:'Ποσό',vatRate:'ΦΠΑ %',addVat:'Πρόσθεσε ΦΠΑ',removeVat:'Αφαίρεσε ΦΠΑ',vatAmount:'Ποσό ΦΠΑ',value:'Τιμή',category:'Κατηγορία',from:'Από',to:'Σε',convert:'Μετατροπή',length:'Μήκος',area:'Εμβαδόν',mass:'Μάζα',volume:'Όγκος',speed:'Ταχύτητα',time:'Χρόνος',data:'Δεδομένα',energy:'Ενέργεια',power:'Ισχύς',pressure:'Πίεση',angle:'Γωνία',temperature:'Θερμοκρασία',unit_mm:'Χιλιοστό',unit_cm:'Εκατοστό',unit_m:'Μέτρο',unit_km:'Χιλιόμετρο',unit_in:'Ίντσα',unit_ft:'Πόδι',unit_yd:'Γιάρδα',unit_mi:'Μίλι',unit_nmi:'Ναυτικό μίλι',unit_bit:'Bit',unit_b:'Bit',unit_kbit:'Kilobit',unit_Mbit:'Megabit',unit_Gbit:'Gigabit',unit_Tbit:'Terabit',unit_B:'Byte',unit_kB:'Kilobyte',unit_MB:'Megabyte',unit_GB:'Gigabyte',unit_TB:'Terabyte',unit_KiB:'Kibibyte',unit_MiB:'Mebibyte',unit_GiB:'Gibibyte',unit_TiB:'Tebibyte',unit_kg:'Κιλά',unit_l:'Λίτρο',unit_ml:'Milliliter',unit_mps:'m/s',unit_kmh:'km/h',unit_mph:'mph',unit_knot:'Κόμβος',unit_J:'Joule',unit_kJ:'Kilojoule',unit_Wh:'Watt-ώρα',unit_kWh:'Kilowatt-ώρα',unit_cal:'cal',unit_kcal:'kcal',unit_W:'Watt',unit_kW:'Kilowatt',unit_MW:'Megawatt',unit_hp:'Ιπποδύναμη',unit_Pa:'Pascal',unit_kPa:'Kilopascal',unit_bar:'Bar',unit_psi:'PSI',unit_atm:'Ατμόσφαιρα',unit_deg:'Μοίρα',unit_rad:'Ακτίνιο',unit_grad:'Grad',unit_C:'Κελσίου',unit_F:'Φαρενάιτ',unit_K:'Kelvin',toolReady:'Το αποτέλεσμα θα εμφανιστεί εδώ',toolFuel:'Κόστος καυσίμου',toolEnergy:'Κόστος ρεύματος',toolVat:'Τελικό ποσό',toolUnit:'Αποτέλεσμα',fuelResult:'Καύσιμο που χρησιμοποιήθηκε',energyResult:'Ενέργεια',clearConfirm:'Διαγραφή;',close:'Κλείσιμο',swap:'Εναλλαγή μονάδων',deleteKey:'Διαγραφή',themeLight:'Εναλλαγή σε φωτεινό θέμα',themeDark:'Εναλλαγή σε σκοτεινό θέμα',graph:'Γράφημα',chart:'Διάγραμμα',install:'Εγκατάσταση εφαρμογής',helpLong:'Συμβουλές & συντομεύσεις',helpShort:'Συμβουλές',tips:'Συμβουλές',keyboard:'Πληκτρολόγιο',installTitle:'Εγκατάσταση στο κινητό',installIntro:'Πρόσθεσε την αριθμομηχανή στην οθόνη του κινητού σου. Θα ανοίγει σαν κανονική εφαρμογή, σε πλήρη οθόνη.',iosShareT:'Πάτα Κοινοποίηση',iosShare:'Το κουμπί {share}. Στο Safari είναι στο κάτω μέρος της οθόνης, στο Chrome πάνω δεξιά.',iosAddT:'Προσθήκη στην οθόνη Αφετηρίας',iosAdd:'Κάνε κύλιση στη λίστα και πάτα «Προσθήκη στην οθόνη Αφετηρίας».',iosDoneT:'Πάτα «Προσθήκη»',iosDone:'Πάνω δεξιά. Η εφαρμογή εμφανίζεται στην οθόνη σου.',andMenuT:'Άνοιξε το μενού',andMenu:'Το κουμπί ⋮ πάνω δεξιά (στο Samsung Internet το ☰ κάτω δεξιά).',andAddT:'Εγκατάσταση εφαρμογής',andAdd:'Πάτα «Εγκατάσταση εφαρμογής» ή «Προσθήκη στην αρχική οθόνη».',andDoneT:'Επιβεβαίωσε',andDone:'Πάτα «Εγκατάσταση». Η εφαρμογή εμφανίζεται στην οθόνη σου.'},
-en:{calc:'Calculator',fuel:'Fuel',energy:'Energy',vat:'VAT',units:'Units',how:'How was this calculated?',history:'History',copy:'Copy result',copied:'Copied',clear:'Clear all',confirm:'Delete all calculation history?',confirmYes:'Delete',none:'No calculations yet.',hint:'Enter a calculation to get started.',delete:'Delete',created:'Created by',fuelD:'Distance (km)',fuelC:'Consumption (L/100 km)',fuelP:'Fuel price / L',fuelGo:'Calculate fuel cost',fuelUsed:'Fuel used',costKm:'Cost per km',energyP:'Power (W)',energyH:'Hours / day',energyD:'Days',energyR:'Price / kWh',energyGo:'Calculate electricity cost',energyUsed:'Energy',amount:'Amount',vatRate:'VAT %',addVat:'Add VAT',removeVat:'Remove VAT',vatAmount:'VAT amount',value:'Value',category:'Category',from:'From',to:'To',convert:'Convert',length:'Length',area:'Area',mass:'Mass',volume:'Volume',speed:'Speed',time:'Time',data:'Data',energy:'Energy',power:'Power',pressure:'Pressure',angle:'Angle',temperature:'Temperature',unit_mm:'Millimeter',unit_cm:'Centimeter',unit_m:'Meter',unit_km:'Kilometer',unit_in:'Inch',unit_ft:'Foot',unit_yd:'Yard',unit_mi:'Statute mile',unit_nmi:'Nautical mile',unit_bit:'Bit',unit_b:'Bit',unit_kbit:'Kilobit',unit_Mbit:'Megabit',unit_Gbit:'Gigabit',unit_Tbit:'Terabit',unit_B:'Byte',unit_kB:'Kilobyte',unit_MB:'Megabyte',unit_GB:'Gigabyte',unit_TB:'Terabyte',unit_KiB:'Kibibyte',unit_MiB:'Mebibyte',unit_GiB:'Gibibyte',unit_TiB:'Tebibyte',unit_kg:'Kilogram',unit_l:'Liter',unit_ml:'Milliliter',unit_mps:'m/s',unit_kmh:'km/h',unit_mph:'mph',unit_knot:'Knot',unit_J:'Joule',unit_kJ:'Kilojoule',unit_Wh:'Watt-hour',unit_kWh:'Kilowatt-hour',unit_cal:'cal',unit_kcal:'kcal',unit_W:'Watt',unit_kW:'Kilowatt',unit_MW:'Megawatt',unit_hp:'Horsepower',unit_Pa:'Pascal',unit_kPa:'Kilopascal',unit_bar:'Bar',unit_psi:'PSI',unit_atm:'Atmosphere',unit_deg:'Degree',unit_rad:'Radian',unit_grad:'Grad',unit_C:'Celsius',unit_F:'Fahrenheit',unit_K:'Kelvin',toolReady:'The result will appear here',toolFuel:'Fuel cost',toolEnergy:'Electricity cost',toolVat:'Final amount',toolUnit:'Result',fuelResult:'Fuel used',energyResult:'Energy',clearConfirm:'Delete?',close:'Close',swap:'Swap units',deleteKey:'Delete',themeLight:'Switch to light mode',themeDark:'Switch to dark mode',graph:'Graph',chart:'Chart',install:'Install app',helpLong:'Tips & shortcuts',helpShort:'Tips',tips:'Tips',keyboard:'Keyboard',installTitle:'Install on your phone',installIntro:'Add the calculator to your home screen. It opens like a normal app, full screen.',iosShareT:'Tap Share',iosShare:'The {share} button. In Safari it is at the bottom of the screen, in Chrome at the top right.',iosAddT:'Add to Home Screen',iosAdd:'Scroll down the list and tap “Add to Home Screen”.',iosDoneT:'Tap “Add”',iosDone:'At the top right. The app appears on your home screen.',andMenuT:'Open the menu',andMenu:'The ⋮ button at the top right (in Samsung Internet, ☰ at the bottom right).',andAddT:'Install app',andAdd:'Tap “Install app” or “Add to Home screen”.',andDoneT:'Confirm',andDone:'Tap “Install”. The app appears on your home screen.'}
+el:{calc:'Αριθμομηχανή',fuel:'Καύσιμα',energy:'Ενέργεια',vat:'ΦΠΑ',units:'Μονάδες',how:'Πώς υπολογίστηκε',history:'Ιστορικό',copy:'Αντιγραφή αποτελέσματος',copied:'Αντιγράφηκε',clear:'Διαγραφή όλων',confirm:'Διαγραφή όλου του ιστορικού;',confirmYes:'Διαγραφή',none:'Δεν υπάρχουν υπολογισμοί ακόμη.',hint:'Πληκτρολόγησε μια πράξη για να ξεκινήσεις.',delete:'Διαγραφή',created:'Δημιουργήθηκε από',fuelD:'Απόσταση (km)',fuelC:'Κατανάλωση (L/100 km)',fuelP:'Τιμή καυσίμου / L',fuelGo:'Υπολογισμός κόστους καυσίμου',fuelUsed:'Καύσιμο που χρησιμοποιήθηκε',costKm:'Κόστος ανά km',energyP:'Ισχύς (W)',energyH:'Ώρες / ημέρα',energyD:'Ημέρες',energyR:'Τιμή / kWh',energyGo:'Υπολογισμός κόστους ρεύματος',energyUsed:'Ενέργεια',amount:'Ποσό',vatRate:'ΦΠΑ %',addVat:'Πρόσθεσε ΦΠΑ',removeVat:'Αφαίρεσε ΦΠΑ',vatAmount:'Ποσό ΦΠΑ',value:'Τιμή',category:'Κατηγορία',from:'Από',to:'Σε',convert:'Μετατροπή',length:'Μήκος',area:'Εμβαδόν',mass:'Μάζα',volume:'Όγκος',speed:'Ταχύτητα',time:'Χρόνος',data:'Δεδομένα',energy:'Ενέργεια',power:'Ισχύς',pressure:'Πίεση',angle:'Γωνία',temperature:'Θερμοκρασία',unit_mm:'Χιλιοστό',unit_cm:'Εκατοστό',unit_m:'Μέτρο',unit_km:'Χιλιόμετρο',unit_in:'Ίντσα',unit_ft:'Πόδι',unit_yd:'Γιάρδα',unit_mi:'Μίλι',unit_nmi:'Ναυτικό μίλι',unit_bit:'Bit',unit_b:'Bit',unit_kbit:'Kilobit',unit_Mbit:'Megabit',unit_Gbit:'Gigabit',unit_Tbit:'Terabit',unit_B:'Byte',unit_kB:'Kilobyte',unit_MB:'Megabyte',unit_GB:'Gigabyte',unit_TB:'Terabyte',unit_KiB:'Kibibyte',unit_MiB:'Mebibyte',unit_GiB:'Gibibyte',unit_TiB:'Tebibyte',unit_kg:'Κιλά',unit_l:'Λίτρο',unit_ml:'Milliliter',unit_mps:'m/s',unit_kmh:'km/h',unit_mph:'mph',unit_knot:'Κόμβος',unit_J:'Joule',unit_kJ:'Kilojoule',unit_Wh:'Watt-ώρα',unit_kWh:'Kilowatt-ώρα',unit_cal:'cal',unit_kcal:'kcal',unit_W:'Watt',unit_kW:'Kilowatt',unit_MW:'Megawatt',unit_hp:'Ιπποδύναμη',unit_Pa:'Pascal',unit_kPa:'Kilopascal',unit_bar:'Bar',unit_psi:'PSI',unit_atm:'Ατμόσφαιρα',unit_deg:'Μοίρα',unit_rad:'Ακτίνιο',unit_grad:'Grad',unit_C:'Κελσίου',unit_F:'Φαρενάιτ',unit_K:'Kelvin',toolReady:'Το αποτέλεσμα θα εμφανιστεί εδώ',toolFuel:'Κόστος καυσίμου',toolEnergy:'Κόστος ρεύματος',toolVat:'Τελικό ποσό',toolUnit:'Αποτέλεσμα',fuelResult:'Καύσιμο που χρησιμοποιήθηκε',energyResult:'Ενέργεια',clearConfirm:'Διαγραφή;',close:'Κλείσιμο',swap:'Εναλλαγή μονάδων',deleteKey:'Διαγραφή',themeLight:'Εναλλαγή σε φωτεινό θέμα',themeDark:'Εναλλαγή σε σκοτεινό θέμα',graph:'Γράφημα',chart:'Διάγραμμα',install:'Εγκατάσταση εφαρμογής',tips:'Συμβουλές',keyboard:'Συντομεύσεις πληκτρολογίου',installTitle:'Εγκατάσταση στο κινητό',installIntro:'Πρόσθεσε την αριθμομηχανή στην οθόνη του κινητού σου. Θα ανοίγει σαν κανονική εφαρμογή, σε πλήρη οθόνη.',iosShareT:'Πάτα Κοινοποίηση',iosShare:'Το κουμπί {share}. Στο Safari είναι στο κάτω μέρος της οθόνης, στο Chrome πάνω δεξιά.',iosAddT:'Προσθήκη στην οθόνη Αφετηρίας',iosAdd:'Κάνε κύλιση στη λίστα και πάτα «Προσθήκη στην οθόνη Αφετηρίας».',iosDoneT:'Πάτα «Προσθήκη»',iosDone:'Πάνω δεξιά. Η εφαρμογή εμφανίζεται στην οθόνη σου.',andMenuT:'Άνοιξε το μενού',andMenu:'Το κουμπί ⋮ πάνω δεξιά (στο Samsung Internet το ☰ κάτω δεξιά).',andAddT:'Εγκατάσταση εφαρμογής',andAdd:'Πάτα «Εγκατάσταση εφαρμογής» ή «Προσθήκη στην αρχική οθόνη».',andDoneT:'Επιβεβαίωσε',andDone:'Πάτα «Εγκατάσταση». Η εφαρμογή εμφανίζεται στην οθόνη σου.'},
+en:{calc:'Calculator',fuel:'Fuel',energy:'Energy',vat:'VAT',units:'Units',how:'How was this calculated?',history:'History',copy:'Copy result',copied:'Copied',clear:'Clear all',confirm:'Delete all calculation history?',confirmYes:'Delete',none:'No calculations yet.',hint:'Enter a calculation to get started.',delete:'Delete',created:'Created by',fuelD:'Distance (km)',fuelC:'Consumption (L/100 km)',fuelP:'Fuel price / L',fuelGo:'Calculate fuel cost',fuelUsed:'Fuel used',costKm:'Cost per km',energyP:'Power (W)',energyH:'Hours / day',energyD:'Days',energyR:'Price / kWh',energyGo:'Calculate electricity cost',energyUsed:'Energy',amount:'Amount',vatRate:'VAT %',addVat:'Add VAT',removeVat:'Remove VAT',vatAmount:'VAT amount',value:'Value',category:'Category',from:'From',to:'To',convert:'Convert',length:'Length',area:'Area',mass:'Mass',volume:'Volume',speed:'Speed',time:'Time',data:'Data',energy:'Energy',power:'Power',pressure:'Pressure',angle:'Angle',temperature:'Temperature',unit_mm:'Millimeter',unit_cm:'Centimeter',unit_m:'Meter',unit_km:'Kilometer',unit_in:'Inch',unit_ft:'Foot',unit_yd:'Yard',unit_mi:'Statute mile',unit_nmi:'Nautical mile',unit_bit:'Bit',unit_b:'Bit',unit_kbit:'Kilobit',unit_Mbit:'Megabit',unit_Gbit:'Gigabit',unit_Tbit:'Terabit',unit_B:'Byte',unit_kB:'Kilobyte',unit_MB:'Megabyte',unit_GB:'Gigabyte',unit_TB:'Terabyte',unit_KiB:'Kibibyte',unit_MiB:'Mebibyte',unit_GiB:'Gibibyte',unit_TiB:'Tebibyte',unit_kg:'Kilogram',unit_l:'Liter',unit_ml:'Milliliter',unit_mps:'m/s',unit_kmh:'km/h',unit_mph:'mph',unit_knot:'Knot',unit_J:'Joule',unit_kJ:'Kilojoule',unit_Wh:'Watt-hour',unit_kWh:'Kilowatt-hour',unit_cal:'cal',unit_kcal:'kcal',unit_W:'Watt',unit_kW:'Kilowatt',unit_MW:'Megawatt',unit_hp:'Horsepower',unit_Pa:'Pascal',unit_kPa:'Kilopascal',unit_bar:'Bar',unit_psi:'PSI',unit_atm:'Atmosphere',unit_deg:'Degree',unit_rad:'Radian',unit_grad:'Grad',unit_C:'Celsius',unit_F:'Fahrenheit',unit_K:'Kelvin',toolReady:'The result will appear here',toolFuel:'Fuel cost',toolEnergy:'Electricity cost',toolVat:'Final amount',toolUnit:'Result',fuelResult:'Fuel used',energyResult:'Energy',clearConfirm:'Delete?',close:'Close',swap:'Swap units',deleteKey:'Delete',themeLight:'Switch to light mode',themeDark:'Switch to dark mode',graph:'Graph',chart:'Chart',install:'Install app',tips:'Tips',keyboard:'Keyboard shortcuts',installTitle:'Install on your phone',installIntro:'Add the calculator to your home screen. It opens like a normal app, full screen.',iosShareT:'Tap Share',iosShare:'The {share} button. In Safari it is at the bottom of the screen, in Chrome at the top right.',iosAddT:'Add to Home Screen',iosAdd:'Scroll down the list and tap “Add to Home Screen”.',iosDoneT:'Tap “Add”',iosDone:'At the top right. The app appears on your home screen.',andMenuT:'Open the menu',andMenu:'The ⋮ button at the top right (in Samsung Internet, ☰ at the bottom right).',andAddT:'Install app',andAdd:'Tap “Install app” or “Add to Home screen”.',andDoneT:'Confirm',andDone:'Tap “Install”. The app appears on your home screen.'}
 };
 const ICONS={calc:'▦',graph:'∿',fuel:'⛽︎',energy:'ϟ',vat:'%',units:'↔'};const MODE_TRANSLATIONS={calc:['Αριθμομηχανή','Calculator'],graph:['Γράφημα','Graph'],fuel:['Καύσιμα','Fuel'],energy:['Ενέργεια','Energy'],vat:['ΦΠΑ','VAT'],units:['Μονάδες','Units']};
 const TOOL_LABEL_KEYS={fuel:['fuelD','fuelC','fuelP'],energy:['energyP','energyH','energyD','energyR'],vat:['amount','vatRate']};
 const modeText=m=>MODE_TRANSLATIONS[m]?.[lang==='el'?0:1]||t(m);
-// Units is switched on inside the Calculator (the ↔ button), so the mode button shows Calculator for both.
-const menuMode=()=>mode==='units'?'calc':mode;
 
 const t=k=>T[lang][k]??T.en[k]??k;
 const gcd=(a,b)=>{a=a<0n?-a:a;b=b<0n?-b:b;while(b){const t=a%b;a=b;b=t}return a};
@@ -685,7 +683,6 @@ function restoreCalculatorDisplay(){
 function renderTool(){
  const calc=mode==='calc';
  const card=$('#calculatorCard');
- const modeLabel=$('#modeLabel');if(modeLabel)modeLabel.textContent=modeText(menuMode());
  card.classList.toggle('mobile-tool',!calc&&isMobileDevice()&&mode!=='units'&&mode!=='graph');
  document.body.classList.toggle('mobile-tool-on',card.classList.contains('mobile-tool'));
  card.classList.remove('unit-keypad-open');
@@ -822,7 +819,6 @@ function setMode(next){
  // Tools keep what was typed in them; only an empty VAT rate goes back to the default.
  if(next==='vat'&&!toolState.vat.inputs.vatRate)toolState.vat.inputs.vatRate='24';
  if(next==='units'){unitActiveInput=unitSource;unitReplaceOnNextKey=true;window._unitCategory=window._unitCategory||'length';}
- const label=$('#modeLabel'),icon=$('#modeIcon');if(label)label.textContent=modeText(menuMode());if(icon)icon.textContent=modeIcon(menuMode());
  renderTool();
  if(next!=='calc'&&next!=='graph'){runActiveTool();if(next!=='units')renderToolDisplay()}
  syncModeButton();
@@ -848,6 +844,9 @@ function applyLanguage(){
  $('#langButton').textContent=lang==='el'?'ΕΛ':'EN';
  $('#copyButton').textContent=t('copy');
  $('#historyButtonText').textContent=t('history');
+ $('#historyButton').setAttribute('aria-label',t('history'));$('#historyButton').title=t('history');
+ $('#modeTabs')?.setAttribute('aria-label',lang==='el'?'Λειτουργίες':'Modes');
+ renderModeTabs();
  $('#howTitle').textContent=t('how');
  $('#howButton')?.setAttribute('aria-label',t('how'));
  $('#historyPanel').setAttribute('aria-label',t('history'));
@@ -875,7 +874,6 @@ function applyLanguage(){
  else if(mode==='vat')window._runVat?.(vatAction==='add');
  else if(mode==='units')window._runUnits?.();
  else render();
- renderModeMenu();
  syncModeButton();
  renderVatToggle();
 }
@@ -910,54 +908,71 @@ window.addEventListener('appinstalled',()=>{installPrompt=null;store.set('uc-ins
 try{matchMedia('(display-mode: standalone)').addEventListener('change',syncInstallButton)}catch{}
 // Shown in the footer, in English in both languages.
 const AUTHORS=['Leonidas Kampaxis','Efstathios Konstantinos Tsakiris'];
-const MODE_LABELS=['calc','graph','vat','fuel','energy'];
-function renderModeMenu(){
- const menu=$('#modeMenu');if(!menu)return;
- menu.innerHTML=MODE_LABELS.filter(m=>m!==menuMode()).map(m=>`<button class="mode-item" data-mode="${m}" type="button"><span class="mode-item-icon">${modeIcon(m)}</span><span class="mode-item-label">${esc(modeText(m))}</span></button>`).join('');
- menu.querySelectorAll('.mode-item').forEach(b=>b.addEventListener('click',e=>{
-   e.stopPropagation();
-   const next=b.dataset.mode;
-   closeModeMenu();
-   setMode(next);
- }));
+// The modes, one tap each: a strip of tabs at the top of the card (scrolls sideways when they don't all fit).
+const MODE_LABELS=['calc','units','graph','vat','fuel','energy'];
+function renderModeTabs(){
+ const track=$('#modeTabs .mode-tabs-track');if(!track)return;
+ track.innerHTML=MODE_LABELS.map(m=>'<button class="mode-tab" role="tab" type="button" data-mode="'+m+'"><span class="mode-tab-icon" aria-hidden="true">'+modeIcon(m)+'</span><span class="mode-tab-label">'+esc(modeText(m))+'</span></button>').join('');
+ syncModeTabs(true);
 }
-function syncModeButton(){
- const label=$('#modeLabel'),icon=$('#modeIcon'),button=$('#modeButton');
- if(label)label.textContent=modeText(menuMode());
- if(icon)icon.textContent=modeIcon(menuMode());
- if(button){button.dataset.mode=menuMode();button.setAttribute('aria-label',modeText(menuMode()));}
- renderModeMenu();
- syncQuickMode();
+// Highlight the current tab and bring it into view.
+function syncModeTabs(instant){
+ const track=$('#modeTabs .mode-tabs-track');if(!track)return;
+ if(!track.children.length){renderModeTabs();return}
+ let active=null;
+ [...track.children].forEach(b=>{const on=b.dataset.mode===mode;b.classList.toggle('active',on);b.setAttribute('aria-selected',String(on));b.tabIndex=on?0:-1;if(on)active=b});
+ if(active){
+  const pad=24,left=Math.min(Math.max(track.scrollLeft,active.offsetLeft+active.offsetWidth-track.clientWidth+pad),active.offsetLeft-pad);
+  track.scrollTo({left:Math.max(0,left),behavior:instant||reducedMotion()?'auto':'smooth'});
+ }
+ syncTabEdges();
 }
-// Tips & shortcuts: one sheet for the current mode, opened from the footer (or ? on a keyboard).
+// soft edges show that there are more tabs to scroll to
+function syncTabEdges(){const track=$('#modeTabs .mode-tabs-track');if(!track)return;track.classList.toggle('at-start',track.scrollLeft<=2);track.classList.toggle('at-end',track.scrollLeft+track.clientWidth>=track.scrollWidth-2)}
+function syncModeButton(){syncModeTabs()}
+// Choosing a mode. Calculator -> Units moves the calculator's number into Units (into the value you last typed in
+// there) and the calculator starts fresh; nothing comes back the other way (Units does its own math).
+function switchMode(next){
+ if(next===mode){syncModeTabs();return}
+ if(mode==='calc'&&next==='units'){
+  const v=calcNumberForUnits();
+  if(v!==null){
+   const side=unitSource==='to'?'to':'from';
+   unitExpressions={from:'',to:''};unitExpressions[side]=v;unitSource=unitActiveInput=side;unitSourceTyped=false;
+   clearAll();
+  }
+ }
+ setMode(next);
+}
+// Tips: one sheet for the current mode, opened from the footer (or ? on a keyboard); keyboard shortcuts are a section in it.
 // Tips are [Greek, English]; keyboard rows are [[keys], Greek, English]. The keyboard part shows only on devices with a keyboard and mouse.
 const HELP={
  calc:{tips:[
   ['Πάτα ένα αποτέλεσμα για να το αντιγράψεις.','Tap a result to copy it.'],
-  ['Το ( ) ανοίγει ή κλείνει παρένθεση μόνο του. Όσες μείνουν ανοιχτές, τις κλείνει το =.','( ) opens or closes a parenthesis on its own. Any left open are closed by =.'],
+  ['Το ( ) ανοίγει ή κλείνει παρένθεση μόνο του. Όσες μείνουν ανοιχτές, τις κλείνει το =.','( ) opens or closes a parenthesis on its own. Any left open are closed by =.'],
   ['Κράτα πατημένο το − για να αλλάξεις πρόσημο (±), στον αριθμό που γράφεις ή στο αποτέλεσμα.','Hold − to change the sign (±) of the number you are typing, or of the result.'],
   ['Για αρνητικό αριθμό μέσα στην πράξη, πάτα − αμέσως μετά από × ή ÷: το 2 × − 3 δίνει −6.','For a negative number inside a calculation, press − right after × or ÷: 2 × − 3 gives −6.'],
   ['Το 50 + 10% δίνει 55: το ποσοστό παίρνεται από τον προηγούμενο αριθμό. Το 50 × 10% δίνει 5.','50 + 10% gives 55: the percent is taken from the number before it. 50 × 10% gives 5.'],
   ['Πάτα ξανά = για να επαναλάβεις την τελευταία πράξη: το 2 + 3 = = δίνει 8.','Press = again to repeat the last operation: 2 + 3 = = gives 8.'],
   ['Κράτα πατημένο το ⌫ για να τα σβήσεις όλα.','Hold ⌫ to clear everything.'],
-  ['Το ↔ ανοίγει τις Μονάδες και παίρνει μαζί τον αριθμό που φαίνεται.','↔ turns on Units and takes the number on screen with it.'],
+  ['Όταν πας στις Μονάδες, ο αριθμός που φαίνεται μεταφέρεται εκεί και η Αριθμομηχανή ξεκινά από την αρχή.','Going to Units moves the number on screen there, and the Calculator starts fresh.'],
   ['Μετά από ένα αποτέλεσμα, το ? δείχνει βήμα βήμα πώς βγήκε. Στο Ιστορικό, πάτα έναν υπολογισμό για να τον ξαναφέρεις.','After a result, ? shows step by step how it was worked out. In History, tap a calculation to bring it back.']],
-  keys:[[['0–9'],'Αριθμοί','Numbers'],[['+','−','×','÷'],'Πράξεις (και * /)','Operators (also * /)'],[[',','.'],'Υποδιαστολή','Decimal point'],[['(',')'],'Παρενθέσεις','Parentheses'],[['%'],'Ποσοστό','Percent'],[['F9'],'Αλλαγή προσήμου (±)','Change sign (±)'],[['Enter','='],'Αποτέλεσμα','Result'],[['Backspace'],'Σβήνει το τελευταίο','Delete the last character'],[['Esc'],'Καθαρίζει την πράξη','Clear the calculation'],[['?'],'Αυτές οι συμβουλές','These tips']]},
+  keys:[[['0–9'],'Αριθμοί','Numbers'],[['+','−','×','÷'],'Πράξεις (και * /)','Operators (also * /)'],[[',','.'],'Υποδιαστολή','Decimal point'],[['(',')'],'Παρενθέσεις','Parentheses'],[['%'],'Ποσοστό','Percent'],[['F9'],'Αλλαγή προσήμου (±)','Change sign (±)'],[['Enter','='],'Αποτέλεσμα','Result'],[['Backspace'],'Σβήνει το τελευταίο','Delete the last character'],[['Esc'],'Καθαρίζει την πράξη','Clear the calculation'],[['Alt','1–6'],'Αλλαγή λειτουργίας','Switch mode'],[['?'],'Αυτές οι συμβουλές','These tips']]},
  units:{tips:[
   ['Πάτα την πάνω ή την κάτω τιμή για να γράψεις εκεί. Η άλλη μετατρέπεται αμέσως.','Tap the top or bottom value to type there. The other one converts right away.'],
   ['Μπορείς να κάνεις πράξεις μέσα στην τιμή, με παρενθέσεις και ποσοστά, π.χ. (12 + 8) × 2.','You can calculate inside a value, with parentheses and percentages, e.g. (12 + 8) × 2.'],
   ['Το ⇄ αλλάζει θέση στις δύο μονάδες.','⇄ swaps the two units.'],
   ['Από το μενού πάνω από τις τιμές διαλέγεις κατηγορία. Ο αριθμός μένει όταν αλλάζεις κατηγορία. Το Εμβαδόν έχει και στρέμματα.','The menu above the values picks the category. The number stays when you change category. Area includes the Greek stremma.'],
   ['Κράτα πατημένο το − για αλλαγή προσήμου (±) και το ⌫ για να τα σβήσεις όλα.','Hold − to change the sign (±), and ⌫ to clear everything.'],
-  ['Πάτα ξανά το ↔ για να γυρίσεις στην Αριθμομηχανή, όπως την άφησες.','Press ↔ again to go back to the Calculator, just as you left it.']],
-  keys:[[['0–9'],'Αριθμοί','Numbers'],[['+','−','×','÷'],'Πράξη μέσα στην τιμή','Math inside the value'],[['(',')'],'Παρενθέσεις','Parentheses'],[[',','.'],'Υποδιαστολή','Decimal point'],[['%'],'Ποσοστό','Percent'],[['F9'],'Αλλαγή προσήμου (±)','Change sign (±)'],[['Enter','='],'Ολοκλήρωση','Finish'],[['Backspace'],'Σβήνει το τελευταίο','Delete the last character'],[['Esc'],'Κλείνει ανοιχτά παράθυρα','Close open windows'],[['?'],'Αυτές οι συμβουλές','These tips']]},
+  ['Ένας αριθμός από την Αριθμομηχανή μπαίνει στην τιμή όπου έγραψες τελευταία, πάνω ή κάτω.','A number from the Calculator goes into the value you last typed in, top or bottom.']],
+  keys:[[['0–9'],'Αριθμοί','Numbers'],[['+','−','×','÷'],'Πράξη μέσα στην τιμή','Math inside the value'],[['(',')'],'Παρενθέσεις','Parentheses'],[[',','.'],'Υποδιαστολή','Decimal point'],[['%'],'Ποσοστό','Percent'],[['F9'],'Αλλαγή προσήμου (±)','Change sign (±)'],[['Enter','='],'Ολοκλήρωση','Finish'],[['Backspace'],'Σβήνει το τελευταίο','Delete the last character'],[['Esc'],'Κλείνει ανοιχτά παράθυρα','Close open windows'],[['Alt','1–6'],'Αλλαγή λειτουργίας','Switch mode'],[['?'],'Αυτές οι συμβουλές','These tips']]},
  graph:{tips:[
   ['Έως τρεις συναρτήσεις μαζί. Το + δίπλα στη συνάρτηση προσθέτει νέα.','Up to three functions at once. The + next to a function adds a new one.'],
   ['Σύρε το γράφημα για να το μετακινήσεις. Ζουμ με τη ροδέλα του ποντικιού, τα − + ή με δύο δάχτυλα.','Drag the graph to move it. Zoom with the mouse wheel, the − + buttons or two fingers.'],
   ['Οι τελείες δείχνουν ρίζες, ελάχιστα, μέγιστα και τομές. Πάτα μία για τις τιμές της ή το ? για λίστα.','The dots mark roots, minima, maxima and intersections. Tap one for its values, or ? for a list.'],
   ['Το ⤢ προσαρμόζει το ύψος στην καμπύλη, το ⌂ γυρίζει στην αρχή και το ⤓ το αποθηκεύει ως εικόνα.','⤢ fits the height to the curve, ⌂ goes back to the start and ⤓ saves it as an image.'],
   ['Το 2x σημαίνει 2 × x και το sin x σημαίνει sin(x). Οι γωνίες είναι σε ακτίνια.','2x means 2 × x and sin x means sin(x). Angles are in radians.']],
-  keys:[[['x'],'Η μεταβλητή x','The variable x'],[['^'],'Δύναμη, π.χ. x^3','Power, e.g. x^3'],[['sin','sqrt','ln'],'Συναρτήσεις: γράψε το όνομα','Functions: type the name'],[['Enter'],'Επόμενη συνάρτηση','Next function'],[['↑','↓'],'Αλλαγή συνάρτησης','Switch function'],[['←','→'],'Μετακίνηση γραφήματος','Move the graph'],[['Backspace'],'Σβήνει το τελευταίο','Delete the last character'],[['Esc'],'Καθαρίζει τη συνάρτηση','Clear the function'],[['?'],'Αυτές οι συμβουλές','These tips']]},
+  keys:[[['x'],'Η μεταβλητή x','The variable x'],[['^'],'Δύναμη, π.χ. x^3','Power, e.g. x^3'],[['sin','sqrt','ln'],'Συναρτήσεις: γράψε το όνομα','Functions: type the name'],[['Enter'],'Επόμενη συνάρτηση','Next function'],[['↑','↓'],'Αλλαγή συνάρτησης','Switch function'],[['←','→'],'Μετακίνηση γραφήματος','Move the graph'],[['Backspace'],'Σβήνει το τελευταίο','Delete the last character'],[['Esc'],'Καθαρίζει τη συνάρτηση','Clear the function'],[['Alt','1–6'],'Αλλαγή λειτουργίας','Switch mode'],[['?'],'Αυτές οι συμβουλές','These tips']]},
  vat:{tips:[
   ['«Πρόσθεσε ΦΠΑ»: από την καθαρή τιμή βρίσκεις την τελική. «Αφαίρεσε ΦΠΑ»: από την τελική βρίσκεις την καθαρή και τον ΦΠΑ που είχε.','“Add VAT”: from the net price you get the final price. “Remove VAT”: from the final price you get the net price and the VAT in it.'],
   ['Ο συντελεστής ξεκινά στο 24%. Άλλαξέ τον αν χρειάζεσαι άλλον.','The rate starts at 24%. Change it if you need another one.'],
@@ -975,28 +990,18 @@ const HELP={
   ['Για συσκευές που ανάβουν και σβήνουν μόνες τους, όπως το ψυγείο, οι ώρες είναι κατά προσέγγιση.','For devices that switch on and off by themselves, like a fridge, the hours are an estimate.'],
   ['Το κουμπί με τις στήλες δείχνει το κόστος ανά ημέρα, εβδομάδα, μήνα και χρόνο. Πάτα το αποτέλεσμα για να το αντιγράψεις.','The bars button shows the cost per day, week, month and year. Tap the result to copy it.']]}
 };
-const HELP_TOOL_KEYS=[[['Tab'],'Επόμενο πεδίο','Next field'],[['Shift','Tab'],'Προηγούμενο πεδίο','Previous field'],[['0–9'],'Αριθμοί στο πεδίο','Type in the field'],[[',','.'],'Υποδιαστολή','Decimal point'],[['Backspace'],'Σβήνει το τελευταίο','Delete the last character'],[['Esc'],'Κλείνει ανοιχτά παράθυρα','Close open windows'],[['?'],'Αυτές οι συμβουλές','These tips']];
+const HELP_TOOL_KEYS=[[['Tab'],'Επόμενο πεδίο','Next field'],[['Shift','Tab'],'Προηγούμενο πεδίο','Previous field'],[['0–9'],'Αριθμοί στο πεδίο','Type in the field'],[[',','.'],'Υποδιαστολή','Decimal point'],[['Backspace'],'Σβήνει το τελευταίο','Delete the last character'],[['Esc'],'Κλείνει ανοιχτά παράθυρα','Close open windows'],[['Alt','1–6'],'Αλλαγή λειτουργίας','Switch mode'],[['?'],'Αυτές οι συμβουλές','These tips']];
 const hasKeyboard=()=>matchMedia('(hover:hover) and (pointer:fine)').matches;
-function syncHelpButton(){const l=$('#helpLabel');if(l)l.textContent=t(hasKeyboard()?'helpLong':'helpShort');$('#helpButton')?.setAttribute('aria-label',t('helpLong'))}
+function syncHelpButton(){const l=$('#helpLabel');if(l)l.textContent=t('tips')}
 function showHelp(){
  const h=HELP[mode]||HELP.calc,i=lang==='el'?0:1,keys=h.keys||HELP_TOOL_KEYS;
- $('#howTitle').textContent=t('helpLong')+' · '+modeText(mode);
- $('#howContent').innerHTML='<div class="help"><section class="help-section"><h3 class="help-heading">'+esc(t('tips'))+'</h3><ul class="help-tips">'+h.tips.map(x=>'<li>'+esc(x[i])+'</li>').join('')+'</ul></section>'+
+ $('#howTitle').textContent=t('tips')+' · '+modeText(mode);
+ $('#howContent').innerHTML='<div class="help"><section class="help-section"><ul class="help-tips">'+h.tips.map(x=>'<li>'+esc(x[i])+'</li>').join('')+'</ul></section>'+
   (hasKeyboard()?'<section class="help-section"><h3 class="help-heading">'+esc(t('keyboard'))+'</h3><ul class="help-keys">'+keys.map(([k,el,en])=>'<li><span class="help-caps">'+k.map(x=>'<kbd>'+esc(x)+'</kbd>').join('')+'</span><span>'+esc(i?en:el)+'</span></li>').join('')+'</ul></section>':'')+'</div>';
  $('#howModal').classList.add('help-open');$('#howModal').classList.remove('hidden');
  $('#howContent').scrollTop=0;
 }
 
-// Units is a switch inside the Calculator: the ↔ button turns it on (and stays pressed) and off again.
-// Turning it on takes the number the calculator shows with it; turning it off returns to the calculator
-// exactly as it was (Units does its own math, so nothing comes back).
-function syncQuickMode(){
- const b=$('#quickModeButton');if(!b)return;
- const show=mode==='calc'||mode==='units';b.classList.toggle('hidden',!show);if(!show)return;
- const on=mode==='units';
- b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));
- $('#quickModeIcon').textContent=modeIcon('units');b.setAttribute('aria-label',modeText('units'));b.title=modeText('units');
-}
 // The calculator's current number: the result, or what is being typed (an unfinished calculation is worked out). null if none.
 function calcNumberForUnits(){
  if(current==='Error')return null;
@@ -1011,12 +1016,6 @@ function calcNumberForUnits(){
   }
   return value?ratToDecimal(value,24):null;
  }catch{return null}
-}
-function toggleUnits(){
- if(mode==='units'){setMode('calc');return}
- const v=calcNumberForUnits();
- if(v!==null){unitExpressions={from:v,to:''};unitSource='from';unitActiveInput='from';unitSourceTyped=false}
- setMode('units');
 }
 // Holding ⌫ clears everything, the same as AC, in every mode.
 function clearEverything(){if(mode==='calc')clearAll();else if(mode==='units')toolKeyInput('clear');else if(mode==='graph')graphKey('clear');else clearToolFields()}
@@ -1041,27 +1040,6 @@ function setupHoldKeys(){
  pad.addEventListener('click',e=>{if(fired&&holdKey(e.target)){fired=false;e.stopImmediatePropagation();e.preventDefault()}},true);
  pad.addEventListener('contextmenu',e=>{if(holdKey(e.target))e.preventDefault()});
 }
-function toggleModeMenu(){
- const menu=$('#modeMenu'),control=$('.mode-control'),button=$('#modeButton');
- if(!menu||!control||!button)return;
- const open=!control.classList.contains('mode-open');
- if(open){
-   renderModeMenu();
-   menu.classList.remove('hidden');
-   control.classList.add('mode-open');
- }else{
-   control.classList.remove('mode-open');
-   menu.classList.add('hidden');
- }
- button.setAttribute('aria-expanded',String(open));
-}
-function closeModeMenu(){
- const menu=$('#modeMenu'),control=$('.mode-control');
- if(control)control.classList.remove('mode-open');
- if(menu)menu.classList.add('hidden');
- $('#modeButton')?.setAttribute('aria-expanded','false');
-}
-
 function openHistory(){const p=$('#historyPanel'),b=$('#historyBackdrop');renderHistory();p.classList.remove('hidden');b.classList.remove('hidden');requestAnimationFrame(()=>{p.classList.add('open');b.classList.add('open')});p.classList.remove('expanded');$('#historyList').scrollTop=0}
 function closeHistory(){const p=$('#historyPanel'),b=$('#historyBackdrop');p.classList.remove('open','expanded');b.classList.remove('open');setTimeout(()=>{if(!p.classList.contains('open')){p.classList.add('hidden');b.classList.add('hidden')}},220)}
 function setupHistorySheet(){
@@ -1250,17 +1228,24 @@ $('#langButton').addEventListener('click',e=>{e.preventDefault();e.stopPropagati
 $('#themeButton').addEventListener('click',toggleTheme);
 $('#installButton')?.addEventListener('click',installApp);
 $('#helpButton')?.addEventListener('click',showHelp);
-$('#modeButton').addEventListener('click',e=>{e.stopPropagation();toggleModeMenu()});
-$('#quickModeButton')?.addEventListener('click',e=>{e.stopPropagation();closeModeMenu();toggleUnits()});
+$('#modeTabs').addEventListener('click',e=>{const b=e.target.closest('.mode-tab');if(b)switchMode(b.dataset.mode)});
+$('#modeTabs .mode-tabs-track').addEventListener('scroll',syncTabEdges,{passive:true});
+// a mouse wheel over the tabs scrolls them sideways (when they don't all fit)
+$('#modeTabs').addEventListener('wheel',e=>{const t=$('#modeTabs .mode-tabs-track');if(t.scrollWidth<=t.clientWidth)return;e.preventDefault();t.scrollLeft+=Math.abs(e.deltaY)>Math.abs(e.deltaX)?e.deltaY:e.deltaX},{passive:false});
+// arrow keys move between tabs when one has keyboard focus
+$('#modeTabs').addEventListener('keydown',e=>{if(e.key!=='ArrowLeft'&&e.key!=='ArrowRight')return;e.preventDefault();e.stopPropagation();const i=MODE_LABELS.indexOf(mode),n=MODE_LABELS[Math.max(0,Math.min(MODE_LABELS.length-1,i+(e.key==='ArrowRight'?1:-1)))];switchMode(n);requestAnimationFrame(()=>$('#modeTabs .mode-tab.active')?.focus())});
+window.addEventListener('resize',()=>syncModeTabs(true));
 setupHoldKeys();
- document.addEventListener('click',e=>{if(!e.target.closest('#modeButton')&&!e.target.closest('#modeMenu'))closeModeMenu();if(!e.target.closest('.unit-select')&&!e.target.closest('.unit-select-menu'))closeUnitMenus();if(historyClearConfirm&&!e.target.closest('#historyClearWrap'))clearHistoryConfirm()});
+ document.addEventListener('click',e=>{if(!e.target.closest('.unit-select')&&!e.target.closest('.unit-select-menu'))closeUnitMenus();if(historyClearConfirm&&!e.target.closest('#historyClearWrap'))clearHistoryConfirm()});
 $('#clearHistory').addEventListener('click',clearHistoryConfirm);$('#historyConfirmYes').addEventListener('click',deleteAllHistory);
 window.addEventListener('keydown',e=>{
+ // Alt+1…6 jumps to a mode (Alt+← / → are left alone: browsers use them for Back / Forward)
+ if(e.altKey&&!e.ctrlKey&&!e.metaKey&&/^Digit[1-9]$/.test(e.code)){const n=MODE_LABELS[+e.code.slice(5)-1];if(n){e.preventDefault();switchMode(n)}return}
  if(e.ctrlKey||e.metaKey||e.altKey)return;
  // An open (or focused) dropdown handles its own keys: arrows, Enter, typing to jump to an item.
  if(document.activeElement?.closest?.('select'))return;
  const nothingOpen=$('#howModal').classList.contains('hidden')&&$('#historyPanel').classList.contains('hidden');
- // ? opens Tips & shortcuts (not while typing in a field)
+ // ? opens Tips (not while typing in a field)
  if(e.key==='?'&&nothingOpen&&!document.activeElement?.matches('input,textarea')){e.preventDefault();showHelp();return}
  // F9 = ± (as in Windows Calculator)
  if(e.key==='F9'&&(mode==='calc'||mode==='units')){e.preventDefault();if(nothingOpen){if(mode==='calc')negate();else toolKeyInput('negate')}return}
@@ -1274,7 +1259,6 @@ window.addEventListener('keydown',e=>{
  if(e.key==='Escape'){
    if(!$('#howModal').classList.contains('hidden')){e.preventDefault();closeHow();return}
    if(!$('#historyPanel').classList.contains('hidden')){e.preventDefault();closeHistory();return}
-   if($('.mode-control')?.classList.contains('mode-open')){e.preventDefault();closeModeMenu();return}
    if(mode==='calc'){e.preventDefault();clearAll()}
    else if(mode==='graph'){e.preventDefault();graphKey('clear')}
    return;
@@ -1292,4 +1276,4 @@ window.addEventListener('keydown',e=>{
  else if(e.key==='Enter'||e.key==='='){e.preventDefault();equals()}
  else if(e.key==='Backspace'){e.preventDefault();backspace()}
 });
-window.__UC_VERSION=VERSION;$('#footerVersion').textContent=`v${VERSION}`;loadTools();lang=readLanguage();bindTools();renderHistory();renderTool();renderModeMenu();syncModeButton();setupHistorySheet();setupVatSlide();bindHistoryChart();$('#chartButton')?.addEventListener('click',showToolChart);applyLanguage();applyTheme();window.addEventListener('pageshow',e=>{if(e.persisted&&mode!=='calc')setMode('calc')});
+window.__UC_VERSION=VERSION;$('#footerVersion').textContent=`v${VERSION}`;loadTools();lang=readLanguage();bindTools();renderHistory();renderTool();renderModeTabs();syncModeButton();setupHistorySheet();setupVatSlide();bindHistoryChart();$('#chartButton')?.addEventListener('click',showToolChart);applyLanguage();applyTheme();window.addEventListener('pageshow',e=>{if(e.persisted&&mode!=='calc')setMode('calc')});

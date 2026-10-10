@@ -66,9 +66,10 @@ and the file checks in `publish-image.yml`, or it works locally and 404s in prod
   mode, and switches the tools to their compact layout when needed; only if nothing fits does the page scroll
   (`html.page-scroll`). Don't add fixed pixel heights per screen size or device; let `fitLayout` handle it,
   and call it after anything that changes the layout's height.
-- **Units is part of the Calculator:** the ↔ button next to the mode button switches it on/off (`toggleUnits`);
-  it is not in the mode menu, and the mode button keeps saying Calculator (`menuMode()`). Turning it on takes
-  the calculator's number along; turning it off returns to the calculator as it was. Internally `mode==='units'`.
+- **Modes are tabs:** a strip of tabs at the top of the card (`MODE_LABELS`, `renderModeTabs`, `switchMode`), one tap
+  each, scrolling sideways when they don't fit; Alt+1…6 on a keyboard. Add a new mode to `MODE_LABELS`, `ICONS`
+  and `MODE_TRANSLATIONS`. Units is its own tab after Calculator. Going Calculator -> Units moves the calculator's
+  number into the Units value last typed in (`unitSource`) and resets the calculator; nothing moves back.
 - **Big screens:** on large desktop screens the whole app is scaled with CSS `zoom` on `<html>` (`applyUiZoom`,
   `window.__uiZoom`, CSS var `--z`). Viewport units must be written `calc(100dvh / var(--z,1))`, and any code that
   turns screen coordinates (clientX/Y, getBoundingClientRect, innerHeight) into CSS sizes must divide by
@@ -79,8 +80,8 @@ and the file checks in `publish-image.yml`, or it works locally and 404s in prod
 - **± and holding keys:** holding ⌫ clears everything, holding − flips the sign (`negate`, units: `toolKeyInput('negate')`);
   F9 does ± on a keyboard. A tap on − is always minus. Negative numbers inside a calculation display as `5×(−25)`
   (`formatInputDisplay`). Units has the same keypad as the calculator, including ( ).
-- **Tips & shortcuts:** a sheet per mode (`HELP`, `showHelp`), opened from the footer link or the ? key; the keyboard
-  part only shows on devices with a keyboard. When behaviour changes, update the tips in both languages.
+- **Tips:** a sheet per mode (`HELP`, `showHelp`), opened from the footer "Tips" link or the ? key; its keyboard
+  shortcuts section only shows on devices with a keyboard. When behaviour changes, update the tips in both languages.
 - **Copying:** tapping a finished result copies it (calculator and tools), so the copy button can be hidden
   on short screens.
 - **Keyboard:** desktop typing is handled in the `window` `keydown` listener at the end of `app.js`.

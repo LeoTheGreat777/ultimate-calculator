@@ -42,9 +42,9 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 - English and Greek language support
 - Installable on phones: an install button opens the install dialog on Android, and shows a short Add to Home Screen guide on iPhone
 - Mobile-friendly calculator controls
-- Clean, compact UI with dedicated mode navigation
+- One-tap mode tabs (Calculator, Units, Graph, VAT, Fuel, Energy); Alt+1–6 on a keyboard
 - Calculation explanations presented in a readable step-by-step view
-- Tips & shortcuts for every mode, from the footer (or ? on a keyboard)
+- Tips for every mode, with keyboard shortcuts on computers, from the footer (or ? on a keyboard)
 
 ## Authors
 
