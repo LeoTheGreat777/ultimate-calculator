@@ -33,7 +33,7 @@ setupHoldKeys();
 $('#clearHistory').addEventListener('click',clearHistoryConfirm);$('#historyConfirmYes').addEventListener('click',deleteAllHistory);
 window.addEventListener('keydown',e=>{
  if(themeMenuKeydown(e))return;
- // Alt+1…8 jumps to a mode (Alt+← / → are left alone: browsers use them for Back / Forward)
+ // Alt+1…9 jumps to a mode (Alt+← / → are left alone: browsers use them for Back / Forward)
  if(e.altKey&&!e.ctrlKey&&!e.metaKey&&/^Digit[1-9]$/.test(e.code)){const n=MODE_LABELS[+e.code.slice(5)-1];if(n){e.preventDefault();switchMode(n)}return}
  if(e.ctrlKey||e.metaKey||e.altKey)return;
  // An open (or focused) dropdown handles its own keys: arrows, Enter, typing to jump to an item.
@@ -53,7 +53,7 @@ window.addEventListener('keydown',e=>{
  if((e.key==='Backspace'||e.code==='Backspace')&&toolFieldFocused)return;
  if(e.key==='Backspace'||e.code==='Backspace'){e.preventDefault();if(mode==='calc')backspace();else toolKeyInput('backspace');return;}
  if(e.key==='%'&&mode==='units'){e.preventDefault();toolKeyInput('%');return}
- if(e.key===','||e.key==='.'||e.key==='Decimal'){e.preventDefault();if(mode==='calc')digit('.');else if(toolFieldFocused){const input=document.activeElement,end=input.value.length,a=input.selectionStart??end,b=input.selectionEnd??a;if(WHOLE_NUMBER_FIELDS.has(input.id)||/[.,]/.test(input.value.slice(0,a)+input.value.slice(b))){refuseKey(input);return}input.setRangeText(',',a,b,'end');input.dispatchEvent(new Event('input',{bubbles:true}))}else toolKeyInput('.');return}
+ if(e.key===','||e.key==='.'||e.key==='Decimal'){e.preventDefault();if(mode==='calc')digit('.');else if(toolFieldFocused){const input=document.activeElement,end=input.value.length,a=input.selectionStart??end,b=input.selectionEnd??a;if(noDecimalField(input.id)||/[.,]/.test(input.value.slice(0,a)+input.value.slice(b))){refuseKey(input);return}input.setRangeText(',',a,b,'end');input.dispatchEvent(new Event('input',{bubbles:true}))}else toolKeyInput('.');return}
  if(mode==='calc'&&(e.key==='('||e.key===')')){e.preventDefault();parenthesis(e.key);return}
  // Delete = the C key: clears the number being typed (Esc clears everything)
  if(e.key==='Delete'&&nothingOpen&&(mode==='calc'||mode==='units')){e.preventDefault();if(mode==='calc')clearButtonAction();else toolKeyInput('clearEntry');return}

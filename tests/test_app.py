@@ -266,6 +266,36 @@ async def desktop(browser, url, lang, theme):
     await p.wait_for_timeout(200)
     check(L + 'Interest: the chart opens', await p.evaluate("!howModal.classList.contains('hidden')&&toolChart.width>0"))
     await p.keyboard.press('Escape')
+    # Dates: between (working days without Greek holidays), add days, age; typed as digits
+    check(L + 'Dates: Orthodox Easter 2025-2027', await p.evaluate("[2025,2026,2027].map(y=>dateText(orthodoxEaster(y))).join()") == '20/04/2025,12/04/2026,02/05/2027')
+    await p.evaluate("switchMode('dates');setToolKind('dates','between')")
+    await p.click('#dateFrom')
+    await p.keyboard.type('01012026')
+    await p.keyboard.press('Tab')
+    await p.keyboard.type('31122026')
+    st = [await p.evaluate('dateFrom.value'), await p.evaluate(R), await p.evaluate(X)]
+    check(L + 'Dates: 2026 has 364 days between and 251 working days', st == ['01/01/2026', t('364 days', '364 ημέρες', lang), t('Working days: 251', 'Εργάσιμες: 251', lang)], st)
+    await p.keyboard.press('Backspace')
+    check(L + 'Dates: Backspace takes a digit', await p.evaluate('dateTo.value') == '31/12/202', await p.evaluate('dateTo.value'))
+    await p.keyboard.type('5,-')
+    check(L + 'Dates: no comma or minus in a date', await p.evaluate('dateTo.value') == '31/12/2025' and await p.evaluate(R) == t('1 day', '1 ημέρα', lang), [await p.evaluate('dateTo.value'), await p.evaluate(R)])
+    await p.click('[data-choice="add"]')
+    await p.click('#dateStart')
+    await p.keyboard.type('10102026')
+    await p.keyboard.press('Tab')
+    await p.keyboard.type('100')
+    await p.keyboard.press('-')
+    st = [await p.evaluate(R), await p.evaluate(X)]
+    check(L + 'Dates: 10/10/2026 − 100 days', st == ['02/07/2026', t('Thursday', 'Πέμπτη', lang)], st)
+    await p.click('[data-choice="age"]')
+    await p.click('#dateBirth')
+    await p.keyboard.type('29021992')
+    await p.keyboard.press('Tab')
+    await p.keyboard.type('10102026')
+    st = [await p.evaluate(R), await p.evaluate(X)]
+    check(L + 'Dates: age, and a 29 February birthday', st == [t('34 years', '34 χρόνια', lang), t('Birthday in 141 days', 'Γενέθλια σε 141 ημέρες', lang)], st)
+    await p.evaluate("dateBirth.value='31/02/1992';dateBirth.dispatchEvent(new Event('input',{bubbles:true}))")
+    check(L + 'Dates: 31/02 is not a date', await p.evaluate(R) == '0', await p.evaluate(R))
     # changing mode clears the mode you leave (only Calculator -> Units carries the number)
     await p.evaluate("switchMode('vat')")
     await p.click('.tool-key[data-action="clear-all"]')
@@ -525,7 +555,7 @@ async def phone(browser, url, lang, theme, size):
         await p.tap(f'.key[data-value="{key}"]')
     await p.tap('.key[data-action="equals"]')
     check(L + 'keypad works', await p.evaluate(R) == '8')
-    for m in ['calc', 'sci', 'units', 'graph', 'vat', 'pct', 'tip', 'loan', 'savings', 'fuel', 'energy']:
+    for m in ['calc', 'sci', 'units', 'graph', 'vat', 'pct', 'tip', 'loan', 'savings', 'dates', 'fuel', 'energy']:
         # 'sci' is the Calculator with the scientific keys on
         # 'tip' is Percent's tip, the kind with the most fields
         await p.evaluate("switchMode('calc');if(!sciMode)toggleSci()" if m == 'sci' else "switchMode('pct');setToolKind('pct','tip')" if m == 'tip'

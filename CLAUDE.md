@@ -1,6 +1,6 @@
 # Ultimate Calculator – notes for Claude
 
-An all-in-one calculator web app: calculator, graph, unit converter, VAT, percent/discount/tip, interest (loan/savings), fuel and energy tools.
+An all-in-one calculator web app: calculator, graph, unit converter, VAT, percent/discount/tip, interest (loan/savings), dates, fuel and energy tools.
 Plain HTML/CSS/vanilla JS, no framework, no build step, no backend. English and Greek; new users start
 in English and dark theme (people who used the app before keep Greek / their theme, see the script in the
 `<head>` of `public/index.html`). Numbers always use Greek formatting: `1.234,56`.
@@ -49,6 +49,7 @@ Everything the app serves is in `public/` (the web root for both GitHub Pages an
 | `history.js` | saved calculations, the History sheet and its gestures |
 | `units.js` | unit data and names, conversion, the two values, `unitKeyInput` |
 | `tools.js` | VAT, Percent, Interest, Fuel, Energy: fields, saved values, calculations, switches, `toolKeyInput`, tool field events |
+| `dates.js` | Dates: day numbers, date fields, Orthodox Easter and Greek public holidays, working days, the Dates calculations |
 | `layout.js` | `fitLayout` (fits every mode to the screen), long text (`fitDisplayText`, `refuseKey`), zoom on big screens |
 | `ui.js` | theme, `setLanguage`/`applyLanguage`, modes and tabs (`switchMode`, `renderTool`), dialogs, hold keys, install |
 | `help.js` | Tips & shortcuts text (`HELP`) and `showHelp` |
@@ -98,17 +99,21 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   the English names are also in `index.html` (footer and `<meta name="author">`) and both in the README.
   Change them in all places together.
 - **Tool modes** are `TOOL_MODES` (core.js): use it rather than listing them. Defaults (VAT rate 24, tip 10% for 1 person)
-  are `TOOL_DEFAULTS`, filled in on entering the mode and after AC. Percent (discount, change, tip) and Interest (`loan`:
-  loan, savings) have kinds on a switch above their fields: `KIND_FIELDS`, `KIND_LABELS`, `toolKind[mode]`, `setToolKind`,
+  are `TOOL_DEFAULTS`, filled in on entering the mode and after AC. Percent (discount, change, tip), Interest (`loan`:
+  loan, savings) and Dates (between, add, age) have kinds on a switch above their fields: `KIND_FIELDS`, `KIND_LABELS`, `toolKind[mode]`, `setToolKind`,
   `kindPanelHtml`; switching kinds re-renders only the fields, AC (and changing kind) clears the kind on screen. In
-  landscape a kind's fields share one row (`.kind-grid`, `--f`, one-line labels); the tip always does (`ONE_ROW_KINDS`). Fields in `WHOLE_NUMBER_FIELDS` (People) refuse , . and −. A tip split between people is rounded
+  landscape a kind's fields share one row (`.kind-grid`, `--f`, one-line labels); the tip always does (`ONE_ROW_KINDS`). `FIELD_TYPE` marks fields that aren't plain numbers:
+  'count' (People: digits only), 'int' (Dates' days: may be negative), 'date' (digits only, shown DD/MM/YYYY by
+  `formatDateDigits`; an empty field with the placeholder "Today" means today). The , key is dimmed for those. A tip split between people is rounded
   up to the cent (`ratCentsUp`) so the shares cover the bill. Interest (`loanNumbers`, floats like Fuel/Energy): yearly
   rate, interest monthly, months = round(years × 12) up to 1200; a loan's payment is rounded to cents; savings deposits
-  come at the end of each month, an empty starting amount or deposit counts as 0.
-- **Switches** (VAT add/remove, the kinds of Percent and Interest) are one generic segmented control: `TOGGLES`, `toggleHtml`,
+  come at the end of each month, an empty starting amount or deposit counts as 0. Dates (dates.js) count days in UTC
+  (`dayNumber`), years 1000–9999; working days are Monday–Friday without Greek public holidays (`greekHolidays`,
+  `orthodoxEaster`), both dates counted; a 29 February birthday falls on 28 February in other years.
+- **Switches** (VAT add/remove, the kinds of Percent, Interest and Dates) are one generic segmented control: `TOGGLES`, `toggleHtml`,
   `renderToggles`, `setupToggleSlide` (tap, drag, swipe, ← →), `.seg-toggle` in styles.css (`--n` options, `--i` chosen).
 - **Changing mode clears the mode you leave** (`resetModeInput`, called by `switchMode`): numbers typed and results
-  go, in every mode (Percent, Interest: also changing kind; Graph goes back to `graphDefault`). Only Calculator -> Units carries
+  go, in every mode (Percent, Interest, Dates: also changing kind; Graph goes back to `graphDefault`). Only Calculator -> Units carries
   the number. Kept: choices (units picked, VAT add/remove, the kinds, Deg/Rad, f(x)), History, the fuel log. Typed values are
   not saved across visits; `saveTools`/`loadTools` keep only those choices. AC clears a tool.
 - **Storage:** all in the browser (`uc-history`, `uc-tools`, `uc-fuel-log`, `uc-lang`,
@@ -131,7 +136,7 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   stays exact where the answer is exact and rounds floats to 15 digits otherwise. Shown with superscripts and sin⁻¹
   (`sciPretty`). Keyboard: ^ and !.
 - **Modes are tabs:** a strip of tabs at the top of the card (`MODE_LABELS`, `renderModeTabs`, `switchMode`), one tap
-  each, scrolling sideways when they don't fit; Alt+1…8 on a keyboard. Add a new mode to `MODE_LABELS`, `ICONS`
+  each, scrolling sideways when they don't fit; Alt+1…9 on a keyboard. Add a new mode to `MODE_LABELS`, `ICONS`
   and `MODE_TRANSLATIONS`. Units is its own tab after Calculator. Going Calculator -> Units moves the calculator's
   number into the Units value last typed in (`unitSource`) and resets the calculator; nothing moves back.
 - **Big screens:** on large desktop screens the whole app is scaled with CSS `zoom` on `<html>` (`applyUiZoom`,

@@ -6,6 +6,20 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.9.0 – 2026-10-10
+
+### Added
+- **Dates** tab, with three kinds on a switch. Dates are typed as digits (25122026 → 25/12/2026), and a field
+  showing "Today" can stay empty.
+  - **Between:** the days between two dates and how many are working days: Monday to Friday, without Greek
+    public holidays, including Clean Monday, Good Friday, Easter Monday and Whit Monday each year.
+  - **Add days:** the date so many days later, or earlier with −, and its weekday.
+  - **Age:** years since a birth date and the days to the next birthday.
+- Alt+1–9 switches tabs on a keyboard.
+
+### Changed
+- The , key is dimmed when the field can't take a decimal (People, dates, days).
+
 ## 0.8.0 – 2026-10-10
 
 ### Added

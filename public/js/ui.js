@@ -118,14 +118,14 @@ function renderTool(){
  if(mode==='fuel')html='<div class="tool-grid">'+field('fuelD',T[lang].fuelD)+field('fuelC',T[lang].fuelC)+field('fuelP',T[lang].fuelP)+'</div>';
  if(mode==='energy')html='<div class="tool-grid">'+field('energyP',T[lang].energyP)+field('energyH',T[lang].energyH)+field('energyD',T[lang].energyD)+field('energyR',T[lang].energyR)+'</div>';
  if(mode==='vat')html='<div class="tool-grid">'+field('amount',T[lang].amount)+field('vatRate',T[lang].vatRate)+'</div>'+toggleHtml('vat');
- // Percent and Interest: the switch goes above the fields, since it decides which fields there are
+ // Percent, Interest and Dates: the switch goes above the fields, since it decides which fields there are
  if(KIND_FIELDS[mode])html=kindPanelHtml();
 
  $('#toolPanel').innerHTML=html;
  $$('#toolPanel input[data-tool-input]').forEach(i=>fitDisplayText(i,12));
  setActiveToolInput($('#toolPanel input[data-tool-input]'));
  renderToggles();
- renderToolKeypad();
+ renderToolKeypad();setActiveToolInput(toolActiveInput);// again, now that the keypad is there
  fitLayout();
 
 
@@ -141,7 +141,7 @@ function setMode(next){
  syncModeTabs();
 }
 // The modes, one tap each: a strip of tabs at the top of the card (scrolls sideways when they don't all fit).
-const MODE_LABELS=['calc','units','graph','vat','pct','loan','fuel','energy'];
+const MODE_LABELS=['calc','units','graph','vat','pct','loan','dates','fuel','energy'];
 function renderModeTabs(){
  const track=$('#modeTabs .mode-tabs-track');if(!track)return;
  track.innerHTML=MODE_LABELS.map(m=>'<button class="mode-tab" role="tab" type="button" data-mode="'+m+'"><span class="mode-tab-icon" aria-hidden="true">'+modeIcon(m)+'</span><span class="mode-tab-label">'+esc(modeText(m))+'</span></button>').join('');
