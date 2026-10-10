@@ -89,6 +89,9 @@ input,select{-webkit-user-select:text;user-select:text}
 .tool-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 /* the tip's three short fields in one row, so switching kinds in Percent doesn't change the height */
 .tool-grid.cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+html.landscape .tool-grid.kind-grid{grid-template-columns:repeat(var(--f,2),minmax(0,1fr))}
+/* one line per label there, so a long one can't make the row taller */
+html.landscape .tool-grid.kind-grid .tool-field span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tool-field{display:flex;flex-direction:column;gap:6px}
 .tool-field span{font-size:12px;color:var(--muted)}
 .tool-field input,.tool-field select,.unit-select{width:100%;border:1px solid var(--border);border-radius:11px;background:var(--card);color:var(--text);padding:11px 12px;outline:none}

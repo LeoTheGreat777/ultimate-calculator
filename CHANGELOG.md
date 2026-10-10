@@ -6,6 +6,19 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.8.0 – 2026-10-10
+
+### Added
+- **Interest** tab, with two kinds on a switch:
+  - **Loan:** the monthly payment for an amount, yearly interest rate and years, and the total interest. Its chart
+    shows how much of what you pay back is interest.
+  - **Savings:** what a starting amount and a monthly deposit grow to, and how much of it is interest. Its chart
+    shows the total growing over the years against what you put in.
+- Alt+1–8 switches tabs on a keyboard.
+
+### Fixed
+- In the VAT and Interest charts, a large total in the middle of the ring no longer runs over its edges.
+
 ## 0.7.4 – 2026-10-10
 
 ### Fixed

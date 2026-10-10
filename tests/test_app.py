@@ -208,7 +208,7 @@ async def desktop(browser, url, lang, theme):
     check(L + 'VAT switch: remove', await p.evaluate('vatAction') == 'remove' and await p.evaluate(R) == '995,61 €', await p.evaluate(R))
     await p.click('[data-choice="add"]')
     # Percent: discount, % change, tip
-    await p.evaluate("switchMode('pct');setPctAction('discount')")
+    await p.evaluate("switchMode('pct');setToolKind('pct','discount')")
     await p.click('.tool-key[data-action="clear-all"]')
     await p.keyboard.type('80')
     await p.keyboard.press('Tab')
@@ -221,7 +221,7 @@ async def desktop(browser, url, lang, theme):
     await p.mouse.move(box['x'] + 120, box['y'] + box['height'] / 2, steps=8)
     await p.wait_for_timeout(150)
     await p.mouse.up()
-    check(L + 'Percent: dragging the switch picks Change', await p.evaluate('pctAction') == 'change' and await p.locator('#pctFrom').count() == 1)
+    check(L + 'Percent: dragging the switch picks Change', await p.evaluate('toolKind.pct') == 'change' and await p.locator('#pctFrom').count() == 1)
     await p.click('#pctFrom')
     await p.keyboard.type('80')
     await p.keyboard.press('Tab')
@@ -243,7 +243,29 @@ async def desktop(browser, url, lang, theme):
     await p.click('.tool-key[data-action="clear-all"]')
     st = await p.evaluate("[tipBill.value,tipRate.value,tipPeople.value,toolState.pct.inputs.pctFrom??'']")
     check(L + 'Percent: AC and changing kind start over (tip keeps its defaults)', st == ['', '10', '1', ''], st)
-    await p.evaluate("setPctAction('discount')")
+    await p.evaluate("setToolKind('pct','discount')")
+    # Interest: loan payment and savings
+    await p.evaluate("switchMode('loan');setToolKind('loan','loan')")
+    await p.click('#loanAmount')
+    for v in ['10000', '4', '5']:
+        await p.keyboard.type(v)
+        await p.keyboard.press('Tab')
+    st = [await p.evaluate(R), await p.evaluate(X)]
+    check(L + 'Interest: 10.000 at 4% for 5 years', st == ['184,17 €', t('Monthly payment · Interest: 1.050,20 €', 'Μηνιαία δόση · Τόκοι: 1.050,20 €', lang)], st)
+    await p.evaluate("loanRate.value='0';loanRate.dispatchEvent(new Event('input',{bubbles:true}))")
+    check(L + 'Interest: a 0% loan', await p.evaluate(R) == '166,67 €', await p.evaluate(R))
+    await p.click('[data-choice="savings"]')
+    check(L + 'Interest: changing kind clears the loan', await p.evaluate("toolState.loan.inputs.loanAmount??''") == '' and await p.locator('#saveStart').count() == 1)
+    await p.click('#saveMonthly')
+    for v in ['100', '3', '10']:
+        await p.keyboard.type(v)
+        await p.keyboard.press('Tab')
+    st = [await p.evaluate(R), await p.evaluate(X)]
+    check(L + 'Interest: 100 a month at 3% for 10 years', st == ['13.974,14 €', t('Of which interest: 1.974,14 €', 'Από αυτά τόκοι: 1.974,14 €', lang)], st)
+    await p.click('#chartButton')
+    await p.wait_for_timeout(200)
+    check(L + 'Interest: the chart opens', await p.evaluate("!howModal.classList.contains('hidden')&&toolChart.width>0"))
+    await p.keyboard.press('Escape')
     # changing mode clears the mode you leave (only Calculator -> Units carries the number)
     await p.evaluate("switchMode('vat')")
     await p.click('.tool-key[data-action="clear-all"]')
@@ -503,10 +525,11 @@ async def phone(browser, url, lang, theme, size):
         await p.tap(f'.key[data-value="{key}"]')
     await p.tap('.key[data-action="equals"]')
     check(L + 'keypad works', await p.evaluate(R) == '8')
-    for m in ['calc', 'sci', 'units', 'graph', 'vat', 'pct', 'tip', 'fuel', 'energy']:
+    for m in ['calc', 'sci', 'units', 'graph', 'vat', 'pct', 'tip', 'loan', 'savings', 'fuel', 'energy']:
         # 'sci' is the Calculator with the scientific keys on
         # 'tip' is Percent's tip, the kind with the most fields
-        await p.evaluate("switchMode('calc');if(!sciMode)toggleSci()" if m == 'sci' else "switchMode('pct');setPctAction('tip')" if m == 'tip' else f"switchMode('{m}')")
+        await p.evaluate("switchMode('calc');if(!sciMode)toggleSci()" if m == 'sci' else "switchMode('pct');setToolKind('pct','tip')" if m == 'tip'
+                         else "switchMode('loan');setToolKind('loan','savings')" if m == 'savings' else f"switchMode('{m}')")
         await p.wait_for_timeout(200)
         # compared with the real screen size: a phone browser widens the page to fit content that is too wide
         fits = await p.evaluate("""([vw,vh])=>{const scroll=document.documentElement.classList.contains('page-scroll');

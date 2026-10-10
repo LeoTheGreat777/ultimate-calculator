@@ -33,7 +33,7 @@ setupHoldKeys();
 $('#clearHistory').addEventListener('click',clearHistoryConfirm);$('#historyConfirmYes').addEventListener('click',deleteAllHistory);
 window.addEventListener('keydown',e=>{
  if(themeMenuKeydown(e))return;
- // Alt+1…7 jumps to a mode (Alt+← / → are left alone: browsers use them for Back / Forward)
+ // Alt+1…8 jumps to a mode (Alt+← / → are left alone: browsers use them for Back / Forward)
  if(e.altKey&&!e.ctrlKey&&!e.metaKey&&/^Digit[1-9]$/.test(e.code)){const n=MODE_LABELS[+e.code.slice(5)-1];if(n){e.preventDefault();switchMode(n)}return}
  if(e.ctrlKey||e.metaKey||e.altKey)return;
  // An open (or focused) dropdown handles its own keys: arrows, Enter, typing to jump to an item.

@@ -1,19 +1,20 @@
-// The VAT, Percent (discount, % change, tip), Fuel and Energy tools: their fields, saved values, calculations and keypad input.
+// The VAT, Percent (discount, % change, tip), Interest (loan, savings), Fuel and Energy tools: their fields, saved values, calculations and keypad input.
 // (Their charts and the fuel log are in charts.js.)
 // What was typed in a tool is forgotten when the mode changes (resetModeInput in ui.js) and isn't kept across visits;
-// only the choices are saved: VAT add/remove, Percent's kind, the unit category and units picked, the Units side.
+// only the choices are saved: VAT add/remove, the kind in Percent and Interest, the unit category and units picked, the Units side.
 const TOOLS_KEY='uc-tools';
 let unitPick={};// last chosen from/to units per unit category
 function saveTools(){
  const cat=$('#unitCategory')?.value,from=$('#unitFrom')?.value,to=$('#unitTo')?.value;
  if(cat&&units[cat]&&units[cat][from]!==undefined&&units[cat][to]!==undefined)unitPick[cat]={from,to};
- store.set(TOOLS_KEY,JSON.stringify({vatAction,pctAction,units:{category:window._unitCategory||'length',pick:unitPick,source:unitSource}}));
+ store.set(TOOLS_KEY,JSON.stringify({vatAction,kinds:toolKind,units:{category:window._unitCategory||'length',pick:unitPick,source:unitSource}}));
 }
 function loadTools(){
  try{
   const s=JSON.parse(store.get(TOOLS_KEY)||'null');if(!s||typeof s!=='object')return;
   if(TOGGLES.vat.options.includes(s.vatAction))vatAction=s.vatAction;
-  if(TOGGLES.pct.options.includes(s.pctAction))pctAction=s.pctAction;
+  const kinds=s.kinds||{pct:s.pctAction};// pctAction: saved by 0.7.x
+  Object.keys(KIND_FIELDS).forEach(m=>{if(KIND_FIELDS[m][kinds?.[m]])toolKind[m]=kinds[m]});
   const u=s.units;if(!u||typeof u!=='object')return;
   if(units[u.category])window._unitCategory=u.category;
   if(u.pick&&typeof u.pick==='object')Object.entries(u.pick).forEach(([c,p])=>{if(units[c]&&units[c][p?.from]!==undefined&&units[c][p?.to]!==undefined)unitPick[c]={from:p.from,to:p.to}});
@@ -35,22 +36,27 @@ function renderToolDisplay(){
  d.classList.toggle('tool-empty',!toolResult);
  fitDisplayText($('#result'),24);
 }
-const FIELD_EXAMPLES={fuelD:'250',fuelC:'7,2',fuelP:'1,85',energyP:'100',energyH:'8',energyD:'30',energyR:'0,20',amount:'100',vatRate:'24%',pctPrice:'80',pctOff:'25%',pctFrom:'80',pctTo:'100',tipBill:'60',tipRate:'10%',tipPeople:'3',value:'10'};
+const FIELD_EXAMPLES={fuelD:'250',fuelC:'7,2',fuelP:'1,85',energyP:'100',energyH:'8',energyD:'30',energyR:'0,20',amount:'100',vatRate:'24%',pctPrice:'80',pctOff:'25%',pctFrom:'80',pctTo:'100',tipBill:'60',tipRate:'10%',tipPeople:'3',loanAmount:'10.000',loanRate:'4%',loanYears:'5',saveStart:'1.000',saveMonthly:'100',saveRate:'3%',saveYears:'10',value:'10'};
 let vatAction='add';
 const liveToolNumber=id=>{const raw=normalizeNumericInput($('#'+id)?.value??'');if(raw==='')return null;const n=Number(raw);return Number.isFinite(n)?n:null};
 // On phones the fields are filled only from the app's own keypad, so the native keyboard never opens.
 const field=(id,label)=>{const value=toolState[mode]?.inputs?.[id]??'';const touch=isMobileDevice();return '<label class="tool-field"><span>'+esc(label)+'</span><input id="'+id+'" type="text" inputmode="'+(touch?'none':'decimal')+'"'+(touch?' readonly':'')+' autocomplete="off" spellcheck="false" value="'+esc(value)+'" placeholder="'+esc(String(FIELD_EXAMPLES[id]??''))+'" data-tool-input="true"></label>'};
 function setActiveToolInput(input){toolActiveInput=input||null;$$('#toolPanel input[data-tool-input]').forEach(i=>i.classList.toggle('tool-active',i===toolActiveInput))}
 function setToolResult(main,detail='',how=null){toolResult={main,detail,how};if(toolState[mode])toolState[mode].result=toolResult;howData=how;renderToolDisplay();}
-// Percent has three kinds, each with its own fields; tip has defaults like the VAT rate. People is a whole number.
-let pctAction='discount';
-const PCT_FIELDS={discount:['pctPrice','pctOff'],change:['pctFrom','pctTo'],tip:['tipBill','tipRate','tipPeople']};
+// Tools with kinds on a switch above their fields (Percent, Interest): each kind has its own fields.
+// Tip has defaults like the VAT rate. People is a whole number. The tip's three short fields share one row.
+const KIND_FIELDS={pct:{discount:['pctPrice','pctOff'],change:['pctFrom','pctTo'],tip:['tipBill','tipRate','tipPeople']},
+ loan:{loan:['loanAmount','loanRate','loanYears'],savings:['saveStart','saveMonthly','saveRate','saveYears']}};
+const KIND_LABELS={pct:['pctDiscount','pctChange','pctTip'],loan:['loanLoan','loanSavings']};
+const ONE_ROW_KINDS=new Set(['tip']);
+let toolKind={pct:'discount',loan:'loan'};
+const kindFields=(m=mode)=>KIND_FIELDS[m]?.[toolKind[m]]||[];
 const TOOL_DEFAULTS={vat:{vatRate:'24'},pct:{tipRate:'10',tipPeople:'1'}};
 const WHOLE_NUMBER_FIELDS=new Set(['tipPeople']);
 function fillToolDefaults(m){const d=TOOL_DEFAULTS[m];if(d&&toolState[m])Object.entries(d).forEach(([id,v])=>{if(!toolState[m].inputs[id])toolState[m].inputs[id]=v})}
 // Segmented switches (VAT add/remove, Percent discount/change/tip) work like iOS: tap a side, drag the thumb, or swipe.
-const TOGGLES={vat:{options:['add','remove'],labels:['addVat','removeVat'],get:()=>vatAction,set:v=>setVatAction(v)},
- pct:{options:['discount','change','tip'],labels:['pctDiscount','pctChange','pctTip'],get:()=>pctAction,set:v=>setPctAction(v)}};
+const TOGGLES={vat:{options:['add','remove'],labels:['addVat','removeVat'],get:()=>vatAction,set:v=>setVatAction(v)}};
+Object.keys(KIND_FIELDS).forEach(m=>{TOGGLES[m]={options:Object.keys(KIND_FIELDS[m]),labels:KIND_LABELS[m],get:()=>toolKind[m],set:v=>setToolKind(m,v)}});
 function toggleHtml(name,top){
  const c=TOGGLES[name];
  return '<div class="seg-toggle'+(top?' seg-top':'')+'" role="radiogroup" data-toggle="'+name+'" style="--n:'+c.options.length+'"><span class="seg-thumb" aria-hidden="true"></span>'+c.options.map((v,i)=>'<button type="button" role="radio" data-choice="'+v+'">'+esc(t(c.labels[i]))+'</button>').join('')+'</div>';
@@ -63,17 +69,22 @@ function renderToggles(){
  });
 }
 function setVatAction(next){if(!TOGGLES.vat.options.includes(next))return;vatAction=next;renderToggles();window._runVat?.(vatAction==='add');saveTools()}
-function setPctAction(next){
- if(!TOGGLES.pct.options.includes(next)||next===pctAction)return;
+function setToolKind(m,next){
+ if(!KIND_FIELDS[m]?.[next]||next===toolKind[m])return;
  // like changing mode: the kind you leave starts over
- PCT_FIELDS[pctAction].forEach(id=>delete toolState.pct.inputs[id]);
- pctAction=next;renderToggles();renderPctFields();window._runPct?.();saveTools();
+ kindFields(m).forEach(id=>delete toolState[m].inputs[id]);
+ toolKind[m]=next;renderToggles();
+ if(mode===m){renderKindFields();runActiveTool()}
+ saveTools();
 }
-// Only the fields change, so the switch keeps its slide animation.
-function pctFieldsHtml(){return PCT_FIELDS[pctAction].map(id=>field(id,t(id))).join('')}
-function renderPctFields(){
- const grid=$('#toolPanel .tool-grid');if(!grid||mode!=='pct')return;
- grid.innerHTML=pctFieldsHtml();grid.classList.toggle('cols-3',PCT_FIELDS[pctAction].length===3);
+// The switch and the fields of a tool with kinds. Changing kind replaces only the fields, so the switch keeps its slide animation.
+// In landscape a kind's fields share one row (--f fields), so the switch above them still fits beside the keypad.
+const kindGridClass=()=>'tool-grid kind-grid'+(ONE_ROW_KINDS.has(toolKind[mode])?' cols-3':'');
+function kindPanelHtml(){return toggleHtml(mode,true)+'<div class="'+kindGridClass()+'" style="--f:'+kindFields().length+'">'+kindFieldsHtml()+'</div>'}
+function kindFieldsHtml(){return kindFields().map(id=>field(id,t(id))).join('')}
+function renderKindFields(){
+ const grid=$('#toolPanel .tool-grid');if(!grid||!KIND_FIELDS[mode])return;
+ grid.innerHTML=kindFieldsHtml();grid.className=kindGridClass();grid.style.setProperty('--f',String(kindFields().length));
  $$('#toolPanel input[data-tool-input]').forEach(i=>fitDisplayText(i,12));
  setActiveToolInput($('#toolPanel input[data-tool-input]'));
  fitLayout();
@@ -147,6 +158,26 @@ function vatNumbers(add=vatAction==='add'){
  const n=ratToNumber;
  return{amount:n(A),rate:n(R),net:n(net),tax:n(tax),total:n(total)};
 }
+// Interest's numbers, for its result and its chart; null until the fields make sense.
+// Loan: equal monthly payments (rounded to cents) over Years × 12 months. Savings: interest added every month,
+// deposits at the end of each month; an empty starting amount or monthly deposit counts as 0.
+function loanNumbers(){
+ const n=liveToolNumber,kind=toolKind.loan,R=n(kind==='loan'?'loanRate':'saveRate'),Y=n(kind==='loan'?'loanYears':'saveYears');
+ if(R===null||Y===null||R<0)return null;
+ const months=Math.round(Y*12),i=R/100/12;
+ if(months<1||months>1200)return null;
+ const cents=x=>Math.round(x*100)/100;
+ if(kind==='loan'){
+  const P=n('loanAmount');if(P===null||P<=0)return null;
+  const pay=cents(i?P*i/(1-Math.pow(1+i,-months)):P/months),total=cents(pay*months);
+  return {kind,P,R,Y,months,i,pay,total,interest:cents(total-P)};
+ }
+ const S=n('saveStart')??0,D=n('saveMonthly')??0;
+ if(S===0&&D===0)return null;
+ const grow=m=>{const g=Math.pow(1+i,m);return S*g+(i?D*(g-1)/i:D*m)};
+ const fromStart=cents(S*Math.pow(1+i,months)),final=cents(grow(months)),fromDeposits=cents(final-fromStart),deposited=cents(S+D*months);
+ return {kind,S,D,R,Y,months,i,fromStart,fromDeposits,final,deposited,interest:cents(final-deposited),grow};
+}
 function bindTools(){
  // Money is shown in cents; litres, kWh and per-km prices with a few decimals.
  // (from 10¹⁵ up, the power-of-ten form, as in the calculator)
@@ -191,7 +222,7 @@ function bindTools(){
  const pct2=num(2),signed=(s,v)=>(v>0?'+':'')+s;
  const pct=()=>{
   const H=rat(100n),n=ratToNumber,el=lang==='el';
-  if(pctAction==='discount'){
+  if(toolKind.pct==='discount'){
    const P=ratField('pctPrice'),D=ratField('pctOff');
    if(!P||!D){setToolResult('','',null);return}
    const off=ratCents(ratDiv(ratMul(P,D),H)),final=ratSub(P,off);
@@ -200,7 +231,7 @@ function bindTools(){
     {title:el?'Αφαίρεσέ την από την τιμή':'Take it off the price',text:money(n(P))+' − '+money(n(off))+' = '+money(n(final))}],result:money(n(final))};
    setToolResult(money(n(final)),t('youSave')+': '+money(n(off)),how);return;
   }
-  if(pctAction==='change'){
+  if(toolKind.pct==='change'){
    const A=ratField('pctFrom'),B=ratField('pctTo');
    if(!A||!B||A.n===0n){setToolResult('','',null);return}
    const diff=ratSub(B,A),change=n(ratDiv(ratMul(diff,H),A.n<0n?rat(-A.n,A.d):A)),shown=signed(pct2(change),change)+'%';
@@ -222,6 +253,27 @@ function bindTools(){
   setToolResult(money(n(each)),detail,how);
  };
  window._runPct=pct;
+ // Interest: a loan's monthly payment, or what savings grow to (interest added monthly).
+ const loan=()=>{
+  const v=loanNumbers(),el=lang==='el',pc=num(6);
+  if(!v){setToolResult('','',null);return}
+  const rateStep={title:el?'Μηνιαίο επιτόκιο':'Monthly rate',text:fmt(v.R)+'% ÷ 12 = '+pc(v.R/12)+'%'};
+  const monthsStep={title:el?'Μήνες':'Months',text:fmt(v.Y)+' × 12 = '+v.months};
+  if(v.kind==='loan'){
+   const how={formula:money(v.P)+(el?' με ':' at ')+fmt(v.R)+'% '+(el?'για ':'for ')+fmt(v.Y)+(el?' χρόνια':' years'),steps:[rateStep,monthsStep,
+    {title:el?'Μηνιαία δόση':'Monthly payment',text:money(v.P)+' × i ÷ (1 − (1 + i)^−'+v.months+') = '+money(v.pay)},
+    {title:el?'Σύνολο που πληρώνεις':'Total you pay',text:money(v.pay)+' × '+v.months+' = '+money(v.total)},
+    {title:el?'Τόκοι':'Interest',text:money(v.total)+' − '+money(v.P)+' = '+money(v.interest)}],result:money(v.pay)};
+   setToolResult(money(v.pay),t('perMonth')+' · '+t('interestTotal')+': '+money(v.interest),how);return;
+  }
+  const how={formula:money(v.S)+' + '+money(v.D)+(el?' τον μήνα, ':' a month, ')+fmt(v.R)+'%, '+fmt(v.Y)+(el?' χρόνια':' years'),steps:[rateStep,monthsStep,
+   {title:el?'Το αρχικό ποσό με τους τόκους':'The starting amount with interest',text:money(v.S)+' × (1 + i)^'+v.months+' = '+money(v.fromStart)},
+   {title:el?'Οι μηνιαίες καταθέσεις με τους τόκους':'The monthly deposits with interest',text:money(v.D)+' × ((1 + i)^'+v.months+' − 1) ÷ i = '+money(v.fromDeposits)},
+   {title:el?'Σύνολο':'Total',text:money(v.fromStart)+' + '+money(v.fromDeposits)+' = '+money(v.final)},
+   {title:el?'Από αυτά, τόκοι':'Of which interest',text:money(v.final)+' − '+money(v.deposited)+' = '+money(v.interest)}],result:money(v.final)};
+  setToolResult(money(v.final),t('ofWhichInterest')+': '+money(v.interest),how);// deposits: in ? and the chart (one line on a phone)
+ };
+ window._runLoan=loan;
  populateUnits();
 }
 function renderToolKeypad(){
@@ -243,8 +295,8 @@ function clearToolFields(){
  }
  if(!toolState[mode])return;
  // AC starts the tool over: every field empty, except the VAT rate and the tip's rate and people, which go back to their defaults.
- // In Percent only the fields of the kind on screen are cleared.
- if(mode==='pct'){const inp=toolState.pct.inputs;PCT_FIELDS[pctAction].forEach(id=>delete inp[id])}else toolState[mode].inputs={};
+ // In Percent and Interest only the fields of the kind on screen are cleared.
+ if(KIND_FIELDS[mode]){const inp=toolState[mode].inputs;kindFields().forEach(id=>delete inp[id])}else toolState[mode].inputs={};
  fillToolDefaults(mode);
  $$('#toolPanel input[data-tool-input]').forEach(input=>input.value=toolState[mode].inputs[input.id]??'');
  setActiveToolInput($('#toolPanel input[data-tool-input]'));
@@ -276,6 +328,7 @@ function runActiveTool(){
  if(mode==='energy'){window._runEnergy?.();return}
  if(mode==='vat'){window._runVat?.(vatAction==='add');return}
  if(mode==='pct'){window._runPct?.();return}
+ if(mode==='loan'){window._runLoan?.();return}
  if(mode==='units'){window._runUnits?.();return}
 }
 

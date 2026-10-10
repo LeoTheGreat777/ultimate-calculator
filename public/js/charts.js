@@ -97,18 +97,22 @@ function chDonut(cv,parts,center){
  const {ctx,w,h}=chSetup(cv),C=chColors(),total=parts.reduce((s,p)=>s+Math.max(0,p.value),0)||1,r=Math.min(w,h)/2-8,cx=w/2,cy=h/2;
  let a=-Math.PI/2;
  parts.forEach(p=>{const da=Math.max(0,p.value)/total*Math.PI*2;if(da<=0)return;ctx.beginPath();ctx.arc(cx,cy,r,a,a+da);ctx.arc(cx,cy,r*.64,a+da,a,true);ctx.closePath();ctx.fillStyle=p.color;ctx.fill();ctx.lineWidth=2;ctx.strokeStyle=C.card;ctx.stroke();a+=da});
- ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=C.text;ctx.font='750 '+Math.round(r*.2)+'px -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif';ctx.fillText(center[0],cx,cy-r*.07);
+ ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=C.text;
+ // the amount in the middle shrinks to stay inside the ring (large totals)
+ const font=px=>'750 '+px+'px -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif';let px=Math.round(r*.2);ctx.font=font(px);
+ const room=r*.64*2*.84,wide=ctx.measureText(center[0]).width;if(wide>room){px=Math.max(10,Math.floor(px*room/wide));ctx.font=font(px)}
+ ctx.fillText(center[0],cx,cy-r*.07);
  ctx.font=CH_FONT;ctx.fillStyle=C.muted;ctx.fillText(center[1],cx,cy+r*.18);
 }
 
 /* ---------- Charts for the Fuel, Energy and VAT tools ---------- */
 const CHART_ICON='<svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M5 20V11M12 20V5M19 20v-6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>';
 function cText(k){
- const el={chart:'Διάγραμμα',fuelTitle:'Κόστος ανάλογα με την απόσταση',fuelNote:'Με 1 λίτρο λιγότερη κατανάλωση ανά 100 km θα πλήρωνες {v} λιγότερα σε αυτή την απόσταση.',energyTitle:'Κόστος σε βάθος χρόνου',energyNote:'Η συσκευή καταναλώνει {v} την ημέρα.',day:'Ημέρα',week:'Εβδομάδα',month:'Μήνας',year:'Έτος',days:'{n} ημ.',vatTitle:'Από τι αποτελείται το ποσό',net:'Καθαρό ποσό',vat:'ΦΠΑ',total:'Σύνολο',km:'km',historyEmpty:'Χρειάζονται τουλάχιστον 2 υπολογισμοί για το διάγραμμα.',historyHint:'Οι τελευταίοι {n} υπολογισμοί. Πάτα ένα σημείο για να δεις την πράξη.'};
- const en={chart:'Chart',fuelTitle:'Cost by distance',fuelNote:'Using 1 litre less per 100 km would save you {v} over this distance.',energyTitle:'Cost over time',energyNote:'The device uses {v} a day.',day:'Day',week:'Week',month:'Month',year:'Year',days:'{n} days',vatTitle:'What the amount is made of',net:'Net amount',vat:'VAT',total:'Total',km:'km',historyEmpty:'At least 2 calculations are needed for the chart.',historyHint:'The last {n} calculations. Tap a point to see it.'};
+ const el={loanTitle:'Τι επιστρέφεις συνολικά',saveTitle:'Πώς μεγαλώνουν οι αποταμιεύσεις',borrowed:'Ποσό δανείου',interest:'Τόκοι',deposited:'Καταθέσεις',balance:'Σύνολο',payments:'{n} δόσεις των {v}',yr:'{n} χρ.',chart:'Διάγραμμα',fuelTitle:'Κόστος ανάλογα με την απόσταση',fuelNote:'Με 1 λίτρο λιγότερη κατανάλωση ανά 100 km θα πλήρωνες {v} λιγότερα σε αυτή την απόσταση.',energyTitle:'Κόστος σε βάθος χρόνου',energyNote:'Η συσκευή καταναλώνει {v} την ημέρα.',day:'Ημέρα',week:'Εβδομάδα',month:'Μήνας',year:'Έτος',days:'{n} ημ.',vatTitle:'Από τι αποτελείται το ποσό',net:'Καθαρό ποσό',vat:'ΦΠΑ',total:'Σύνολο',km:'km',historyEmpty:'Χρειάζονται τουλάχιστον 2 υπολογισμοί για το διάγραμμα.',historyHint:'Οι τελευταίοι {n} υπολογισμοί. Πάτα ένα σημείο για να δεις την πράξη.'};
+ const en={loanTitle:'What you pay back',saveTitle:'How your savings grow',borrowed:'Amount borrowed',interest:'Interest',deposited:'Deposits',balance:'Total',payments:'{n} payments of {v}',yr:'{n} yr',chart:'Chart',fuelTitle:'Cost by distance',fuelNote:'Using 1 litre less per 100 km would save you {v} over this distance.',energyTitle:'Cost over time',energyNote:'The device uses {v} a day.',day:'Day',week:'Week',month:'Month',year:'Year',days:'{n} days',vatTitle:'What the amount is made of',net:'Net amount',vat:'VAT',total:'Total',km:'km',historyEmpty:'At least 2 calculations are needed for the chart.',historyHint:'The last {n} calculations. Tap a point to see it.'};
  return (lang==='el'?el:en)[k];
 }
-function toolChartAvailable(){return ['fuel','energy','vat'].includes(mode)&&!!toolResult?.how}
+function toolChartAvailable(){return ['fuel','energy','vat','loan'].includes(mode)&&!!toolResult?.how}
 function showToolChart(){
  if(!toolChartAvailable())return;
  $('#howTitle').textContent=cText('chart')+' · '+modeText(mode);
@@ -143,6 +147,24 @@ function drawToolChart(){
   chDonut(cv,[{value:net,color:C.series[0]},{value:tax,color:C.series[1]}],[chMoney(total),cText('total')]);
   const pc=v=>total?chNum(v/total*100,1)+'%':'';
   legend.innerHTML=chLegend([{color:C.series[0],label:cText('net')+' · '+pc(net),value:chMoney(net)},{color:C.series[1],label:cText('vat')+' '+chNum(rate,2)+'% · '+pc(tax),value:chMoney(tax)}]);note.textContent='';
+ }else if(mode==='loan'){
+  const v=loanNumbers();if(!v)return;
+  if(v.kind==='loan'){
+   // a loan: how much of what you pay back is the loan and how much is interest
+   title.textContent=cText('loanTitle');
+   chDonut(cv,[{value:v.P,color:C.series[0]},{value:Math.max(0,v.interest),color:C.series[1]}],[chMoney(v.total),cText('total')]);
+   const pc=x=>v.total?chNum(x/v.total*100,1)+'%':'';
+   legend.innerHTML=chLegend([{color:C.series[0],label:cText('borrowed')+' · '+pc(v.P),value:chMoney(v.P)},{color:C.series[1],label:cText('interest')+' · '+pc(v.interest),value:chMoney(v.interest)}]);
+   note.textContent=cText('payments').replace('{n}',v.months).replace('{v}',chMoney(v.pay));
+  }else{
+   // savings: the total over the years against what you put in; the gap between the lines is the interest
+   const steps=Math.min(v.months,120),pts=f=>Array.from({length:steps+1},(_,k)=>{const m=v.months*k/steps;return [m/12,f(m)]});
+   title.textContent=cText('saveTitle');
+   chLineChart(cv,{series:[{pts:pts(m=>v.S+v.D*m),color:C.series[1],width:1.6,dash:[5,5]},{pts:pts(v.grow),color:C.series[0],width:3}],xMin:0,xMax:v.months/12,
+    xFmt:x=>cText('yr').replace('{n}',chNum(x,1)),yFmt:x=>chMoney(x),marker:{x:v.months/12,y:v.final,label:chMoney(v.final),color:C.series[0]}});
+   legend.innerHTML=chLegend([{color:C.series[0],label:cText('balance'),value:chMoney(v.final)},{color:C.series[1],label:cText('deposited'),value:chMoney(v.deposited)}]);
+   note.textContent=cText('interest')+': '+chMoney(v.interest);
+  }
  }
 }
 
