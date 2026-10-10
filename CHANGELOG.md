@@ -6,6 +6,15 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.11.1 – 2026-10-10
+
+### Changed
+- The bar under the tabs can be grabbed: drag it with the mouse or a finger, or press it to jump there. It gets thicker
+  under the mouse, and pulled past an end it shrinks instead of sliding off; the tabs no longer bounce past their ends.
+- On computers, Dates opens the app's own calendar instead of the browser's: months with the public holidays dotted
+  and today ringed, a tap on the title for months and years, a Today button, the mouse wheel and the keyboard.
+  Phones keep their own date picker.
+
 ## 0.11.0 – 2026-10-10
 
 ### Changed

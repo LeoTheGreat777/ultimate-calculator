@@ -121,6 +121,7 @@ function renderTool(){
  // Percent, Interest and Dates: the switch goes above the fields, since it decides which fields there are
  if(KIND_FIELDS[mode])html=kindPanelHtml();
 
+ closeCalendar();
  $('#toolPanel').innerHTML=html;
  $$('#toolPanel input[data-tool-input]').forEach(i=>fitDisplayText(i,12));
  setActiveToolInput($('#toolPanel input[data-tool-input]'));
@@ -165,10 +166,31 @@ function syncTabEdges(){
  const start=track.scrollLeft<=2,end=track.scrollLeft+track.clientWidth>=track.scrollWidth-2;
  track.classList.toggle('at-start',start);track.classList.toggle('at-end',end);
  nav.classList.toggle('at-start',start);nav.classList.toggle('at-end',end);nav.classList.toggle('all-fit',start&&end);
- // the slim bar under the tabs: as wide as the part in view, where the view is
- const bar=nav.querySelector('.tabs-scrollbar'),thumb=bar?.firstElementChild;if(!thumb||start&&end)return;
- const ratio=track.clientWidth/track.scrollWidth,room=bar.clientWidth,w=Math.max(24,room*ratio);
- thumb.style.width=w+'px';thumb.style.transform='translateX('+((room-w)*track.scrollLeft/Math.max(1,track.scrollWidth-track.clientWidth))+'px)';
+ // the slim bar under the tabs: as wide as the part in view, where the view is. Pulled past an end (the bounce of a
+ // touch screen), the thumb stays at that end and gets shorter, like a phone's own scroll bars.
+ const bar=nav.querySelector('.tabs-scrollbar'),thumb=bar?.querySelector('span');if(!thumb||start&&end)return;
+ const max=track.scrollWidth-track.clientWidth,x=track.scrollLeft,over=x<0?-x:x>max?x-max:0;
+ const room=bar.clientWidth,w=Math.max(12,Math.max(28,room*track.clientWidth/track.scrollWidth)-over*1.5);
+ thumb.style.width=w+'px';thumb.style.transform='translateX('+(room-w)*Math.min(1,Math.max(0,x/Math.max(1,max)))+'px)';
+}
+// The bar can be grabbed, with a mouse or a finger: drag the thumb, or press the bar elsewhere to jump there.
+function setupTabsBar(){
+ const nav=$('#modeTabs'),bar=nav?.querySelector('.tabs-scrollbar'),track=nav?.querySelector('.mode-tabs-track');if(!bar||!track)return;
+ let drag=null;
+ const Z=()=>window.__uiZoom||1,max=()=>track.scrollWidth-track.clientWidth;
+ const thumbW=()=>bar.querySelector('span').getBoundingClientRect().width/Z();
+ const moveTo=clientX=>{const r=bar.getBoundingClientRect(),room=r.width/Z()-thumbW();track.scrollLeft=Math.min(max(),Math.max(0,(clientX/Z()-r.left/Z()-drag.grab)/Math.max(1,room)*max()))};
+ bar.addEventListener('pointerdown',e=>{
+  if(nav.classList.contains('all-fit')||e.button>0)return;
+  e.preventDefault();e.stopPropagation();
+  const t=bar.querySelector('span').getBoundingClientRect(),on=e.clientX>=t.left-6&&e.clientX<=t.right+6;
+  drag={id:e.pointerId,grab:on?(e.clientX-t.left)/Z():thumbW()/2};
+  bar.setPointerCapture?.(e.pointerId);nav.classList.add('bar-drag','show-bar');clearTimeout(tabsBarTimer);
+  if(!on)moveTo(e.clientX);
+ });
+ bar.addEventListener('pointermove',e=>{if(drag&&e.pointerId===drag.id){e.preventDefault();moveTo(e.clientX)}});
+ const end=e=>{if(!drag||e.pointerId!==drag.id)return;drag=null;nav.classList.remove('bar-drag');flashTabsBar(900)};
+ bar.addEventListener('pointerup',end);bar.addEventListener('pointercancel',end);
 }
 // The bar shows while the tabs move (and for a moment when the app opens, to say there are more), then fades away.
 let tabsBarTimer=0;
@@ -330,6 +352,7 @@ $('#modeTabs .mode-tabs-track').addEventListener('scroll',()=>{syncTabEdges();fl
 $$('#modeTabs .tabs-arrow').forEach(b=>b.addEventListener('click',()=>{const t=$('#modeTabs .mode-tabs-track');t.scrollBy({left:(b.classList.contains('tabs-prev')?-1:1)*t.clientWidth*.7,behavior:reducedMotion()?'auto':'smooth'})}));
 addEventListener('load',()=>setTimeout(()=>{syncTabEdges();flashTabsBar(1800)},400));
 addEventListener('resize',()=>syncTabEdges());
+setupTabsBar();
 // a mouse wheel over the tabs scrolls them sideways (when they don't all fit)
 $('#modeTabs').addEventListener('wheel',e=>{const t=$('#modeTabs .mode-tabs-track');if(t.scrollWidth<=t.clientWidth)return;e.preventDefault();t.scrollLeft+=Math.abs(e.deltaY)>Math.abs(e.deltaX)?e.deltaY:e.deltaX},{passive:false});
 // arrow keys move between tabs when one has keyboard focus

@@ -43,6 +43,7 @@ let vatAction='add';
 const liveToolNumber=id=>{const raw=normalizeNumericInput($('#'+id)?.value??'');if(raw==='')return null;const n=Number(raw);return Number.isFinite(n)?n:null};
 // On phones the fields are filled only from the app's own keypad, so the native keyboard never opens.
 const field=(id,label)=>{const value=toolState[mode]?.inputs?.[id]??'';
+ if(FIELD_TYPE[id]==='date'&&ownCalendar())return datePickHtml(id,label,value);// a computer: the app's calendar (dates.js)
  if(FIELD_TYPE[id]==='date')return '<label class="tool-field"><span>'+esc(label)+'</span><input id="'+id+'" type="date" min="1000-01-01" max="9999-12-31" value="'+esc(value)+'" data-date-input="true"></label>';const touch=isMobileDevice();return '<label class="tool-field"><span>'+esc(label)+'</span><input id="'+id+'" type="text" inputmode="'+(touch?'none':'decimal')+'"'+(touch?' readonly':'')+' autocomplete="off" spellcheck="false" value="'+esc(value)+'" placeholder="'+esc(String(typeof FIELD_EXAMPLES[id]==='function'?FIELD_EXAMPLES[id]():FIELD_EXAMPLES[id]??''))+'" data-tool-input="true"></label>'};
 function setActiveToolInput(input){toolActiveInput=input||null;$$('#toolPanel input[data-tool-input]').forEach(i=>i.classList.toggle('tool-active',i===toolActiveInput));
  // the , key is ± for a whole number that may be negative (Dates' days), dimmed for other fields without decimals (People)
@@ -396,7 +397,7 @@ $('#toolPanel').addEventListener('keydown',e=>{
  if(!/^[0-9.,-]$/.test(e.key)&&!['Backspace','Delete','ArrowLeft','ArrowRight','Home','End','Tab','Enter','Escape'].includes(e.key))e.preventDefault();
 });
 $('#toolPanel').addEventListener('input',e=>{
- if(e.target.matches('input[data-date-input]')){toolState[mode].inputs[e.target.id]=e.target.value;runActiveTool();return}// a date picked
+ if(e.target.matches('[data-date-input]')){toolState[mode].inputs[e.target.id]=e.target.value;runActiveTool();return}// a date picked
  if(!e.target.matches('input'))return;
  if(mode==='units')return;
  const input=e.target;

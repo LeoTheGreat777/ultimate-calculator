@@ -113,6 +113,8 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   display (`renderDateBar`, `dateCount`, saved as a choice) counts Monday–Friday without Greek public holidays
   (`greekHolidays`, `orthodoxEaster`): "between" counts both dates, "add" skips non-working days from the day after.
   "Between" has no number to type, so `#keypad.date-details` shows a details list instead of keys.
+  With a mouse (`ownCalendar`), a date is a button (`datePickHtml`, its `value` is YYYY-MM-DD) opening the app's
+  calendar (`openCalendar`, `#calPop`: days/months/years views, holidays dotted); touch devices keep `<input type="date">`.
 - **Switches** (VAT add/remove, the kinds of Percent, Interest and Dates) are one generic segmented control: `TOGGLES`, `toggleHtml`,
   `renderToggles`, `setupToggleSlide` (tap, drag, swipe, ← →), `.seg-toggle` in styles.css (`--n` options, `--i` chosen).
 - **Changing mode clears the mode you leave** (`resetModeInput`, called by `switchMode`): numbers typed and results
@@ -140,7 +142,8 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   (`sciPretty`). Keyboard: ^ and !.
 - **Modes are tabs:** a strip of tabs at the top of the card (`MODE_LABELS`, `renderModeTabs`, `switchMode`), one tap
   each, scrolling sideways when they don't fit; Alt+1…9 on a keyboard. When they don't all fit, a slim bar under them
-  (`.tabs-scrollbar`, `syncTabEdges`, `flashTabsBar`) shows while they move and briefly on start, and with a mouse
+  (`.tabs-scrollbar`, `syncTabEdges`, `flashTabsBar`) shows while they move and briefly on start; it can be dragged
+  or pressed (`setupTabsBar`), and past an end (touch bounce) the thumb shrinks instead of moving out; and with a mouse
   ‹ › buttons appear on hover at the edges that have more tabs. Add a new mode to `MODE_LABELS`, `ICONS`
   and `MODE_TRANSLATIONS`. Units is its own tab after Calculator. Going Calculator -> Units moves the calculator's
   number into the Units value last typed in (`unitSource`) and resets the calculator; nothing moves back.
