@@ -54,6 +54,9 @@ and the file checks in `publish-image.yml`, or it works locally and 404s in prod
   some modes have their own small tables (`gText`, `cText`, `fText`, and `HELP` for Tips & shortcuts).
   Switching language happens in place (`setLanguage` -> `applyLanguage`), no reload: anything that shows text
   must be re-rendered by `applyLanguage`, and a new text must look the same after a live switch as after a fresh load.
+- **Logo:** `icon.svg` is the source of the app icons; the PNGs (`icon-192/512.png`, `icon-maskable-512.png`,
+  `apple-touch-icon.png`) are rendered from it, so regenerate them together after changing it. The small logo by
+  the title is an inline SVG in `index.html` coloured by theme tokens (`.bm-*` classes), so new themes recolour it.
 - **Credits:** the footer names come from `AUTHORS` in `app.js`; the same names are in `index.html`
   (footer and `<meta name="author">`) and the README. Change them in all places together.
 - **Tools** (fuel, energy, VAT, units) remember their values per tool in localStorage

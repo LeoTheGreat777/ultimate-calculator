@@ -303,3 +303,14 @@ html.theme-fade *,html.theme-fade *::before,html.theme-fade *::after{transition:
 .mode-tab.active{background:var(--accent);border-color:var(--accent);color:#07101c}
 .mode-tab.active .mode-tab-icon{color:#07101c}
 @media (prefers-reduced-motion:reduce){.mode-tab{transition:none}}
+/* ---------- Logo next to the title: drawn with the theme's colours, so every theme recolours it ---------- */
+.topbar h1.brand{display:flex;align-items:center;gap:9px;min-width:0;white-space:nowrap}
+.brand-mark{width:28px;height:28px;flex:0 0 auto;display:block}
+.brand-name{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.bm-key{fill:var(--key)}
+.bm-lit{fill:var(--accent)}
+.bm-sym{stroke:var(--accent2);fill:none}
+.bm-ink{stroke:#07101c;fill:none}
+@media(max-width:480px){.topbar h1.brand{gap:7px;font-size:min(21px,5.4vw)}.brand-mark{width:24px;height:24px}}
+/* narrow phones: slightly tighter header buttons so the logo and the full title fit */
+@media(max-width:400px){.topbar{gap:8px}.top-actions{gap:4px}.top-actions .icon-button,.top-actions .language-button{width:38px;height:38px}}

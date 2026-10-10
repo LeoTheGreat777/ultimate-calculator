@@ -1,4 +1,4 @@
-const VERSION='0.4.136';
+const VERSION='0.4.137';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 // localStorage can throw (blocked storage, private mode, quota full). Never let that break the app.
