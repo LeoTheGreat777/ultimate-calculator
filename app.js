@@ -1,4 +1,4 @@
-const VERSION='0.4.130';
+const VERSION='0.4.131';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 // localStorage can throw (blocked storage, private mode, quota full). Never let that break the app.
@@ -689,6 +689,7 @@ function renderTool(){
    $('#toolPanel').classList.add('hidden');
    $('#calculatorDisplay').classList.remove('hidden');
    renderGraphMode();
+   fitLayout();
    return;
  }
  if(mode==='units'){
@@ -697,6 +698,7 @@ function renderTool(){
    $('#calculatorDisplay').classList.remove('hidden');
    renderUnitsDisplay();
    renderCalcKeypad();
+   fitLayout();
    return;
  }
  restoreCalculatorDisplay();
@@ -707,6 +709,7 @@ function renderTool(){
  if(calc){
    renderCalcKeypad();
    render();
+   fitLayout();
    return;
  }
  let html='';
@@ -718,9 +721,70 @@ function renderTool(){
  setActiveToolInput($('#toolPanel input[data-tool-input]'));
  renderVatToggle();
  renderToolKeypad();
+ fitLayout();
 
 
 }
+// Fit the app to the screen, the same way in every mode and on every device. Step by step, only as far as needed:
+// a shorter display, smaller keys, the most compact display, the tools' compact layout (the one phones use),
+// no copy button (tapping the result copies). Only if even that does not fit (a phone held sideways)
+// does the page scroll; nothing is ever cut off.
+// k = key height [max,min], d = display height [max,min], roomy = smallest display that keeps the ? above the result,
+// comfy = key height kept as long as the display can still give way.
+const FIT={
+ calc:{k:[68,40],d:[205,128],roomy:172,comfy:48,copy:true},
+ units:{k:[68,40],d:[205,165],comfy:48,copy:false},
+ tool:{k:[56,36],d:[205,128],roomy:172,comfy:44,copy:true},
+ mobileTool:{k:[56,36],d:[108,98],comfy:44,copy:true},
+ graphMin:520
+};
+// On phones the browser bars slide in and out while scrolling, changing the height; fitting to the smallest
+// height seen (per width, i.e. per orientation) keeps the layout from jumping back and forth.
+const fitHeights={};
+function fitAvailHeight(){const h=window.innerHeight;if(!isMobileDevice())return h;const w=window.innerWidth;fitHeights[w]=Math.min(fitHeights[w]??h,h);return fitHeights[w]}
+let fitRaf=0;
+function fitLayoutSoon(){if(!fitRaf)fitRaf=requestAnimationFrame(()=>{fitRaf=0;fitLayout()})}
+function fitLayout(){
+ const card=$('#calculatorCard'),shell=$('.app-shell'),footer=$('.app-footer'),root=document.documentElement;if(!card||!shell||!footer)return;
+ document.body.classList.add('fit');
+ const avail=fitAvailHeight();
+ const need=()=>Math.ceil(footer.getBoundingClientRect().bottom+window.scrollY+(parseFloat(getComputedStyle(shell).paddingBottom)||0));
+ root.classList.remove('page-scroll');shell.style.height='';card.classList.remove('compact-display','fit-no-copy');
+ const tool=['fuel','energy','vat'].includes(mode),touchTool=tool&&isMobileDevice();
+ const setToolLayout=compact=>{card.classList.toggle('mobile-tool',compact);document.body.classList.toggle('mobile-tool-on',compact)};
+ if(tool)setToolLayout(touchTool);
+ if(mode==='graph'){if(avail<FIT.graphMin){root.classList.add('page-scroll');shell.style.height=FIT.graphMin+'px'}placeSideTips();return}
+ const attempt=spec=>{
+  let [k,kMin]=spec.k,[d,dMin]=spec.d;
+  const apply=()=>{
+   card.style.setProperty('--k',k+'px');card.style.setProperty('--disp',d+'px');
+   if(mode==='units')card.style.setProperty('--urow',Math.min(70,Math.floor((d-61)/2))+'px');
+   card.classList.toggle('compact-display',!!spec.roomy&&d<spec.roomy);
+  };
+  apply();
+  let over=need()-avail;if(over<=0)return 0;
+  const rows=new Set([...$('#keypad').children].map(b=>b.offsetTop)).size||5;
+  const shrinkDisplay=to=>{const step=Math.min(over,Math.max(0,d-to));d-=step;over-=step};
+  const shrinkKeys=to=>{const dk=Math.min(Math.max(0,k-to),Math.ceil(over/rows));k-=dk;over-=dk*rows};
+  if(spec.roomy)shrinkDisplay(spec.roomy);
+  if(over>0)shrinkKeys(spec.comfy);
+  if(over>0)shrinkDisplay(dMin);
+  if(over>0)shrinkKeys(kMin);
+  apply();
+  return need()-avail;
+ };
+ let over=attempt(mode==='calc'?FIT.calc:mode==='units'?FIT.units:touchTool?FIT.mobileTool:FIT.tool);
+ if(over>0&&tool&&!touchTool){setToolLayout(true);over=attempt(FIT.mobileTool)}
+ const spec=mode==='calc'?FIT.calc:mode==='units'?FIT.units:FIT.tool;
+ if(over>0&&spec.copy){card.classList.add('fit-no-copy');over=need()-avail}
+ if(over>0)root.classList.add('page-scroll');
+ root.dataset.fitOver=Math.max(0,over);// how many px did not fit (used by tests)
+ placeSideTips();
+}
+window.addEventListener('resize',fitLayoutSoon);
+window.visualViewport?.addEventListener('resize',fitLayoutSoon);
+window.addEventListener('orientationchange',()=>setTimeout(fitLayout,250));
+document.fonts?.ready?.then(fitLayoutSoon);
 function setMode(next){
  resultCompact=false;if(mode==='calc')calcHowData=howData;mode=next;howData=next==='calc'?calcHowData:null;toolResult=null;
  // Tools keep what was typed in them; only an empty VAT rate goes back to the default.
@@ -1036,8 +1100,8 @@ $('#toolPanel').addEventListener('input',e=>{
 });
 $('#howButton').addEventListener('click',showHow);$('#closeHow').addEventListener('click',closeHow);$('#howModal').addEventListener('click',e=>{if(e.target.id==='howModal')closeHow()});
 $('#historyButton').addEventListener('click',openHistory);$('#closeHistory').addEventListener('click',closeHistory);$('#historyBackdrop').addEventListener('click',closeHistory);$('#historyList').addEventListener('click',historyClick);$('#copyButton').addEventListener('click',copyResult);
-// In the tools, tapping the result copies it too (on short phones the copy button is hidden to make room for the keypad).
-$('#calculatorDisplay').addEventListener('click',e=>{if(mode==='calc'||mode==='units'||mode==='graph'||!e.target.closest('#result')||!toolResult?.main)return;copyResult();const r=$('#result');r.classList.add('copied');setTimeout(()=>r.classList.remove('copied'),700)});
+// Tapping a result copies it too (on short screens the copy button is hidden to make room for the keypad).
+$('#calculatorDisplay').addEventListener('click',e=>{if(mode==='units'||mode==='graph'||!e.target.closest('#result'))return;if(mode==='calc'?!justCalculated:!toolResult?.main)return;copyResult();const r=$('#result');r.classList.add('copied');setTimeout(()=>r.classList.remove('copied'),700)});
 $('#langButton').addEventListener('click',e=>{
  e.preventDefault();
  e.stopPropagation();

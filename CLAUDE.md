@@ -60,6 +60,12 @@ and the file checks in `publish-image.yml`, or it works locally and 404s in prod
   `uc-theme`). Use `store.get/set` – localStorage can throw.
 - **Phones:** the app's own keypad replaces the native keyboard (tool inputs are `readonly` with
   `inputmode="none"` on touch devices). Don't let the native keyboard open.
+- **Fitting the screen:** `fitLayout()` sizes keys (`--k`) and the display (`--disp`) to the screen in every
+  mode, and switches the tools to their compact layout when needed; only if nothing fits does the page scroll
+  (`html.page-scroll`). Don't add fixed pixel heights per screen size or device; let `fitLayout` handle it,
+  and call it after anything that changes the layout's height.
+- **Copying:** tapping a finished result copies it (calculator and tools), so the copy button can be hidden
+  on short screens.
 - **Keyboard:** desktop typing is handled in the `window` `keydown` listener at the end of `app.js`.
   Keys that do nothing in a mode are ignored.
 

@@ -207,3 +207,33 @@ body.mobile-tool-on .app-shell{height:100dvh}
 .install-button{display:grid;place-items:center;padding:0}.install-button.hidden{display:none}
 .install-guide .chart-note{margin:0 0 6px}
 .install-guide .share-icon{vertical-align:-3px;color:var(--accent)}
+/* ---------- Fit to the screen (fitLayout in app.js) ----------
+   fitLayout measures the screen and sets --k (key height) and --disp (display height) on the card,
+   so every mode fits, footer included. If even the smallest sizes don't fit, html gets .page-scroll. */
+.app-shell{padding-top:max(10px,env(safe-area-inset-top));padding-bottom:max(12px,env(safe-area-inset-bottom));padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right))}
+@media(max-width:480px){.app-shell{padding-top:max(8px,env(safe-area-inset-top));padding-bottom:max(10px,env(safe-area-inset-bottom));padding-left:max(8px,env(safe-area-inset-left));padding-right:max(8px,env(safe-area-inset-right))}}
+body.fit:not(.graph-on) .app-shell{height:auto!important;min-height:100dvh}
+body.fit .calculator-card:not(.graph-mode){flex:0 0 auto!important}
+body.fit .calculator-card:not(.graph-mode) .keypad .key{height:var(--k)!important;min-height:var(--k)!important}
+body.fit .calculator-card .tool-keypad{height:auto!important;grid-template-rows:none!important;grid-auto-rows:var(--k)!important}
+body.fit .calculator-card .tool-keypad button{height:var(--k)!important;min-height:0!important}
+body.fit .calculator-card:not(.graph-mode) #calculatorDisplay:not(.unit-display){height:var(--disp)!important}
+.calculator-card.fit-no-copy .bottom-actions{display:none}
+/* A short display: the ? / chart / fuel buttons sit in the line above the result, not above it */
+.calculator-card.compact-display .how-button{position:static;flex:0 0 30px;width:30px;height:30px;font-size:15px}
+.calculator-card.compact-display .how-button.chart-button{order:0}
+.calculator-card.compact-display .how-button.fuel-btn{left:auto}
+.calculator-card.compact-display .how-button.fuel-log{position:relative;inset:auto}
+/* Tool results never get taller than the phone-size tool display */
+.calculator-card.mobile-tool .display-wrap.tool-display .result{font-size:clamp(34px,11vw,52px)}
+/* Units: the display height comes from fitLayout too; each row holds the value and the unit name below it */
+body.fit #calculatorDisplay.unit-display{height:var(--disp,205px)!important}
+body.fit .unit-row{height:var(--urow,70px)!important;min-height:0!important;flex:0 0 var(--urow,70px)!important;padding-top:0!important;padding-bottom:0!important}
+.unit-value{height:calc(var(--urow,70px) - 24px)!important;font-size:min(48px,10vw,calc(var(--urow,70px) - 24px))!important;line-height:1!important}
+.unit-unit{height:22px}
+/* Tapping a finished result copies it, in the calculator as in the tools */
+.display-wrap.calculated .result{cursor:copy}
+/* The compact tool layout on a desktop that is short on space: keep the text cursor in the fields */
+@media (pointer:fine){.calculator-card.mobile-tool .tool-field input{caret-color:auto}}
+html.page-scroll,html.page-scroll body{height:auto!important;min-height:100%;overflow-y:auto!important}
+html.page-scroll body{touch-action:pan-y!important}
