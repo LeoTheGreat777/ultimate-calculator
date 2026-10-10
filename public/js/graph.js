@@ -101,8 +101,13 @@ function graphKey(k){
  graph.fns[graph.active]=s;graphChanged();
 }
 // Desktop keyboard in Graph mode. Returns true when the key was used.
+// Letters are also read by key position (e.code), so a Greek keyboard layout (χ, ε, σ ...) and accented letters
+// (ê after a "dead" ^ key) still type x, e, sin ... The π key on a Greek layout stays π.
+const G_DEAD_CARET=['Digit6','BracketLeft','Backquote'];// where ^ is a dead key: US-International, French/Spanish, German
 function graphKeydown(e){
- const k=e.key;
+ let k=e.key;
+ if(k==='Dead'){if(G_DEAD_CARET.includes(e.code)){graphKey('^');return true}return false}
+ if(k.length===1&&!/^[a-zA-Zπ√]$/.test(k)&&/^Key[A-Z]$/.test(e.code||''))k=e.code.slice(3).toLowerCase();
  if(k==='Backspace'){graphKey('back');return true}
  if(/^[0-9]$/.test(k)||['+','-','*','/','^','(',')'].includes(k)){graphKey(k);return true}
  if(k===','||k==='.'||k==='Decimal'){graphKey('.');return true}

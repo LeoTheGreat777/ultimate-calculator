@@ -141,6 +141,21 @@ async def desktop(browser, url, lang, theme):
     await p.evaluate("switchMode('graph')")
     await p.wait_for_timeout(150)
     check(L + 'graph has a canvas', await p.evaluate('graphCanvas.clientHeight > 100'))
+    # typing a formula: keypad, and keyboards with other layouts (Greek letters, a "dead" ^ key that waits for a letter)
+    await p.evaluate("graphKey('clear')")
+    for k in ['x', '^', 'e']:
+        await p.click(f'.key[data-g="{k}"]')
+    check(L + 'graph keypad: x^e', await p.evaluate('graph.fns[graph.active]') == 'x^e')
+    send = "([k,c,sh])=>window.dispatchEvent(new KeyboardEvent('keydown',{key:k,code:c,shiftKey:!!sh,bubbles:true,cancelable:true}))"
+    for layout, keys in [('US', [('x', 'KeyX', 0), ('^', 'Digit6', 1), ('e', 'KeyE', 0)]),
+                         ('Greek', [('χ', 'KeyX', 0), ('^', 'Digit6', 1), ('ε', 'KeyE', 0)]),
+                         ('dead ^', [('x', 'KeyX', 0), ('Dead', 'Digit6', 1), ('ê', 'KeyE', 0)])]:
+        await p.evaluate("graphKey('clear')")
+        for key in keys:
+            await p.evaluate(send, list(key))
+        got = await p.evaluate("[graph.fns[graph.active], document.querySelector('.graph-fn.active').classList.contains('invalid')]")
+        check(L + f'graph keyboard ({layout} layout): x^e', got == ['x^e', False], got)
+    await p.evaluate("graphKey('clear')")
 
     # language switch in place, tips
     other = 'en' if lang == 'el' else 'el'
