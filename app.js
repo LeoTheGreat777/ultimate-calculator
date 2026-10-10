@@ -1,4 +1,4 @@
-const VERSION='0.4.132';
+const VERSION='0.4.133';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 // localStorage can throw (blocked storage, private mode, quota full). Never let that break the app.
@@ -43,10 +43,11 @@ function restoreReloadState(){
 function readLanguage(){
  let stored='';
  try{stored=localStorage.getItem('uc-lang')||''}catch{}
- return stored==='en'||stored==='el'?stored:'el';
+ return stored==='en'||stored==='el'?stored:'en';
 }
 let lang=readLanguage();
-let theme=store.get('uc-theme')==='light'?'light':store.get('uc-theme')==='dark'?'dark':'auto';
+// New users start in dark theme; 'auto' (follow the system) is kept for people who used the app before it became the default.
+let theme=store.get('uc-theme')==='light'?'light':store.get('uc-theme')==='auto'?'auto':'dark';
 let carry=null;
 let mode='calc',expression='',current='',currentIsPercent=false,justCalculated=false,lastExpression='',lastResult=null,howData=null,calcHowData=null,lastOperation=null,historyClearConfirm=false,toolResult=null,toolActiveInput=null,resultCompact=false,unitActiveInput='from',unitSource='from',unitReplaceOnNextKey=false,unitExpressions={from:'',to:''},toolState={fuel:{inputs:{},result:null},energy:{inputs:{},result:null},vat:{inputs:{},result:null}};
 store.del('uc-mode');
@@ -80,6 +81,8 @@ en:{calc:'Calculator',fuel:'Fuel',energy:'Energy',vat:'VAT',units:'Units',how:'H
 const ICONS={calc:'▦',graph:'∿',fuel:'⛽︎',energy:'ϟ',vat:'%',units:'↔'};const MODE_TRANSLATIONS={calc:['Αριθμομηχανή','Calculator'],graph:['Γράφημα','Graph'],fuel:['Καύσιμα','Fuel'],energy:['Ενέργεια','Energy'],vat:['ΦΠΑ','VAT'],units:['Μονάδες','Units']};
 const TOOL_LABEL_KEYS={fuel:['fuelD','fuelC','fuelP'],energy:['energyP','energyH','energyD','energyR'],vat:['amount','vatRate']};
 const modeText=m=>MODE_TRANSLATIONS[m]?.[lang==='el'?0:1]||t(m);
+// Units is switched on inside the Calculator (the ↔ button), so the mode button shows Calculator for both.
+const menuMode=()=>mode==='units'?'calc':mode;
 
 const t=k=>T[lang][k]??T.en[k]??k;
 const gcd=(a,b)=>{a=a<0n?-a:a;b=b<0n?-b:b;while(b){const t=a%b;a=b;b=t}return a};
@@ -406,12 +409,13 @@ function renderUnitsDisplay(){
 
  cat.addEventListener('change',()=>{
    window._unitCategory=cat.value||'length';
-   unitExpressions={from:'0',to:'0'};
-   unitActiveInput='from';
-   unitSource='from';
+   // A new category keeps the number that was typed (or brought from the calculator) and converts it with the new units.
+   const keep=unitExpressions[unitSource]||'0';
+   unitExpressions={from:'0',to:'0'};unitExpressions[unitSource]=keep;
+   unitActiveInput=unitSource;
    unitReplaceOnNextKey=true;
    populateUnits(true);
-   updateUnitsDisplay();
+   convertUnitExpression(unitSource);
  });
 
  const handleUnitChange=select=>{
@@ -432,7 +436,7 @@ function renderUnitsDisplay(){
    unitExpressions={from:to,to:from};
    unitSource=unitSource==='from'?'to':'from';
    unitActiveInput=unitSource;
-   unitReplaceOnNextKey=false;
+   unitReplaceOnNextKey=false;unitSourceTyped=false;
    convertUnitExpression(unitSource);
  });
  updateUnitsDisplay();
@@ -446,10 +450,12 @@ function formatUnitResult(s){
  const rounded=ratToRoundedDecimal(r,dec);
  return rounded==='0'||rounded==='-0'?formatScientific(ratToDecimal(r,200)):formatGroupedNumber(rounded);
 }
-// The side being typed shows exactly what was typed; a computed side (or a finished one, after = or a tap) is rounded.
+// Only what you are typing shows exactly as typed; every other value (converted, finished with =, brought from
+// the calculator, swapped) is shown rounded. unitSourceTyped says whether the source side was typed by hand.
+let unitSourceTyped=false;
 function unitSideText(side){
  const expr=unitExpressions[side]??'0';
- return side===unitSource&&!unitReplaceOnNextKey?formatUnitDisplayValue(expr):formatUnitResult(expr);
+ return side===unitSource&&unitSourceTyped&&!unitReplaceOnNextKey?formatUnitDisplayValue(expr):formatUnitResult(expr);
 }
 function updateUnitsDisplay(){
  const from=$('#unitValueFrom'),to=$('#unitValueTo');
@@ -509,7 +515,7 @@ function equalsUnits(){
  if(value===null)return;
  const cc=$('#unitCategory')?.value,fu=$('#unitFrom')?.value,tu=$('#unitTo')?.value;
  if(!cc||!fu||!tu)return;
- unitExpressions[source]=unitValueFormat(value);
+ unitExpressions[source]=unitValueFormat(value);unitSourceTyped=false;
  unitExpressions[other]=unitValueFormat(source==='from'?unitConvertValue(cc,value,fu,tu):unitConvertValue(cc,value,tu,fu));
  unitReplaceOnNextKey=true;
  updateUnitsDisplay();
@@ -677,7 +683,7 @@ function restoreCalculatorDisplay(){
 function renderTool(){
  const calc=mode==='calc';
  const card=$('#calculatorCard');
- const modeLabel=$('#modeLabel');if(modeLabel)modeLabel.textContent=modeText(mode);
+ const modeLabel=$('#modeLabel');if(modeLabel)modeLabel.textContent=modeText(menuMode());
  card.classList.toggle('mobile-tool',!calc&&isMobileDevice()&&mode!=='units'&&mode!=='graph');
  document.body.classList.toggle('mobile-tool-on',card.classList.contains('mobile-tool'));
  card.classList.remove('unit-keypad-open');
@@ -790,7 +796,7 @@ function setMode(next){
  // Tools keep what was typed in them; only an empty VAT rate goes back to the default.
  if(next==='vat'&&!toolState.vat.inputs.vatRate)toolState.vat.inputs.vatRate='24';
  if(next==='units'){unitActiveInput=unitSource;unitReplaceOnNextKey=true;window._unitCategory=window._unitCategory||'length';}
- const label=$('#modeLabel'),icon=$('#modeIcon');if(label)label.textContent=modeText(mode);if(icon)icon.textContent=modeIcon(mode);
+ const label=$('#modeLabel'),icon=$('#modeIcon');if(label)label.textContent=modeText(menuMode());if(icon)icon.textContent=modeIcon(menuMode());
  renderTool();
  if(next!=='calc'&&next!=='graph'){runActiveTool();if(next!=='units')renderToolDisplay()}
  syncModeButton();
@@ -864,10 +870,10 @@ window.addEventListener('appinstalled',()=>{installPrompt=null;store.set('uc-ins
 try{matchMedia('(display-mode: standalone)').addEventListener('change',syncInstallButton)}catch{}
 // Shown in the footer, in English in both languages.
 const AUTHORS=['Leonidas Kampaxis','Efstathios Konstantinos Tsakiris'];
-const MODE_LABELS=['calc','graph','units','vat','fuel','energy'];
+const MODE_LABELS=['calc','graph','vat','fuel','energy'];
 function renderModeMenu(){
  const menu=$('#modeMenu');if(!menu)return;
- menu.innerHTML=MODE_LABELS.filter(m=>m!==mode).map(m=>`<button class="mode-item" data-mode="${m}" type="button"><span class="mode-item-icon">${modeIcon(m)}</span><span class="mode-item-label">${esc(modeText(m))}</span></button>`).join('');
+ menu.innerHTML=MODE_LABELS.filter(m=>m!==menuMode()).map(m=>`<button class="mode-item" data-mode="${m}" type="button"><span class="mode-item-icon">${modeIcon(m)}</span><span class="mode-item-label">${esc(modeText(m))}</span></button>`).join('');
  menu.querySelectorAll('.mode-item').forEach(b=>b.addEventListener('click',e=>{
    e.stopPropagation();
    const next=b.dataset.mode;
@@ -877,9 +883,9 @@ function renderModeMenu(){
 }
 function syncModeButton(){
  const label=$('#modeLabel'),icon=$('#modeIcon'),button=$('#modeButton');
- if(label)label.textContent=modeText(mode);
- if(icon)icon.textContent=modeIcon(mode);
- if(button){button.dataset.mode=mode;button.setAttribute('aria-label',t(mode));}
+ if(label)label.textContent=modeText(menuMode());
+ if(icon)icon.textContent=modeIcon(menuMode());
+ if(button){button.dataset.mode=menuMode();button.setAttribute('aria-label',modeText(menuMode()));}
  renderModeMenu();
  renderSideTips();
  syncQuickMode();
@@ -897,12 +903,12 @@ const SIDE_KEYS={
        en:[[['Tab'],'Next field'],[['Shift','Tab'],'Previous field'],[['0–9'],'Type in the field'],[[',','.'],'Decimal point'],[['Backspace'],'Delete last'],[['Esc'],'Close open windows']]}
 };
 const SIDE_TIPS={
- calc:{el:['Το κουμπί ( ) καταλαβαίνει μόνο του αν ανοίγει ή κλείνει παρένθεση. Όσες ξεχάσεις ανοιχτές, τις κλείνει το =.','Για αρνητικό αριθμό πάτα − αμέσως μετά από × ή ÷. Το 2 × − 3 δίνει −6.','Το 50 + 10% δίνει 55, γιατί το ποσοστό παίρνεται από τον προηγούμενο αριθμό.','Πάτα ξανά = για να επαναλάβεις την τελευταία πράξη. Το 2 + 3 = = δίνει 8.','Μετά το αποτέλεσμα, το ? δείχνει βήμα βήμα πώς βγήκε.','Στο Ιστορικό, πάτα έναν υπολογισμό για να τον ξαναφέρεις.','Κράτα πατημένο το ⌫ για να τα σβήσεις όλα, όπως το AC.','Το κουμπί ↔ δίπλα στη λειτουργία ανοίγει αμέσως τις Μονάδες.'],
-       en:['The ( ) key works out on its own whether to open or close a parenthesis. Any you leave open, = closes for you.','For a negative number, press − right after × or ÷. 2 × − 3 gives −6.','50 + 10% gives 55, because the percent is taken from the previous number.','Press = again to repeat the last operation. 2 + 3 = = gives 8.','After a result, the ? button shows step by step how it was worked out.','In History, click a calculation to bring it back.','Hold ⌫ to clear everything, like AC.','The ↔ button next to the mode opens Units straight away.']},
+ calc:{el:['Το κουμπί ( ) καταλαβαίνει μόνο του αν ανοίγει ή κλείνει παρένθεση. Όσες ξεχάσεις ανοιχτές, τις κλείνει το =.','Για αρνητικό αριθμό πάτα − αμέσως μετά από × ή ÷. Το 2 × − 3 δίνει −6.','Το 50 + 10% δίνει 55, γιατί το ποσοστό παίρνεται από τον προηγούμενο αριθμό.','Πάτα ξανά = για να επαναλάβεις την τελευταία πράξη. Το 2 + 3 = = δίνει 8.','Μετά το αποτέλεσμα, το ? δείχνει βήμα βήμα πώς βγήκε.','Στο Ιστορικό, πάτα έναν υπολογισμό για να τον ξαναφέρεις.','Κράτα πατημένο το ⌫ για να τα σβήσεις όλα, όπως το AC.','Το κουμπί ↔ δίπλα στη λειτουργία ανοίγει τις Μονάδες, μαζί με τον αριθμό που φαίνεται.'],
+       en:['The ( ) key works out on its own whether to open or close a parenthesis. Any you leave open, = closes for you.','For a negative number, press − right after × or ÷. 2 × − 3 gives −6.','50 + 10% gives 55, because the percent is taken from the previous number.','Press = again to repeat the last operation. 2 + 3 = = gives 8.','After a result, the ? button shows step by step how it was worked out.','In History, click a calculation to bring it back.','Hold ⌫ to clear everything, like AC.','The ↔ button next to the mode opens Units, taking the number on screen with it.']},
  graph:{el:['Έως τρεις συναρτήσεις μαζί. Το + δίπλα στη συνάρτηση προσθέτει νέα.','Σύρε το γράφημα για να το μετακινήσεις. Ζουμ με τη ρόδα του ποντικιού, τα + − ή με δύο δάχτυλα.','Οι τελείες δείχνουν ρίζες, ελάχιστα, μέγιστα και τομές. Πάτα μία για να δεις τις τιμές της, ή το ? για λίστα.','Το ⤢ προσαρμόζει το ύψος στην καμπύλη και το ⌂ γυρίζει στην αρχή. Το ⤓ το αποθηκεύει ως εικόνα.','Το 2x σημαίνει 2 × x και το sin x σημαίνει sin(x). Οι γωνίες είναι σε ακτίνια.'],
         en:['Up to three functions at once. The + next to a function adds a new one.','Drag the graph to move it. Zoom with the mouse wheel, the + − buttons or two fingers.','The dots mark roots, minima, maxima and intersections. Click one to see its values, or ? for a list.','⤢ fits the height to the curve and ⌂ goes back to the start. ⤓ saves it as an image.','2x means 2 × x and sin x means sin(x). Angles are in radians.']},
- units:{el:['Πάτα την πάνω ή την κάτω τιμή για να γράψεις εκεί. Η άλλη μετατρέπεται αμέσως.','Το ⇄ αλλάζει θέση στις δύο μονάδες.','Μπορείς να γράψεις και πράξη, π.χ. 12 + 8, και να πατήσεις =.','Από το μενού πάνω από τις τιμές διαλέγεις κατηγορία: μήκος, βάρος, θερμοκρασία, δεδομένα και άλλα.','Το Εμβαδόν έχει και στρέμματα.','Το κουμπί ▦ δίπλα στη λειτουργία γυρίζει αμέσως στην Αριθμομηχανή.'],
-        en:['Click the top or bottom value to type there. The other one converts right away.','⇄ swaps the two units.','You can type a calculation too, e.g. 12 + 8, then press =.','The menu above the values picks the category: length, mass, temperature, data and more.','Area includes the Greek stremma.','The ▦ button next to the mode goes straight back to the Calculator.']},
+ units:{el:['Πάτα την πάνω ή την κάτω τιμή για να γράψεις εκεί. Η άλλη μετατρέπεται αμέσως.','Το ⇄ αλλάζει θέση στις δύο μονάδες.','Μπορείς να γράψεις και πράξη, π.χ. 12 + 8, και να πατήσεις =.','Από το μενού πάνω από τις τιμές διαλέγεις κατηγορία: μήκος, βάρος, θερμοκρασία, δεδομένα και άλλα.','Το Εμβαδόν έχει και στρέμματα.','Πάτα ξανά το ↔ για να γυρίσεις στην Αριθμομηχανή, όπως την άφησες.'],
+        en:['Click the top or bottom value to type there. The other one converts right away.','⇄ swaps the two units.','You can type a calculation too, e.g. 12 + 8, then press =.','The menu above the values picks the category: length, mass, temperature, data and more.','Area includes the Greek stremma.','Press ↔ again to go back to the Calculator, just as you left it.']},
  vat:{el:['«Πρόσθεσε ΦΠΑ»: από την καθαρή τιμή βρίσκεις την τελική.','«Αφαίρεσε ΦΠΑ»: από την τελική τιμή βρίσκεις την καθαρή και πόσος ήταν ο ΦΠΑ.','Ο συντελεστής ξεκινά στο 24%. Άλλαξέ τον αν χρειάζεσαι άλλον.','Σύρε τον διακόπτη ή πάτα ← → πάνω του για να αλλάξεις πρόσθεση και αφαίρεση.','Το ? δείχνει πώς βγήκε το ποσό και το κουμπί με τις στήλες το δείχνει σε διάγραμμα.'],
       en:['"Add VAT": from the net price you get the final price.','"Remove VAT": from the final price you get the net price and how much VAT it had.','The rate starts at 24%. Change it if you need another one.','Drag the switch, or press ← → on it, to change between add and remove.','The ? button shows how the amount was worked out, and the bars button shows it as a chart.']},
  fuel:{el:['Συμπλήρωσε απόσταση, κατανάλωση και τιμή. Το κόστος βγαίνει αμέσως.','Την κατανάλωση σε L/100 km τη δείχνει ο υπολογιστής ταξιδιού του αυτοκινήτου.','Για ταξίδι με επιστροφή, βάλε διπλή απόσταση.','Κάτω από το κόστος βλέπεις πόσα λίτρα θα κάψεις και πόσο κοστίζει κάθε km.','Το κουμπί με τις στήλες δείχνει πώς αλλάζει το κόστος με την απόσταση.','Ο σελιδοδείκτης αποθηκεύει τον υπολογισμό. Η λίστα δίπλα δείχνει μέση τιμή και σύνολα.'],
@@ -922,13 +928,36 @@ function renderSideTips(){
 // Line the side columns up with the top of the calculator card.
 function placeSideTips(){const card=$('#calculatorCard');if(card)document.documentElement.style.setProperty('--side-top',Math.round(card.getBoundingClientRect().top)+'px')}
 window.addEventListener('resize',placeSideTips);
-// Quick switch between Calculator and Units (they share the same keypad): one tap, next to the mode button.
+// Units is a switch inside the Calculator: the ↔ button turns it on (and stays pressed) and off again.
+// Turning it on takes the number the calculator shows with it; turning it off returns to the calculator
+// exactly as it was (Units does its own math, so nothing comes back).
 function syncQuickMode(){
  const b=$('#quickModeButton');if(!b)return;
  const show=mode==='calc'||mode==='units';b.classList.toggle('hidden',!show);if(!show)return;
- const target=mode==='calc'?'units':'calc';
- b.dataset.target=target;$('#quickModeIcon').textContent=modeIcon(target);
- b.setAttribute('aria-label',modeText(target));b.title=modeText(target);
+ const on=mode==='units';
+ b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));
+ $('#quickModeIcon').textContent=modeIcon('units');b.setAttribute('aria-label',modeText('units'));b.title=modeText('units');
+}
+// The calculator's current number: the result, or what is being typed (an unfinished calculation is worked out). null if none.
+function calcNumberForUnits(){
+ if(current==='Error')return null;
+ try{
+  let value;
+  if(justCalculated&&lastResult)value=lastResult;
+  else{
+   let full=(expression+current).replace(/[+\-×÷*/(]+$/,'');
+   if(!full)return null;
+   const open=(full.match(/\(/g)||[]).length-(full.match(/\)/g)||[]).length;if(open>0)full+=')'.repeat(open);
+   value=evalExpr(full);
+  }
+  return value?ratToDecimal(value,24):null;
+ }catch{return null}
+}
+function toggleUnits(){
+ if(mode==='units'){setMode('calc');return}
+ const v=calcNumberForUnits();
+ if(v!==null){unitExpressions={from:v,to:''};unitSource='from';unitActiveInput='from';unitSourceTyped=false}
+ setMode('units');
 }
 // Holding ⌫ clears everything, the same as AC, in every mode.
 function clearEverything(){if(mode==='calc')clearAll();else if(mode==='units')toolKeyInput('clear');else if(mode==='graph')graphKey('clear');else clearToolFields()}
@@ -1002,7 +1031,7 @@ function copyResult(){
 }
 function clearToolFields(){
  if(mode==='units'){
-   unitExpressions={from:'0',to:'0'};
+   unitExpressions={from:'0',to:'0'};unitSourceTyped=false;
    unitActiveInput='from';
    unitSource='from';
    unitReplaceOnNextKey=true;
@@ -1023,7 +1052,7 @@ function toolKeyInput(key){
  if(mode==='units'){
    const side=unitActiveInput||'from';
    let value=unitExpressions[side]||'';
-   if(key==='clear'){unitExpressions={from:'0',to:'0'};unitActiveInput='from';unitSource='from';unitReplaceOnNextKey=true;updateUnitsDisplay();return true}
+   if(key==='clear'){unitExpressions={from:'0',to:'0'};unitActiveInput='from';unitSource='from';unitReplaceOnNextKey=true;unitSourceTyped=false;updateUnitsDisplay();return true}
    if(key==='backspace'){unitReplaceOnNextKey=false;value=value.slice(0,-1)||'0'}
    else{
      if(unitReplaceOnNextKey&&['+','-','*','/'].includes(key))unitReplaceOnNextKey=false;
@@ -1051,7 +1080,7 @@ function toolKeyInput(key){
        else value+=key;
      }else return false;
    }
-   unitExpressions[side]=value;unitSource=side;convertUnitExpression(side);return true;
+   unitExpressions[side]=value;unitSource=side;unitSourceTyped=true;convertUnitExpression(side);return true;
  }
  const input=toolActiveInput&&toolActiveInput.matches('#toolPanel input')?toolActiveInput:$('#toolPanel input');
  if(!input)return false;
@@ -1139,7 +1168,7 @@ $('#langButton').addEventListener('click',e=>{
 $('#themeButton').addEventListener('click',toggleTheme);
 $('#installButton')?.addEventListener('click',installApp);
 $('#modeButton').addEventListener('click',e=>{e.stopPropagation();toggleModeMenu()});
-$('#quickModeButton')?.addEventListener('click',e=>{e.stopPropagation();closeModeMenu();setMode(e.currentTarget.dataset.target==='units'?'units':'calc')});
+$('#quickModeButton')?.addEventListener('click',e=>{e.stopPropagation();closeModeMenu();toggleUnits()});
 setupHoldToClear();
  document.addEventListener('click',e=>{if(!e.target.closest('#modeButton')&&!e.target.closest('#modeMenu'))closeModeMenu();if(!e.target.closest('.unit-select')&&!e.target.closest('.unit-select-menu'))closeUnitMenus();if(historyClearConfirm&&!e.target.closest('#historyClearWrap'))clearHistoryConfirm()});
 $('#clearHistory').addEventListener('click',clearHistoryConfirm);$('#historyConfirmYes').addEventListener('click',deleteAllHistory);

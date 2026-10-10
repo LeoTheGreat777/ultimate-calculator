@@ -1,8 +1,9 @@
 # Ultimate Calculator – notes for Claude
 
 An all-in-one calculator web app: calculator, graph, unit converter, VAT, fuel and energy tools.
-Plain HTML/CSS/vanilla JS, no framework, no build step, no backend. Greek is the default language
-(English optional) and numbers use Greek formatting: `1.234,56`.
+Plain HTML/CSS/vanilla JS, no framework, no build step, no backend. English and Greek; new users start
+in English and dark theme (people who used the app before keep Greek / their theme, see the first script in
+`index.html`). Numbers always use Greek formatting: `1.234,56`.
 
 Two people work on this repo, each with their own Claude sessions, and both push to `main`.
 
@@ -64,6 +65,9 @@ and the file checks in `publish-image.yml`, or it works locally and 404s in prod
   mode, and switches the tools to their compact layout when needed; only if nothing fits does the page scroll
   (`html.page-scroll`). Don't add fixed pixel heights per screen size or device; let `fitLayout` handle it,
   and call it after anything that changes the layout's height.
+- **Units is part of the Calculator:** the ↔ button next to the mode button switches it on/off (`toggleUnits`);
+  it is not in the mode menu, and the mode button keeps saying Calculator (`menuMode()`). Turning it on takes
+  the calculator's number along; turning it off returns to the calculator as it was. Internally `mode==='units'`.
 - **Copying:** tapping a finished result copies it (calculator and tools), so the copy button can be hidden
   on short screens.
 - **Keyboard:** desktop typing is handled in the `window` `keydown` listener at the end of `app.js`.
