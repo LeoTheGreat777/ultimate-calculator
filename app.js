@@ -1,4 +1,4 @@
-const VERSION='0.4.139';
+const VERSION='0.4.140';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 // localStorage can throw (blocked storage, private mode, quota full). Never let that break the app.
@@ -211,7 +211,7 @@ function render(){
  $('#result').textContent=display;
  $('#result').classList.remove('long-value','near-limit');
  const hasEntry=Boolean(raw);
- $('#clearButton').textContent=justCalculated||!hasEntry?'AC':'C';
+ $('#clearButton').textContent=current&&!justCalculated?'C':'AC';// C clears the number being typed; with none, the key clears everything
  $('#howButton').classList.toggle('hidden',!howData);
  $('#chartButton')?.classList.add('hidden');
  syncFuelButtons();
@@ -257,7 +257,9 @@ function digit(v){
  if(v===',')v='.';
  resetHow();
  if(justCalculated){expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null}
- if(currentIsPercent){current=v;currentIsPercent=false;render();return}
+ // after a closed bracket or a percent, a new number is multiplied: (8+9)5 → (8+9)×5, 10%5 → 10%×5 (as in Units)
+ if(currentIsPercent){expression+=current+'×';current='';currentIsPercent=false}
+ else if(!current&&/\)$/.test(expression))expression+='×';
  if(v==='.'&&current.includes('.'))return;
  if(v==='.'&&(!current||current==='-'))current+='0.';else if(current==='0'&&v!=='.')current=v;else current+=v;
  render()
@@ -300,7 +302,7 @@ function parenthesis(ch){
  resetHow();
  if(justCalculated){expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null}
  if(ch==='('){
-   if(current&&current!=='-')return false;
+   if((current&&current!=='-')||(!current&&/[0-9.%)]$/.test(expression)))operator('×');// after a number: 5( → 5×(
    if(current==='-'){expression+=current;current='';currentIsPercent=false}
    if(expression&&/[0-9.)]$/.test(expression))return false;
    expression+='(';
@@ -494,9 +496,20 @@ function unitSideText(side){
  const expr=unitExpressions[side]??'0';
  return side===unitSource&&unitSourceTyped&&!unitReplaceOnNextKey?formatUnitDisplayValue(expr):formatUnitResult(expr);
 }
+// The number being typed at the end of the Units value, which C clears (like the calculator's C).
+// null when there is none – a finished value, one brought from the calculator, or 0 – and the key is AC.
+function unitEntry(){
+ if(!unitSourceTyped||unitReplaceOnNextKey)return null;
+ const v=unitExpressions[unitActiveInput==='to'?'to':'from']||'';
+ if(v==='0')return null;
+ if(/(^|[*/(])-$/.test(v))return '-';
+ const m=v.match(/(^|[*/(])?(-?)([\d.]+%?)$/);
+ return m?(m[1]!==undefined?m[2]:'')+m[3]:null;
+}
 function updateUnitsDisplay(){
  const from=$('#unitValueFrom'),to=$('#unitValueTo');
  if(!from||!to)return;
+ if(mode==='units'&&$('#clearButton'))$('#clearButton').textContent=unitEntry()?'C':'AC';
  from.value=unitSideText('from');
  to.value=unitSideText('to');
  saveTools();
@@ -991,18 +1004,19 @@ const HELP={
   ['Για αρνητικό αριθμό μέσα στην πράξη, πάτα − αμέσως μετά από × ή ÷: το 2 × − 3 δίνει −6.','For a negative number inside a calculation, press − right after × or ÷: 2 × − 3 gives −6.'],
   ['Το 50 + 10% δίνει 55: το ποσοστό παίρνεται από τον προηγούμενο αριθμό. Το 50 × 10% δίνει 5.','50 + 10% gives 55: the percent is taken from the number before it. 50 × 10% gives 5.'],
   ['Πάτα ξανά = για να επαναλάβεις την τελευταία πράξη: το 2 + 3 = = δίνει 8.','Press = again to repeat the last operation: 2 + 3 = = gives 8.'],
-  ['Κράτα πατημένο το ⌫ για να τα σβήσεις όλα.','Hold ⌫ to clear everything.'],
+  ['Το C σβήνει τον αριθμό που γράφεις. Όταν δεν γράφεις αριθμό γίνεται AC και τα σβήνει όλα, όπως και το ⌫ αν το κρατήσεις πατημένο.','C clears the number you are typing. When there is none it shows AC and clears everything, as does holding ⌫.'],
   ['Όταν πας στις Μονάδες, ο αριθμός που φαίνεται μεταφέρεται εκεί και η Αριθμομηχανή ξεκινά από την αρχή.','Going to Units moves the number on screen there, and the Calculator starts fresh.'],
   ['Μετά από ένα αποτέλεσμα, το ? δείχνει βήμα βήμα πώς βγήκε. Στο Ιστορικό, πάτα έναν υπολογισμό για να τον ξαναφέρεις.','After a result, ? shows step by step how it was worked out. In History, tap a calculation to bring it back.']],
-  keys:[[['0–9'],'Αριθμοί','Numbers'],[['+','−','×','÷'],'Πράξεις (και * /)','Operators (also * /)'],[[',','.'],'Υποδιαστολή','Decimal point'],[['(',')'],'Παρενθέσεις','Parentheses'],[['%'],'Ποσοστό','Percent'],[['F9'],'Αλλαγή προσήμου (±)','Change sign (±)'],[['Enter','='],'Αποτέλεσμα','Result'],[['Backspace'],'Σβήνει το τελευταίο','Delete the last character'],[['Esc'],'Καθαρίζει την πράξη','Clear the calculation'],[['Alt','1–6'],'Αλλαγή λειτουργίας','Switch mode'],[['?'],'Αυτές οι συμβουλές','These tips']]},
+  keys:[[['0–9'],'Αριθμοί','Numbers'],[['+','−','×','÷'],'Πράξεις (και * /)','Operators (also * /)'],[[',','.'],'Υποδιαστολή','Decimal point'],[['(',')'],'Παρενθέσεις','Parentheses'],[['%'],'Ποσοστό','Percent'],[['F9'],'Αλλαγή προσήμου (±)','Change sign (±)'],[['Enter','='],'Αποτέλεσμα','Result'],[['Backspace'],'Σβήνει το τελευταίο','Delete the last character'],[['Delete'],'Σβήνει τον αριθμό που γράφεις (C)','Clear the number you are typing (C)'],[['Esc'],'Καθαρίζει την πράξη (AC)','Clear the calculation (AC)'],[['Alt','1–6'],'Αλλαγή λειτουργίας','Switch mode'],[['?'],'Αυτές οι συμβουλές','These tips']]},
  units:{tips:[
   ['Πάτα την πάνω ή την κάτω τιμή για να γράψεις εκεί. Η άλλη μετατρέπεται αμέσως.','Tap the top or bottom value to type there. The other one converts right away.'],
   ['Μπορείς να κάνεις πράξεις μέσα στην τιμή, με παρενθέσεις και ποσοστά, π.χ. (12 + 8) × 2.','You can calculate inside a value, with parentheses and percentages, e.g. (12 + 8) × 2.'],
   ['Το ⇄ αλλάζει θέση στις δύο μονάδες.','⇄ swaps the two units.'],
   ['Από το μενού πάνω από τις τιμές διαλέγεις κατηγορία. Ο αριθμός μένει όταν αλλάζεις κατηγορία. Το Εμβαδόν έχει και στρέμματα.','The menu above the values picks the category. The number stays when you change category. Area includes the Greek stremma.'],
-  ['Κράτα πατημένο το − για αλλαγή προσήμου (±) και το ⌫ για να τα σβήσεις όλα.','Hold − to change the sign (±), and ⌫ to clear everything.'],
+  ['Κράτα πατημένο το − για αλλαγή προσήμου (±).','Hold − to change the sign (±).'],
+  ['Το C σβήνει τον αριθμό που γράφεις. Όταν δεν γράφεις αριθμό γίνεται AC και σβήνει και τις δύο τιμές, όπως και το ⌫ αν το κρατήσεις πατημένο.','C clears the number you are typing. When there is none it shows AC and clears both values, as does holding ⌫.'],
   ['Ένας αριθμός από την Αριθμομηχανή μπαίνει στην τιμή όπου έγραψες τελευταία, πάνω ή κάτω.','A number from the Calculator goes into the value you last typed in, top or bottom.']],
-  keys:[[['0–9'],'Αριθμοί','Numbers'],[['+','−','×','÷'],'Πράξη μέσα στην τιμή','Math inside the value'],[['(',')'],'Παρενθέσεις','Parentheses'],[[',','.'],'Υποδιαστολή','Decimal point'],[['%'],'Ποσοστό','Percent'],[['F9'],'Αλλαγή προσήμου (±)','Change sign (±)'],[['Enter','='],'Ολοκλήρωση','Finish'],[['Backspace'],'Σβήνει το τελευταίο','Delete the last character'],[['Esc'],'Κλείνει ανοιχτά παράθυρα','Close open windows'],[['Alt','1–6'],'Αλλαγή λειτουργίας','Switch mode'],[['?'],'Αυτές οι συμβουλές','These tips']]},
+  keys:[[['0–9'],'Αριθμοί','Numbers'],[['+','−','×','÷'],'Πράξη μέσα στην τιμή','Math inside the value'],[['(',')'],'Παρενθέσεις','Parentheses'],[[',','.'],'Υποδιαστολή','Decimal point'],[['%'],'Ποσοστό','Percent'],[['F9'],'Αλλαγή προσήμου (±)','Change sign (±)'],[['Enter','='],'Ολοκλήρωση','Finish'],[['Backspace'],'Σβήνει το τελευταίο','Delete the last character'],[['Delete'],'Σβήνει τον αριθμό που γράφεις (C)','Clear the number you are typing (C)'],[['Esc'],'Καθαρίζει τις τιμές (AC)','Clear both values (AC)'],[['Alt','1–6'],'Αλλαγή λειτουργίας','Switch mode'],[['?'],'Αυτές οι συμβουλές','These tips']]},
  graph:{tips:[
   ['Έως τρεις συναρτήσεις μαζί. Το + δίπλα στη συνάρτηση προσθέτει νέα.','Up to three functions at once. The + next to a function adds a new one.'],
   ['Σύρε το γράφημα για να το μετακινήσεις. Ζουμ με τη ροδέλα του ποντικιού, τα − + ή με δύο δάχτυλα.','Drag the graph to move it. Zoom with the mouse wheel, the − + buttons or two fingers.'],
@@ -1112,8 +1126,7 @@ function copyResult(){
 function clearToolFields(){
  if(mode==='units'){
    unitExpressions={from:'0',to:'0'};unitSourceTyped=false;
-   unitActiveInput='from';
-   unitSource='from';
+   unitSource=unitActiveInput==='to'?'to':'from';
    unitReplaceOnNextKey=true;
    updateUnitsDisplay();
    return;
@@ -1132,7 +1145,8 @@ function toolKeyInput(key){
  if(mode==='units'){
    const side=unitActiveInput||'from';
    let value=unitExpressions[side]||'';
-   if(key==='clear'){unitExpressions={from:'0',to:'0'};unitActiveInput='from';unitSource='from';unitReplaceOnNextKey=true;unitSourceTyped=false;updateUnitsDisplay();return true}
+   if(key==='clear'){unitExpressions={from:'0',to:'0'};unitSource=side;unitReplaceOnNextKey=true;unitSourceTyped=false;updateUnitsDisplay();return true}
+   if(key==='clearEntry'){const e=unitEntry();if(!e)return toolKeyInput('clear');value=value.slice(0,-e.length)||'0';unitExpressions[side]=value;unitSource=side;convertUnitExpression(side);return true}
    const afterValue=/[\d.%)]$/,opener=/(^|[+*/(])$/;
    if(key==='backspace'){unitReplaceOnNextKey=false;value=value.slice(0,-1)||'0'}
    else if(key==='negate'){
@@ -1215,7 +1229,7 @@ $('#keypad').addEventListener('click',e=>{
  if(mode!=='calc'){
    if(mode==='units'){
      if(a==='paren'){toolKeyInput('paren');return}
-     if(a==='clear'||a==='backspace'||v==='.'||v==='%'||/^\d$/.test(v||'')||['+','-','*','/'].includes(v||'')){toolKeyInput(a==='clear'?'clear':a==='backspace'?'backspace':v==='/'?'/':v);return}
+     if(a==='clear'||a==='backspace'||v==='.'||v==='%'||/^\d$/.test(v||'')||['+','-','*','/'].includes(v||'')){toolKeyInput(a==='clear'?'clearEntry':a==='backspace'?'backspace':v==='/'?'/':v);return}
      if(a==='equals')window._equalsUnits?.();
      return;
    }
@@ -1293,10 +1307,13 @@ window.addEventListener('keydown',e=>{
  if(e.key==='%'&&mode==='units'){e.preventDefault();toolKeyInput('%');return}
  if(e.key===','||e.key==='.'||e.key==='Decimal'){e.preventDefault();if(mode==='calc')digit('.');else if(document.activeElement?.matches('#toolPanel input')){const input=document.activeElement;const pos=input.selectionStart??input.value.length;input.setRangeText(',',pos,pos,'end');input.dispatchEvent(new Event('input',{bubbles:true}))}else toolKeyInput('.');return}
  if(mode==='calc'&&(e.key==='('||e.key===')')){e.preventDefault();parenthesis(e.key);return}
+ // Delete = the C key: clears the number being typed (Esc clears everything)
+ if(e.key==='Delete'&&nothingOpen&&(mode==='calc'||mode==='units')){e.preventDefault();if(mode==='calc')clearButtonAction();else toolKeyInput('clearEntry');return}
  if(e.key==='Escape'){
    if(!$('#howModal').classList.contains('hidden')){e.preventDefault();closeHow();return}
    if(!$('#historyPanel').classList.contains('hidden')){e.preventDefault();closeHistory();return}
    if(mode==='calc'){e.preventDefault();clearAll()}
+   else if(mode==='units'&&!document.activeElement?.matches('select')){e.preventDefault();toolKeyInput('clear')}
    else if(mode==='graph'){e.preventDefault();graphKey('clear')}
    return;
  }
