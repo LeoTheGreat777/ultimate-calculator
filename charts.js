@@ -418,8 +418,8 @@ function drawToolChart(){
   title.textContent=cText('energyTitle');chBarChart(cv,items,chMoney);
   legend.innerHTML='';note.textContent=cText('energyNote').replace('{v}',chNum(P/1000*hh,3)+' kWh');
  }else if(mode==='vat'){
-  const a=num('amount'),rate=num('vatRate');if(a===null||rate===null)return;
-  const add=vatAction==='add',total=add?a*(1+rate/100):a,net=add?a:a/(1+rate/100),tax=total-net;
+  const v=vatNumbers();if(!v)return;
+  const {rate,total,net,tax}=v;
   title.textContent=cText('vatTitle');
   chDonut(cv,[{value:net,color:C.series[0]},{value:tax,color:C.series[1]}],[chMoney(total),cText('total')]);
   const pc=v=>total?chNum(v/total*100,1)+'%':'';

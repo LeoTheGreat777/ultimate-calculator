@@ -15,7 +15,7 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 - Intermediate results are shown so complex calculations are easy to understand
 
 ### Unit Converter
-- Length, weight, volume, speed and temperature conversions
+- Length, area (including stremma), mass, volume, speed, time, data, energy, power, pressure, angle and temperature conversions
 - Calculator-style arithmetic directly inside unit fields
 - Expressions can be chained just like the main calculator
 - Percentage calculations
@@ -23,36 +23,48 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 - Switch conversion direction
 - Keypad-based input designed for a calculator-like experience
 
+### Graph
+- Plot up to three functions of x
+- Roots, minima, maxima and intersections are marked
+- Pan, zoom, fit to the curve and save the graph as an image
+
 ### Dedicated Calculators
-- Fuel cost calculator
+- Fuel cost calculator, with saved entries and their averages
 - Electricity/energy cost calculator
-- VAT add/remove calculator
+- VAT add/remove calculator (VAT rounded to cents, as on invoices)
+- Charts and step-by-step explanations for every tool
+- Each tool remembers the values typed in it; AC clears them
 
 ### Interface
 - Responsive desktop and mobile layouts
 - Dark and light themes
 - English and Greek language support
-- Installable PWA
-- Offline-capable static web app
+- Installable as an app (web app manifest)
 - Mobile-friendly calculator controls
 - Clean, compact UI with dedicated mode navigation
 - Calculation explanations presented in a readable step-by-step view
 
 ## Technology
 
-Ultimate Calculator is intentionally lightweight and does not require a backend for its core functionality.
+Ultimate Calculator is intentionally lightweight: plain HTML, CSS and vanilla JavaScript, with no framework, no build step and no backend.
 
-- HTML
-- CSS
-- Vanilla JavaScript
-- Progressive Web App
-- Docker / Nginx for self-hosting
+- `index.html`, `styles.css` – the page and its styles
+- `app.js` – calculator engine (exact fractions), modes, tools, history, translations
+- `charts.js` – Graph mode, tool charts, the History chart and the fuel log (canvas, no libraries)
+- `history-interaction.js` – the History sheet's drag and scroll gestures
+- `server.py` – a tiny static file server used by the Docker image
 
-Calculations are performed locally in the browser. No account or server is required for the core calculator.
+Calculations happen in the browser, and history and settings are stored in the browser (localStorage). There are no accounts and nothing is sent to a server.
 
 ## Run locally
 
 This is a static web app, so it can be served by any static web server.
+
+### Python
+
+```bash
+PORT=8080 python3 server.py
+```
 
 ### Docker
 
@@ -61,13 +73,20 @@ docker build -t ultimate-calculator .
 docker run --rm -p 8080:80 ultimate-calculator
 ```
 
-Then open:
+Then open `http://localhost:8080`.
 
-```
-http://localhost:8080
-```
+## Deployment
 
-You can also serve the project directly with any local static HTTP server.
+Every push to `main` runs two GitHub Actions workflows, so both deployments always get the same version:
+
+- **GitHub Pages** – the static site
+- **Docker image** – `ghcr.io/leothegreat777/ultimate-calculator:latest` (see `docker-compose.yml`). Pull it again (`docker compose pull && docker compose up -d`) to update a self-hosted copy.
+
+If two pushes land within seconds of each other, the older run is cancelled and only the newest one deploys. A cancelled run in the Actions tab is expected in that case.
+
+## Versioning
+
+The version is written in `app.js` (`VERSION`) and in `index.html` (the footer and the `?v=` on each script and stylesheet, which makes browsers load the new files). Bump all of them together.
 
 ## Project Direction
 
@@ -93,4 +112,4 @@ Planned areas include:
 
 ## Self-hosting
 
-The application is designed to be easy to self-host. Because the core application is static, it can run behind Nginx, a simple web server, Docker, or another static hosting platform without requiring a database or application backend.
+The application is designed to be easy to self-host. It is a static site, so it runs on GitHub Pages, behind Nginx or any static web server, or from the Docker image, with no database or application backend.

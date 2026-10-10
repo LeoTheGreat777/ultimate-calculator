@@ -10,6 +10,12 @@ permissions:
   contents: read
   packages: write
 
+# If two pushes land close together, only the newest build publishes :latest,
+# so an older build can never finish last and overwrite a newer image.
+concurrency:
+  group: docker-image
+  cancel-in-progress: true
+
 jobs:
   docker:
     runs-on: ubuntu-latest

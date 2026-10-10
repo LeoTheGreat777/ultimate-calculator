@@ -1,4 +1,4 @@
-const VERSION='0.4.127-s9';
+const VERSION='0.4.128';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 // localStorage can throw (blocked storage, private mode, quota full). Never let that break the app.
@@ -6,7 +6,7 @@ const store={get:k=>{try{return localStorage.getItem(k)}catch{return null}},set:
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function saveReloadState(){
  try{
-  const state={mode,expression,current,currentIsPercent,justCalculated,lastExpression,lastResult:lastResult&&typeof lastResult==='object'&&'n'in lastResult&&'d'in lastResult?{n:lastResult.n.toString(),d:lastResult.d.toString()}:lastResult,lastOperation,howData,toolResult,toolState,unitExpressions,unitActiveInput,unitSource,unitReplaceOnNextKey,vatAction,graph};
+  const state={mode,expression,current,currentIsPercent,justCalculated,lastExpression,lastResult:lastResult&&typeof lastResult==='object'&&'n'in lastResult&&'d'in lastResult?{n:lastResult.n.toString(),d:lastResult.d.toString()}:lastResult,lastOperation,howData,toolResult,toolState,unitExpressions,unitActiveInput,unitSource,unitReplaceOnNextKey,vatAction,graph,lastShown,carry:carry?{raw:carry.raw,text:carry.text,shown:carry.shown,plain:carry.plain,n:carry.value.n.toString(),d:carry.value.d.toString()}:null};
   sessionStorage.setItem('uc-reload-state',JSON.stringify(state));
  }catch{}
 }
@@ -26,6 +26,8 @@ function restoreReloadState(){
   else if(state.lastResult!==null&&state.lastResult!==undefined&&state.lastResult!=='')lastResult=ratFromString(String(state.lastResult));
   else lastResult=null;
   lastOperation=state.lastOperation||null;
+  lastShown=typeof state.lastShown==='string'?state.lastShown:'';
+  if(state.carry&&typeof state.carry.raw==='string')carry={raw:state.carry.raw,text:state.carry.text,shown:state.carry.shown,plain:state.carry.plain,value:rat(BigInt(state.carry.n),BigInt(state.carry.d))};
   howData=state.howData||null;
   if(mode==='calc'&&lastResult!==null&&lastExpression&&!howData)howData=explanationForExpression(lastExpression,lastResult)||null;
   toolResult=state.toolResult||null;
@@ -48,6 +50,28 @@ let theme=store.get('uc-theme')==='light'?'light':store.get('uc-theme')==='dark'
 let carry=null;
 let mode='calc',expression='',current='',currentIsPercent=false,justCalculated=false,lastExpression='',lastResult=null,howData=null,calcHowData=null,lastOperation=null,historyClearConfirm=false,toolResult=null,toolActiveInput=null,resultCompact=false,unitActiveInput='from',unitSource='from',unitReplaceOnNextKey=false,unitExpressions={from:'',to:''},toolState={fuel:{inputs:{},result:null},energy:{inputs:{},result:null},vat:{inputs:{},result:null}};
 store.del('uc-mode');
+// Tools remember what was typed in them (per tool, kept across mode switches and visits); AC clears a tool.
+const TOOLS_KEY='uc-tools';
+let unitPick={};// last chosen from/to units per unit category
+function saveTools(){
+ const cat=$('#unitCategory')?.value,from=$('#unitFrom')?.value,to=$('#unitTo')?.value;
+ if(cat&&units[cat]&&units[cat][from]!==undefined&&units[cat][to]!==undefined)unitPick[cat]={from,to};
+ store.set(TOOLS_KEY,JSON.stringify({inputs:{fuel:toolState.fuel.inputs,energy:toolState.energy.inputs,vat:toolState.vat.inputs},vatAction,units:{category:window._unitCategory||'length',pick:unitPick,expr:unitExpressions,source:unitSource}}));
+}
+function loadTools(){
+ try{
+  const s=JSON.parse(store.get(TOOLS_KEY)||'null');if(!s||typeof s!=='object')return;
+  const numeric=v=>typeof v==='string'&&/^-?[0-9.,]*$/.test(v);
+  for(const k of ['fuel','energy','vat']){const inp=s.inputs?.[k];if(!inp||typeof inp!=='object')continue;const clean={};TOOL_LABEL_KEYS[k].forEach(id=>{if(numeric(inp[id]))clean[id]=inp[id]});toolState[k].inputs=clean}
+  if(s.vatAction==='add'||s.vatAction==='remove')vatAction=s.vatAction;
+  const u=s.units;if(!u||typeof u!=='object')return;
+  if(units[u.category])window._unitCategory=u.category;
+  if(u.pick&&typeof u.pick==='object')Object.entries(u.pick).forEach(([c,p])=>{if(units[c]&&units[c][p?.from]!==undefined&&units[c][p?.to]!==undefined)unitPick[c]={from:p.from,to:p.to}});
+  const expr=v=>typeof v==='string'&&v.length<200&&/^[-0-9.,+*/%]*$/.test(v);
+  if(expr(u.expr?.from)&&expr(u.expr?.to))unitExpressions={from:u.expr.from,to:u.expr.to};
+  if(u.source==='from'||u.source==='to')unitSource=unitActiveInput=u.source;
+ }catch{}
+}
 
 const T={
 el:{calc:'Αριθμομηχανή',fuel:'Καύσιμα',energy:'Ενέργεια',vat:'ΦΠΑ',units:'Μονάδες',how:'Πώς υπολογίστηκε',history:'Ιστορικό',copy:'Αντιγραφή αποτελέσματος',copied:'Αντιγράφηκε',clear:'Διαγραφή όλων',confirm:'Διαγραφή όλου του ιστορικού;',confirmYes:'Διαγραφή',none:'Δεν υπάρχουν υπολογισμοί ακόμη.',hint:'Πληκτρολόγησε μια πράξη για να ξεκινήσεις.',delete:'Διαγραφή',created:'Δημιουργήθηκε από',fuelD:'Απόσταση (km)',fuelC:'Κατανάλωση (L/100 km)',fuelP:'Τιμή καυσίμου / L',fuelGo:'Υπολογισμός κόστους καυσίμου',fuelUsed:'Καύσιμο που χρησιμοποιήθηκε',costKm:'Κόστος ανά km',energyP:'Ισχύς (W)',energyH:'Ώρες / ημέρα',energyD:'Ημέρες',energyR:'Τιμή / kWh',energyGo:'Υπολογισμός κόστους ρεύματος',energyUsed:'Ενέργεια',amount:'Ποσό',vatRate:'ΦΠΑ %',addVat:'Πρόσθεσε ΦΠΑ',removeVat:'Αφαίρεσε ΦΠΑ',vatAmount:'Ποσό ΦΠΑ',value:'Τιμή',category:'Κατηγορία',from:'Από',to:'Σε',convert:'Μετατροπή',length:'Μήκος',area:'Εμβαδόν',mass:'Μάζα',volume:'Όγκος',speed:'Ταχύτητα',time:'Χρόνος',data:'Δεδομένα',energy:'Ενέργεια',power:'Ισχύς',pressure:'Πίεση',angle:'Γωνία',temperature:'Θερμοκρασία',unit_mm:'Χιλιοστό',unit_cm:'Εκατοστό',unit_m:'Μέτρο',unit_km:'Χιλιόμετρο',unit_in:'Ίντσα',unit_ft:'Πόδι',unit_yd:'Γιάρδα',unit_mi:'Μίλι',unit_nmi:'Ναυτικό μίλι',unit_bit:'Bit',unit_b:'Bit',unit_kbit:'Kilobit',unit_Mbit:'Megabit',unit_Gbit:'Gigabit',unit_Tbit:'Terabit',unit_B:'Byte',unit_kB:'Kilobyte',unit_MB:'Megabyte',unit_GB:'Gigabyte',unit_TB:'Terabyte',unit_KiB:'Kibibyte',unit_MiB:'Mebibyte',unit_GiB:'Gibibyte',unit_TiB:'Tebibyte',unit_kg:'Κιλά',unit_l:'Λίτρο',unit_ml:'Milliliter',unit_mps:'m/s',unit_kmh:'km/h',unit_mph:'mph',unit_knot:'Κόμβος',unit_J:'Joule',unit_kJ:'Kilojoule',unit_Wh:'Watt-ώρα',unit_kWh:'Kilowatt-ώρα',unit_cal:'cal',unit_kcal:'kcal',unit_W:'Watt',unit_kW:'Kilowatt',unit_MW:'Megawatt',unit_hp:'Ιπποδύναμη',unit_Pa:'Pascal',unit_kPa:'Kilopascal',unit_bar:'Bar',unit_psi:'PSI',unit_atm:'Ατμόσφαιρα',unit_deg:'Μοίρα',unit_rad:'Ακτίνιο',unit_grad:'Grad',unit_C:'Κελσίου',unit_F:'Φαρενάιτ',unit_K:'Kelvin',toolReady:'Το αποτέλεσμα θα εμφανιστεί εδώ',toolFuel:'Κόστος καυσίμου',toolEnergy:'Κόστος ρεύματος',toolVat:'Τελικό ποσό',toolUnit:'Αποτέλεσμα',fuelResult:'Καύσιμο που χρησιμοποιήθηκε',energyResult:'Ενέργεια',clearConfirm:'Διαγραφή;',close:'Κλείσιμο',swap:'Εναλλαγή μονάδων',deleteKey:'Διαγραφή',themeLight:'Εναλλαγή σε φωτεινό θέμα',themeDark:'Εναλλαγή σε σκοτεινό θέμα',graph:'Γράφημα',chart:'Διάγραμμα'},
@@ -111,11 +135,15 @@ function formatGroupedNumber(raw){
 function formatInputDisplay(s){
  return pretty(String(s)).replace(/\d+(?:\.\d*)?/g,m=>formatGroupedNumber(m));
 }
+// After a result, the next calculation starts from its full-precision value (carry). On screen that value shows rounded, like the result did.
 function formatExpressionDisplay(s){
- return formatInputDisplay(String(s??''));
+ s=String(s??'');
+ if(carry&&carry.raw&&s.startsWith(carry.raw))return carry.shown+formatInputDisplay(s.slice(carry.raw.length));
+ return formatInputDisplay(s);
 }
+let lastShown='';// how the finished calculation (lastExpression) is shown above the result
 
-function carryText(r,digits){const abs=r.n<0n?{n:-r.n,d:r.d}:r;carry={text:ratToDecimal(abs,digits),value:abs};return ratToDecimal(r,digits)}
+function carryText(r,digits){const abs=r.n<0n?{n:-r.n,d:r.d}:r,raw=ratToDecimal(r,digits);carry={text:ratToDecimal(abs,digits),value:abs,raw,shown:fmt(r),plain:ratToRoundedDecimal(r,6)};return raw}
 function tokenize(input){
  const s=String(input).replace(/×/g,'*').replace(/÷/g,'/').replace(/\s+/g,'');const tokens=[];let i=0;
  while(i<s.length){const ch=s[i];
@@ -196,10 +224,10 @@ function fitDisplayText(el,minSize){
 function render(){
  if(mode!=='calc')return;
  const raw=expression+current;
- const display=current==='Error'?'Error':justCalculated?fmt(lastResult):(raw?formatInputDisplay(raw):'0');
+ const display=current==='Error'?'Error':justCalculated?fmt(lastResult):(raw?formatExpressionDisplay(raw):'0');
  $('#calculatorDisplay').classList.remove('tool-display','tool-empty');
  $('#calculatorDisplay').classList.toggle('calculated',justCalculated);
- $('#expression').textContent=justCalculated?formatExpressionDisplay(lastExpression):'';
+ $('#expression').textContent=justCalculated?(lastShown||formatExpressionDisplay(lastExpression)):'';
  const exprEl=$('#expression');
  $('#result').textContent=display;
  $('#result').classList.remove('long-value','near-limit');
@@ -245,7 +273,7 @@ function clearButtonAction(){
  if(expression){clearAll();return}
  clearAll();
 }
-function backspace(){resetHow();if(justCalculated){clearAll();return}if(current){current=current.slice(0,-1);currentIsPercent=false}else if(expression)expression=expression.slice(0,-1);render()}
+function backspace(){resetHow();if(justCalculated){clearAll();return}if(!current&&carry&&expression===carry.raw){expression=carry.plain;carry=null}if(current){current=current.slice(0,-1);currentIsPercent=false}else if(expression)expression=expression.slice(0,-1);render()}
 function digit(v){
  if(v===',')v='.';
  resetHow();
@@ -295,22 +323,22 @@ function percent(){resetHow();if(!current||currentIsPercent)return;current+='%';
 function parseLastOperation(full){const m=String(full).match(/^(.*?)([+\-×÷])(-?\d+(?:[.,]\d+)?%?)$/);return m?{op:m[2],rhs:m[3]}:null}
 function repeatEquals(){
  if(!justCalculated||!lastOperation)return false;
- try{const rhs=lastOperation.rhs,base=carryText(lastResult,24),full=base+lastOperation.op+rhs,value=evalExpr(full);lastExpression=full;lastResult=value;justCalculated=true;howData=explanationForExpression(full,value)||{formula:pretty(full),steps:[`${pretty(full)} = ${fmt(value)}`],result:fmt(value)};calcHowData=howData;saveHistory({expression:full,result:value,how:howData});render();return true}catch{return false}
+ try{const rhs=lastOperation.rhs,base=carryText(lastResult,24),full=base+lastOperation.op+rhs,value=evalExpr(full);lastExpression=full;lastShown=formatExpressionDisplay(full);lastResult=value;justCalculated=true;howData=explanationForExpression(full,value)||{formula:pretty(full),steps:[`${pretty(full)} = ${fmt(value)}`],result:fmt(value)};calcHowData=howData;saveHistory({expression:full,result:value,how:howData});render();return true}catch{return false}
 }
 function equals(){
  if(justCalculated&&repeatEquals())return;
  let full=expression+current;if(!full||/[+\-×÷(]$/.test(full))return;
  const openParens=(full.match(/\(/g)||[]).length-(full.match(/\)/g)||[]).length;if(openParens>0){full+=')'.repeat(openParens);expression=full;current=''}
- try{const value=evalExpr(full);lastExpression=full;lastResult=value;lastOperation=parseLastOperation(full);justCalculated=true;currentIsPercent=false;howData=explanationForExpression(full,value)||{formula:pretty(full),steps:[`${pretty(full)} = ${fmt(value)}`],result:fmt(value)};saveHistory({expression:full,result:value,how:howData});render()}
+ try{const value=evalExpr(full);lastExpression=full;lastShown=formatExpressionDisplay(full);lastResult=value;lastOperation=parseLastOperation(full);justCalculated=true;currentIsPercent=false;howData=explanationForExpression(full,value)||{formula:pretty(full),steps:[`${pretty(full)} = ${fmt(value)}`],result:fmt(value)};saveHistory({expression:full,result:value,how:howData});render()}
  catch{current='Error';currentIsPercent=false;render();setTimeout(()=>{if(current==='Error'){current='';render()}},900)}
 }
 function showHow(){if(!howData)return;$('#howTitle').textContent=t('how');$('#howContent').innerHTML=`<div class="how-step"><div class="how-expression-label">${lang==='el'?'Πράξη':'Expression'}</div><div class="how-formula">${esc(howData.formula)}</div><div class="how-steps">${howData.steps.map((s,i)=>`<div class="how-line"><span>${i+1}</span><div class="how-line-body"><strong>${esc(s.title||'')}</strong><div>${esc(s.text||s)}</div></div></div>`).join('')}</div><div class="how-result"><span>${lang==='el'?'Αποτέλεσμα':'Result'}</span><strong>${esc(howData.result)}</strong></div></div>`;$('#howModal').classList.remove('hidden')}
 function closeHow(){$('#howModal').classList.add('hidden')}
 function historyItems(){try{return JSON.parse(store.get('uc-history')||'[]')}catch{return[]}}
-function saveHistory(item){const list=historyItems();const stored={...item,result:item.result&&typeof item.result==='object'&&'n'in item.result?ratToDecimal(item.result,24):String(item.result)};list.unshift({id:Date.now()+Math.random(),...stored});store.set('uc-history',JSON.stringify(list.slice(0,100)));renderHistory()}
-function renderHistory(){const list=historyItems();$('#historyList').innerHTML=list.length?list.map(x=>`<div class="history-item"><button class="history-main" data-history="${x.id}" type="button"><div class="history-expression">${esc(pretty(x.expression))}</div><div class="history-result">${esc(fmt(x.result&&typeof x.result==='string'?ratFromString(x.result):x.result))}</div></button><button class="history-delete" data-delete="${x.id}" type="button" aria-label="${esc(t('delete'))}">×</button></div>`).join(''):`<div class="empty">${esc(t('none'))}</div>`;historyChartRefresh()}
+function saveHistory(item){const list=historyItems();const stored={...item,shown:item.shown||formatExpressionDisplay(item.expression),result:item.result&&typeof item.result==='object'&&'n'in item.result?ratToDecimal(item.result,24):String(item.result)};list.unshift({id:Date.now()+Math.random(),...stored});store.set('uc-history',JSON.stringify(list.slice(0,100)));renderHistory()}
+function renderHistory(){const list=historyItems();$('#historyList').innerHTML=list.length?list.map(x=>`<div class="history-item"><button class="history-main" data-history="${x.id}" type="button"><div class="history-expression">${esc(x.shown||formatInputDisplay(x.expression))}</div><div class="history-result">${esc(fmt(x.result&&typeof x.result==='string'?ratFromString(x.result):x.result))}</div></button><button class="history-delete" data-delete="${x.id}" type="button" aria-label="${esc(t('delete'))}">×</button></div>`).join(''):`<div class="empty">${esc(t('none'))}</div>`;historyChartRefresh()}
 
-const units={length:{mm:'0.001',cm:'0.01',m:'1',km:'1000',in:'0.0254',ft:'0.3048',yd:'0.9144',mi:'1609.344',nmi:'1852'},area:{'mm²':'0.000001','cm²':'0.0001','m²':'1','km²':'1000000','in²':'0.00064516','ft²':'0.09290304',stremma:'1000',acre:'4046.8564224',ha:'10000'},mass:{mg:'0.000001',g:'0.001',kg:'1',oz:'0.028349523125',lb:'0.45359237',t:'1000'},volume:{ml:'0.001',l:'1','m³':'1000',tsp:'0.00492892159375',tbsp:'0.01478676478125',cup:'0.2365882365',gal:'3.785411784',qt:'0.946352946',pt:'0.473176473'},speed:{'m/s':'1','km/h':'0.27777777777777777778',mph:'0.44704',knot:'0.51444444444444444444'},time:{ms:'0.001',s:'1',min:'60',h:'3600',day:'86400',week:'604800'},data:{bit:'1',b:'1',kbit:'1000',Mbit:'1000000',Gbit:'1000000000',Tbit:'1000000000000',B:'8',kB:'8000',MB:'8000000',GB:'8000000000',TB:'8000000000000',KiB:'8192',MiB:'8388608',GiB:'8589934592',TiB:'8796093022208'},energy:{J:'1',kJ:'1000',Wh:'3600',kWh:'3600000',cal:'4.184',kcal:'4184'},power:{W:'1',kW:'1000',MW:'1000000',hp:'745.69987158227022'},pressure:{Pa:'1',kPa:'1000',bar:'100000',psi:'6894.757293168',atm:'101325'},angle:{deg:'1',rad:'57.2957795130823208768',grad:'0.9'},temperature:{'°C':'1','°F':'1',K:'1'}};
+const units={length:{mm:'0.001',cm:'0.01',m:'1',km:'1000',in:'0.0254',ft:'0.3048',yd:'0.9144',mi:'1609.344',nmi:'1852'},area:{'mm²':'0.000001','cm²':'0.0001','m²':'1','km²':'1000000','in²':'0.00064516','ft²':'0.09290304',stremma:'1000',acre:'4046.8564224',ha:'10000'},mass:{mg:'0.000001',g:'0.001',kg:'1',oz:'0.028349523125',lb:'0.45359237',t:'1000'},volume:{ml:'0.001',l:'1','m³':'1000',tsp:'0.00492892159375',tbsp:'0.01478676478125',cup:'0.2365882365',gal:'3.785411784',qt:'0.946352946',pt:'0.473176473'},speed:{'m/s':'1','km/h':'0.27777777777777777778',mph:'0.44704',knot:'0.51444444444444444444'},time:{ms:'0.001',s:'1',min:'60',h:'3600',day:'86400',week:'604800'},data:{bit:'1',kbit:'1000',Mbit:'1000000',Gbit:'1000000000',Tbit:'1000000000000',B:'8',kB:'8000',MB:'8000000',GB:'8000000000',TB:'8000000000000',KiB:'8192',MiB:'8388608',GiB:'8589934592',TiB:'8796093022208'},energy:{J:'1',kJ:'1000',Wh:'3600',kWh:'3600000',cal:'4.184',kcal:'4184'},power:{W:'1',kW:'1000',MW:'1000000',hp:'745.69987158227022'},pressure:{Pa:'1',kPa:'1000',bar:'100000',psi:'6894.757293168',atm:'101325'},angle:{deg:'1',rad:'57.2957795130823208768',grad:'0.9'},temperature:{'°C':'1','°F':'1',K:'1'}};
 function normalizeUnitExpression(expr){
  return String(expr??'').trim().replace(/×/g,'*').replace(/÷/g,'/').replace(/-?\d[\d.,]*/g,m=>{
   const sign=m.startsWith('-')?'-':'';
@@ -409,11 +437,26 @@ function renderUnitsDisplay(){
  });
  updateUnitsDisplay();
 }
+// A converted value: about 6 decimals, more for small values so that at least 6 significant digits show.
+function formatUnitResult(s){
+ const raw=String(s??'').trim();
+ if(!/^-?\d+(?:\.\d+)?$/.test(raw))return formatUnitDisplayValue(raw);
+ const r=ratFromString(raw);if(r.n===0n)return '0';
+ const abs=Math.abs(Number(raw)),dec=abs<1?Math.min(12,Math.max(6,Math.ceil(-Math.log10(abs))+5)):6;
+ const rounded=ratToRoundedDecimal(r,dec);
+ return rounded==='0'||rounded==='-0'?formatScientific(ratToDecimal(r,200)):formatGroupedNumber(rounded);
+}
+// The side being typed shows exactly what was typed; a computed side (or a finished one, after = or a tap) is rounded.
+function unitSideText(side){
+ const expr=unitExpressions[side]??'0';
+ return side===unitSource&&!unitReplaceOnNextKey?formatUnitDisplayValue(expr):formatUnitResult(expr);
+}
 function updateUnitsDisplay(){
  const from=$('#unitValueFrom'),to=$('#unitValueTo');
  if(!from||!to)return;
- from.value=formatUnitDisplayValue(unitExpressions.from??'0');
- to.value=formatUnitDisplayValue(unitExpressions.to??'0');
+ from.value=unitSideText('from');
+ to.value=unitSideText('to');
+ saveTools();
  const active=unitActiveInput==='to'?'to':'from';
  unitActiveInput=active;
  from.classList.toggle('unit-active-value',active==='from');
@@ -488,7 +531,7 @@ function renderVatToggle(){
  $$('#toolPanel [data-vat-mode]').forEach(b=>{const on=b.dataset.vatMode===vatAction;b.classList.toggle('active',on);b.setAttribute('aria-checked',String(on))});
  const tg=$('#toolPanel .vat-toggle');if(tg)tg.dataset.active=vatAction;
 }
-function setVatAction(next){if(next!=='add'&&next!=='remove')return;vatAction=next;renderVatToggle();window._runVat?.(vatAction==='add')}
+function setVatAction(next){if(next!=='add'&&next!=='remove')return;vatAction=next;renderVatToggle();window._runVat?.(vatAction==='add');saveTools()}
 // Add/Remove VAT works like an iOS segmented control: tap a side, drag the thumb, or swipe left/right.
 function setupVatSlide(){
  const panel=$('#toolPanel');let drag=null,suppressClick=false;
@@ -538,9 +581,9 @@ function populateUnits(preserve=true){
  if(!cat||!from||!to)return;
  const category=cat.value||'length';
  const keys=Object.keys(units[category]||{});
- const previousFrom=from.value,previousTo=to.value;
- from.innerHTML=unitOptions(category,preserve&&keys.includes(previousFrom)?previousFrom:keys[0]);
- to.innerHTML=unitOptions(category,preserve&&keys.includes(previousTo)?previousTo:(keys[1]||keys[0]));
+ const previousFrom=from.value,previousTo=to.value,pick=unitPick[category];
+ from.innerHTML=unitOptions(category,preserve&&keys.includes(previousFrom)?previousFrom:pick?.from??keys[0]);
+ to.innerHTML=unitOptions(category,preserve&&keys.includes(previousTo)?previousTo:pick?.to??(keys[1]||keys[0]));
 }
 function closeUnitMenus(except=null){$$('.unit-select-menu').forEach(menu=>{if(menu!==except)menu.classList.add('hidden')})}
 function liveUnitFormat(n){
@@ -549,16 +592,34 @@ function liveUnitFormat(n){
  const max=Math.min(12,abs!==0&&abs<1?Math.max(6,Math.ceil(-Math.log10(abs))+6):6);
  return new Intl.NumberFormat(NUMBER_LOCALE,{maximumFractionDigits:max,useGrouping:false}).format(n);
 }
+const money=v=>new Intl.NumberFormat(NUMBER_LOCALE,{minimumFractionDigits:2,maximumFractionDigits:2}).format(v)+' €';
+// VAT the way invoices do it: the VAT amount is rounded to cents and the total is net + VAT, so the numbers always add up.
+// Exact fractions, so no floating-point rounding surprises. Used by the VAT tool and its chart. null if a field is empty.
+function vatNumbers(add=vatAction==='add'){
+ const ra=normalizeNumericInput($('#amount')?.value??''),rr=normalizeNumericInput($('#vatRate')?.value??'');
+ if(!/^-?\d*\.?\d+$/.test(ra)&&!/^-?\d+\.?$/.test(ra))return null;
+ if(!/^-?\d*\.?\d+$/.test(rr)&&!/^-?\d+\.?$/.test(rr))return null;
+ const A=ratFromString(ra.replace(/\.$/,'')),R=ratFromString(rr.replace(/\.$/,'')),hundred=ratFromString('100');
+ const factor=ratAdd(rat(1n),ratDiv(R,hundred));if(factor.n===0n)return null;
+ const cents=x=>ratFromString(ratToRoundedDecimal(x,2));
+ let net,tax,total;
+ if(add){net=A;tax=cents(ratDiv(ratMul(A,R),hundred));total=ratAdd(net,tax)}
+ else{total=A;net=cents(ratDiv(A,factor));tax=ratSub(total,net)}
+ const n=ratToNumber;
+ return{amount:n(A),rate:n(R),net:n(net),tax:n(tax),total:n(total)};
+}
 function bindTools(){
+ // Money is shown in cents; litres, kWh and per-km prices with a few decimals.
+ const L=v=>new Intl.NumberFormat(NUMBER_LOCALE,{maximumFractionDigits:2}).format(v),kWh=v=>new Intl.NumberFormat(NUMBER_LOCALE,{maximumFractionDigits:3}).format(v),perKm=v=>new Intl.NumberFormat(NUMBER_LOCALE,{maximumFractionDigits:3}).format(v);
  const fuelCalculate=()=>{
   const d=liveToolNumber('fuelD'),c=liveToolNumber('fuelC'),p=liveToolNumber('fuelP');
   if(d===null||c===null||p===null||d===0){setToolResult('','',null);return}
   const used=d*c/100,cost=used*p;
   const how={formula:fmt(d)+' km × '+fmt(c)+' L/100 km × '+fmt(p)+' €/L',steps:[
-   {title:lang==='el'?'Υπολόγισε τα λίτρα':'Calculate fuel used',text:fmt(d)+' × '+fmt(c)+' ÷ 100 = '+fmt(used)+' L'},
-   {title:lang==='el'?'Υπολόγισε το κόστος':'Calculate cost',text:fmt(used)+' L × '+fmt(p)+' €/L = '+fmt(cost)+' €'},
-   {title:lang==='el'?'Κόστος ανά km':'Cost per km',text:fmt(cost)+' € ÷ '+fmt(d)+' km = '+fmt(cost/d)+' €/km'}],result:fmt(cost)+' €'};
-  setToolResult(fmt(cost)+' €',t('fuelResult')+': '+fmt(used)+' L · '+t('costKm')+': '+fmt(cost/d)+' €/km',how)
+   {title:lang==='el'?'Υπολόγισε τα λίτρα':'Calculate fuel used',text:fmt(d)+' × '+fmt(c)+' ÷ 100 = '+L(used)+' L'},
+   {title:lang==='el'?'Υπολόγισε το κόστος':'Calculate cost',text:L(used)+' L × '+fmt(p)+' €/L = '+money(cost)},
+   {title:lang==='el'?'Κόστος ανά km':'Cost per km',text:money(cost)+' ÷ '+fmt(d)+' km = '+perKm(cost/d)+' €/km'}],result:money(cost)};
+  setToolResult(money(cost),t('fuelResult')+': '+L(used)+' L · '+t('costKm')+': '+perKm(cost/d)+' €/km',how)
  };
  window._runFuel=fuelCalculate;
  const energyCalculate=()=>{
@@ -567,22 +628,22 @@ function bindTools(){
   const kwh=p/1000*hh*d,cost=kwh*r;
   const how={formula:fmt(p)+' W ÷ 1000 × '+fmt(hh)+(lang==='el'?' ώρες/ημέρα × ':' h/day × ')+fmt(d)+(lang==='el'?' ημέρες':' days'),steps:[
    {title:lang==='el'?'Μετέτρεψε W σε kW':'Convert W to kW',text:fmt(p)+' W ÷ 1000 = '+fmt(p/1000)+' kW'},
-   {title:lang==='el'?'Υπολόγισε την ενέργεια':'Calculate energy',text:fmt(p/1000)+' kW × '+fmt(hh)+' × '+fmt(d)+' = '+fmt(kwh)+' kWh'},
-   {title:lang==='el'?'Υπολόγισε το κόστος':'Calculate cost',text:fmt(kwh)+' kWh × '+fmt(r)+' €/kWh = '+fmt(cost)+' €'}],result:fmt(cost)+' €'};
-  setToolResult(fmt(cost)+' €',t('energyResult')+': '+fmt(kwh)+' kWh',how)
+   {title:lang==='el'?'Υπολόγισε την ενέργεια':'Calculate energy',text:fmt(p/1000)+' kW × '+fmt(hh)+' × '+fmt(d)+' = '+kWh(kwh)+' kWh'},
+   {title:lang==='el'?'Υπολόγισε το κόστος':'Calculate cost',text:kWh(kwh)+' kWh × '+fmt(r)+' €/kWh = '+money(cost)}],result:money(cost)};
+  setToolResult(money(cost),t('energyResult')+': '+kWh(kwh)+' kWh',how)
  };
  window._runEnergy=energyCalculate;
  const vat=add=>{
-  const aa=liveToolNumber('amount'),r=liveToolNumber('vatRate');
-  if(aa===null||r===null){setToolResult('','',null);return}
-  const total=add?aa*(1+r/100):aa/(1+r/100),tax=add?total-aa:aa-total;
+  const v=vatNumbers(add);
+  if(!v){setToolResult('','',null);return}
+  const {amount:aa,rate:r,net,tax,total}=v;
   const vatWord=lang==='el'?'ΦΠΑ':'VAT';
-  const how={formula:add?fmt(aa)+' € + '+fmt(r)+'% '+vatWord:fmt(aa)+(lang==='el'?' € με ':' € with ')+fmt(r)+'% '+vatWord,steps:add?[
-   {title:lang==='el'?'Υπολόγισε τον ΦΠΑ':'Calculate VAT',text:fmt(aa)+' × '+fmt(r)+' ÷ 100 = '+fmt(tax)+' €'},
-   {title:lang==='el'?'Πρόσθεσε τον ΦΠΑ':'Add VAT',text:fmt(aa)+' + '+fmt(tax)+' = '+fmt(total)+' €'}]:[
-   {title:lang==='el'?'Αφαίρεσε τον ΦΠΑ':'Remove VAT',text:fmt(aa)+' ÷ (1 + '+fmt(r)+' ÷ 100) = '+fmt(total)+' €'},
-   {title:lang==='el'?'Ποσό ΦΠΑ':'VAT amount',text:fmt(aa)+' - '+fmt(total)+' = '+fmt(Math.abs(tax))+' €'}],result:fmt(total)+' €'};
-  setToolResult(fmt(total)+' €',t('vatAmount')+': '+fmt(Math.abs(tax))+' €',how)
+  const how={formula:add?money(aa)+' + '+fmt(r)+'% '+vatWord:money(aa)+(lang==='el'?' με ':' with ')+fmt(r)+'% '+vatWord,steps:add?[
+   {title:lang==='el'?'Υπολόγισε τον ΦΠΑ':'Calculate VAT',text:fmt(aa)+' × '+fmt(r)+' ÷ 100 = '+money(tax)},
+   {title:lang==='el'?'Πρόσθεσε τον ΦΠΑ':'Add VAT',text:money(aa)+' + '+money(tax)+' = '+money(total)}]:[
+   {title:lang==='el'?'Αφαίρεσε τον ΦΠΑ':'Remove VAT',text:fmt(aa)+' ÷ (1 + '+fmt(r)+' ÷ 100) = '+money(net)},
+   {title:lang==='el'?'Ποσό ΦΠΑ':'VAT amount',text:money(aa)+' − '+money(net)+' = '+money(Math.abs(tax))}],result:money(add?total:net)};
+  setToolResult(money(add?total:net),t('vatAmount')+': '+money(Math.abs(tax)),how)
  };
  window._runVat=vat;
  populateUnits();
@@ -660,7 +721,16 @@ function renderTool(){
 
 
 }
-function setMode(next){resultCompact=false;if(mode==='calc')calcHowData=howData;mode=next;howData=next==='calc'?calcHowData:null;vatAction='add';if(next!=='calc')toolState[next]={inputs:{},result:null};toolResult=null;if(next==='vat')toolState.vat.inputs.vatRate='24';if(next==='units'){unitExpressions={from:'0',to:'0'};unitActiveInput='from';unitSource='from';unitReplaceOnNextKey=true;window._unitCategory=window._unitCategory||'length';}const label=$('#modeLabel'),icon=$('#modeIcon');if(label)label.textContent=modeText(mode);if(icon)icon.textContent=modeIcon(mode);renderTool();if(next==='vat')window._runVat?.(true);if(next!=='calc'&&next!=='vat'&&next!=='units'&&next!=='graph')renderToolDisplay();syncModeButton();}
+function setMode(next){
+ resultCompact=false;if(mode==='calc')calcHowData=howData;mode=next;howData=next==='calc'?calcHowData:null;toolResult=null;
+ // Tools keep what was typed in them; only an empty VAT rate goes back to the default.
+ if(next==='vat'&&!toolState.vat.inputs.vatRate)toolState.vat.inputs.vatRate='24';
+ if(next==='units'){unitActiveInput=unitSource;unitReplaceOnNextKey=true;window._unitCategory=window._unitCategory||'length';}
+ const label=$('#modeLabel'),icon=$('#modeIcon');if(label)label.textContent=modeText(mode);if(icon)icon.textContent=modeIcon(mode);
+ renderTool();
+ if(next!=='calc'&&next!=='graph'){runActiveTool();if(next!=='units')renderToolDisplay()}
+ syncModeButton();
+}
 function applyLanguage(){
  lang=readLanguage();
  const savedInputs={};
@@ -683,7 +753,7 @@ function applyLanguage(){
  $('#themeButton').setAttribute('aria-label',((theme==='dark'||(theme==='auto'&&!matchMedia('(prefers-color-scheme: light)').matches))?t('themeLight'):t('themeDark')));
  const hint=$('#hint');if(hint)hint.textContent=t('hint');
  const created=$('#createdBy');if(created)created.textContent=t('created')+' Leonidas Kampaxis';
- if(mode==='calc'&&justCalculated&&lastExpression&&lastResult!==null){howData=explanationForExpression(lastExpression,lastResult)||howData;calcHowData=howData;}
+ if(mode==='calc'&&justCalculated&&lastExpression&&lastResult!==null){howData=explanationForExpression(lastExpression,lastResult)||howData;if(howData&&lastShown)howData.formula=lastShown;calcHowData=howData;}
  renderTool();
  Object.entries(savedInputs).forEach(([id,value])=>{
    if(toolState[mode])toolState[mode].inputs[id]=value;
@@ -799,10 +869,12 @@ function deleteAllHistory(){store.del('uc-history');historyClearConfirm=false;$(
 function historyClick(e){
  const del=e.target.closest('[data-delete]'),item=e.target.closest('[data-history]');
  if(del){store.set('uc-history',JSON.stringify(historyItems().filter(x=>String(x.id)!==del.dataset.delete)));renderHistory();return}
- if(item){const x=historyItems().find(x=>String(x.id)===item.dataset.history);if(!x)return;closeHistory();setMode('calc');lastExpression=x.expression;lastResult=ratFromString(String(x.result));justCalculated=true;expression='';current='';currentIsPercent=false;howData=x.how||null;calcHowData=howData;lastOperation=parseLastOperation(x.expression);render();syncModeButton()}
+ if(item){const x=historyItems().find(x=>String(x.id)===item.dataset.history);if(!x)return;closeHistory();setMode('calc');carry=null;lastExpression=x.expression;lastShown=x.shown||formatInputDisplay(x.expression);lastResult=ratFromString(String(x.result));justCalculated=true;expression='';current='';currentIsPercent=false;howData=x.how||null;calcHowData=howData;lastOperation=parseLastOperation(x.expression);render();syncModeButton()}
 }
 function copyResult(){
- const value=mode==='calc'?(justCalculated?fmt(lastResult):(current||expression)):(toolResult?.main??'');
+ // Copies what the screen shows: the result, the expression being typed, or in Units the converted value.
+ const unitResult=()=>{const side=unitSource==='to'?'from':'to';return formatUnitResult(unitExpressions[side]??'')};
+ const value=mode==='calc'?(justCalculated?fmt(lastResult):(expression+current?formatExpressionDisplay(expression+current):'')):mode==='units'?unitResult():(toolResult?.main??'');
  if(value===''||value===t('toolReady')||!navigator.clipboard)return;
  navigator.clipboard.writeText(String(value)).then(()=>{const b=$('#copyButton');b.textContent=t('copied');setTimeout(()=>b.textContent=t('copy'),900)}).catch(()=>{})
 }
@@ -816,13 +888,14 @@ function clearToolFields(){
    return;
  }
  if(!toolState[mode])return;
- const inputs=toolState[mode].inputs||{};
- Object.keys(inputs).forEach(key=>inputs[key]='');
- toolActiveInput=null;
- $$('#toolPanel input[data-tool-input]').forEach(input=>input.value='');
+ // AC starts the tool over: every field empty, except the VAT rate, which goes back to its default.
+ toolState[mode].inputs=mode==='vat'?{vatRate:'24'}:{};
+ $$('#toolPanel input[data-tool-input]').forEach(input=>input.value=toolState[mode].inputs[input.id]??'');
+ setActiveToolInput($('#toolPanel input[data-tool-input]'));
  toolResult=null;
  howData=null;
- renderToolDisplay();
+ saveTools();
+ if(mode==='vat')runActiveTool();else renderToolDisplay();
 }
 function toolKeyInput(key){
  if(mode==='units'){
@@ -919,13 +992,14 @@ $('#toolPanel').addEventListener('input',e=>{
  if(!e.target.matches('input'))return;
  if(mode==='units')return;
  const input=e.target;
- const key=input.dataset.toolInput;
+ const key=input.id;
  if(!key)return;
  let raw=input.value;
  if(/^0\d/.test(raw))raw=raw.replace(/^0+(?=\d)/,'');
  if(raw!==input.value)input.value=raw;
  toolState[mode]??={inputs:{},result:null};
  toolState[mode].inputs[key]=raw;
+ saveTools();
  runActiveTool();
 });
 $('#howButton').addEventListener('click',showHow);$('#closeHow').addEventListener('click',closeHow);$('#howModal').addEventListener('click',e=>{if(e.target.id==='howModal')closeHow()});
@@ -964,6 +1038,8 @@ window.addEventListener('keydown',e=>{
    if(/^[0-9]$/.test(e.key)||['+','-','*','/'].includes(e.key)){e.preventDefault();toolKeyInput(e.key);return}
    if(e.key==='Enter'||e.key==='='){e.preventDefault();window._equalsUnits?.();return}
  }
+ // In the tools, typing without clicking a field first goes to the highlighted field (Backspace and the decimal key already do).
+ if(['fuel','energy','vat'].includes(mode)&&/^[0-9-]$/.test(e.key)&&!document.activeElement?.matches('input,select,textarea')&&$('#howModal').classList.contains('hidden')&&$('#historyPanel').classList.contains('hidden')){e.preventDefault();toolKeyInput(e.key);return}
  if(mode!=='calc')return;
  if(/^[0-9]$/.test(e.key))digit(e.key);
  else if(['+','-','*','/'].includes(e.key))operator(e.key==='*'?'×':e.key==='/'?'÷':e.key);
@@ -971,4 +1047,4 @@ window.addEventListener('keydown',e=>{
  else if(e.key==='Enter'||e.key==='='){e.preventDefault();equals()}
  else if(e.key==='Backspace'){e.preventDefault();backspace()}
 });
-window.__UC_VERSION=VERSION;$('#footerVersion').textContent=`v${VERSION}`;restoreReloadState();lang=readLanguage();bindTools();renderHistory();renderTool();renderModeMenu();syncModeButton();setupHistorySheet();setupVatSlide();bindHistoryChart();$('#chartButton')?.addEventListener('click',showToolChart);applyLanguage();applyTheme();window.addEventListener('pageshow',e=>{if(e.persisted&&mode!=='calc')setMode('calc')});
+window.__UC_VERSION=VERSION;$('#footerVersion').textContent=`v${VERSION}`;loadTools();restoreReloadState();lang=readLanguage();bindTools();renderHistory();renderTool();renderModeMenu();syncModeButton();setupHistorySheet();setupVatSlide();bindHistoryChart();$('#chartButton')?.addEventListener('click',showToolChart);applyLanguage();applyTheme();window.addEventListener('pageshow',e=>{if(e.persisted&&mode!=='calc')setMode('calc')});
