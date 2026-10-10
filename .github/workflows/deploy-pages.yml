@@ -30,7 +30,7 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      # Publish only the app's files, the same ones server.py serves in Docker.
+      # Publish only the app's files, the same ones the Dockerfile copies into the image.
       - name: Collect site files
         run: |
           mkdir _site

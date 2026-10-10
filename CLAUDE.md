@@ -33,11 +33,11 @@ The `?v=` makes browsers load the new files, so a missed one serves an old file.
   fuel log. Its functions use `app.js` globals at call time.
 - `history-interaction.js` – History sheet drag/scroll gestures.
 - `styles.css` – all styles, dark/light themes, phone and wide-desktop layouts.
-- `server.py` – static file server for Docker. Serves only the files in `STATIC_FILES`.
+- `Dockerfile` + `nginx.conf` – the Docker image: nginx, with only the app's files copied into it.
 - `.github/workflows/deploy-pages.yml` – publishes only the files listed in its "Collect site files" step.
 
-Adding a new file the app loads? Add it to `STATIC_FILES` in `server.py` AND to the Pages copy step,
-or it works locally and 404s in production.
+Adding a new file the app loads? Add it to the `COPY` line in the `Dockerfile`, the Pages copy step,
+and the file checks in `publish-image.yml`, or it works locally and 404s in production.
 
 ## How the code works
 
@@ -63,7 +63,7 @@ or it works locally and 404s in production.
 
 ## Testing before every push
 
-Serve the app (`PORT=8099 python3 server.py`) and check it in a real browser (Playwright is fine)
+Serve the app (`python3 -m http.server 8099`) and check it in a real browser (Playwright is fine)
 at desktop (1280×860) and phone (390×844, touch) sizes:
 - no JavaScript errors in the console
 - the changed feature works, in both Greek and English, light and dark theme

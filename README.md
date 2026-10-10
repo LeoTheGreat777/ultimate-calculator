@@ -52,7 +52,7 @@ Ultimate Calculator is intentionally lightweight: plain HTML, CSS and vanilla Ja
 - `app.js` – calculator engine (exact fractions), modes, tools, history, translations
 - `charts.js` – Graph mode, tool charts, the History chart and the fuel log (canvas, no libraries)
 - `history-interaction.js` – the History sheet's drag and scroll gestures
-- `server.py` – a tiny static file server used by the Docker image
+- `Dockerfile`, `nginx.conf` – the Docker image: nginx serving only the app's files
 
 Calculations happen in the browser, and history and settings are stored in the browser (localStorage). There are no accounts and nothing is sent to a server.
 
@@ -60,10 +60,10 @@ Calculations happen in the browser, and history and settings are stored in the b
 
 This is a static web app, so it can be served by any static web server.
 
-### Python
+### Any static web server
 
 ```bash
-PORT=8080 python3 server.py
+python3 -m http.server 8080
 ```
 
 ### Docker
