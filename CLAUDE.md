@@ -52,7 +52,8 @@ and the file checks in `publish-image.yml`, or it works locally and 404s in prod
   Money is always 2 decimals (`money`). VAT is rounded to cents like invoices (`vatNumbers`).
 - **Text:** every visible string needs Greek and English. Most live in `T.el`/`T.en` (use `t(key)`);
   some modes have their own small tables (`gText`, `cText`, `fText`, `SIDE_TIPS`, `SIDE_KEYS`).
-  Switching language reloads the page and restores state (`saveReloadState`/`restoreReloadState`).
+  Switching language happens in place (`setLanguage` -> `applyLanguage`), no reload: anything that shows text
+  must be re-rendered by `applyLanguage`, and a new text must look the same after a live switch as after a fresh load.
 - **Credits:** the footer names come from `AUTHORS` in `app.js`; the same names are in `index.html`
   (footer and `<meta name="author">`) and the README. Change them in all places together.
 - **Tools** (fuel, energy, VAT, units) remember their values per tool in localStorage
@@ -68,6 +69,13 @@ and the file checks in `publish-image.yml`, or it works locally and 404s in prod
 - **Units is part of the Calculator:** the ↔ button next to the mode button switches it on/off (`toggleUnits`);
   it is not in the mode menu, and the mode button keeps saying Calculator (`menuMode()`). Turning it on takes
   the calculator's number along; turning it off returns to the calculator as it was. Internally `mode==='units'`.
+- **Big screens:** on large desktop screens the whole app is scaled with CSS `zoom` on `<html>` (`applyUiZoom`,
+  `window.__uiZoom`, CSS var `--z`). Viewport units must be written `calc(100dvh / var(--z,1))`, and any code that
+  turns screen coordinates (clientX/Y, getBoundingClientRect, innerHeight) into CSS sizes must divide by
+  `window.__uiZoom` (see charts.js `chZoom`, history-interaction.js `Z`).
+- **Theme change:** circle reveal from the theme button (View Transitions), fade fallback, instant with reduced motion.
+- **Dropdowns:** on desktop Chrome/Edge the unit menus use `appearance: base-select`, styled like the app; phones keep
+  native pickers. While a dropdown has focus the global keydown handler leaves keys to it.
 - **Copying:** tapping a finished result copies it (calculator and tools), so the copy button can be hidden
   on short screens.
 - **Keyboard:** desktop typing is handled in the `window` `keydown` listener at the end of `app.js`.

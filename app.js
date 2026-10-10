@@ -1,45 +1,10 @@
-const VERSION='0.4.133';
+const VERSION='0.4.134';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 // localStorage can throw (blocked storage, private mode, quota full). Never let that break the app.
 const store={get:k=>{try{return localStorage.getItem(k)}catch{return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch{}},del:k=>{try{localStorage.removeItem(k)}catch{}}};
+const reducedMotion=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-function saveReloadState(){
- try{
-  const state={mode,expression,current,currentIsPercent,justCalculated,lastExpression,lastResult:lastResult&&typeof lastResult==='object'&&'n'in lastResult&&'d'in lastResult?{n:lastResult.n.toString(),d:lastResult.d.toString()}:lastResult,lastOperation,howData,toolResult,toolState,unitExpressions,unitActiveInput,unitSource,unitReplaceOnNextKey,vatAction,graph,lastShown,carry:carry?{raw:carry.raw,text:carry.text,shown:carry.shown,plain:carry.plain,n:carry.value.n.toString(),d:carry.value.d.toString()}:null};
-  sessionStorage.setItem('uc-reload-state',JSON.stringify(state));
- }catch{}
-}
-function restoreReloadState(){
- try{
-  const raw=sessionStorage.getItem('uc-reload-state');
-  if(!raw)return;
-  sessionStorage.removeItem('uc-reload-state');
-  const state=JSON.parse(raw);
-  if(state.mode)mode=state.mode;
-  expression=typeof state.expression==='string'?state.expression:'';
-  current=typeof state.current==='string'?state.current:'';
-  currentIsPercent=!!state.currentIsPercent;
-  justCalculated=!!state.justCalculated;
-  lastExpression=typeof state.lastExpression==='string'?state.lastExpression:'';
-  if(state.lastResult&&typeof state.lastResult==='object'&&state.lastResult.n!==undefined&&state.lastResult.d!==undefined)lastResult=rat(BigInt(state.lastResult.n),BigInt(state.lastResult.d));
-  else if(state.lastResult!==null&&state.lastResult!==undefined&&state.lastResult!=='')lastResult=ratFromString(String(state.lastResult));
-  else lastResult=null;
-  lastOperation=state.lastOperation||null;
-  lastShown=typeof state.lastShown==='string'?state.lastShown:'';
-  if(state.carry&&typeof state.carry.raw==='string')carry={raw:state.carry.raw,text:state.carry.text,shown:state.carry.shown,plain:state.carry.plain,value:rat(BigInt(state.carry.n),BigInt(state.carry.d))};
-  howData=state.howData||null;
-  if(mode==='calc'&&lastResult!==null&&lastExpression&&!howData)howData=explanationForExpression(lastExpression,lastResult)||null;
-  toolResult=state.toolResult||null;
-  if(state.toolState)toolState=state.toolState;
-  if(state.unitExpressions)unitExpressions=state.unitExpressions;
-  if(state.unitActiveInput)unitActiveInput=state.unitActiveInput;
-  if(state.unitSource)unitSource=state.unitSource;
-  unitReplaceOnNextKey=!!state.unitReplaceOnNextKey;
-  if(state.vatAction)vatAction=state.vatAction;
-  if(state.graph&&Array.isArray(state.graph.fns)&&state.graph.fns.length)graph=state.graph;
- }catch{}
-}
 function readLanguage(){
  let stored='';
  try{stored=localStorage.getItem('uc-lang')||''}catch{}
@@ -200,11 +165,22 @@ function applyTheme(){
  if(b){const dark=theme==='dark'||(theme==='auto'&&!matchMedia('(prefers-color-scheme: light)').matches);b.textContent=dark?'☾':'☀';b.setAttribute('aria-label',dark?t('themeLight'):t('themeDark'))}
  redrawCharts();
 }
+// The new theme spreads out in a circle from the theme button (View Transitions); browsers without it get a
+// short colour fade; with reduced motion it switches at once.
 function toggleTheme(){
  const dark=theme==='dark'||(theme==='auto'&&!matchMedia('(prefers-color-scheme: light)').matches);
- theme=dark?'light':'dark';
- store.set('uc-theme',theme);
- applyTheme();
+ const run=()=>{theme=dark?'light':'dark';store.set('uc-theme',theme);applyTheme()};
+ const root=document.documentElement;
+ if(reducedMotion()){run();return}
+ if(!document.startViewTransition){root.classList.add('theme-fade');run();setTimeout(()=>root.classList.remove('theme-fade'),400);return}
+ const z=window.__uiZoom||1,b=$('#themeButton').getBoundingClientRect(),x=(b.left+b.width/2)/z,y=(b.top+b.height/2)/z;// CSS px
+ const r=Math.hypot(Math.max(x,innerWidth/z-x),Math.max(y,innerHeight/z-y));
+ root.classList.add('vt-theme');
+ try{
+  const vt=document.startViewTransition(run);
+  vt.ready.then(()=>root.animate({clipPath:[`circle(0px at ${x}px ${y}px)`,`circle(${r}px at ${x}px ${y}px)`]},{duration:560,easing:'cubic-bezier(.4,0,.2,1)',pseudoElement:'::view-transition-new(root)'})).catch(()=>{});
+  vt.finished.finally(()=>root.classList.remove('vt-theme'));
+ }catch{root.classList.remove('vt-theme');run()}
 }
 function fitDisplayText(el,minSize){
  if(!el)return;
@@ -416,6 +392,7 @@ function renderUnitsDisplay(){
    unitReplaceOnNextKey=true;
    populateUnits(true);
    convertUnitExpression(unitSource);
+   setTimeout(()=>cat.blur(),0);
  });
 
  const handleUnitChange=select=>{
@@ -426,8 +403,11 @@ function renderUnitsDisplay(){
    unitReplaceOnNextKey=false;
    convertUnitExpression(source);
  };
- $('#unitFrom').addEventListener('change',()=>handleUnitChange($('#unitFrom')));
- $('#unitTo').addEventListener('change',()=>handleUnitChange($('#unitTo')));
+ // After picking from a menu, the keyboard goes straight back to typing numbers.
+ // (blur after the menu has closed: closing a menu hands the focus back to it)
+ const release=sel=>setTimeout(()=>sel.blur(),0);
+ $('#unitFrom').addEventListener('change',()=>{handleUnitChange($('#unitFrom'));release($('#unitFrom'))});
+ $('#unitTo').addEventListener('change',()=>{handleUnitChange($('#unitTo'));release($('#unitTo'))});
 
  $('#unitSwap').addEventListener('click',()=>{
    const a=$('#unitFrom'),b=$('#unitTo');
@@ -545,16 +525,16 @@ function setupVatSlide(){
  panel.addEventListener('pointerdown',e=>{
    const tg=e.target.closest('.vat-toggle');if(!tg||e.button>0)return;
    const range=thumbRange(tg);
-   drag={tg,id:e.pointerId,x0:e.clientX,lastX:e.clientX,lastT:performance.now(),v:0,range,start:vatAction==='remove'?range:0,moved:false};
+   drag={tg,id:e.pointerId,x0:e.clientX/(window.__uiZoom||1),lastX:e.clientX/(window.__uiZoom||1),lastT:performance.now(),v:0,range,start:vatAction==='remove'?range:0,moved:false};
    // Capture only once a drag starts: capturing on pointerdown sends the click to the toggle instead of the button, so a plain click did nothing.
  });
  panel.addEventListener('pointermove',e=>{
    if(!drag||e.pointerId!==drag.id)return;
-   const dx=e.clientX-drag.x0;
+   const cx=e.clientX/(window.__uiZoom||1),dx=cx-drag.x0;
    if(!drag.moved&&Math.abs(dx)<6)return;
    if(!drag.moved)drag.tg.setPointerCapture?.(e.pointerId);
    drag.moved=true;drag.tg.classList.add('sliding');
-   const now=performance.now();drag.v=(e.clientX-drag.lastX)/Math.max(1,now-drag.lastT);drag.lastX=e.clientX;drag.lastT=now;
+   const now=performance.now();drag.v=(cx-drag.lastX)/Math.max(1,now-drag.lastT);drag.lastX=cx;drag.lastT=now;
    const pos=Math.max(0,Math.min(drag.range,drag.start+dx));
    drag.tg.style.setProperty('--vat-thumb-x',pos+'px');
    e.preventDefault();
@@ -674,7 +654,7 @@ function restoreCalculatorDisplay(){
  const d=$('#calculatorDisplay');
  if(!d||!d.querySelector('#expression')||!d.querySelector('#result')){
    d.className='display-wrap';
-   d.innerHTML='<div class="expression-row"><div id="expression" class="expression" aria-live="polite"></div><button id="chartButton" class="how-button chart-button hidden" type="button" aria-label="'+esc(t('chart'))+'">'+CHART_ICON+'</button><button id="howButton" class="how-button hidden" type="button" aria-label="How was this calculated?">?</button></div><div id="result" class="result" aria-live="polite">0</div>';
+   d.innerHTML='<div class="expression-row"><div id="expression" class="expression" aria-live="polite"></div><button id="chartButton" class="how-button chart-button hidden" type="button" aria-label="'+esc(t('chart'))+'">'+CHART_ICON+'</button><button id="howButton" class="how-button hidden" type="button" aria-label="'+esc(t('how'))+'">?</button></div><div id="result" class="result" aria-live="polite">0</div>';
    $('#howButton').addEventListener('click',showHow);
    $('#chartButton').addEventListener('click',showToolChart);
  }
@@ -748,13 +728,37 @@ const FIT={
 // height seen (per width, i.e. per orientation) keeps the layout from jumping back and forth.
 const fitHeights={};
 function fitAvailHeight(){const h=window.innerHeight;if(!isMobileDevice())return h;const w=window.innerWidth;fitHeights[w]=Math.min(fitHeights[w]??h,h);return fitHeights[w]}
+// Big desktop screens (e.g. a 4K monitor at 100% scaling): the whole app scales up like browser zoom, so it
+// fills about the same share of the screen as on a 1080p monitor. Laptops, tablets and phones stay at 1.
+// CSS zoom does not scale viewport units, so the CSS divides them by --z, and code that turns screen
+// pixels into CSS pixels divides by window.__uiZoom (charts, History sheet, VAT switch, fitLayout).
+const ZOOM={baseH:1050,baseW:1500,min:1.1,max:2.2};
+window.__uiZoom=1;
+const zoomSupported=(()=>{
+ try{
+  if(/^((?!chrome|android|crios|fxios|edg).)*safari/i.test(navigator.userAgent))return false;// Safari's zoom differs; it keeps the normal size
+  const o=document.createElement('div'),i=document.createElement('div');o.style.cssText='zoom:2;position:absolute;visibility:hidden';i.style.width='100px';
+  o.appendChild(i);document.body.appendChild(o);const ok=Math.round(i.getBoundingClientRect().width)===200&&i.offsetWidth===100;o.remove();return ok;
+ }catch{return false}
+})();
+function applyUiZoom(){
+ let z=1;
+ if(zoomSupported&&matchMedia('(hover:hover) and (pointer:fine)').matches){const raw=Math.min(innerHeight/ZOOM.baseH,innerWidth/ZOOM.baseW,ZOOM.max);if(raw>=ZOOM.min)z=Math.floor(raw*20)/20}
+ if(z===window.__uiZoom)return false;
+ window.__uiZoom=z;const root=document.documentElement;
+ root.style.zoom=z===1?'':String(z);root.style.setProperty('--z',String(z));
+ return true;
+}
 let fitRaf=0;
 function fitLayoutSoon(){if(!fitRaf)fitRaf=requestAnimationFrame(()=>{fitRaf=0;fitLayout()})}
 function fitLayout(){
  const card=$('#calculatorCard'),shell=$('.app-shell'),footer=$('.app-footer'),root=document.documentElement;if(!card||!shell||!footer)return;
  document.body.classList.add('fit');
- const avail=fitAvailHeight();
- const need=()=>Math.ceil(footer.getBoundingClientRect().bottom+window.scrollY+(parseFloat(getComputedStyle(shell).paddingBottom)||0));
+ if(applyUiZoom())requestAnimationFrame(redrawCharts);
+ const Z=window.__uiZoom;
+ // everything below is in CSS pixels (screen pixels / zoom)
+ const avail=fitAvailHeight()/Z;
+ const need=()=>Math.ceil((footer.getBoundingClientRect().bottom+window.scrollY)/Z+(parseFloat(getComputedStyle(shell).paddingBottom)||0));
  root.classList.remove('page-scroll');shell.style.height='';card.classList.remove('compact-display','fit-no-copy');
  const tool=['fuel','energy','vat'].includes(mode),touchTool=tool&&isMobileDevice();
  const setToolLayout=compact=>{card.classList.toggle('mobile-tool',compact);document.body.classList.toggle('mobile-tool-on',compact)};
@@ -793,6 +797,7 @@ window.addEventListener('orientationchange',()=>setTimeout(fitLayout,250));
 document.fonts?.ready?.then(fitLayoutSoon);
 function setMode(next){
  resultCompact=false;if(mode==='calc')calcHowData=howData;mode=next;howData=next==='calc'?calcHowData:null;toolResult=null;
+ if(next==='calc')refreshCalcHow();
  // Tools keep what was typed in them; only an empty VAT rate goes back to the default.
  if(next==='vat'&&!toolState.vat.inputs.vatRate)toolState.vat.inputs.vatRate='24';
  if(next==='units'){unitActiveInput=unitSource;unitReplaceOnNextKey=true;window._unitCategory=window._unitCategory||'length';}
@@ -801,6 +806,19 @@ function setMode(next){
  if(next!=='calc'&&next!=='graph'){runActiveTool();if(next!=='units')renderToolDisplay()}
  syncModeButton();
 }
+// Switch language in place, everything kept as it is (no page reload), with a short cross-fade where supported.
+function setLanguage(next){
+ const run=()=>{
+  try{localStorage.setItem('uc-lang',next)}catch{}
+  if(!$('#howModal').classList.contains('hidden'))closeHow();
+  applyLanguage();
+  renderHistory();
+ };
+ if(document.startViewTransition&&!reducedMotion()){try{document.documentElement.classList.add('vt-lang');const vt=document.startViewTransition(run);vt.finished.finally(()=>document.documentElement.classList.remove('vt-lang'));return}catch{document.documentElement.classList.remove('vt-lang')}}
+ run();
+}
+// The calculator's step-by-step explanation, in the current language.
+function refreshCalcHow(){if(justCalculated&&lastExpression&&lastResult!==null){howData=explanationForExpression(lastExpression,lastResult)||howData;if(howData&&lastShown)howData.formula=lastShown;calcHowData=howData}}
 function applyLanguage(){
  lang=readLanguage();
  const savedInputs={};
@@ -824,7 +842,7 @@ function applyLanguage(){
  const hint=$('#hint');if(hint)hint.textContent=t('hint');
  syncInstallButton();
  const created=$('#createdBy');if(created)created.innerHTML=esc(t('created'))+' '+AUTHORS.map(n=>'<span class="author">'+esc(n)+'</span>').join(' &amp; ');
- if(mode==='calc'&&justCalculated&&lastExpression&&lastResult!==null){howData=explanationForExpression(lastExpression,lastResult)||howData;if(howData&&lastShown)howData.formula=lastShown;calcHowData=howData;}
+ if(mode==='calc')refreshCalcHow();
  renderTool();
  Object.entries(savedInputs).forEach(([id,value])=>{
    if(toolState[mode])toolState[mode].inputs[id]=value;
@@ -926,7 +944,7 @@ function renderSideTips(){
  placeSideTips();
 }
 // Line the side columns up with the top of the calculator card.
-function placeSideTips(){const card=$('#calculatorCard');if(card)document.documentElement.style.setProperty('--side-top',Math.round(card.getBoundingClientRect().top)+'px')}
+function placeSideTips(){const card=$('#calculatorCard');if(card)document.documentElement.style.setProperty('--side-top',Math.round(card.getBoundingClientRect().top/(window.__uiZoom||1))+'px')}
 window.addEventListener('resize',placeSideTips);
 // Units is a switch inside the Calculator: the ↔ button turns it on (and stays pressed) and off again.
 // Turning it on takes the number the calculator shows with it; turning it off returns to the calculator
@@ -1020,7 +1038,7 @@ function deleteAllHistory(){store.del('uc-history');historyClearConfirm=false;$(
 function historyClick(e){
  const del=e.target.closest('[data-delete]'),item=e.target.closest('[data-history]');
  if(del){store.set('uc-history',JSON.stringify(historyItems().filter(x=>String(x.id)!==del.dataset.delete)));renderHistory();return}
- if(item){const x=historyItems().find(x=>String(x.id)===item.dataset.history);if(!x)return;closeHistory();setMode('calc');carry=null;lastExpression=x.expression;lastShown=x.shown||formatInputDisplay(x.expression);lastResult=ratFromString(String(x.result));justCalculated=true;expression='';current='';currentIsPercent=false;howData=x.how||null;calcHowData=howData;lastOperation=parseLastOperation(x.expression);render();syncModeButton()}
+ if(item){const x=historyItems().find(x=>String(x.id)===item.dataset.history);if(!x)return;closeHistory();setMode('calc');carry=null;lastExpression=x.expression;lastShown=x.shown||formatInputDisplay(x.expression);lastResult=ratFromString(String(x.result));justCalculated=true;expression='';current='';currentIsPercent=false;howData=explanationForExpression(x.expression,lastResult)||x.how||null;if(howData&&lastShown)howData.formula=lastShown;calcHowData=howData;lastOperation=parseLastOperation(x.expression);render();syncModeButton()}
 }
 function copyResult(){
  // Copies what the screen shows: the result, the expression being typed, or in Units the converted value.
@@ -1157,14 +1175,7 @@ $('#howButton').addEventListener('click',showHow);$('#closeHow').addEventListene
 $('#historyButton').addEventListener('click',openHistory);$('#closeHistory').addEventListener('click',closeHistory);$('#historyBackdrop').addEventListener('click',closeHistory);$('#historyList').addEventListener('click',historyClick);$('#copyButton').addEventListener('click',copyResult);
 // Tapping a result copies it too (on short screens the copy button is hidden to make room for the keypad).
 $('#calculatorDisplay').addEventListener('click',e=>{if(mode==='units'||mode==='graph'||!e.target.closest('#result'))return;if(mode==='calc'?!justCalculated:!toolResult?.main)return;copyResult();const r=$('#result');r.classList.add('copied');setTimeout(()=>r.classList.remove('copied'),700)});
-$('#langButton').addEventListener('click',e=>{
- e.preventDefault();
- e.stopPropagation();
- lang=lang==='el'?'en':'el';
- try{localStorage.setItem('uc-lang',lang)}catch{}
- saveReloadState();
- window.location.reload();
-});
+$('#langButton').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();setLanguage(lang==='el'?'en':'el')});
 $('#themeButton').addEventListener('click',toggleTheme);
 $('#installButton')?.addEventListener('click',installApp);
 $('#modeButton').addEventListener('click',e=>{e.stopPropagation();toggleModeMenu()});
@@ -1174,6 +1185,8 @@ setupHoldToClear();
 $('#clearHistory').addEventListener('click',clearHistoryConfirm);$('#historyConfirmYes').addEventListener('click',deleteAllHistory);
 window.addEventListener('keydown',e=>{
  if(e.ctrlKey||e.metaKey||e.altKey)return;
+ // An open (or focused) dropdown handles its own keys: arrows, Enter, typing to jump to an item.
+ if(document.activeElement?.closest?.('select'))return;
  if(mode==='calc'&&e.key.length===1&&!/^[0-9+\-*/%.,()=]$/.test(e.key)){e.preventDefault();e.stopImmediatePropagation();return}
  if(mode==='graph'&&e.key!=='Escape'){if($('#howModal').classList.contains('hidden')&&$('#historyPanel').classList.contains('hidden')&&graphKeydown(e))e.preventDefault();return}
  if(e.key==='Backspace'||e.code==='Backspace'){e.preventDefault();if(mode==='calc')backspace();else toolKeyInput('backspace');return;}
@@ -1201,4 +1214,4 @@ window.addEventListener('keydown',e=>{
  else if(e.key==='Enter'||e.key==='='){e.preventDefault();equals()}
  else if(e.key==='Backspace'){e.preventDefault();backspace()}
 });
-window.__UC_VERSION=VERSION;$('#footerVersion').textContent=`v${VERSION}`;loadTools();restoreReloadState();lang=readLanguage();bindTools();renderHistory();renderTool();renderModeMenu();syncModeButton();setupHistorySheet();setupVatSlide();bindHistoryChart();$('#chartButton')?.addEventListener('click',showToolChart);applyLanguage();applyTheme();window.addEventListener('pageshow',e=>{if(e.persisted&&mode!=='calc')setMode('calc')});
+window.__UC_VERSION=VERSION;$('#footerVersion').textContent=`v${VERSION}`;loadTools();lang=readLanguage();bindTools();renderHistory();renderTool();renderModeMenu();syncModeButton();setupHistorySheet();setupVatSlide();bindHistoryChart();$('#chartButton')?.addEventListener('click',showToolChart);applyLanguage();applyTheme();window.addEventListener('pageshow',e=>{if(e.persisted&&mode!=='calc')setMode('calc')});

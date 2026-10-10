@@ -34,18 +34,21 @@
     #historyPanel.dragging .sheet-handle,
     #historyPanel.dragging .section-heading { cursor: grabbing; }
     #historyPanel.dragging .history-list { pointer-events: none; }
-    #historyPanel.expanded { height: min(92dvh, 780px); }
+    #historyPanel.expanded { height: min(calc(92dvh / var(--z,1)), 780px); }
     @media (max-width: 480px) {
-      #historyPanel.expanded { height: 100dvh; border-radius: 20px 20px 0 0; }
+      #historyPanel.expanded { height: calc(100dvh / var(--z,1)); border-radius: 20px 20px 0 0; }
     }
   `;
   document.head.appendChild(style);
 
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
-  const collapsedHeight = () => Math.min(window.innerHeight * 0.42, 470);
+  // On big screens the app is scaled up (app.js, window.__uiZoom): screen pixels / zoom = CSS pixels.
+  const Z = () => window.__uiZoom || 1;
+  const cy = e => e.clientY / Z();
+  const collapsedHeight = () => Math.min(window.innerHeight * 0.42 / Z(), 470);
   const expandedHeight = () => window.innerWidth <= 480
-    ? window.innerHeight
-    : Math.min(window.innerHeight * 0.92, 780);
+    ? window.innerHeight / Z()
+    : Math.min(window.innerHeight * 0.92 / Z(), 780);
 
   let pointerId = null;
   let startY = 0;
@@ -55,7 +58,7 @@
   let startHeight = 0;
   let moved = false;
 
-  function currentHeight() { return panel.getBoundingClientRect().height; }
+  function currentHeight() { return panel.getBoundingClientRect().height / Z(); }
   function setHeight(height) { panel.style.height = `${height}px`; }
   function clearInlineGeometry() { panel.style.height = ''; panel.style.transform = ''; }
 
@@ -111,7 +114,7 @@
     // Buttons in the heading (close, clear all, chart) must get their own click; capturing the pointer here would swallow it.
     if (e.target.closest('button')) return;
     pointerId = e.pointerId;
-    startY = lastY = e.clientY;
+    startY = lastY = cy(e);
     lastTime = performance.now();
     velocityY = 0;
     startHeight = currentHeight();
@@ -123,10 +126,10 @@
   function onPointerMove(e) {
     if (pointerId !== e.pointerId) return;
     const now = performance.now();
-    const dy = e.clientY - startY;
+    const dy = cy(e) - startY;
     const dt = Math.max(1, now - lastTime);
-    velocityY = (e.clientY - lastY) / dt;
-    lastY = e.clientY;
+    velocityY = (cy(e) - lastY) / dt;
+    lastY = cy(e);
     lastTime = now;
     if (Math.abs(dy) > 3) moved = true;
 
@@ -140,13 +143,13 @@
     e.preventDefault();
   }
 
-  function onPointerUp(e) { if (pointerId === e.pointerId) finishDrag(e.clientY); }
+  function onPointerUp(e) { if (pointerId === e.pointerId) finishDrag(cy(e)); }
 
   [handle, heading].forEach(el => {
     el?.addEventListener('pointerdown', onPointerDown);
     el?.addEventListener('pointermove', onPointerMove);
     el?.addEventListener('pointerup', onPointerUp);
-    el?.addEventListener('pointercancel', e => { if (pointerId === e.pointerId) finishDrag(e.clientY); });
+    el?.addEventListener('pointercancel', e => { if (pointerId === e.pointerId) finishDrag(cy(e)); });
   });
 
   // While History is open it is the page's scroll area: the mouse wheel and the keyboard scroll it from anywhere on screen.

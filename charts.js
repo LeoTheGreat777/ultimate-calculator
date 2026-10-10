@@ -17,9 +17,11 @@ function chColors(){
   grid:light?'rgba(17,23,34,.07)':'rgba(255,255,255,.06)',axis:light?'rgba(17,23,34,.38)':'rgba(255,255,255,.34)',
   series:light?['#3478e5','#e07b1a','#1f9d5a']:['#6ea8fe','#f5a65b','#4cd38a']};
 }
-// Size the canvas for the screen's pixel density and return a context drawing in CSS pixels.
+// On big screens the app is scaled up (app.js, window.__uiZoom): screen pixels / zoom = CSS pixels.
+const chZoom=()=>window.__uiZoom||1;
+// Size the canvas for the screen's pixel density (and the app's zoom) and return a context drawing in CSS pixels.
 function chSetup(cv){
- const r=cv.getBoundingClientRect(),dpr=Math.min(3,window.devicePixelRatio||1),w=Math.max(1,Math.round(r.width)),h=Math.max(1,Math.round(r.height));
+ const r=cv.getBoundingClientRect(),z=chZoom(),dpr=Math.min(3,window.devicePixelRatio||1)*z,w=Math.max(1,Math.round(r.width/z)),h=Math.max(1,Math.round(r.height/z));
  if(cv.width!==Math.round(w*dpr)||cv.height!==Math.round(h*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr)}
  const ctx=cv.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);ctx.font=CH_FONT;
  return{ctx,w,h};
@@ -232,7 +234,7 @@ function graphFit(){
 }
 function bindGraphCanvas(cv){
  const ptrs=new Map();let start=null,moved=false,pinch=null;
- const pos=e=>{const r=cv.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}};
+ const pos=e=>{const r=cv.getBoundingClientRect(),z=chZoom();return{x:(e.clientX-r.left)/z,y:(e.clientY-r.top)/z}};
  cv.addEventListener('pointerdown',e=>{
   e.preventDefault();cv.setPointerCapture?.(e.pointerId);ptrs.set(e.pointerId,pos(e));
   const v=graphView(cv.clientWidth);
@@ -448,7 +450,7 @@ function drawHistoryChart(){
 function historyChartRefresh(){if(!$('#historyChartWrap')?.classList.contains('hidden'))drawHistoryChart()}
 function bindHistoryChart(){
  const cv=$('#historyChart');if(!cv)return;
- const pickAt=e=>{const g=cv._geo,data=historyChartData();if(!g||data.length<2)return;const r=cv.getBoundingClientRect(),x=e.clientX-r.left;
+ const pickAt=e=>{const g=cv._geo,data=historyChartData();if(!g||data.length<2)return;const r=cv.getBoundingClientRect(),x=(e.clientX-r.left)/chZoom();
   const i=Math.round((x-g.L)/(g.w-g.L-g.R)*(data.length-1));const n=Math.max(0,Math.min(data.length-1,i));if(n!==historyChartPick){historyChartPick=n;drawHistoryChart()}};
  cv.addEventListener('pointerdown',pickAt);cv.addEventListener('pointermove',e=>{if(e.pointerType==='mouse'||e.buttons)pickAt(e)});
  $('#historyChartButton')?.addEventListener('click',e=>{e.stopPropagation();toggleHistoryChart()});
