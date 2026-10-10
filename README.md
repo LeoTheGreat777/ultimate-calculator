@@ -44,6 +44,10 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 - Clean, compact UI with dedicated mode navigation
 - Calculation explanations presented in a readable step-by-step view
 
+## Authors
+
+Leonidas Kampaxis and Efstathios Konstantinos Tsakiris
+
 ## Technology
 
 Ultimate Calculator is intentionally lightweight: plain HTML, CSS and vanilla JavaScript, with no framework, no build step and no backend.

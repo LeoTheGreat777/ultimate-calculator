@@ -52,6 +52,8 @@ and the file checks in `publish-image.yml`, or it works locally and 404s in prod
 - **Text:** every visible string needs Greek and English. Most live in `T.el`/`T.en` (use `t(key)`);
   some modes have their own small tables (`gText`, `cText`, `fText`, `SIDE_TIPS`, `SIDE_KEYS`).
   Switching language reloads the page and restores state (`saveReloadState`/`restoreReloadState`).
+- **Credits:** the footer names come from `AUTHORS` in `app.js`; the same names are in `index.html`
+  (footer and `<meta name="author">`) and the README. Change them in all places together.
 - **Tools** (fuel, energy, VAT, units) remember their values per tool in localStorage
   (`saveTools`/`loadTools`); AC clears a tool. Field values are stored under the field's `id`.
 - **Storage:** all in the browser (`uc-history`, `uc-tools`, `uc-fuel-log`, `uc-graph`, `uc-lang`,

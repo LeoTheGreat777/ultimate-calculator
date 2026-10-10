@@ -149,33 +149,45 @@
     el?.addEventListener('pointercancel', e => { if (pointerId === e.pointerId) finishDrag(e.clientY); });
   });
 
-  panel.addEventListener('wheel', e => {
-    if (!panel.classList.contains('open')) return;
-    const min = collapsedHeight(), max = expandedHeight(), height = currentHeight();
-    if (e.deltaY < 0 && height < max - 1) {
-      e.preventDefault();
-      const next = Math.min(max, height - e.deltaY);
-      setHeight(next);
-      if (next >= max - 1) { panel.classList.add('expanded'); requestAnimationFrame(() => { panel.style.height = ''; }); }
-      return;
+  // While History is open it is the page's scroll area: the mouse wheel and the keyboard scroll it from anywhere on screen.
+  // Like a map app's bottom sheet: scrolling down first opens the sheet fully, then scrolls the list;
+  // scrolling up goes back to the top of the list, then shrinks the sheet again.
+  const isOpen = () => panel.classList.contains('open') && !panel.classList.contains('hidden');
+  let sheetMovedAt = 0;
+  function scrollHistory(dy, smooth) {
+    if (!dy) return;
+    const now = performance.now();
+    if (now - sheetMovedAt < 280) return; // let the open/shrink animation finish before scrolling on
+    const expanded = panel.classList.contains('expanded');
+    if (dy > 0 && !expanded && list.scrollHeight > list.clientHeight + 1) {
+      snap(true); list.scrollTop = 0; sheetMovedAt = now; return;
     }
-    if (e.deltaY > 0 && list.scrollTop > 0) {
-      e.preventDefault();
-      list.scrollTop += e.deltaY;
-      return;
+    if (dy < 0 && expanded && list.scrollTop <= 0) {
+      snap(false); sheetMovedAt = now; return;
     }
-    if (e.deltaY > 0 && height > min + 1) {
-      e.preventDefault();
-      const next = Math.max(min, height - e.deltaY);
-      setHeight(next);
-      if (next <= min + 1) { panel.classList.remove('expanded'); requestAnimationFrame(() => { panel.style.height = ''; }); }
-      return;
+    list.scrollBy({ top: dy, behavior: smooth ? 'smooth' : 'auto' });
+  }
+
+  document.addEventListener('wheel', e => {
+    if (!isOpen() || pointerId !== null || e.ctrlKey) return;
+    e.preventDefault();
+    e.stopPropagation(); // nothing behind the sheet (e.g. the graph) reacts to the wheel
+    const dy = e.deltaMode === 1 ? e.deltaY * 32 : e.deltaMode === 2 ? e.deltaY * list.clientHeight : e.deltaY;
+    scrollHistory(dy, false);
+  }, { passive: false, capture: true });
+
+  document.addEventListener('keydown', e => {
+    if (!isOpen() || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (!document.querySelector('#howModal')?.classList.contains('hidden')) return;
+    const page = Math.max(80, list.clientHeight - 60);
+    const step = { ArrowDown: 64, ArrowUp: -64, PageDown: page, PageUp: -page }[e.key];
+    if (step !== undefined) { e.preventDefault(); e.stopImmediatePropagation(); scrollHistory(step, true); return; }
+    if (e.key === 'Home' || e.key === 'End') {
+      e.preventDefault(); e.stopImmediatePropagation();
+      if (e.key === 'End' && !panel.classList.contains('expanded')) snap(true);
+      list.scrollTo({ top: e.key === 'Home' ? 0 : list.scrollHeight, behavior: 'smooth' });
     }
-    if (e.deltaY < 0) {
-      e.preventDefault();
-      list.scrollTop = Math.max(0, list.scrollTop + e.deltaY);
-    }
-  }, { passive: false });
+  }, true);
 
   let scrollTimer;
   list.addEventListener('scroll', () => {

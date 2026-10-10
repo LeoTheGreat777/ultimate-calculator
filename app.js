@@ -1,4 +1,4 @@
-const VERSION='0.4.128';
+const VERSION='0.4.129';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 // localStorage can throw (blocked storage, private mode, quota full). Never let that break the app.
@@ -752,7 +752,7 @@ function applyLanguage(){
  $('#historyChartButton')?.setAttribute('title',t('chart'));
  $('#themeButton').setAttribute('aria-label',((theme==='dark'||(theme==='auto'&&!matchMedia('(prefers-color-scheme: light)').matches))?t('themeLight'):t('themeDark')));
  const hint=$('#hint');if(hint)hint.textContent=t('hint');
- const created=$('#createdBy');if(created)created.textContent=t('created')+' Leonidas Kampaxis';
+ const created=$('#createdBy');if(created)created.innerHTML=esc(t('created'))+' '+AUTHORS.map(n=>'<span class="author">'+esc(n)+'</span>').join(' &amp; ');
  if(mode==='calc'&&justCalculated&&lastExpression&&lastResult!==null){howData=explanationForExpression(lastExpression,lastResult)||howData;if(howData&&lastShown)howData.formula=lastShown;calcHowData=howData;}
  renderTool();
  Object.entries(savedInputs).forEach(([id,value])=>{
@@ -768,6 +768,8 @@ function applyLanguage(){
  syncModeButton();
  renderVatToggle();
 }
+// Shown in the footer, in English in both languages.
+const AUTHORS=['Leonidas Kampaxis','Efstathios Konstantinos Tsakiris'];
 const MODE_LABELS=['calc','graph','units','vat','fuel','energy'];
 function renderModeMenu(){
  const menu=$('#modeMenu');if(!menu)return;
