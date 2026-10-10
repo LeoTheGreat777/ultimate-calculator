@@ -34,7 +34,7 @@ jobs:
       - name: Collect site files
         run: |
           mkdir _site
-          cp index.html app.js charts.js history-interaction.js styles.css icon.svg manifest.webmanifest _site/
+          cp index.html app.js charts.js history-interaction.js styles.css icon.svg icon-192.png icon-512.png icon-maskable-512.png apple-touch-icon.png manifest.webmanifest _site/
 
       - name: Upload site
         uses: actions/upload-pages-artifact@v3

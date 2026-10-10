@@ -39,7 +39,7 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 - Responsive desktop and mobile layouts
 - Dark and light themes
 - English and Greek language support
-- Installable as an app (web app manifest)
+- Installable on phones: an install button opens the install dialog on Android, and shows a short Add to Home Screen guide on iPhone
 - Mobile-friendly calculator controls
 - Clean, compact UI with dedicated mode navigation
 - Calculation explanations presented in a readable step-by-step view

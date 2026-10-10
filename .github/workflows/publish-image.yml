@@ -35,7 +35,7 @@ jobs:
           fail=0
           check() { if [ "$2" = "$3" ]; then echo "ok   $1"; else echo "FAIL $1: expected $3, got $2"; fail=1; fi; }
           version=$(grep -o "VERSION='[^']*'" app.js | cut -d"'" -f2)
-          for f in / /index.html /app.js /charts.js /history-interaction.js /styles.css /icon.svg /manifest.webmanifest; do
+          for f in / /index.html /app.js /charts.js /history-interaction.js /styles.css /icon.svg /icon-192.png /icon-512.png /icon-maskable-512.png /apple-touch-icon.png /manifest.webmanifest; do
             check "$f is served" "$(code "$f")" 200
           done
           for f in /Dockerfile /nginx.conf /README.md /CLAUDE.md /.git/config /missing; do

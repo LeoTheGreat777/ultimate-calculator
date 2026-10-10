@@ -203,3 +203,7 @@ body.mobile-tool-on .app-shell{height:100dvh}
 .display-wrap .result.copied{color:var(--accent2);transition:color .15s}
 /* Footer credits: each name stays on one line, so a narrow screen wraps between the names */
 .app-footer .author{white-space:nowrap}
+/* Install-on-phone button and guide */
+.install-button{display:grid;place-items:center;padding:0}.install-button.hidden{display:none}
+.install-guide .chart-note{margin:0 0 6px}
+.install-guide .share-icon{vertical-align:-3px;color:var(--accent)}
