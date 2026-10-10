@@ -179,7 +179,7 @@ function calcNumberForUnits(){
   let value;
   if(justCalculated&&lastResult)value=lastResult;
   else{
-   let full=(expression+current).replace(/[+\-×÷*/(]+$/,'');
+   let full=tidyParens(expression+current);if(/[+\-×÷^]$/.test(full))full=full.slice(0,-1);
    if(!full)return null;
    const open=(full.match(/\(/g)||[]).length-(full.match(/\)/g)||[]).length;if(open>0)full+=')'.repeat(open);
    value=evalExpr(full);

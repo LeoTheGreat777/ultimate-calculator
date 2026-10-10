@@ -16,6 +16,7 @@ $('#keypad').addEventListener('click',e=>{
    if(v==='-'){toolKeyInput('-');return}
    return;
  }
+ if(b.dataset.sci){sciKey(b.dataset.sci);return}
  if(a==='clear')clearButtonAction();else if(a==='backspace')backspace();else if(a==='equals')equals();else if(a==='paren')smartParen();else if(v==='%')percent();else if(/[+\-*/]/.test(v||''))operator(v==='*'?'×':v==='/'?'÷':v);else if(v)digit(v)
 });
 $('#howButton').addEventListener('click',showHow);$('#closeHow').addEventListener('click',closeHow);$('#howModal').addEventListener('click',e=>{if(e.target.id==='howModal')closeHow()});
@@ -43,6 +44,8 @@ window.addEventListener('keydown',e=>{
  // F9 = ± (as in Windows Calculator)
  if(e.key==='F9'&&(mode==='calc'||mode==='units')){e.preventDefault();if(nothingOpen){if(mode==='calc')negate();else toolKeyInput('negate')}return}
  if(mode==='units'&&nothingOpen&&(e.key==='('||e.key===')')){e.preventDefault();toolKeyInput(e.key);return}
+ // ^ power and ! factorial (also a "dead" ^ key that waits for a letter, as on some layouts)
+ if(mode==='calc'&&nothingOpen&&(e.key==='^'||e.key==='!'||(e.key==='Dead'&&G_DEAD_CARET.includes(e.code)))){e.preventDefault();sciKey(e.key==='!'?'fact':'pow');return}
  if(mode==='calc'&&e.key.length===1&&!/^[0-9+\-*/%.,()=]$/.test(e.key)){e.preventDefault();e.stopImmediatePropagation();return}
  if(mode==='graph'&&e.key!=='Escape'){if($('#howModal').classList.contains('hidden')&&$('#historyPanel').classList.contains('hidden')&&graphKeydown(e))e.preventDefault();return}
  if(e.key==='Backspace'||e.code==='Backspace'){e.preventDefault();if(mode==='calc')backspace();else toolKeyInput('backspace');return;}

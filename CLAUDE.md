@@ -92,6 +92,12 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   and call it after anything that changes the layout's height. Phones held sideways (any window wider than tall and
   at most 500px high) get the landscape layout: keypad on the right, the rest on the left (`fitLandscape`,
   `html.landscape` in styles.css). The app is not locked to portrait (iPhones can't be), so both must work.
+- **Scientific:** a view of the Calculator, not a mode: the f(x) switch on the display (`sciMode`, `uc-sci`) adds 15
+  keys above the basic ones (beside them in landscape; `sciKeysHtml`, `.keypad.sci`). Functions apply to the value
+  just typed / the result / the bracket just closed (`sciKey`, `lastValueStart`), else open `sin(`. 2nd swaps keys
+  for inverses; Deg/Rad is `angleUnit` (`uc-angle`). The engine (numbers.js: `evalExpr`, `ratPow`, `sciFunction`)
+  stays exact where the answer is exact and rounds floats to 15 digits otherwise. Shown with superscripts and sin⁻¹
+  (`sciPretty`). Keyboard: ^ and !.
 - **Modes are tabs:** a strip of tabs at the top of the card (`MODE_LABELS`, `renderModeTabs`, `switchMode`), one tap
   each, scrolling sideways when they don't fit; Alt+1…6 on a keyboard. Add a new mode to `MODE_LABELS`, `ICONS`
   and `MODE_TRANSLATIONS`. Units is its own tab after Calculator. Going Calculator -> Units moves the calculator's

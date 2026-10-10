@@ -26,6 +26,7 @@ function fitDisplayText(el,minSize){
 const FIT={
  calc:{k:[68,40],d:[205,128],roomy:172,comfy:48,copy:true},
  units:{k:[68,40],d:[205,165],comfy:48,copy:false},
+ sci:{k:[62,34],d:[180,96],roomy:150,comfy:42,copy:true},// Scientific: 8 rows of keys
  tool:{k:[56,36],d:[205,128],roomy:172,comfy:44,copy:true},
  mobileTool:{k:[56,36],d:[108,98],comfy:44,copy:true},
  graphMin:520
@@ -61,7 +62,7 @@ const LANDSCAPE='(orientation: landscape) and (max-height: 500px)';
 function fitLandscape(card,root,avail,need,tool,setToolLayout){
  if(tool)setToolLayout(true);
  const graph=mode==='graph',v=graph?'--gk':'--k',[kMax,kMin]=graph?[56,28]:tool?[56,32]:[68,34];
- const rows=new Set([...$('#keypad').children].map(b=>b.offsetTop)).size||5;
+ const rows=new Set([...$('#keypad').querySelectorAll('button')].map(b=>b.getBoundingClientRect().top|0)).size||5;
  let k=kMin;card.style.setProperty(v,k+'px');
  card.style.setProperty('--disp','auto');// the display fills the height beside the keys
  if(mode==='units')card.style.setProperty('--urow','36px');// the unit rows grow afterwards, into the room beside the keys
@@ -100,7 +101,7 @@ function fitLayout(){
   };
   apply();
   let over=need()-avail;if(over<=0)return 0;
-  const rows=new Set([...$('#keypad').children].map(b=>b.offsetTop)).size||5;
+  const rows=new Set([...$('#keypad').querySelectorAll('button')].map(b=>b.getBoundingClientRect().top|0)).size||5;
   const shrinkDisplay=to=>{const step=Math.min(over,Math.max(0,d-to));d-=step;over-=step};
   const shrinkKeys=to=>{const dk=Math.min(Math.max(0,k-to),Math.ceil(over/rows));k-=dk;over-=dk*rows};
   if(spec.roomy)shrinkDisplay(spec.roomy);
@@ -110,9 +111,9 @@ function fitLayout(){
   apply();
   return need()-avail;
  };
- let over=attempt(mode==='calc'?FIT.calc:mode==='units'?FIT.units:touchTool?FIT.mobileTool:FIT.tool);
+ let over=attempt(mode==='calc'?(sciMode?FIT.sci:FIT.calc):mode==='units'?FIT.units:touchTool?FIT.mobileTool:FIT.tool);
  if(over>0&&tool&&!touchTool){setToolLayout(true);over=attempt(FIT.mobileTool)}
- const spec=mode==='calc'?FIT.calc:mode==='units'?FIT.units:FIT.tool;
+ const spec=mode==='calc'?(sciMode?FIT.sci:FIT.calc):mode==='units'?FIT.units:FIT.tool;
  if(over>0&&spec.copy){card.classList.add('fit-no-copy');over=need()-avail}
  if(over>0)root.classList.add('page-scroll');
  root.dataset.fitOver=Math.max(0,over);// how many px did not fit (used by tests)

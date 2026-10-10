@@ -574,3 +574,21 @@ html.landscape .calculator-card.graph-mode .keypad .key{height:auto!important;mi
 .theme-swatch-auto{display:flex}
 .theme-swatch-auto span{flex:1;align-self:stretch;display:grid;place-items:center;background:var(--bg)}
 .theme-swatch-auto i{width:8px;box-shadow:none;background:var(--accent)}
+/* ---------- Scientific (calculator.js): the f(x) switch and DEG/RAD on the display, 15 keys above the basic ones ---------- */
+.sci-bar{position:absolute;top:8px;left:8px;z-index:3;display:flex;gap:6px}
+.calculator-card.tool-mode .sci-bar,.calculator-card.graph-mode .sci-bar{display:none}
+.sci-chip{height:28px;min-width:40px;padding:0 10px;border:1px solid var(--border);border-radius:999px;background:var(--card2);color:var(--muted);font:inherit;font-size:12px;font-weight:750;letter-spacing:.03em;cursor:pointer}
+.sci-chip.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.sci-chip:focus{outline:none}
+.sci-chip:focus-visible{outline:2px solid var(--accent2);outline-offset:1px}
+.keypad.sci{display:flex;flex-direction:column;gap:8px}
+.keypad.sci .sci-pad{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.keypad.sci .basic-pad{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.key.sci-key{background:var(--card2);box-shadow:inset 0 0 0 1px var(--border);color:var(--text);font-size:16px;font-weight:500;letter-spacing:0}
+.key.sci-key.on{background:var(--accent);box-shadow:none;color:var(--on-accent)}
+html.landscape .calculator-card.sci-on{grid-template-columns:minmax(0,.85fr) minmax(0,1.6fr)}
+html.landscape .keypad.sci{flex-direction:row}
+html.landscape .keypad.sci .sci-pad{flex:3;grid-template-columns:none;grid-template-rows:repeat(5,auto);grid-auto-flow:column;grid-auto-columns:minmax(0,1fr)}
+html.landscape .keypad.sci .basic-pad{flex:4}
+html.landscape .calculator-card.sci-on .bottom-actions{display:none}
+.bottom-actions .secondary-button{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

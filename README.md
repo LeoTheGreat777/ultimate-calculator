@@ -17,6 +17,11 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 - Step-by-step explanations of how a result was worked out
 - Brackets that change nothing are tidied away; C clears the number being typed, AC everything
 
+### Scientific
+- The f(x) switch on the calculator's display adds scientific keys: sin, cos, tan and their inverses, ln, log, powers, roots, 1/x, x!, π, e and EE
+- Degrees or radians; exact answers wherever they are exact (2¹⁰, √(9/4), sin 30°)
+- Functions apply to the number just typed or to the result: 30 then sin gives sin(30)
+
 ### Unit Converter
 - Length, area (including stremma), mass, volume, speed, time, data, energy, power, pressure, angle and temperature conversions
 - Calculator-style arithmetic directly inside unit fields

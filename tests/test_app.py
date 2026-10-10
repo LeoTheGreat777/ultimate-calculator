@@ -229,6 +229,97 @@ async def desktop(browser, url, lang, theme):
     await p.context.close()
 
 
+async def scientific(browser, url, lang, theme):
+    """The Scientific calculator: the f(x) switch, the keys (by tapping, like on a phone), Deg/Rad, the keyboard."""
+    p = await new_page(browser, url, lang, theme)
+    L = f'[scientific {lang} {theme}] '
+    check(L + 'starts in Basic, no scientific keys', await p.locator('.sci-key').count() == 0)
+    await p.click('[data-bar="sci"]')
+    check(L + 'f(x) shows 15 scientific keys and DEG', await p.locator('.sci-key').count() == 15
+          and 'DEG' in await p.inner_text('#sciBar'))
+
+    async def keys(*seq):
+        """tap keys: digits/operators by value, scientific ones as 'sci:name', '=' and 'AC'"""
+        await p.evaluate('clearAll()')
+        for k in seq:
+            if k.startswith('sci:'):
+                await p.click(f'[data-sci="{k[4:]}"]')
+            elif k == '=':
+                await p.click('.key[data-action="equals"]')
+            elif k == '( )':
+                await p.click('.key[data-action="paren"]')
+            elif k == '±':
+                await p.keyboard.press('F9')
+            else:
+                await p.click(f'.key[data-value="{k}"]')
+        return [await p.evaluate(X), await p.evaluate(R)]
+
+    cases = [
+        (('3', '0', 'sci:sin', '='), ['sin(30)', '0,5']),
+        (('sci:sin', '3', '0', '='), ['sin(30)', '0,5']),
+        (('2', '+', '3', '0', 'sci:sin', '='), ['2+sin(30)', '2,5']),
+        (('2', 'sci:pow', '1', '0', '='), ['2¹⁰', '1.024']),
+        (('9', 'sci:sqrt', '='), ['√(9)', '3']),
+        (('5', 'sci:fact', '='), ['5!', '120']),
+        (('2', '/', '4', 'sci:inv', '='), ['2÷(1÷4)', '8']),
+        (('1', ',', '5', 'sci:ee', '3', '='), ['1,5×10³', '1.500']),
+        (('1', '0', '0', '0', 'sci:log', '='), ['log(1.000)', '3']),
+        (('2', 'sci:pi', '='), ['2×π', '6,283185']),
+        (('3', '0', '±', 'sci:sin', '='), ['sin(−30)', '-0,5']),
+        (('2', 'sci:sq', '+', '1', '='), ['2²+1', '5']),
+    ]
+    for seq, want in cases:
+        got = await keys(*seq)
+        check(L + ' '.join(seq) + f' -> {want[0]} = {want[1]}', got == want, got)
+    # a result continues: 1÷3 = then x² is (1/3)², exactly 1/9
+    await keys('1', '/', '3', '=', 'sci:sq', '=')
+    check(L + 'result then x²: 0,333333² = 0,111111', [await p.evaluate(X), await p.evaluate(R)] == ['0,333333²', '0,111111'],
+          [await p.evaluate(X), await p.evaluate(R)])
+    # 2nd: inverse functions; Deg/Rad
+    await p.click('[data-sci="2nd"]')
+    got = await keys('0', ',', '5', 'sci:asin', '=')
+    check(L + '2nd sin = sin⁻¹: sin⁻¹(0,5) = 30°', got == ['sin⁻¹(0,5)', '30'], got)
+    await p.click('[data-sci="2nd"]')
+    await p.click('[data-sci="angle"]')
+    check(L + 'Rad on', 'RAD' in await p.inner_text('#sciBar'))
+    got = await keys('sci:pi', 'sci:sin', '=')
+    check(L + 'sin(π) = 0 in radians', got[1] == '0', got)
+    await p.click('[data-sci="angle"]')
+    # mistakes give Error, not nonsense
+    got = await keys('1', '±', 'sci:sqrt', '=')
+    check(L + '√(−1) = Error', got[1] == 'Error', got)
+    await p.wait_for_timeout(950)
+    # backspace takes a function away whole
+    await keys('sci:sin')
+    await p.click('.key[data-action="backspace"]')
+    check(L + 'backspace removes "sin(" at once', await p.evaluate('expression+current') == '')
+    # keyboard: ^ and !
+    await p.keyboard.press('Escape')
+    await p.keyboard.type('2^10=')
+    check(L + 'keyboard 2^10 = 1.024', await p.evaluate(R) == '1.024', await p.evaluate(R))
+    await p.keyboard.press('Escape')
+    await p.keyboard.type('5!=')
+    check(L + 'keyboard 5! = 120', await p.evaluate(R) == '120', await p.evaluate(R))
+    # History and the explanation keep the scientific text
+    await p.keyboard.press('Escape')
+    await keys('3', '0', 'sci:sin', '=')
+    check(L + 'History shows sin(30)', await p.evaluate("document.querySelector('.history-expression').textContent") == 'sin(30)')
+    check(L + 'explanation: sin(30) = 0,5', 'sin(30) = 0,5' in await p.evaluate("howData.steps.map(s=>s.text||s).join('|')"))
+    # the choice is remembered; Units keeps its own keypad
+    await p.reload()
+    await p.wait_for_timeout(300)
+    check(L + 'Scientific kept after reload', await p.locator('.sci-key').count() == 15)
+    await p.evaluate("switchMode('units')")
+    await p.wait_for_timeout(150)
+    check(L + 'Units has no scientific keys', await p.locator('.sci-key').count() == 0)
+    await p.evaluate("switchMode('calc')")
+    await p.wait_for_timeout(150)
+    await p.click('[data-bar="sci"]')
+    check(L + 'f(x) again: back to Basic', await p.locator('.sci-key').count() == 0)
+    check(L + 'no JavaScript errors', not p.errors, p.errors)
+    await p.context.close()
+
+
 async def phone(browser, url, lang, theme, size):
     p = await new_page(browser, url, lang, theme, phone=True, size=size)
     L = f'[phone {size[0]}x{size[1]} {lang} {theme}] '
@@ -236,8 +327,9 @@ async def phone(browser, url, lang, theme, size):
         await p.tap(f'.key[data-value="{key}"]')
     await p.tap('.key[data-action="equals"]')
     check(L + 'keypad works', await p.evaluate(R) == '8')
-    for m in ['calc', 'units', 'graph', 'vat', 'fuel', 'energy']:
-        await p.evaluate(f"switchMode('{m}')")
+    for m in ['calc', 'sci', 'units', 'graph', 'vat', 'fuel', 'energy']:
+        # 'sci' is the Calculator with the scientific keys on
+        await p.evaluate("switchMode('calc');if(!sciMode)toggleSci()" if m == 'sci' else f"switchMode('{m}')")
         await p.wait_for_timeout(200)
         # compared with the real screen size: a phone browser widens the page to fit content that is too wide
         fits = await p.evaluate("""([vw,vh])=>{const scroll=document.documentElement.classList.contains('page-scroll');
@@ -269,6 +361,7 @@ async def main():
         browser = await pw.chromium.launch()
         for lang, theme in [('en', 'dark'), ('el', 'light')]:
             await desktop(browser, url, lang, theme)
+            await scientific(browser, url, lang, theme)
         for lang, theme, size in [('en', 'dark', (390, 844)), ('el', 'light', (360, 740)), ('en', 'light', (820, 1180)),
                                   ('el', 'dark', (844, 390)), ('en', 'light', (740, 360))]:  # the last two: phones held sideways
             await phone(browser, url, lang, theme, size)
