@@ -1095,11 +1095,13 @@ async def sideways_and_chips(browser, url):
 
 
 async def press_feedback(browser, url):
-    """Pressing keys: they light up at once and fade after, Android phones tick (vibrate), iPhones tick through a hidden
-    switch (no vibrate there), and a fast double tap can't start selecting a key's label (iOS's magnifier bubble)."""
+    """Pressing keys, the same with a mouse and a finger: they light up at once, grow a little when held a moment, and fade
+    after. Android phones tick (vibrate); iPhones tick through an invisible switch over each key that the finger itself
+    taps (iOS 26.5+ ignores script-made clicks), no vibrate there. A fast double tap can't start selecting a key's label."""
     IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
-    for name, ua in [('Android', None), ('iPhone', IPHONE)]:
-        kw = dict(viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True)
+    scale = "(s=>{const m=getComputedStyle(document.querySelector(s)).transform;return m==='none'?1:+m.split('(')[1].split(',')[0]})"
+    for name, ua in [('desktop', None), ('Android', None), ('iPhone', IPHONE)]:
+        kw = dict(viewport={'width': 1280, 'height': 860}) if name == 'desktop' else dict(viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True)
         if ua:
             kw['user_agent'] = ua
         ctx = await browser.new_context(**kw)
@@ -1113,27 +1115,60 @@ async def press_feedback(browser, url):
         key = p.locator('#keypad [data-value="7"]')
         box = await key.bounding_box()
         x, y = box['x'] + box['width'] / 2, box['y'] + box['height'] / 2
-        await p.evaluate(f"(()=>{{const b=document.querySelector('#keypad [data-value=\"7\"]'),o={{bubbles:true,pointerType:'touch',clientX:{x},clientY:{y}}};b.dispatchEvent(new PointerEvent('pointerdown',o))}})()")
+        if name == 'desktop':
+            await p.mouse.move(x, y)
+            await p.mouse.down()
+        else:
+            await p.evaluate(f"(()=>{{const b=document.querySelector('#keypad [data-value=\"7\"]'),o={{bubbles:true,pointerType:'touch',clientX:{x},clientY:{y}}};b.dispatchEvent(new PointerEvent('pointerdown',o))}})()")
         lit = await p.evaluate("(()=>{const b=document.querySelector('#keypad [data-value=\"7\"]');return [b.classList.contains('pressed'),getComputedStyle(b,'::after').opacity]})()")
         check(L + 'a key lights up the moment it is touched', lit[0] and float(lit[1]) > 0.1, lit)
-        await p.evaluate("document.querySelector('#keypad [data-value=\"7\"]').dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerType:'touch'}))")
-        await p.wait_for_timeout(400)
-        check(L + 'and fades back after it is let go', not await p.evaluate("document.querySelector('#keypad [data-value=\"7\"]').classList.contains('pressed')"))
-        await p.tap('#themeButton')
-        await p.wait_for_timeout(150)
-        before = await p.evaluate("[window.__vib.length,document.querySelector('.haptic-switch input')?.checked??null]")
+        quick = await p.evaluate(scale + "('#keypad [data-value=\"7\"]')")
+        check(L + 'at first it only lights up (a quick tap does not grow or shrink)', abs(quick - 1) < 0.01, quick)
+        await p.wait_for_timeout(450)
+        held = await p.evaluate(scale + "('#keypad [data-value=\"7\"]')")
+        check(L + 'held a moment, it grows a little', 1.04 < held < 1.1, held)
+        if name == 'desktop':
+            await p.mouse.up()
+        else:
+            await p.evaluate("document.querySelector('#keypad [data-value=\"7\"]').dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerType:'touch'}))")
+        await p.wait_for_timeout(450)
+        after_up = await p.evaluate("(()=>{const b=document.querySelector('#keypad [data-value=\"7\"]');return [b.classList.contains('pressed'),getComputedStyle(b).transform]})()")
+        check(L + 'and settles back after it is let go', not after_up[0] and after_up[1] in ('none', 'matrix(1, 0, 0, 1, 0, 0)'), after_up)
+        if name == 'desktop':
+            check(L + 'no vibrate with a mouse', not await p.evaluate("window.__vib.length"))
+            check(L + 'no iPhone switches off iPhone', not await p.evaluate("document.querySelectorAll('.key-tick').length"))
+            await ctx.close()
+            continue
+        await p.evaluate("clearAll()")
+        before = await p.evaluate("[window.__vib.length,document.querySelector('#keypad [data-value=\"8\"] .key-tick input')?.checked??null]")
         await p.tap('#keypad [data-value="8"]')
-        after = await p.evaluate("[window.__vib.length,document.querySelector('.haptic-switch input')?.checked??null,document.querySelector('#result').textContent]")
+        after = await p.evaluate("[window.__vib.length,document.querySelector('#keypad [data-value=\"8\"] .key-tick input')?.checked??null,document.querySelector('#result').textContent]")
         if name == 'Android':
             check(L + 'a tap vibrates briefly', after[0] > before[0], [before, after])
+            check(L + 'no iPhone switches on Android', not await p.evaluate("document.querySelectorAll('.key-tick').length"))
         else:
-            check(L + 'a tap ticks through the hidden switch, no vibrate', after[1] is not None and after[1] != before[1] and after[0] == before[0], [before, after])
-        check(L + 'the tap still types the digit', after[2].endswith('8'), after)
+            check(L + "a tap toggles the key's own switch (the tick), no vibrate", before[1] is False and after[1] is True and after[0] == before[0], [before, after])
+            hit = await p.evaluate(f"document.elementFromPoint({x},{y}).className")
+            check(L + 'the finger lands on the switch label over the key', hit == 'key-tick', hit)
+        check(L + 'the tap types the digit once', after[2] == '8', after)
         if name == 'iPhone':
-            st = await p.evaluate("openThemeMenu();iosTick();themeMenuOpen()")
-            check(L + 'the tick is not a click anywhere else (an open menu stays open)', st)
-            await p.evaluate("closeThemeMenu()")
-        # (the theme menu closing here is the tap outside it; the tick itself must not count as another click)
+            await p.tap('#clearButton')
+            await p.tap('#keypad [data-value="5"]')
+            await p.wait_for_timeout(50)
+            st = await p.evaluate("""[document.querySelector('#result').textContent,document.querySelector('#clearButton').textContent,
+              [...document.querySelectorAll('#keypad button')].every(b=>b.querySelector(':scope>.key-tick input[switch]'))]""")
+            check(L + 'every key keeps its switch after re-labelling (C/AC), and its text is unchanged', st == ['5', 'C', True], st)
+            await p.evaluate("toggleSci()")
+            await p.tap('#keypad [data-sci="2nd"]')
+            await p.wait_for_timeout(50)
+            st = await p.evaluate("[document.querySelector('#keypad [data-sci=\"2nd\"]').classList.contains('on'),[...document.querySelectorAll('#keypad button')].every(b=>b.querySelector(':scope>.key-tick'))]")
+            check(L + 'keys drawn again (2nd) get their switches too', st == [True, True], st)
+            await p.evaluate("toggleSci()")
+            await p.tap('#themeButton')
+            await p.wait_for_timeout(150)
+            await p.tap('#keypad [data-value="2"]')
+            st = await p.evaluate("[themeMenuOpen(),document.querySelector('#result').textContent]")
+            check(L + 'a key tap still counts as a press outside the theme menu, and types once', st == [False, '52'], st)
         sel = await p.evaluate("""(()=>{const t=document.querySelector('#keypad [data-value="9"]').firstChild||document.querySelector('#keypad [data-value="9"]');
           const e=new Event('selectstart',{bubbles:true,cancelable:true});t.dispatchEvent(e);
           const i=document.createElement('input');document.body.appendChild(i);const f=new Event('selectstart',{bubbles:true,cancelable:true});i.dispatchEvent(f);i.remove();

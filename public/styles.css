@@ -69,8 +69,7 @@ input,select{-webkit-user-select:text;user-select:text}
 }
 .result.long-value{font-size:clamp(30px,8vw,54px);letter-spacing:-.035em}
 .keypad{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.key{border:0;border-radius:14px;height:68px;min-height:68px;background:var(--key);color:var(--text);font-size:22px;font-weight:450;cursor:pointer;transition:background .1s,transform .05s}
-.key:active{transform:scale(.96)}
+.key{border:0;border-radius:14px;height:68px;min-height:68px;background:var(--key);color:var(--text);font-size:22px;font-weight:450;cursor:pointer;transition:background .1s}
 .key:focus{outline:none;box-shadow:none}
 .key:focus-visible{outline:2px solid var(--accent2);outline-offset:1px}
 .key.utility,.key.operator{color:var(--accent2)}
@@ -112,8 +111,7 @@ html.landscape .tool-grid.kind-grid .tool-field span{white-space:nowrap;overflow
 .tool-field input:focus,.tool-field select:focus{border-color:var(--accent)}
 .tool-field input::placeholder{color:var(--muted);opacity:.42}
 .tool-keypad{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:56px;gap:6px;margin-top:7px;padding-top:7px;border-top:1px solid var(--border)}
-.tool-keypad button{width:100%;height:56px;min-width:0;border:0;border-radius:14px;background:var(--key);color:var(--text);font-size:20px;font-weight:450;cursor:pointer;transition:background .1s,transform .05s}
-.tool-keypad button:active{transform:scale(.96)}
+.tool-keypad button{width:100%;height:56px;min-width:0;border:0;border-radius:14px;background:var(--key);color:var(--text);font-size:20px;font-weight:450;cursor:pointer;transition:background .1s}
 .tool-keypad .tool-key-wide{grid-column:span 2}
 .tool-keypad .tool-utility{color:var(--accent2)}
 .hint{text-align:center;color:var(--muted);font-size:12px;margin:10px 10px 0;flex:0 0 auto}
@@ -200,7 +198,6 @@ html.landscape .tool-grid.kind-grid .tool-field span{white-space:nowrap;overflow
 }
 @media (hover:none) and (pointer:coarse){
   .key,.tool-keypad button,.secondary-button{-webkit-tap-highlight-color:transparent}
-  .key:active,.tool-keypad button:active{transform:none}
 }
 .seg-toggle{display:grid;grid-template-columns:repeat(var(--n,2),minmax(0,1fr));gap:5px;margin-top:10px;padding:4px;background:var(--card);border:1px solid var(--border);border-radius:13px}
 .seg-toggle button{min-width:0;min-height:38px;border:0;border-radius:9px;background:transparent;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer}
@@ -463,13 +460,21 @@ html.page-scroll body{touch-action:pan-y!important}
 /* Quick Calculator <-> Units button, left of the mode button */
 /* Hold ⌫ to clear everything: the key fills while held, then flashes */
 #keypad [data-action="backspace"],#keypad [data-g="back"]{-webkit-touch-callout:none}
-/* pressed: lights up at once, fades out after (ui.js setupPressFeedback); a layer of the text colour, so it works on
-   every key colour and theme */
-#keypad button{position:relative;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+/* pressed, the same with a mouse and a finger (ui.js setupPressFeedback): lights up at once (a layer of the text colour,
+   so it works on every key colour and theme) and, held a moment longer, grows a little over its neighbours; let go, it
+   fades and settles back. A quick tap only lights up: the grow waits .14s */
+#keypad button{position:relative;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;transition:background .1s,transform .2s cubic-bezier(.2,.8,.3,1)}
 #keypad button::after{content:'';position:absolute;inset:0;border-radius:inherit;background:var(--text);opacity:0;pointer-events:none;transition:opacity .22s ease-out}
+#keypad button.pressed{z-index:2;transform:scale(1.07);transition:background .1s,transform .18s cubic-bezier(.2,.8,.3,1) .14s}
 #keypad button.pressed::after{opacity:.14;transition:none}
-.haptic-switch{position:fixed;left:-100px;top:0;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none}
-#keypad .holding{background:color-mix(in srgb,var(--key) 55%,var(--accent))!important;transition:background .5s linear}
+@media (prefers-reduced-motion:reduce){
+  #keypad button.pressed{transform:none}
+}
+/* iPhone: the invisible switch over each key that the finger taps, for the haptic tick (ui.js addKeyTicks) */
+.key-tick{position:absolute;inset:0;z-index:1;border-radius:inherit;cursor:inherit;-webkit-tap-highlight-color:transparent}
+.key-tick input{position:absolute;width:1px;height:1px;margin:0;visibility:hidden;pointer-events:none}
+#keypad button:disabled .key-tick{display:none}
+#keypad button.holding{background:color-mix(in srgb,var(--key) 55%,var(--accent))!important;transition:background .5s linear,transform .18s cubic-bezier(.2,.8,.3,1) .14s}
 #keypad .held{background:var(--accent)!important;color:var(--on-accent)!important;transition:none}
 /* Units switched on: the ↔ button stays lit, like a pressed key */
 /* ---------- Theme and language changes ---------- */

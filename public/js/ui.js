@@ -248,33 +248,35 @@ const HOLD_KEYS=[
  {sel:'[data-action="backspace"],[data-g="back"]',run:()=>clearEverything()},
  {sel:'.key[data-value="-"]',when:()=>mode==='calc'||mode==='units',run:()=>{if(mode==='calc')negate();else toolKeyInput('negate')}}
 ];
-// Pressing a key: it lights up the moment it's touched and fades as it's let go (.pressed, every device), and on a
-// phone it ticks. Android: navigator.vibrate. iPhone has no vibrate for websites, but toggling a hidden <input switch>
-// plays the system's haptic tick (iOS 18+; older ones just do nothing). It needs the tap itself, so it runs on click.
+// Pressing a key: it lights up the moment it's touched, grows a little if held a moment (styles.css) and fades as it's
+// let go (.pressed, the same with a mouse and a finger), and on a phone it ticks. Android: navigator.vibrate.
+// iPhone has no vibrate for websites, but its own switch (<input type="checkbox" switch>, iOS 18+) ticks when toggled,
+// and since iOS 26.5 only when a finger does it (a click made by a script stays silent). So on iPhone every key holds an
+// invisible <label> over its whole face with a hidden switch inside (addKeyTicks): the tap lands on the label, the label
+// passes it to its switch (the tick), and the same click goes on up to the keypad as a press of the key.
 const IS_IOS=/iP(hone|od|ad)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-let hapticSwitch=null,lastPressTouch=false;
-function iosTick(){
- if(!hapticSwitch){
+function addKeyTicks(pad){
+ for(const b of pad.querySelectorAll('button')){
+  if(b.querySelector(':scope>.key-tick'))continue;
   const l=document.createElement('label'),i=document.createElement('input');
-  l.setAttribute('aria-hidden','true');l.className='haptic-switch';i.type='checkbox';i.setAttribute('switch','');i.tabIndex=-1;
-  l.appendChild(i);l.addEventListener('click',e=>e.stopPropagation());// a tick, not a click anything else should see
-  document.body.appendChild(l);hapticSwitch=l;
+  l.className='key-tick';l.setAttribute('aria-hidden','true');i.type='checkbox';i.setAttribute('switch','');i.tabIndex=-1;
+  i.addEventListener('click',e=>e.stopPropagation());// the label's click already is the key press
+  l.appendChild(i);b.appendChild(l);
  }
- hapticSwitch.click();
 }
 function setupPressFeedback(){
  const pad=$('#keypad');
  pad.addEventListener('pointerdown',e=>{
   const b=e.target.closest('button');if(!b||b.disabled)return;
-  lastPressTouch=e.pointerType!=='mouse';
   b.classList.add('pressed');b._pressedAt=performance.now();
-  if(lastPressTouch&&!IS_IOS){try{navigator.vibrate?.(8)}catch{}}
+  if(e.pointerType!=='mouse'&&!IS_IOS){try{navigator.vibrate?.(8)}catch{}}
  });
  // let go: fade back, after showing for at least a moment even on the quickest tap
  const release=e=>{const b=e.target.closest?.('button.pressed');if(!b)return;
   setTimeout(()=>b.classList.remove('pressed'),Math.max(0,90-(performance.now()-(b._pressedAt||0))))};
  ['pointerup','pointercancel','pointerleave'].forEach(t=>pad.addEventListener(t,release,true));
- pad.addEventListener('click',e=>{if(IS_IOS&&lastPressTouch&&e.target.closest('button'))iosTick()},true);
+ // keys are re-drawn often (modes, 2nd, C/AC): every new or re-labelled key gets its switch back
+ if(IS_IOS){addKeyTicks(pad);new MutationObserver(()=>addKeyTicks(pad)).observe(pad,{childList:true,subtree:true})}
 }
 // iOS: a fast double tap starts selecting the key's label and shows the magnifier bubble. Nothing outside the fields is
 // meant to be selected (body is user-select:none), so selection never starts there.
