@@ -106,7 +106,8 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   landscape a kind's fields share one row (`.kind-grid`, `--f`, one-line labels); the tip always does (`ONE_ROW_KINDS`). `FIELD_TYPE` marks fields that aren't plain numbers:
   'count' (People: digits only; the , key is dimmed), 'int' (Dates' days: may be negative; the , key becomes ±),
   'date' (the device's own date picker, `<input type="date">`, value YYYY-MM-DD, not on the keypad), 'ip'/'mask'
-  (`dottedField`: digits and dots, each part ≤ 255, checked by `dottedKey` and on keyboard input; the , key types a dot;
+  (`dottedField`: digits and dots, each part ≤ 255, via `dottedKey`, which adds the dot itself after a third digit or
+  before a digit that can't fit, and ignores a dot typed right after one; the , key types a dot;
   / in the address jumps to the prefix, a pasted 10.0.0.5/16 fills both). A tip split between people is rounded
   up to the cent (`ratCentsUp`) so the shares cover the bill. Interest (`loanNumbers`, floats like Fuel/Energy): yearly
   rate, interest monthly, months = round(years × 12) up to 1200; a loan's payment is rounded to cents; savings deposits

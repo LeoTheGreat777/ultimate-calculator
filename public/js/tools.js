@@ -400,8 +400,13 @@ $('#toolPanel').addEventListener('keydown',e=>{
  if(dottedField(e.target.id)&&/^[.,]$/.test(e.key)){
   // a dot where the cursor is, if one fits there (the window's handler would type a comma)
   e.preventDefault();e.stopPropagation();const i=e.target,a=i.selectionStart??i.value.length,b=i.selectionEnd??a;
-  if(dottedKey(i.value.slice(0,a),'.')===null){refuseKey(i);return}
+  const before=i.value.slice(0,a);if(before.endsWith('.')&&a===b)return;// one was already there
+  if(dottedKey(before,'.')===null){refuseKey(i);return}
   i.setRangeText('.',a,b,'end');i.dispatchEvent(new Event('input',{bubbles:true}));return;
+ }
+ if(dottedField(e.target.id)&&/^\d$/.test(e.key)){
+  // a digit typed at the end goes through dottedKey, so the dots come by themselves here too
+  const i=e.target;if(i.selectionStart===i.value.length&&i.selectionEnd===i.value.length){e.preventDefault();setActiveToolInput(i);toolKeyInput(e.key);return}
  }
  if(e.key==='/'&&e.target.id==='netIp'){e.preventDefault();const n=$('#netPrefix');if(n){n.focus();n.select();setActiveToolInput(n)}return}// 192.168.1.10/24
  if((noDecimalField(e.target.id)&&/^[.,]$/.test(e.key))||(noSignField(e.target.id)&&e.key==='-')){e.preventDefault();refuseKey(e.target);return}

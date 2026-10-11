@@ -6,6 +6,16 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.12.1 – 2026-10-11
+
+### Changed
+- Subnet: the dots in an address or mask appear by themselves after three digits, or when the next digit can't fit
+  (19216811 becomes 192.168.1.1), instead of the key being refused. Typing the dots yourself still works.
+
+### Fixed
+- Greek: "Milliliter" in Units is now "Χιλιοστόλιτρο", and Subnet's first and last host read "Πρώτη IP" / "Τελευταία IP".
+- English: a Graph function that can't be read had an empty tooltip.
+
 ## 0.12.0 – 2026-10-11
 
 ### Added

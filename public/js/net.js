@@ -31,18 +31,20 @@ function ipKind(n){
  return 'netPublic';
 }
 const ipClass=n=>{const a=n>>>24;return a<128?'A':a<192?'B':a<224?'C':a<240?'D':'E'};
-// What a key does to a dotted field: the new text, or null to refuse it (a fifth part, a part over 255, ..).
+// What a key does to a dotted field: the new text, or null to refuse it. The dots come by themselves: after a third
+// digit, and before a digit that can't belong to the part (192 then 1 is 192.1, 30 then 0 is 30.0, 0 then 1 is 0.1).
+// A dot pressed right after one is ignored, so typing it out of habit does no harm.
 function dottedKey(value,key){
+ const parts=value.split('.'),part=parts[parts.length-1],more=parts.length<4;
  if(key==='.'||key===','){
-  if(!value||value.endsWith('.')||(value.match(/\./g)||[]).length>=3)return null;
-  return value+'.';
+  if(!value)return null;
+  if(value.endsWith('.'))return value;
+  return more?value+'.':null;
  }
- if(/^\d$/.test(key)){
-  const part=(value.split('.').pop()||'')+key;
-  if(part.length>3||+part>255||(part.length>1&&part[0]==='0'))return null;
-  return value+key;
- }
- return null;
+ if(!/^\d$/.test(key))return null;
+ const next=part+key,fits=next.length<=3&&+next<=255&&!(next.length>1&&next[0]==='0');
+ if(!fits)return more&&part!==''?value+'.'+key:null;
+ return value+key+(next.length===3&&more?'.':'');
 }
 // Always the same cells (– until there's a result), so the layout doesn't jump when one appears.
 const NET_CELLS={subnet:['netMask','netWildcard','netFirst','netLast','netBroadcast','netHostsLbl'],hosts:['netMask','netWildcard','netBlock','netSpare']};

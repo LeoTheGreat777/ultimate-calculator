@@ -52,7 +52,7 @@ let graph=graphDefault();
 let graphTrace=null,graphPts=[],graphRaf=0;
 function gText(k){
  const el={zoomIn:'Μεγέθυνση',zoomOut:'Σμίκρυνση',fit:'Προσαρμογή ύψους στην καμπύλη',home:'Αρχική θέση',points:'Σημεία',save:'Αποθήκευση εικόνας',add:'Πρόσθεσε συνάρτηση',del:'Διαγραφή',clearFn:'Καθαρισμός',empty:'γράψε μια συνάρτηση του x',invalid:'Δεν καταλαβαίνω τον τύπο',root:'Ρίζα',min:'Ελάχιστο',max:'Μέγιστο',yint:'Τομή με τον άξονα y',cross:'Τομή',pointsTitle:'Σημεία του γραφήματος',none:'Δεν βρέθηκαν σημεία στο κομμάτι που φαίνεται.',pointsNote:'Τα σημεία αφορούν το κομμάτι του γραφήματος που φαίνεται τώρα. Μετακίνησε ή άλλαξε ζουμ για να δεις άλλα.',saved:'Αποθηκεύτηκε'};
- const en={zoomIn:'Zoom in',zoomOut:'Zoom out',fit:'Fit height to the curve',home:'Reset view',points:'Key points',save:'Save image',add:'Add function',del:'Delete',clearFn:'Clear',empty:'type a function of x',invalid:"I can't read this formula",root:'Root',min:'Minimum',max:'Maximum',yint:'y-intercept',cross:'Intersection',pointsTitle:'Key points',none:'No points in the part that is visible.',pointsNote:'Points cover the part of the graph you can see now. Move or zoom to see others.',saved:'Saved'};
+ const en={invalid:'Can’t read this function',zoomIn:'Zoom in',zoomOut:'Zoom out',fit:'Fit height to the curve',home:'Reset view',points:'Key points',save:'Save image',add:'Add function',del:'Delete',clearFn:'Clear',empty:'type a function of x',invalid:"I can't read this formula",root:'Root',min:'Minimum',max:'Maximum',yint:'y-intercept',cross:'Intersection',pointsTitle:'Key points',none:'No points in the part that is visible.',pointsNote:'Points cover the part of the graph you can see now. Move or zoom to see others.',saved:'Saved'};
  return (lang==='el'?el:en)[k];
 }
 
