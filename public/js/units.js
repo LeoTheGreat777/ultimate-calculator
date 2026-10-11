@@ -38,9 +38,12 @@ function formatUnitDisplayValue(value){
 function renderUnitsDisplay(){
  const d=$('#calculatorDisplay');
  d.className='display-wrap unit-display';
- d.innerHTML='<div class="unit-display-toolbar"><select id="unitCategory" class="conversion-category">'+Object.keys(units).map(x=>'<option value="'+x+'">'+esc(t(x))+'</option>').join('')+'</select><button id="unitSwap" class="conversion-swap" type="button" aria-label="'+esc(t('swap'))+'">⇄</button></div><div class="unit-rows"><div class="unit-row" data-unit-row="from"><input id="unitValueFrom" class="unit-value" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" aria-label="'+esc(t('from'))+'"><select id="unitFrom" class="unit-unit"></select></div><div class="unit-row" data-unit-row="to"><input id="unitValueTo" class="unit-value" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" aria-label="'+esc(t('to'))+'"><select id="unitTo" class="unit-unit"></select></div></div>';
+ // The Currency tab is this screen with the category fixed (no menu; the rate and its date instead, currency.js).
+ const cur=unitView==='currency',cats=cur?['currency']:Object.keys(units).filter(x=>x!=='currency');
+ d.innerHTML='<div class="unit-display-toolbar'+(cur?' currency':'')+'"><select id="unitCategory" class="conversion-category'+(cur?' hidden':'')+'">'+cats.map(x=>'<option value="'+x+'">'+esc(t(x))+'</option>').join('')+'</select>'+(cur?'<button id="rateInfo" class="rate-info" type="button" aria-label="'+esc(t('ratesRefresh'))+'" title="'+esc(t('ratesRefresh'))+'"></button>':'')+'<button id="unitSwap" class="conversion-swap" type="button" aria-label="'+esc(t('swap'))+'">⇄</button></div><div class="unit-rows"><div class="unit-row" data-unit-row="from"><input id="unitValueFrom" class="unit-value" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" aria-label="'+esc(t('from'))+'"><select id="unitFrom" class="unit-unit"></select></div><div class="unit-row" data-unit-row="to"><input id="unitValueTo" class="unit-value" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" aria-label="'+esc(t('to'))+'"><select id="unitTo" class="unit-unit"></select></div></div>';
  const cat=$('#unitCategory');
- cat.value=window._unitCategory||'length';
+ cat.value=cur?'currency':window._unitCategory||'length';
+ $('#rateInfo')?.addEventListener('click',()=>refreshRates(true));
  populateUnits(true);
 
  const bindInput=input=>{
@@ -108,7 +111,7 @@ function renderUnitsDisplay(){
 function formatUnitResult(s){
  const raw=String(s??'').trim();
  if(!/^-?\d+(?:\.\d+)?$/.test(raw))return formatUnitDisplayValue(raw);
- const r=ratFromString(raw);if(r.n===0n)return '0';
+ const r=ratFromString(raw);if(unitView==='currency'&&mode==='units')return formatMoneyValue(r);if(r.n===0n)return '0';
  // like the calculator's results: at most 16 significant digits, else the power-of-ten form (formatRat)
  const intDigits=raw.replace(/^-/,'').split('.')[0].replace(/^0+/,'').length;
  if(intDigits>MAX_SHOWN_DIGITS)return ratScientific(r);
@@ -140,6 +143,7 @@ function updateUnitsDisplay(){
  if(!from||!to)return;
  if(mode==='units'&&$('#clearButton'))$('#clearButton').textContent=unitEntry()?'C':'AC';
  from.value=unitSideText('from');
+ if(unitView==='currency'){renderRateInfo();shortCurrencyLabels()}
  to.value=unitSideText('to');
  saveTools();
  const active=unitActiveInput==='to'?'to':'from';
@@ -167,6 +171,7 @@ function unitConvertValue(category,value,from,to){
    }
    return to==='°C'?v:to==='°F'?ratAdd(ratMul(v,ratFromString('1.8')),ratFromString('32')):ratAdd(v,ratFromString('273.15'));
  }
+ if(category==='currency')return ratMul(value,currencyRate(from,to));
  const factors=units[category]||{};
  return ratMul(value,ratDiv(unitFactor(factors[from]),unitFactor(factors[to])));
 }

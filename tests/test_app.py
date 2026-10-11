@@ -45,6 +45,8 @@ def serve(directory=PUBLIC):
 SEED = "if(!sessionStorage.getItem('seeded')){localStorage.clear();localStorage.setItem('uc-defaults','1');" \
        "localStorage.setItem('uc-lang','%s');localStorage.setItem('uc-theme','%s');sessionStorage.setItem('seeded','1')}"
 R = "document.querySelector('#result').textContent"
+# Currency: fixed rates instead of the live ones (Frankfurter, the ECB's daily rates)
+RATES_JSON = '{"amount":1.0,"base":"EUR","date":"2026-10-09","rates":{"USD":1.1206,"GBP":0.84763,"JPY":177.34,"CHF":0.9313,"TRY":55.1033}}'
 X = "document.querySelector('#expression').textContent"
 
 
@@ -52,6 +54,8 @@ async def new_page(browser, url, lang='en', theme='dark', phone=False, size=None
     w, h = size or ((390, 844) if phone else (1280, 860))
     ctx = await browser.new_context(viewport={'width': w, 'height': h}, is_mobile=phone, has_touch=phone)
     await ctx.add_init_script(SEED % (lang, theme))
+    await ctx.route('https://api.frankfurter.dev/**', lambda r: r.fulfill(status=200, content_type='application/json', body=RATES_JSON,
+                                                                          headers={'Access-Control-Allow-Origin': '*'}))
     page = await ctx.new_page()
     page.errors = []
     page.on('pageerror', lambda e: page.errors.append(str(e)))
@@ -346,6 +350,22 @@ async def desktop(browser, url, lang, theme):
     st = [await p.evaluate(R), await p.evaluate(X)]
     check(L + 'Subnet: 50 hosts need a /26', st == ['/26', t('255.255.255.192 · 62 hosts', '255.255.255.192 · 62 συσκευές', lang)], st)
     await p.evaluate("setToolKind('net','subnet')")
+    # Currency: the calculator's number comes along; ECB rates (stubbed above)
+    await p.evaluate("switchMode('calc')")
+    await calc(p, '100')
+    await p.evaluate("switchMode('currency')")
+    await p.wait_for_function("!rateInfo.classList.contains('loading')")
+    st = await p.evaluate("[currentTab(),unitValueFrom.value,unitValueTo.value,unitFrom.value,unitTo.value,rateInfo.textContent.includes('09/10/2026'),document.querySelector('.mode-tab.active').dataset.mode]")
+    check(L + 'Currency: 100 EUR is 112,06 USD', st == ['currency', '100,00', '112,06', 'EUR', 'USD', True, 'currency'], st)
+    await p.evaluate("unitTo.value='JPY';unitTo.dispatchEvent(new Event('change'))")
+    check(L + 'Currency: to JPY', await p.evaluate('unitValueTo.value') == '17.734,00', await p.evaluate('unitValueTo.value'))
+    await p.click('#unitSwap')
+    await p.click('#unitValueFrom')
+    await p.keyboard.type('1')
+    check(L + 'Currency: 1 JPY in EUR shows enough decimals', await p.evaluate('[unitValueFrom.value,unitValueTo.value]') == ['1', '0,005639'], await p.evaluate('[unitValueFrom.value,unitValueTo.value]'))
+    await p.evaluate("switchMode('units')")
+    st = await p.evaluate("[[...unitCategory.options].some(o=>o.value==='currency'),document.querySelector('.mode-tab.active').dataset.mode,!document.getElementById('rateInfo')]")
+    check(L + 'Currency: Units keeps its own categories', st == [False, 'units', True], st)
     # changing mode clears the mode you leave (only Calculator -> Units carries the number)
     await p.evaluate("switchMode('vat')")
     await p.click('.tool-key[data-action="clear-all"]')
@@ -628,7 +648,7 @@ async def phone(browser, url, lang, theme, size):
         await p.tap(f'.key[data-value="{key}"]')
     await p.tap('.key[data-action="equals"]')
     check(L + 'keypad works', await p.evaluate(R) == '8')
-    for m in ['calc', 'sci', 'units', 'graph', 'vat', 'pct', 'tip', 'loan', 'savings', 'dates', 'fuel', 'energy', 'net']:
+    for m in ['calc', 'sci', 'units', 'currency', 'graph', 'vat', 'pct', 'tip', 'loan', 'savings', 'dates', 'fuel', 'energy', 'net']:
         # 'sci' is the Calculator with the scientific keys on
         # 'tip' is Percent's tip, the kind with the most fields
         await p.evaluate("switchMode('calc');if(!sciMode)toggleSci()" if m == 'sci' else "switchMode('pct');setToolKind('pct','tip')" if m == 'tip'
@@ -711,6 +731,22 @@ async def offline(browser):
     shutil.rmtree(folder, ignore_errors=True)
 
 
+async def currency_offline(browser, url):
+    """No internet: Currency still converts, with the rates shipped with the app, and says it's offline."""
+    ctx = await browser.new_context(viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True)
+    await ctx.add_init_script(SEED % ('en', 'dark'))
+    await ctx.route('https://api.frankfurter.dev/**', lambda r: r.abort())
+    p = await ctx.new_page()
+    await p.goto(url)
+    await p.evaluate("switchMode('currency')")
+    await p.wait_for_function("!rateInfo.classList.contains('loading')")
+    for k in ['1', '0']:
+        await p.tap(f'.key[data-value="{k}"]')
+    st = await p.evaluate("[unitValueTo.value!=='0',rateInfo.textContent.includes('offline'),unitTo.options[unitTo.selectedIndex].textContent]")
+    check('Currency offline: converts with the shipped rates and says offline', st == [True, True, 'USD'], st)
+    await ctx.close()
+
+
 async def main():
     url = serve()
     async with async_playwright() as pw:
@@ -724,6 +760,7 @@ async def main():
                                   ('el', 'dark', (844, 390)), ('en', 'light', (740, 360))]:  # the last two: phones held sideways
             await phone(browser, url, lang, theme, size)
         await offline(browser)
+        await currency_offline(browser, url)
         await browser.close()
     print(f'{sum(results)}/{len(results)} checks passed')
     sys.exit(0 if all(results) else 1)

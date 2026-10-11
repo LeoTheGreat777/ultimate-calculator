@@ -6,6 +6,17 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.13.0 – 2026-10-11
+
+### Added
+- **Currency** tab, next to Units: euro, dollar, pound, franc and about 30 more, with the European Central Bank's
+  official daily rates. It works like Units: two values, the ⇄ swap, and calculations inside a value. The rate and
+  its date show at the top (tap to update). Without internet it uses the last rates it downloaded. Going from the
+  Calculator to Currency brings the number along.
+
+### Changed
+- Subnet has a new icon (three linked computers). Alt+3 now opens Currency, so Alt+1–9 reaches up to Fuel.
+
 ## 0.12.1 – 2026-10-11
 
 ### Changed

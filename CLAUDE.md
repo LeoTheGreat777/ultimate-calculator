@@ -1,6 +1,6 @@
 # Ultimate Calculator – notes for Claude
 
-An all-in-one calculator web app: calculator, graph, unit converter, VAT, percent/discount/tip, interest (loan/savings), dates, fuel, energy and subnet (IPv4) tools.
+An all-in-one calculator web app: calculator, graph, unit converter, currency converter, VAT, percent/discount/tip, interest (loan/savings), dates, fuel, energy and subnet (IPv4) tools.
 Plain HTML/CSS/vanilla JS, no framework, no build step, no backend. English and Greek; new users start
 in English and dark theme (people who used the app before keep Greek / their theme, see the script in the
 `<head>` of `public/index.html`). Numbers always use Greek formatting: `1.234,56`.
@@ -48,6 +48,7 @@ Everything the app serves is in `public/` (the web root for both GitHub Pages an
 | `calculator.js` | calculator keys (`digit`, `operator`, brackets, `negate`, `equals`, C/AC), display, explanation |
 | `history.js` | saved calculations, the History sheet and its gestures |
 | `units.js` | unit data and names, conversion, the two values, `unitKeyInput` |
+| `currency.js` | Currency: ECB rates (fetched, saved, shipped snapshot), `units.currency`, money and rate formats, the rate line |
 | `tools.js` | VAT, Percent, Interest, Fuel, Energy: fields, saved values, calculations, switches, `toolKeyInput`, tool field events |
 | `dates.js` | Dates: day numbers, date pickers, Orthodox Easter and Greek public holidays, working days, the details list, the Working days chip |
 | `net.js` | Subnet: IPv4 parsing (`parseIp`, `parsePrefix` takes /24 or a mask), `dottedKey`, the details grid, the Subnet calculations |
@@ -127,7 +128,7 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   go, in every mode (Percent, Interest, Dates: also changing kind; Graph goes back to `graphDefault`). Only Calculator -> Units carries
   the number. Kept: choices (units picked, VAT add/remove, the kinds, Deg/Rad, f(x)), History, the fuel log. Typed values are
   not saved across visits; `saveTools`/`loadTools` keep only those choices. AC clears a tool.
-- **Storage:** all in the browser (`uc-history`, `uc-tools`, `uc-fuel-log`, `uc-lang`,
+- **Storage:** all in the browser (`uc-history`, `uc-tools`, `uc-fuel-log`, `uc-rates`, `uc-lang`,
   `uc-theme`). Use `store.get/set` – localStorage can throw.
 - **Tool fields on a computer** edit like text boxes: a focused field keeps the browser's own Backspace, Delete and
   cursor (selection respected); the global handler only takes over when no field has the focus (keys go to the
@@ -147,7 +148,7 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   stays exact where the answer is exact and rounds floats to 15 digits otherwise. Shown with superscripts and sin⁻¹
   (`sciPretty`). Keyboard: ^ and !.
 - **Modes are tabs:** a strip of tabs at the top of the card (`MODE_LABELS`, `renderModeTabs`, `switchMode`), one tap
-  each, scrolling sideways when they don't fit; Alt+1…9 on a keyboard (the tenth tab, Subnet, has none). When they don't all fit, a slim bar under them
+  each, scrolling sideways when they don't fit; Alt+1…9 on a keyboard (Energy and Subnet, the last two, have none). When they don't all fit, a slim bar under them
   (`.tabs-scrollbar`, `syncTabEdges`, `flashTabsBar`) shows while they move and briefly on start; it can be dragged
   or pressed (`setupTabsBar`), spans the whole strip; with a mouse it shows while the mouse is over the tabs or its strip and
   fades out shortly after (the tabs can be mouse-dragged too). Phones keep their overscroll bounce; past an end (negative/over-max `scrollLeft`, or `tabsPull` measured from
@@ -155,6 +156,13 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   ‹ › buttons appear on hover at the edges that have more tabs. Add a new mode to `MODE_LABELS`, `ICONS`
   and `MODE_TRANSLATIONS`. Units is its own tab after Calculator. Going Calculator -> Units moves the calculator's
   number into the Units value last typed in (`unitSource`) and resets the calculator; nothing moves back.
+- **Currency** is the Units mode with `unitView==='currency'` (core.js): tab id `currency`, `mode` stays `'units'`;
+  `currentTab()` gives the tab on screen (tabs, Tips use it), `switchMode('currency')` sets the view. The category menu
+  is hidden (Units' own menu leaves `currency` out) and `#rateInfo` shows the pair's rate and the rates' date; tap
+  to update. Rates (currency.js): ECB reference rates per euro from `https://api.frankfurter.dev/v1/latest` (CORS),
+  fetched on entering the tab and on coming back to it, at most hourly; saved in `uc-rates`; `RATES_SNAPSHOT` before
+  the first fetch (update it now and then). Strings, converted with fractions (`currencyRate`). Values show as money
+  (`formatMoneyValue`: 2 decimals, more under 1); on phones the closed menus show only the code. Tests stub the URL.
 - **Big screens:** on large desktop screens the whole app is scaled with CSS `zoom` on `<html>` (`applyUiZoom`,
   `window.__uiZoom`, CSS var `--z`). Viewport units must be written `calc(100dvh / var(--z,1))`, and any code that
   turns screen coordinates (clientX/Y, getBoundingClientRect, innerHeight) into CSS sizes must divide by

@@ -143,7 +143,7 @@ function setMode(next){
  syncModeTabs();
 }
 // The modes, one tap each: a strip of tabs at the top of the card (scrolls sideways when they don't all fit).
-const MODE_LABELS=['calc','units','graph','vat','pct','loan','dates','fuel','energy','net'];
+const MODE_LABELS=['calc','units','currency','graph','vat','pct','loan','dates','fuel','energy','net'];
 function renderModeTabs(){
  const track=$('#modeTabs .mode-tabs-track');if(!track)return;
  track.innerHTML=MODE_LABELS.map(m=>'<button class="mode-tab" role="tab" type="button" data-mode="'+m+'"><span class="mode-tab-icon" aria-hidden="true">'+modeIcon(m)+'</span><span class="mode-tab-label">'+esc(modeText(m))+'</span></button>').join('');
@@ -154,7 +154,7 @@ function syncModeTabs(instant){
  const track=$('#modeTabs .mode-tabs-track');if(!track)return;
  if(!track.children.length){renderModeTabs();return}
  let active=null;
- [...track.children].forEach(b=>{const on=b.dataset.mode===mode;b.classList.toggle('active',on);b.setAttribute('aria-selected',String(on));b.tabIndex=on?0:-1;if(on)active=b});
+ [...track.children].forEach(b=>{const on=b.dataset.mode===currentTab();b.classList.toggle('active',on);b.setAttribute('aria-selected',String(on));b.tabIndex=on?0:-1;if(on)active=b});
  if(active){
   const pad=24,left=Math.min(Math.max(track.scrollLeft,active.offsetLeft+active.offsetWidth-track.clientWidth+pad),active.offsetLeft-pad);
   track.scrollTo({left:Math.max(0,left),behavior:instant||reducedMotion()?'auto':'smooth'});
@@ -223,7 +223,9 @@ function flashTabsBar(ms=1200){const nav=$('#modeTabs');if(!nav||nav.classList.c
 // Choosing a mode. Calculator -> Units moves the calculator's number into Units (into the value you last typed in
 // there) and the calculator starts fresh; nothing comes back the other way (Units does its own math).
 function switchMode(next){
- if(next===mode){syncModeTabs();return}
+ if(next===currentTab()){syncModeTabs();return}
+ // Currency is the Units mode showing currencies: the tab sets unitView, the mode is 'units'
+ const tab=next;next=tab==='currency'?'units':tab;
  if(mode==='calc'&&next==='units'){
   const v=calcNumberForUnits();
   if(v!==null){
@@ -233,7 +235,9 @@ function switchMode(next){
   }
  }
  resetModeInput(mode);
+ if(next==='units')unitView=tab==='currency'?'currency':'units';
  setMode(next);
+ if(tab==='currency')refreshRates();
 }
 // Changing mode starts the one you leave over: the numbers typed and the results go, so a tab is a quick way to clear.
 // Graph goes back to its example function. Choices stay (units picked, VAT add/remove, Percent's kind, Deg/Rad, f(x)),
@@ -381,5 +385,5 @@ setupTabsBar();
 // a mouse wheel over the tabs scrolls them sideways (when they don't all fit)
 $('#modeTabs').addEventListener('wheel',e=>{const t=$('#modeTabs .mode-tabs-track');if(t.scrollWidth<=t.clientWidth)return;e.preventDefault();t.scrollLeft+=Math.abs(e.deltaY)>Math.abs(e.deltaX)?e.deltaY:e.deltaX},{passive:false});
 // arrow keys move between tabs when one has keyboard focus
-$('#modeTabs').addEventListener('keydown',e=>{if(e.key!=='ArrowLeft'&&e.key!=='ArrowRight')return;e.preventDefault();e.stopPropagation();const i=MODE_LABELS.indexOf(mode),n=MODE_LABELS[Math.max(0,Math.min(MODE_LABELS.length-1,i+(e.key==='ArrowRight'?1:-1)))];switchMode(n);requestAnimationFrame(()=>$('#modeTabs .mode-tab.active')?.focus())});
+$('#modeTabs').addEventListener('keydown',e=>{if(e.key!=='ArrowLeft'&&e.key!=='ArrowRight')return;e.preventDefault();e.stopPropagation();const i=MODE_LABELS.indexOf(currentTab()),n=MODE_LABELS[Math.max(0,Math.min(MODE_LABELS.length-1,i+(e.key==='ArrowRight'?1:-1)))];switchMode(n);requestAnimationFrame(()=>$('#modeTabs .mode-tab.active')?.focus())});
 window.addEventListener('resize',()=>syncModeTabs(true));

@@ -17,6 +17,11 @@ const HELP={
   ['Αν μια πράξη δεν γίνεται, όπως 8 ÷ 0, φαίνεται ο λόγος και η πράξη μένει: διόρθωσέ την με ⌫ ή πάτα AC. Μια μεγάλη πράξη, σύρε την οθόνη για να δεις την αρχή της.','If a calculation can\'t be done, like 8 ÷ 0, the reason shows and the calculation stays: fix it with ⌫ or press AC. Swipe a long calculation on the display to see its start.'],
   ['Μετά από ένα αποτέλεσμα, το ? δείχνει βήμα βήμα πώς βγήκε. Στο Ιστορικό, πάτα έναν υπολογισμό για να τον ξαναφέρεις.','After a result, ? shows step by step how it was worked out. In History, tap a calculation to bring it back.']],
   keys:[[['0–9'],'Αριθμοί','Numbers'],[['+','−','×','÷'],'Πράξεις (και * /)','Operators (also * /)'],[[',','.'],'Υποδιαστολή','Decimal point'],[['(',')'],'Παρενθέσεις','Parentheses'],[['%'],'Ποσοστό','Percent'],[['^'],'Δύναμη','Power'],[['!'],'Παραγοντικό','Factorial'],[['F9'],'Αλλαγή προσήμου (±)','Change sign (±)'],[['Enter','='],'Αποτέλεσμα','Result'],[['Backspace'],'Σβήνει την επιλογή ή το ψηφίο πριν τον κέρσορα','Delete the selection, or the digit before the cursor'],[['−'],'Αλλάζει το πρόσημο','Change the sign'],[['Delete'],'Σβήνει τον αριθμό που γράφεις (C)','Clear the number you are typing (C)'],[['Esc'],'Καθαρίζει την πράξη (AC)','Clear the calculation (AC)'],[['Alt','1–9'],'Αλλαγή λειτουργίας','Switch mode'],[['?'],'Αυτές οι συμβουλές','These tips']]},
+ currency:{tips:[
+  ['Πάτα την πάνω ή την κάτω τιμή για να γράψεις εκεί, και διάλεξε νόμισμα από το μενού δίπλα. Η άλλη τιμή μετατρέπεται αμέσως. Το ⇄ τα αλλάζει θέση.','Tap the top or bottom value to type there, and pick the currency from the menu beside it. The other value converts right away. ⇄ swaps them.'],
+  ['Οι ισοτιμίες είναι οι επίσημες της Ευρωπαϊκής Κεντρικής Τράπεζας, που βγαίνουν κάθε εργάσιμη γύρω στις 17:00. Πάνω φαίνονται η ισοτιμία και η ημερομηνία της. Πάτα τη για νέα ενημέρωση.','The rates are the European Central Bank’s official ones, published every working day around 17:00 Greek time. The rate and its date show at the top. Tap it to update.'],
+  ['Χωρίς σύνδεση χρησιμοποιούνται οι τελευταίες ισοτιμίες που κατέβηκαν. Οι τράπεζες και τα ανταλλακτήρια χρεώνουν συνήθως λίγο παραπάνω.','Offline, the last rates downloaded are used. Banks and exchange offices usually charge a little more.'],
+  ['Μπορείς να κάνεις πράξεις μέσα στην τιμή, π.χ. 120 + 35. Από την Αριθμομηχανή, ο αριθμός που φαίνεται έρχεται εδώ.','You can calculate inside a value, e.g. 120 + 35. Coming from the Calculator, the number on screen comes along.']]},
  units:{tips:[
   ['Πάτα την πάνω ή την κάτω τιμή για να γράψεις εκεί. Η άλλη μετατρέπεται αμέσως.','Tap the top or bottom value to type there. The other one converts right away.'],
   ['Μπορείς να κάνεις πράξεις μέσα στην τιμή, με παρενθέσεις και ποσοστά, π.χ. (12 + 8) × 2.','You can calculate inside a value, with parentheses and percentages, e.g. (12 + 8) × 2.'],
@@ -72,12 +77,13 @@ const HELP={
   ['Για συσκευές που ανάβουν και σβήνουν μόνες τους, όπως το ψυγείο, οι ώρες είναι κατά προσέγγιση.','For devices that switch on and off by themselves, like a fridge, the hours are an estimate.'],
   ['Το κουμπί με τις στήλες δείχνει το κόστος ανά ημέρα, εβδομάδα, μήνα και χρόνο. Πάτα το αποτέλεσμα για να το αντιγράψεις.','The bars button shows the cost per day, week, month and year. Tap the result to copy it.']]}
 };
+HELP.currency.keys=HELP.units.keys;
 const HELP_TOOL_KEYS=[[['Tab'],'Επόμενο πεδίο','Next field'],[['Shift','Tab'],'Προηγούμενο πεδίο','Previous field'],[['0–9'],'Αριθμοί στο πεδίο','Type in the field'],[[',','.'],'Υποδιαστολή','Decimal point'],[['Backspace'],'Σβήνει την επιλογή ή το ψηφίο πριν τον κέρσορα','Delete the selection, or the digit before the cursor'],[['−'],'Αλλάζει το πρόσημο','Change the sign'],[['Esc'],'Κλείνει ανοιχτά παράθυρα','Close open windows'],[['Alt','1–9'],'Αλλαγή λειτουργίας','Switch mode'],[['?'],'Αυτές οι συμβουλές','These tips']];
 const hasKeyboard=()=>matchMedia('(hover:hover) and (pointer:fine)').matches;
 function syncHelpButton(){const l=$('#helpLabel');if(l)l.textContent=t('tips')}
 function showHelp(){
- const h=HELP[mode]||HELP.calc,i=lang==='el'?0:1,keys=h.keys||HELP_TOOL_KEYS;
- $('#howTitle').textContent=t('tips')+' · '+modeText(mode);
+ const tab=currentTab(),h=HELP[tab]||HELP.calc,i=lang==='el'?0:1,keys=h.keys||HELP_TOOL_KEYS;
+ $('#howTitle').textContent=t('tips')+' · '+modeText(tab);
  $('#howContent').innerHTML='<div class="help"><section class="help-section"><ul class="help-tips">'+h.tips.map(x=>'<li>'+esc(x[i])+'</li>').join('')+'</ul></section>'+
   (hasKeyboard()?'<section class="help-section"><h3 class="help-heading">'+esc(t('keyboard'))+'</h3><ul class="help-keys">'+keys.map(([k,el,en])=>'<li><span class="help-caps">'+k.map(x=>'<kbd>'+esc(x)+'</kbd>').join('')+'</span><span>'+esc(i?en:el)+'</span></li>').join('')+'</ul></section>':'')+'</div>';
  $('#howModal').classList.add('help-open');$('#howModal').classList.remove('hidden');

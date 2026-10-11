@@ -688,3 +688,12 @@ html.landscape .calculator-card.sci-on .bottom-actions{display:none}
 /* a phone held sideways has no room for them: the range and the rest are under ? */
 html.landscape .calculator-card.mobile-tool .net-details{display:none}
 
+
+/* Currency: the rate and its date where Units has its category menu; tap it to update */
+.rate-info{flex:1;min-width:0;min-height:38px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:1px;padding:3px 10px;border:1px solid var(--border);border-radius:12px;background:var(--card);color:var(--text);font:inherit;text-align:left;cursor:pointer}
+.rate-info .rate-pair{font-size:13px;font-weight:700;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rate-info .rate-date{font-size:11px;color:var(--muted);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rate-info.loading .rate-date{animation:ratePulse 1s ease-in-out infinite alternate}
+@keyframes ratePulse{from{opacity:.45}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){.rate-info.loading .rate-date{animation:none}}
+.conversion-category.hidden{display:none}
