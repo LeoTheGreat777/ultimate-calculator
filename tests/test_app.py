@@ -1073,6 +1073,41 @@ async def field_limits(browser, url, phone):
     await p.context.close()
 
 
+async def screen_reader(browser, url):
+    """Screen readers: symbol keys have spoken names in the language on screen, the language button says the language,
+    chart bars are hidden from them, and a refused limit is announced."""
+    L = '[screen reader] '
+    p = await new_page(browser, url, 'en', 'dark')
+    names = "Object.fromEntries([...document.querySelectorAll('#keypad button')].map(b=>[b.textContent.trim(),b.getAttribute('aria-label')]))"
+    got = await p.evaluate(names)
+    check(L + 'calculator: + − × ÷ = % , have names', [got.get(k) for k in ['+', '−', '×', '÷', '=', '%', ',']] == ['Plus', 'Minus', 'Times', 'Divided by', 'Equals', 'Percent', 'Decimal comma'], got)
+    check(L + 'calculator: ⌫ keeps its own name', got.get('⌫') == 'Delete', got.get('⌫'))
+    check(L + 'language button says the language', await p.evaluate("langButton.getAttribute('aria-label')") == 'Language: English')
+    await p.evaluate("setLanguage('el')")
+    await p.wait_for_timeout(600)
+    got = await p.evaluate(names)
+    check(L + 'names follow a language switch', got.get('+') == 'Συν' and got.get('=') == 'Ίσον', got)
+    check(L + 'language button in Greek', await p.evaluate("langButton.getAttribute('aria-label')") == 'Γλώσσα: Ελληνικά')
+    await p.evaluate("setLanguage('en')")
+    await p.wait_for_timeout(600)
+    await p.evaluate("switchMode('graph')")
+    await p.wait_for_timeout(100)
+    got = await p.evaluate(names)
+    check(L + 'graph keys: √, x², π, |x|, ( ) named', [got.get(k) for k in ['√', 'x²', 'π', '|x|', '( )']] == ['Square root', 'x squared', 'Pi', 'Absolute value', 'Parentheses'], got)
+    await p.evaluate("switchMode('vat')")
+    await p.wait_for_timeout(100)
+    check(L + 'tools: the , key is named', (await p.evaluate(names)).get(',') == 'Decimal comma')
+    await p.evaluate("(()=>{const e=document.getElementById('amount');e.value='100';e.dispatchEvent(new Event('input',{bubbles:true}));showToolChart()})()")
+    await p.wait_for_timeout(150)
+    check(L + 'chart bars are hidden from screen readers', await p.evaluate("[...document.querySelectorAll('.cbar')].every(b=>b.getAttribute('aria-hidden')==='true')"))
+    await p.evaluate("closeHow();setActiveToolInput(document.getElementById('vatRate'));for(const k of ['backspace','backspace','9','9'])toolKeyInput(k)")
+    await p.wait_for_timeout(100)
+    check(L + 'a refused limit is announced', await p.evaluate("document.getElementById('srNote')?.textContent") == 'Up to 50%')
+    check(L + 'the Tips link has a drawn icon, not ?', await p.evaluate("!!document.querySelector('#helpButton svg.help-link-icon')&&!document.querySelector('#helpButton').textContent.includes('?')"))
+    check(L + 'no JavaScript errors', not p.errors, p.errors)
+    await p.context.close()
+
+
 async def update_keeps_themes(browser, url):
     """An update reloads the page: own themes, the chosen theme and the language stay; colours being edited are kept."""
     L = '[update] '
@@ -1375,6 +1410,7 @@ async def main():
         await tool_charts(browser, url, True)
         await field_limits(browser, url, False)
         await field_limits(browser, url, True)
+        await screen_reader(browser, url)
         await ios_app(browser, url)
         await offline_status_and_turning(browser, url)
         await sideways_and_chips(browser, url)

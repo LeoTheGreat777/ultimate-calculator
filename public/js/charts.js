@@ -108,7 +108,7 @@ function showToolChart(){
 function chRows(rows){
  const max=Math.max(...rows.map(r=>r.parts.reduce((a,b)=>a+Math.max(0,b),0)),0)||1;
  return rows.map(r=>{const sum=r.parts.reduce((a,b)=>a+Math.max(0,b),0);
-  return '<div class="crow'+(r.hl?' hl':'')+'"><span class="cl">'+esc(r.label)+'</span><span class="cbar"><span class="cfill" style="width:'+(sum/max*100).toFixed(2)+'%">'+
+  return '<div class="crow'+(r.hl?' hl':'')+'"><span class="cl">'+esc(r.label)+'</span><span class="cbar" aria-hidden="true"><span class="cfill" style="width:'+(sum/max*100).toFixed(2)+'%">'+
    r.parts.map((v,i)=>'<span class="cs'+(i+1)+'" style="flex-grow:'+Math.max(0,v)+'"></span>').join('')+'</span></span><span class="cv">'+esc(r.value)+(r.sub?'<small>'+esc(r.sub)+'</small>':'')+'</span></div>'}).join('');
 }
 // A loan's payments month by month, added up per year: [{prin, int, left}], in cents. Each year's interest is the

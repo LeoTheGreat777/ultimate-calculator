@@ -6,6 +6,15 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.16.2 – 2026-10-11
+
+### Changed
+- The Tips link has a lightbulb instead of a ?.
+
+### Fixed
+- Screen readers: keys like + − × ÷ = % and the Graph keys are read by name in Greek and English, the language button
+  says which language is on, chart bars are skipped, and "Up to 50%" is read out when a field's limit is reached.
+
 ## 0.16.1 – 2026-10-11
 
 ### Changed

@@ -260,6 +260,11 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   (`loanYears`: interest per year, rounded so the years add up to the result's interest, and what's left). Bar rows
   are `chRows` (`.chart-body` grid, `.crow`). Savings keeps its canvas line chart (`chLineChart`).
 - **No fuel log:** the save/saved-entries buttons in Fuel were removed on purpose (0.15.5); don't add them back.
+- **Screen readers:** keys showing only a symbol get a spoken name in the language on screen (`KEY_NAMES`, `nameKeys` in
+  ui.js, re-run by a MutationObserver on `#keypad` and in `applyLanguage`); a key with its own `aria-label` (⌫, scientific
+  keys) keeps it. A new symbol key: add it to `KEY_NAMES`. Icon-only buttons need an `aria-label` in both languages,
+  drawn decoration `aria-hidden` (chart bars), and a message that only shows visually is also put in `#srNote`
+  (aria-live), as `refuseLimit` does. The Tips link's icon is a drawn lightbulb (the owner didn't want a ?).
 - **Copying:** tapping a finished result copies it (calculator and tools), so the copy button can be hidden
   on short screens.
 - **Offline:** `public/sw.js` (registered at the end of main.js) keeps a copy of the app in the cache `uc-app`. The page

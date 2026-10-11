@@ -87,6 +87,9 @@ function refuseLimit(input,[max,unit]){
  const s=input.closest('.tool-field')?.querySelector('span');if(!s)return;
  if(s.dataset.label==null)s.dataset.label=s.textContent;
  s.textContent=t('upTo').replace('{v}',groupDigits(String(max))+unit);s.classList.add('limit-hint');
+ // screen readers hear it too (a shake alone says nothing)
+ let say=$('#srNote');if(!say){say=document.createElement('div');say.id='srNote';say.className='sr-only';say.setAttribute('aria-live','polite');document.body.appendChild(say)}
+ say.textContent='';requestAnimationFrame(()=>say.textContent=s.textContent);
  clearTimeout(s._limit);s._limit=setTimeout(()=>{s.textContent=s.dataset.label;delete s.dataset.label;s.classList.remove('limit-hint')},1800);
 }
 function fillToolDefaults(m){const d=TOOL_DEFAULTS[m];if(d&&toolState[m])Object.entries(d).forEach(([id,v])=>{if(!toolState[m].inputs[id])toolState[m].inputs[id]=typeof v==='function'?v():v})}

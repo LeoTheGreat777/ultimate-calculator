@@ -209,6 +209,8 @@ function applyLanguage(){
  if(mode!=='calc'&&mode!=='units')$$('#toolPanel input[data-tool-input]').forEach(input=>savedInputs[input.id]=input.value);
  document.documentElement.lang=lang;
  $('#langButton').textContent=lang==='el'?'ΕΛ':'EN';
+ {const l=lang==='el'?'Γλώσσα: Ελληνικά':'Language: English';$('#langButton').setAttribute('aria-label',l);$('#langButton').title=l}
+ nameKeys();
  $('#copyButton').textContent=t('copy');
  $('#historyButtonText').textContent=t('history');
  $('#historyButton').setAttribute('aria-label',t('history'));$('#historyButton').title=t('history');
@@ -265,8 +267,23 @@ function addKeyTicks(pad){
   l.appendChild(i);b.appendChild(l);
  }
 }
+// Keys showing only a symbol get a name a screen reader can say (and in the language on screen); keys with a name of
+// their own (⌫, the scientific keys) keep it. Re-done whenever keys are re-drawn or re-labelled, and on a language switch.
+const KEY_NAMES={'+':['Συν','Plus'],'−':['Μείον','Minus'],'-':['Μείον','Minus'],'×':['Επί','Times'],'÷':['Διά','Divided by'],'=':['Ίσον','Equals'],
+ '%':['Τοις εκατό','Percent'],',':['Υποδιαστολή','Decimal comma'],'.':['Τελεία','Dot'],'±':['Αλλαγή προσήμου','Change sign'],'( )':['Παρενθέσεις','Parentheses'],
+ '(':['Άνοιγμα παρένθεσης','Open bracket'],')':['Κλείσιμο παρένθεσης','Close bracket'],'√':['Τετραγωνική ρίζα','Square root'],'x²':['x στο τετράγωνο','x squared'],
+ 'xʸ':['Δύναμη','Power'],'π':['Πι','Pi'],'|x|':['Απόλυτη τιμή','Absolute value']};
+function nameKeys(pad=$('#keypad')){
+ if(!pad)return;
+ for(const b of pad.querySelectorAll('button')){
+  const n=KEY_NAMES[b.textContent.trim()];
+  if(n){if(!b.hasAttribute('aria-label')||b.dataset.autoName){b.setAttribute('aria-label',n[lang==='el'?0:1]);b.dataset.autoName='1'}}
+  else if(b.dataset.autoName){b.removeAttribute('aria-label');delete b.dataset.autoName}
+ }
+}
 function setupPressFeedback(){
  const pad=$('#keypad');
+ nameKeys(pad);new MutationObserver(()=>nameKeys(pad)).observe(pad,{childList:true,subtree:true,characterData:true});
  pad.addEventListener('pointerdown',e=>{
   const b=e.target.closest('button');if(!b||b.disabled)return;
   b.classList.add('pressed');b._pressedAt=performance.now();

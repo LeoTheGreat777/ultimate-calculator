@@ -290,7 +290,7 @@ html.landscape .tool-grid.kind-grid .tool-field span{white-space:nowrap;overflow
 .help-link{display:inline-flex;align-items:center;gap:4px;border:0;background:transparent;color:inherit;font:inherit;font-size:10.5px;font-weight:600;padding:2px 6px 2px 3px;border-radius:999px;cursor:pointer}
 .help-link:hover,.help-link:focus-visible{color:var(--accent2);background:var(--card2)}
 .help-link:focus-visible{outline:2px solid var(--accent2);outline-offset:1px}
-.help-link-icon{width:13px;height:13px;border-radius:50%;display:inline-grid;place-items:center;border:1.3px solid currentColor;font-size:8.5px;font-weight:800;line-height:1}
+.help-link-icon{width:14px;height:14px;flex:none;display:block}
 .modal.help-open .modal-card{width:min(520px,calc(calc(100vw / var(--z,1)) - 32px))}
 .help{display:flex;flex-direction:column;gap:18px}
 .help-heading{margin:0 0 6px;font-size:11px;font-weight:750;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
