@@ -142,6 +142,14 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   not saved across visits; `saveTools`/`loadTools` keep only those choices. AC clears a tool.
 - **Storage:** all in the browser (`uc-history`, `uc-tools`, `uc-rates`, `uc-lang`,
   `uc-theme`, `uc-theme-pair`, `uc-custom-themes`, `uc-theme-recent`). Use `store.get/set` – localStorage can throw.
+- **Number fields** (every tool field but dates and IP/mask, `groupedField`) show thousands as they are typed: 10000 ->
+  10.000 (`groupDigits` in the `input` handler, the cursor kept in place). In them a dot is always a thousands dot and the
+  comma the decimal, so read a field with `fieldValue(id)` (the text without dots), never `.value`; `liveToolNumber` and
+  `ratField` already do. A paste may use dots either way (`pastedNumber`: 12.5 is a decimal, 1.234 and 1.234,5 thousands).
+  Backspace/Delete next to a dot removes the digit beyond it. **Limits:** `FIELD_MAX` gives some fields a top (rates
+  50%, discount and tip 100%, hours 24, years 100, L/100 km 100, days 36500): a key past it is refused and the label
+  says "Up to 50%" for a moment (`refuseLimit`). `POSITIVE_FIELDS` refuse − (prices, rates, distances…; VAT's amount
+  and % change's values may be negative).
 - **Tool fields on a computer** edit like text boxes: a focused field keeps the browser's own Backspace, Delete and
   cursor (selection respected); the global handler only takes over when no field has the focus (keys go to the
   highlighted field, at the end). Comma and − are still the app's (one comma; − changes the sign).

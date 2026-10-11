@@ -57,7 +57,7 @@ function renderNetDetails(cells){
 function netCalculate(){
  const el=lang==='el',none=()=>{setToolResult('','',null);renderNetDetails(null)};
  if(toolKind.net==='hosts'){
-  const raw=$('#netHosts')?.value??'';if(!/^\d+$/.test(raw))return none();
+  const raw=fieldValue('netHosts');if(!/^\d+$/.test(raw))return none();
   const need=Number(raw);if(need<1||need>usableHosts(1))return none();
   let p=32;while(usableHosts(p)<need)p--;
   const mask=prefixMask(p),hosts=usableHosts(p);

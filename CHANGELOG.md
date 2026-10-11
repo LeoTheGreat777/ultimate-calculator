@@ -6,6 +6,14 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.16.1 – 2026-10-11
+
+### Changed
+- Number fields show thousands as you type: 10000 becomes 10.000. Pasted numbers work with dots either way.
+- Fields have sensible limits: VAT and interest rates up to 50%, discount and tip up to 100%, up to 24 hours a day,
+  100 years and 100 L/100 km. Going past one shakes the field and its label says how far it goes.
+- Prices, rates, distances and years can't be made negative.
+
 ## 0.16.0 – 2026-10-11
 
 ### Changed

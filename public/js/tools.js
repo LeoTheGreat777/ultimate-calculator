@@ -39,7 +39,7 @@ function renderToolDisplay(){
 }
 const FIELD_EXAMPLES={fuelD:'250',fuelC:'7,2',fuelP:'1,85',energyP:'100',energyH:'8',energyD:'30',energyR:'0,20',amount:'100',vatRate:'24%',pctPrice:'80',pctOff:'25%',pctFrom:'80',pctTo:'100',tipBill:'60',tipRate:'10%',tipPeople:'1',loanAmount:'10.000',payAmount:'10.000',payRate:'4%',payMonthly:'300',loanRate:'4%',loanYears:'5',saveStart:'1.000',saveMonthly:'100',saveRate:'3%',saveYears:'10',dateDays:'30',netIp:'192.168.1.10',netPrefix:'24',netHosts:'50',value:'10'};
 let vatAction='add';
-const liveToolNumber=id=>{const raw=normalizeNumericInput($('#'+id)?.value??'');if(raw==='')return null;const n=Number(raw);return Number.isFinite(n)?n:null};
+const liveToolNumber=id=>{const raw=normalizeNumericInput(fieldValue(id));if(raw==='')return null;const n=Number(raw);return Number.isFinite(n)?n:null};
 // On phones the fields are filled only from the app's own keypad, so the native keyboard never opens.
 const field=(id,label)=>{const value=toolState[mode]?.inputs?.[id]??'';
  if(FIELD_TYPE[id]==='date'&&ownCalendar())return datePickHtml(id,label,value);// a computer: the app's calendar (dates.js)
@@ -66,7 +66,29 @@ const TOOL_DEFAULTS={net:{netPrefix:'24'},vat:{vatRate:'24'},dates:{dateFrom:()=
 // 'ip' and 'mask' (Subnet: digits and dots, 1.2.3.4; a mask field also takes a prefix like 24; the , key types a dot).
 const FIELD_TYPE={tipPeople:'count',dateDays:'int',dateFrom:'date',dateTo:'date',dateStart:'date',netIp:'ip',netPrefix:'mask',netHosts:'count'};
 const dottedField=id=>FIELD_TYPE[id]==='ip'||FIELD_TYPE[id]==='mask';
-const noDecimalField=id=>!!FIELD_TYPE[id]&&!dottedField(id),noSignField=id=>!!FIELD_TYPE[id]&&FIELD_TYPE[id]!=='int';
+// Besides the 15 digits, these fields have a sensible top: a key that would go past it is refused, and for a moment
+// the field's label says how far it goes (refuseLimit). [max, unit]
+const FIELD_MAX={vatRate:[50,'%'],pctOff:[100,'%'],tipRate:[100,'%'],loanRate:[50,'%'],payRate:[50,'%'],saveRate:[50,'%'],
+ loanYears:[100,''],saveYears:[100,''],energyH:[24,''],energyD:[36500,''],fuelC:[100,'']};
+// Fields where a negative number makes no sense: − is refused there (VAT's amount and % change's values may be negative).
+const POSITIVE_FIELDS=new Set(['fuelD','fuelC','fuelP','energyP','energyH','energyD','energyR','vatRate','pctPrice','pctOff','tipBill','tipRate',
+ 'loanAmount','loanRate','loanYears','payAmount','payRate','payMonthly','saveStart','saveMonthly','saveRate','saveYears']);
+const noDecimalField=id=>!!FIELD_TYPE[id]&&!dottedField(id),noSignField=id=>(!!FIELD_TYPE[id]&&FIELD_TYPE[id]!=='int')||POSITIVE_FIELDS.has(id);
+// Number fields show thousands as they are typed, like the rest of the app: 10000 -> 10.000. In them a dot is always a
+// thousands dot and the comma the decimal; fieldValue is the text without the dots, for reading the number.
+const groupedField=id=>!dottedField(id)&&FIELD_TYPE[id]!=='date';
+const fieldValue=id=>{const v=$('#'+id)?.value??'';return groupedField(id)?v.replace(/\./g,''):v};
+function groupDigits(s){const m=/^(-?)(\d*)(,\d*)?$/.exec(s);return m?m[1]+m[2].replace(/\B(?=(\d{3})+(?!\d))/g,'.')+(m[3]??''):s}
+// Pasted: "1.234,5" and "1.234.567" have thousands dots; "12.5" (one dot, not three digits after it) is a decimal point.
+function pastedNumber(s){s=s.replace(/\s/g,'');if(s.includes(','))return s.replace(/\./g,'');const p=s.split('.');return p.length===2&&!/^\d{3}$/.test(p[1])?p.join(','):s.replace(/\./g,'')}
+// A key past a field's top: the usual shake, and the label says "Up to 50%" for a moment.
+function refuseLimit(input,[max,unit]){
+ refuseKey(input);
+ const s=input.closest('.tool-field')?.querySelector('span');if(!s)return;
+ if(s.dataset.label==null)s.dataset.label=s.textContent;
+ s.textContent=t('upTo').replace('{v}',groupDigits(String(max))+unit);s.classList.add('limit-hint');
+ clearTimeout(s._limit);s._limit=setTimeout(()=>{s.textContent=s.dataset.label;delete s.dataset.label;s.classList.remove('limit-hint')},1800);
+}
 function fillToolDefaults(m){const d=TOOL_DEFAULTS[m];if(d&&toolState[m])Object.entries(d).forEach(([id,v])=>{if(!toolState[m].inputs[id])toolState[m].inputs[id]=typeof v==='function'?v():v})}
 // Segmented switches (VAT add/remove, Percent discount/change/tip) work like iOS: tap a side, drag the thumb, or swipe.
 const TOGGLES={vat:{options:['add','remove'],labels:['addVat','removeVat'],get:()=>vatAction,set:v=>setVatAction(v)}};
@@ -152,7 +174,7 @@ function setupToggleSlide(){
 }
 // A field as an exact fraction (null if empty or not a number yet).
 function ratField(id){
- const r=normalizeNumericInput($('#'+id)?.value??'');
+ const r=normalizeNumericInput(fieldValue(id));
  if(!/^-?\d*\.?\d+$/.test(r)&&!/^-?\d+\.?$/.test(r))return null;
  return ratFromString(r.replace(/\.$/,''));
 }
@@ -364,7 +386,7 @@ function toolKeyInput(key){
  else if(dottedField(input.id)){const v=dottedKey(value,key);if(v===null){refuseKey(input);return false}value=v}// 192.168.1.10 (net.js)
  else if(FIELD_TYPE[input.id]==='int'&&(key==='.'||key===','))value=value.startsWith('-')?value.slice(1):'-'+value;// the ± key
  else if((noDecimalField(input.id)&&(key==='.'||key===','))||(noSignField(input.id)&&key==='-')){refuseKey(input);return false}
- else if(key==='.'||key===','){if(!/[.,]/.test(value))value+=(value===''||value==='-')?'0,':','}
+ else if(key==='.'||key===','){if(!value.includes(','))value+=(value===''||value==='-')?'0,':','}
  else if(key==='-')value=value.startsWith('-')?value.slice(1):'-'+value;
  else if(/^\d$/.test(key)){if(value!=='0'&&digitCount(value)>=MAX_DIGITS){refuseKey(input);return false}value=value==='0'?key:value+key}// 15 digits, as everywhere
  else return false;
@@ -391,9 +413,16 @@ $('#toolPanel').addEventListener('click',e=>{
 $('#toolPanel').addEventListener('focusin',e=>{if(e.target.matches('input[data-tool-input]'))setActiveToolInput(e.target)});
 $('#toolPanel').addEventListener('click',e=>{const input=e.target.closest('.tool-field')?.querySelector('input[data-tool-input]');if(input)setActiveToolInput(input)});
 $('#toolPanel').addEventListener('beforeinput',e=>{
- if(!e.target.matches('input[data-tool-input]')||e.inputType?.startsWith('delete'))return;
+ if(!e.target.matches('input[data-tool-input]'))return;
+ // Backspace or Delete next to a thousands dot removes the digit beyond it (the dots come back by themselves)
+ const i=e.target,a=i.selectionStart,back=e.inputType==='deleteContentBackward';
+ if(groupedField(i.id)&&(back||e.inputType==='deleteContentForward')&&a!=null&&a===i.selectionEnd&&i.value[back?a-1:a]==='.'){
+  e.preventDefault();const d=back?a-2:a+1;if(d<0||d>=i.value.length)return;
+  i.setRangeText('',d,d+1,'start');i.dispatchEvent(new Event('input',{bubbles:true}));return;
+ }
+ if(e.inputType?.startsWith('delete'))return;
  if(e.data&&dottedField(e.target.id)){if(!/^[0-9.\/]+$/.test(e.data))e.preventDefault();return}
- if(e.data&&!(noSignField(e.target.id)?/^[0-9]+$/:noDecimalField(e.target.id)?/^[0-9-]+$/:/^[0-9.,-]+$/).test(e.data))e.preventDefault();
+ if(e.data&&!new RegExp('^[0-9'+(noDecimalField(e.target.id)?'':'.,')+(noSignField(e.target.id)?'':'-')+']+$').test(e.data))e.preventDefault();
 });
 $('#toolPanel').addEventListener('keydown',e=>{
  if(!e.target.matches('input[data-tool-input]'))return;// date pickers keep all their keys
@@ -430,9 +459,18 @@ $('#toolPanel').addEventListener('input',e=>{
    if(!ok){input.value=toolState[mode]?.inputs?.[key]??'';refuseKey(input);return}
    input.value=raw;toolState[mode].inputs[key]=raw;fitDisplayText(input,12,true);runActiveTool();return;
  }
-  if(digitCount(raw)>MAX_DIGITS){input.value=toolState[mode]?.inputs?.[key]??'';refuseKey(input);return}// typed or pasted on a keyboard: 15 digits at most
+  const prev=toolState[mode]?.inputs?.[key]??'';
+ // the text without thousands dots (a paste may use dots either way); where the cursor is, counted without the dots
+ const caret=document.activeElement===input&&input.selectionStart!=null?input.value.slice(0,input.selectionStart).replace(/\./g,'').length:null;
+ if(groupedField(key))raw=e.inputType==='insertFromPaste'||e.inputType==='insertFromDrop'?pastedNumber(raw):raw.replace(/\./g,'');
+ if(digitCount(raw)>MAX_DIGITS){input.value=prev;refuseKey(input);return}// typed or pasted on a keyboard: 15 digits at most
  if(/^0\d/.test(raw))raw=raw.replace(/^0+(?=\d)/,'');
- if(raw!==input.value)input.value=raw;
+ if(FIELD_MAX[key]&&Number(normalizeNumericInput(raw))>FIELD_MAX[key][0]){input.value=prev;refuseLimit(input,FIELD_MAX[key]);return}
+ if(groupedField(key))raw=groupDigits(raw);
+ if(raw!==input.value){
+  input.value=raw;
+  if(caret!=null){let k=0,n=0;while(k<raw.length&&n<caret){if(raw[k]!=='.')n++;k++}input.setSelectionRange(k,k)}
+ }
  toolState[mode]??={inputs:{},result:null};
  toolState[mode].inputs[key]=raw;
  fitDisplayText(input,12,true);

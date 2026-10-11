@@ -189,10 +189,16 @@ async def desktop(browser, url, lang, theme):
     await p.click('.tool-key[data-action="clear-all"]')
     await p.click('#amount')
     await p.keyboard.type('123456')
+    check(L + 'tool field: thousands dots as you type', await p.evaluate('amount.value') == '123.456', await p.evaluate('amount.value'))
     await p.evaluate("amount.setSelectionRange(1,3)")
     await p.keyboard.press('Backspace')
-    check(L + 'tool field: Backspace deletes the selection', await p.evaluate('amount.value') == '1456', await p.evaluate('amount.value'))
+    check(L + 'tool field: Backspace deletes the selection', await p.evaluate('amount.value') == '1.456', await p.evaluate('amount.value'))
     await p.evaluate("amount.setSelectionRange(2,2)")
+    await p.keyboard.press('Backspace')
+    check(L + 'tool field: Backspace right after a thousands dot deletes the digit before it', await p.evaluate('amount.value') == '456', await p.evaluate('amount.value'))
+    await p.keyboard.type('1')
+    check(L + 'tool field: typing keeps the cursor in place around new dots', await p.evaluate('[amount.value,amount.selectionStart]') == ['1.456', 1], await p.evaluate('[amount.value,amount.selectionStart]'))
+    await p.evaluate("amount.setSelectionRange(3,3)")
     await p.keyboard.press('Backspace')
     check(L + 'tool field: Backspace deletes before the cursor', await p.evaluate('amount.value') == '156', await p.evaluate('amount.value'))
     await p.keyboard.type('7,')
@@ -634,7 +640,7 @@ async def limits(browser, url, lang, theme, phone=False):
     # tools: 15 digits a field; huge money as × 10ⁿ, never ∞
     await p.evaluate("(()=>{switchMode('vat');clearToolFields();setActiveToolInput(document.querySelector('#amount'));for(let i=0;i<40;i++)toolKeyInput('9')})()")
     got = await p.evaluate(f"[document.querySelector('#amount').value,{R}]")
-    check(L + 'VAT: 15 digits, total as × 10ⁿ', got == ['999999999999999', '1,24 × 10¹⁵ €'], got)
+    check(L + 'VAT: 15 digits, total as × 10ⁿ', got == ['999.999.999.999.999', '1,24 × 10¹⁵ €'], got)
     # Graph: functions of up to 120 characters; the view stays where numbers are precise
     got = await p.evaluate("(()=>{switchMode('graph');graphKey('clear');for(let i=0;i<100;i++){graphKey('x');graphKey('+')}graph.view={cx:1e15,cy:0,ux:1e9,uy:40};drawGraph();return [graph.fns[graph.active].length,graph.view.cx,graph.view.ux]})()")
     check(L + 'Graph: 120 characters, view limited', got[0] <= 120 and got[1] == 1e12 and got[2] <= 0.1, got)
@@ -1019,6 +1025,54 @@ async def tool_charts(browser, url, phone):
     await p.context.close()
 
 
+async def field_limits(browser, url, phone):
+    """Number fields: thousands dots, pasted numbers, sensible tops (refused, the label says how far) and no − where it makes no sense."""
+    L = '[fields%s] ' % (' phone' if phone else '')
+    p = await new_page(browser, url, 'en', 'dark', phone=phone)
+    keys = lambda fid, ks: p.evaluate(f"(()=>{{setActiveToolInput(document.getElementById('{fid}'));for(const k of {list(ks)!r})toolKeyInput(k)}})()")
+    val = lambda fid: p.evaluate(f"document.getElementById('{fid}').value")
+    await p.evaluate("switchMode('fuel')")
+    await keys('fuelD', '10000')
+    await keys('fuelC', '5')
+    await keys('fuelP', '2')
+    check(L + 'fuel: 10000 shows 10.000 and still counts as ten thousand', [await val('fuelD'), await p.evaluate(R)] == ['10.000', '1.000,00 €'], [await val('fuelD'), await p.evaluate(R)])
+    await keys('fuelD', ['backspace'])
+    check(L + 'fuel: ⌫ takes the last digit, the dots follow', await val('fuelD') == '1.000', await val('fuelD'))
+    await keys('fuelC', ['backspace', '1', '0', '1'])
+    check(L + 'fuel: consumption stops at 100 L/100 km', await val('fuelC') == '10', await val('fuelC'))
+    await keys('fuelP', ['-'])
+    check(L + 'fuel: no − for a price', await val('fuelP') == '2', await val('fuelP'))
+    await p.evaluate("switchMode('vat')")
+    await keys('vatRate', ['backspace', 'backspace', '5', '1'])
+    got = await p.evaluate("[document.getElementById('vatRate').value,document.getElementById('vatRate').closest('.tool-field').querySelector('span').textContent]")
+    check(L + 'VAT: the rate stops at 50%, the label says so', got == ['5', 'Up to 50%'], got)
+    await p.wait_for_timeout(2000)
+    got = await p.evaluate("document.getElementById('vatRate').closest('.tool-field').querySelector('span').textContent")
+    check(L + 'VAT: the label comes back', got == 'VAT %' or 'VAT' in got, got)
+    await keys('amount', ['-', '1', '2', '3', '4', ',', '5'])
+    check(L + 'VAT: the amount may be negative, grouped', await val('amount') == '-1.234,5', await val('amount'))
+    await p.evaluate("switchMode('energy')")
+    await keys('energyH', '25')
+    check(L + 'energy: at most 24 hours a day', await val('energyH') == '2', await val('energyH'))
+    await p.evaluate("switchMode('loan')")
+    await p.evaluate("setToolKind('loan','loan')")
+    await keys('loanRate', '60')
+    await keys('loanYears', '101')
+    check(L + 'interest: rate up to 50%, years up to 100', [await val('loanRate'), await val('loanYears')] == ['6', '10'], [await val('loanRate'), await val('loanYears')])
+    if not phone:
+        # pasted on a computer: dots either way
+        for text, want in [('12.5', '12,5'), ('1.234,5', '1.234,5'), ('1234567', '1.234.567'), ('1.234.567', '1.234.567')]:
+            await p.evaluate("(()=>{const e=document.getElementById('loanAmount');e.value='';e.focus()})()")
+            await p.evaluate(f"(()=>{{const e=document.getElementById('loanAmount');e.value={text!r};e.dispatchEvent(new InputEvent('input',{{bubbles:true,inputType:'insertFromPaste'}}))}})()")
+            check(L + f'paste {text}', await val('loanAmount') == want, await val('loanAmount'))
+    await p.evaluate("switchMode('net')")
+    await p.evaluate("setToolKind('net','hosts')")
+    await keys('netHosts', '1000')
+    check(L + 'subnet: 1.000 hosts reads as a thousand', [await val('netHosts'), await p.evaluate(R)] == ['1.000', '/22'], [await val('netHosts'), await p.evaluate(R)])
+    check(L + 'no JavaScript errors', not p.errors, p.errors)
+    await p.context.close()
+
+
 async def update_keeps_themes(browser, url):
     """An update reloads the page: own themes, the chosen theme and the language stay; colours being edited are kept."""
     L = '[update] '
@@ -1319,6 +1373,8 @@ async def main():
         await no_fuel_log(browser, url)
         await tool_charts(browser, url, False)
         await tool_charts(browser, url, True)
+        await field_limits(browser, url, False)
+        await field_limits(browser, url, True)
         await ios_app(browser, url)
         await offline_status_and_turning(browser, url)
         await sideways_and_chips(browser, url)

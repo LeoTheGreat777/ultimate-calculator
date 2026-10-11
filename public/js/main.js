@@ -55,7 +55,7 @@ window.addEventListener('keydown',e=>{
  if((e.key==='Backspace'||e.code==='Backspace')&&toolFieldFocused)return;
  if(e.key==='Backspace'||e.code==='Backspace'){e.preventDefault();if(mode==='calc')backspace();else toolKeyInput('backspace');return;}
  if(e.key==='%'&&mode==='units'){e.preventDefault();toolKeyInput('%');return}
- if(e.key===','||e.key==='.'||e.key==='Decimal'){e.preventDefault();if(mode==='calc')digit('.');else if(toolFieldFocused){const input=document.activeElement,end=input.value.length,a=input.selectionStart??end,b=input.selectionEnd??a;if(noDecimalField(input.id)||/[.,]/.test(input.value.slice(0,a)+input.value.slice(b))){refuseKey(input);return}input.setRangeText(',',a,b,'end');input.dispatchEvent(new Event('input',{bubbles:true}))}else toolKeyInput('.');return}
+ if(e.key===','||e.key==='.'||e.key==='Decimal'){e.preventDefault();if(mode==='calc')digit('.');else if(toolFieldFocused){const input=document.activeElement,end=input.value.length,a=input.selectionStart??end,b=input.selectionEnd??a;if(noDecimalField(input.id)||/,/.test(input.value.slice(0,a)+input.value.slice(b))){refuseKey(input);return}input.setRangeText(',',a,b,'end');input.dispatchEvent(new Event('input',{bubbles:true}))}else toolKeyInput('.');return}
  if(mode==='calc'&&(e.key==='('||e.key===')')){e.preventDefault();parenthesis(e.key);return}
  // Delete = the C key: clears the number being typed (Esc clears everything)
  if(e.key==='Delete'&&nothingOpen&&(mode==='calc'||mode==='units')){e.preventDefault();if(mode==='calc')clearButtonAction();else toolKeyInput('clearEntry');return}

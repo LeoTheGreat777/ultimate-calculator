@@ -85,7 +85,7 @@ function datesCalculate(){
    [t('weekendLbl'),fmt(w.weekend)],[t('holidaysLbl'),w.off.length?fmt(w.off.length)+' · '+holidayList(w.off,3,false):'0']],t('workNote'));
   return;
  }
- const a=dateField('dateStart'),raw=normalizeNumericInput($('#dateDays')?.value??'');
+ const a=dateField('dateStart'),raw=normalizeNumericInput(fieldValue('dateDays'));
  if(a===null||!/^-?\d+$/.test(raw))return none();
  const n=Number(raw);if(!Number.isSafeInteger(n)||(work&&Math.abs(n)>50000))return none();
  const b=work?addWorkingDays(a,n):a+n;if(b===null||b<DATE_MIN||b>DATE_MAX)return none();
