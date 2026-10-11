@@ -5,6 +5,7 @@ function closeHow(){$('#howModal').classList.add('hidden');$('#howModal').classL
 function modeIcon(m){return ICONS[m]||''}
 function renderTool(){
  const calc=mode==='calc';
+ renderDateBar();// the Working days chip shows only in Dates: every tab change hides or shows it
  const card=$('#calculatorCard');
  card.classList.toggle('mobile-tool',!calc&&isMobileDevice()&&mode!=='units'&&mode!=='graph');
  document.body.classList.toggle('mobile-tool-on',card.classList.contains('mobile-tool'));

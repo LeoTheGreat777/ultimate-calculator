@@ -1061,6 +1061,22 @@ async def sideways_and_chips(browser, url):
     await p.wait_for_timeout(200)
     st = await p.evaluate("""(()=>{const r=s=>document.querySelector(s).getBoundingClientRect(),f=r('[data-bar=sci]'),h=r('#historyButton'),q=[...document.querySelectorAll('.how-button')].find(b=>b.offsetParent).getBoundingClientRect();
       return {fxLeft:Math.round(f.left),histLeft:Math.round(h.left),fxH:Math.round(f.height),howH:Math.round(q.height),on:document.querySelector('[data-bar=sci]').classList.contains('on')}})()""")
+    # the Working days chip belongs to Dates only: leaving Dates hides it in every other tab
+    left = []
+    for m in ['calc', 'units', 'currency', 'graph', 'vat', 'net']:
+        await p.evaluate("switchMode('dates')")
+        await p.evaluate(f"switchMode('{m}')")
+        if await p.evaluate("(()=>{const b=document.querySelector('#dateBar');return !!b&&getComputedStyle(b).display!=='none'})()"):
+            left.append(m)
+    check('[Working days] leaving Dates hides its chip in every other tab', not left, left)
+    shown = []
+    for m in ['units', 'currency', 'graph', 'vat', 'dates', 'net']:
+        await p.evaluate("switchMode('calc')")
+        await p.evaluate(f"switchMode('{m}')")
+        if await p.evaluate("(()=>{const b=document.querySelector('#sciBar');return !!b&&b.offsetParent!==null&&getComputedStyle(b).display!=='none'})()"):
+            shown.append(m)
+    check('[f(x)] shows only in the Calculator', not shown, shown)
+    await p.evaluate("switchMode('calc')")
     check('[f(x)] lines up with the History button and is as tall as ?', abs(st['fxLeft'] - st['histLeft']) <= 1 and st['fxH'] == st['howH'] and st['on'], st)
     check('[sideways/chips] no JavaScript errors (f(x))', not p.errors, p.errors)
     await p.context.close()
