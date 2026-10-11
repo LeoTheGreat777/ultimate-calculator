@@ -1,79 +1,5 @@
-// The app around the modes: theme, language, switching modes (tabs), the explanation dialog,
-// copying, holding keys, and installing on a phone.
-// Themes. The colours are in styles.css (html[data-theme]); a new theme is a block there, a name here and its texts.
-// The theme button opens a small menu with a preview of each theme.
-const THEMES=['auto','light','paper','rose','sky','dark','black','ocean','violet','ember','forest'];
-const LIGHT_THEMES=['light','paper','rose','sky'];// the others are dark (the button shows ☀ or ☾)
-const prefersLight=matchMedia('(prefers-color-scheme: light)');
-const resolveTheme=name=>name==='auto'?(prefersLight.matches?'light':'dark'):name;
-function resolvedTheme(){return resolveTheme(theme)}
-function applyTheme(){
- const root=document.documentElement,shown=resolvedTheme();
- root.dataset.theme=shown;
- const b=$('#themeButton');
- if(b){b.textContent=LIGHT_THEMES.includes(shown)?'☀':'☾';b.setAttribute('aria-label',t('theme'));b.title=t('theme')}
- // the browser's own bar (Android, installed app) takes the theme's background
- $('meta[name="theme-color"]')?.setAttribute('content',getComputedStyle(root).getPropertyValue('--bg').trim()||'#0b0f14');
- redrawCharts();
-}
-try{prefersLight.addEventListener('change',()=>{if(theme==='auto')applyTheme()})}catch{}
-// The new theme spreads out in a circle from the theme button (View Transitions); browsers without it get a
-// short colour fade; with reduced motion, or when the colours stay the same (e.g. dark -> auto at night), it switches at once.
-function setTheme(next){
- if(!THEMES.includes(next))return;
- const run=()=>{theme=next;store.set('uc-theme',theme);applyTheme()};
- const root=document.documentElement;
- if(reducedMotion()||resolveTheme(next)===resolvedTheme()){run();return}
- if(!document.startViewTransition){root.classList.add('theme-fade');run();setTimeout(()=>root.classList.remove('theme-fade'),400);return}
- const z=window.__uiZoom||1,b=$('#themeButton').getBoundingClientRect(),x=(b.left+b.width/2)/z,y=(b.top+b.height/2)/z;// CSS px
- const r=Math.hypot(Math.max(x,innerWidth/z-x),Math.max(y,innerHeight/z-y));
- root.classList.add('vt-theme');
- try{
-  const vt=document.startViewTransition(run);
-  vt.ready.then(()=>root.animate({clipPath:[`circle(0px at ${x}px ${y}px)`,`circle(${r}px at ${x}px ${y}px)`]},{duration:560,easing:'cubic-bezier(.4,0,.2,1)',pseudoElement:'::view-transition-new(root)'})).catch(()=>{});
-  vt.finished.finally(()=>root.classList.remove('vt-theme'));
- }catch{root.classList.remove('vt-theme');run()}
-}
-const themeMenuOpen=()=>!!$('#themeMenu')&&!$('#themeMenu').classList.contains('hidden');
-function renderThemeMenu(){
- let m=$('#themeMenu');
- if(!m){
-  m=document.createElement('div');m.id='themeMenu';m.className='theme-menu hidden';m.setAttribute('role','menu');
-  $('.top-actions').appendChild(m);
-  m.addEventListener('click',e=>{const b=e.target.closest('[data-theme-pick]');if(!b)return;closeThemeMenu();setTheme(b.dataset.themePick)});
- }
- m.setAttribute('aria-label',t('theme'));
- const key=n=>'theme'+n[0].toUpperCase()+n.slice(1);
- m.innerHTML=THEMES.map(n=>{
-  // each swatch carries the theme's own colours (data-theme-preview), so it shows the real thing
-  const swatch=n==='auto'
-   ?'<span class="theme-swatch theme-swatch-auto" aria-hidden="true"><span data-theme-preview="light"><i></i></span><span data-theme-preview="dark"><i></i></span></span>'
-   :'<span class="theme-swatch" data-theme-preview="'+n+'" aria-hidden="true"><i></i></span>';
-  return '<button type="button" class="theme-option" role="menuitemradio" aria-checked="'+(theme===n)+'" data-theme-pick="'+n+'">'+swatch+
-   '<span class="theme-option-text">'+esc(t(key(n)))+'</span><span class="theme-check" aria-hidden="true">✓</span></button>'+
-   (n==='auto'||n===LIGHT_THEMES[LIGHT_THEMES.length-1]?'<hr>':'');// lines between Auto, the light themes and the dark ones
- }).join('');
-}
-function openThemeMenu(){
- renderThemeMenu();$('#themeMenu').classList.remove('hidden');$('.topbar').classList.add('menu-open');$('#themeButton').setAttribute('aria-expanded','true');
- if(hasKeyboard())$('#themeMenu [aria-checked="true"]')?.focus({preventScroll:true});
-}
-function closeThemeMenu(focusButton){
- if(!themeMenuOpen())return;
- $('#themeMenu').classList.add('hidden');$('.topbar').classList.remove('menu-open');$('#themeButton').setAttribute('aria-expanded','false');
- if(focusButton)$('#themeButton').focus({preventScroll:true});
-}
-function toggleThemeMenu(){if(themeMenuOpen())closeThemeMenu();else openThemeMenu()}
-// Keys while the menu is open: ↑ ↓ move, Enter/Space choose (the buttons do that themselves), Esc or Tab close it.
-function themeMenuKeydown(e){
- if(!themeMenuOpen())return false;
- const items=[...$('#themeMenu').querySelectorAll('.theme-option')],i=items.indexOf(document.activeElement);
- if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();items[(i+(e.key==='ArrowDown'?1:-1)+items.length)%items.length].focus();return true}
- if(e.key==='Home'||e.key==='End'){e.preventDefault();items[e.key==='Home'?0:items.length-1].focus();return true}
- if(e.key==='Escape'){e.preventDefault();closeThemeMenu(true);return true}
- if((e.key==='Enter'||e.key===' ')&&i>=0)return true;
- closeThemeMenu();return false;
-}
+// The app around the modes: language, switching modes (tabs), the explanation dialog, copying, holding keys,
+// and installing on a phone. Themes are in theme.js.
 function showHow(){if(!howData)return;$('#howTitle').textContent=t('how');$('#howContent').innerHTML=`<div class="how-step"><div class="how-expression-label">${lang==='el'?'Πράξη':'Expression'}</div><div class="how-formula">${esc(howData.formula)}</div><div class="how-steps">${howData.steps.map((s,i)=>`<div class="how-line"><span>${i+1}</span><div class="how-line-body"><strong>${esc(s.title||'')}</strong><div>${esc(s.text||s)}</div></div></div>`).join('')}</div><div class="how-result"><span>${lang==='el'?'Αποτέλεσμα':'Result'}</span><strong>${esc(howData.result)}</strong></div></div>`;$('#howModal').classList.remove('hidden')}
 function closeHow(){$('#howModal').classList.add('hidden');$('#howModal').classList.remove('help-open')}
 function modeIcon(m){return ICONS[m]||''}
@@ -298,7 +224,7 @@ function applyLanguage(){
  $('#closeHistory').setAttribute('aria-label',t('close'));
  $('#historyChartButton')?.setAttribute('aria-label',t('chart'));
  $('#historyChartButton')?.setAttribute('title',t('chart'));
- $('#themeButton').setAttribute('aria-label',t('theme'));$('#themeButton').title=t('theme');if($('#themeMenu'))renderThemeMenu();
+ $('#themeButton').setAttribute('aria-label',t('theme'));$('#themeButton').title=t('theme');if($('#themeMenu'))renderThemeMenu();renderThemeEditor();
  const hint=$('#hint');if(hint)hint.textContent=t('hint');
  syncInstallButton();
  syncHelpButton();

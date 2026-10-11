@@ -6,6 +6,18 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.14.0 – 2026-10-11
+
+### Added
+- **Your own themes:** "Custom…" at the end of the light and the dark themes. Pick a background and an accent colour
+  (from the swatches or any colour you like) and the whole app recolours as you pick; the app works out the rest and
+  keeps everything easy to read. Save it, or change it later with the ✎ next to it.
+
+### Changed
+- **Match device** is now a switch at the top of the theme menu. With it on, you choose one light and one dark theme
+  (your own ones too) and the app follows your device between them, instead of always Light and Dark. With it off,
+  you pick a single theme as before.
+
 ## 0.13.1 – 2026-10-11
 
 ### Changed

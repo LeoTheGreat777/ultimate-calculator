@@ -447,7 +447,7 @@ async def desktop(browser, url, lang, theme):
     check(L + f'theme on start is {theme}', await p.evaluate(T) == theme)
     await p.click('#themeButton')
     check(L + 'theme menu lists every theme', await p.locator('#themeMenu .theme-option').count() == await p.evaluate('THEMES.length'))
-    for name in await p.evaluate("THEMES.filter(n=>n!=='auto')"):
+    for name in await p.evaluate("[...LIGHT_PRESETS,...DARK_PRESETS]"):
         await p.click(f'[data-theme-pick="{name}"]')
         await p.wait_for_timeout(650)
         got = await p.evaluate("[document.documentElement.dataset.theme, getComputedStyle(document.body).backgroundColor, getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()]")
@@ -671,10 +671,19 @@ async def phone(browser, url, lang, theme, size):
     check(L + 'theme menu fits on the screen', all(menu[:3]), menu)
     if menu[3]:
         await p.evaluate("themeMenu.scrollTop=themeMenu.scrollHeight")
-    last = await p.evaluate('THEMES[THEMES.length-1]')
+    last = await p.evaluate('DARK_PRESETS[DARK_PRESETS.length-1]')
     await p.tap(f'[data-theme-pick="{last}"]')
     await p.wait_for_timeout(300)
     check(L + 'last theme in the menu can be picked', await p.evaluate('document.documentElement.dataset.theme') == last)
+    # the own theme editor (the menu's last item) fits on the screen
+    await p.tap('#themeButton')
+    await p.evaluate("themeMenu.scrollTop=themeMenu.scrollHeight")
+    await p.tap('[data-theme-pick="custom-dark"]')
+    await p.wait_for_timeout(200)
+    ed = await p.evaluate("(()=>{const r=themeEditor.getBoundingClientRect(),b=document.querySelector('#themeEditor [data-te=save]').getBoundingClientRect();return [r.left>=0,r.right<=innerWidth+1,r.top>=0,r.bottom<=innerHeight+1,b.bottom<=innerHeight+1]})()")
+    check(L + 'own theme editor fits on the screen', all(ed), ed)
+    await p.tap('#themeEditor [data-te="cancel"]')
+    check(L + 'own theme editor: Cancel goes back', await p.evaluate('document.documentElement.dataset.theme') == last)
     check(L + 'no JavaScript errors', not p.errors, p.errors)
     await p.context.close()
 
@@ -753,6 +762,109 @@ async def currency_offline(browser, url):
     await ctx.close()
 
 
+async def own_themes(browser, url):
+    """Own themes: made from a background and an accent, the editor, Match device with a light and a dark theme."""
+    L = '[own themes] '
+    p = await new_page(browser, url, 'en', 'dark')
+    T = 'document.documentElement.dataset.theme'
+    var = "getComputedStyle(document.documentElement).getPropertyValue('%s').trim()"
+    await p.keyboard.type('12')
+    await p.click('#themeButton')
+    check(L + 'own themes not made yet read "Custom…"', await p.locator('[data-theme-pick="custom-dark"]').inner_text() == 'Custom…'
+          and await p.locator('[data-theme-edit]').count() == 0)
+    await p.click('[data-theme-pick="custom-dark"]')
+    check(L + 'tapping it opens the editor and shows it live', await p.evaluate("themeEditorOpen()&&!themeMenuOpen()") and await p.evaluate(T) == 'custom-dark')
+    check(L + 'it starts from the colours of the theme in use', await p.evaluate("[themeDraft.bg,themeDraft.accent]") == ['#070a0f', '#6ea8fe'])
+    await p.click('[data-te-row="accent"] [data-te-colour="#ff4fa3"]')
+    check(L + 'a swatch recolours the app at once', await p.evaluate(var % '--accent') == '#ff4fa3')
+    await p.keyboard.press('5')
+    check(L + 'keys go to the editor, not the calculator', await p.evaluate(R) == '12')
+    await p.keyboard.press('Escape')
+    check(L + 'Esc cancels: back to Dark, nothing saved', await p.evaluate(T) == 'dark' and not await p.evaluate("themeEditorOpen()")
+          and await p.evaluate("localStorage.getItem('uc-custom-themes')") is None and await p.evaluate(var % '--accent') == '#6ea8fe')
+    await p.click('#themeButton')
+    await p.click('[data-theme-pick="custom-dark"]')
+    await p.click('[data-te-row="bg"] [data-te-colour="#1c1030"]')
+    await p.click('[data-te-row="accent"] [data-te-colour="#a3e635"]')
+    await p.click('[data-te="save"]')
+    st = await p.evaluate("[theme,localStorage.getItem('uc-theme'),document.documentElement.dataset.theme,getComputedStyle(document.body).backgroundColor]")
+    check(L + 'Save chooses the own theme', st == ['custom-dark', 'custom-dark', 'custom-dark', 'rgb(28, 16, 48)'], st)
+    accent = await p.evaluate(var % '--accent')
+    await p.reload()
+    await p.wait_for_timeout(300)
+    check(L + 'kept after a reload (the <head> script applies it before the first paint)',
+          await p.evaluate(T) == 'custom-dark' and await p.evaluate(var % '--accent') == accent)
+    await p.click('#themeButton')
+    check(L + 'a made own theme shows its colours, a check and an edit button',
+          await p.locator('[data-theme-pick="custom-dark"]').inner_text() == 'Custom\n✓' and await p.locator('[data-theme-edit="dark"]').count() == 1
+          and await p.evaluate("getComputedStyle(document.querySelector('[data-theme-pick=custom-dark] .theme-swatch')).backgroundColor") == 'rgb(28, 16, 48)')
+    await p.click('[data-theme-edit="dark"]')
+    check(L + 'the edit button opens the editor with the saved colours',
+          await p.evaluate("[...document.querySelectorAll('#themeEditor [aria-checked=true]')].map(e=>e.dataset.teColour)") == ['#1c1030', '#a3e635'])
+    await p.click('#langButton')
+    await p.wait_for_timeout(500)
+    check(L + 'the editor changes language in place', await p.locator('#themeEditorTitle').inner_text() == 'Το σκοτεινό σου θέμα')
+    await p.click('#langButton')
+    await p.wait_for_timeout(500)
+    # any colour: a background is kept in its group (a white one for a dark theme becomes dark)
+    await p.evaluate("(()=>{const i=document.querySelector('[data-te-pick=bg]');i.value='#ffffff';i.dispatchEvent(new Event('input',{bubbles:true}))})()")
+    st = await p.evaluate("[themeDraft.bg,relLum(hexRgb(themeDraft.bg))<=0.021,document.querySelector('#themeEditor .te-any').classList.contains('on')]")
+    check(L + 'any colour: a dark theme\'s background stays dark', st[1:] == [True, True], st)
+    await p.keyboard.press('Escape')
+    # readable whatever is picked: text, muted text, the accent on keys, text on the accent
+    bad = await p.evaluate("""(()=>{const bad=[];
+      for(const g of ['light','dark'])for(const bg of ['#ffffff','#000000','#ff0000','#ffff00','#0000ff','#808080'])
+       for(const a of ['#ffff00','#000000','#ffffff','#808080','#00ff00','#0000ff','#ff4fa3','#3478e5']){
+        const v=deriveTheme(g,bg,a),c=k=>hexRgb(v[k]),r=(x,y)=>contrastRatio(c(x),c(y));
+        const ok=r('--text','--card')>=7&&r('--text','--key')>=7&&r('--muted','--card')>=4.5&&r('--accent','--card')>=3&&r('--accent','--key')>=3
+          &&r('--on-accent','--accent')>=4.5&&['--series2','--series3'].every(s=>r(s,'--card')>=3)&&(g==='dark')===(relLum(c('--bg'))<0.2);
+        if(!ok)bad.push([g,bg,a]);}
+      return bad})()""")
+    check(L + 'every derived theme is readable', not bad, bad[:5])
+    # Match device: on keeps the theme in use as its group's choice; then one light and one dark theme
+    await p.click('#themeButton')
+    await p.click('[data-theme-auto]')
+    await p.wait_for_timeout(650)
+    st = await p.evaluate("[theme,themePair.dark,themeMenuOpen(),document.querySelector('[data-theme-auto]').getAttribute('aria-checked')]")
+    check(L + 'Match device on: the own theme becomes the dark one, the menu stays open', st == ['auto', 'custom-dark', True, 'true'], st)
+    await p.click('[data-theme-pick="paper"]')
+    await p.wait_for_timeout(650)
+    checked = await p.evaluate("[...document.querySelectorAll('#themeMenu [data-theme-pick][aria-checked=true]')].map(e=>e.dataset.themePick)")
+    check(L + 'with Match device one light and one dark are checked', checked == ['paper', 'custom-dark'] and await p.evaluate('themeMenuOpen()'), checked)
+    await p.emulate_media(color_scheme='light')
+    await p.wait_for_timeout(100)
+    check(L + 'a light device shows the light one', await p.evaluate(T) == 'paper')
+    await p.emulate_media(color_scheme='dark')
+    await p.wait_for_timeout(100)
+    check(L + 'a dark device shows the dark one', await p.evaluate(T) == 'custom-dark')
+    await p.reload()
+    await p.wait_for_timeout(300)
+    check(L + 'Match device kept after a reload', await p.evaluate(T) == 'custom-dark' and await p.evaluate("themePair.light") == 'paper')
+    await p.emulate_media(color_scheme='light')
+    await p.reload()
+    await p.wait_for_timeout(300)
+    check(L + 'the <head> script picks the light one on a light device', await p.evaluate(T) == 'paper')
+    await p.click('#themeButton')
+    await p.click('[data-theme-pick="custom-light"]')
+    await p.click('[data-te-row="accent"] [data-te-colour="#ef4444"]')
+    await p.keyboard.press('Enter')
+    check(L + 'Enter saves; with Match device the own light theme becomes the light one',
+          await p.evaluate("[theme,themePair.light,document.documentElement.dataset.theme,document.querySelector('#themeButton').textContent]") == ['auto', 'custom-light', 'custom-light', '☀'])
+    await p.click('#themeButton')
+    await p.click('[data-theme-auto]')
+    await p.wait_for_timeout(100)
+    check(L + 'Match device off: the theme on screen stays', await p.evaluate("[theme,document.documentElement.dataset.theme]") == ['custom-light', 'custom-light'])
+    # broken or old saved values fall back safely
+    for saved, pair, expect in [('custom-light', None, 'light'), ('auto', '{"light":"black","dark":"rose"}', 'light'), ('nonsense', None, 'dark')]:
+        await p.evaluate(f"localStorage.removeItem('uc-custom-themes');localStorage.setItem('uc-theme','{saved}');" +
+                         (f"localStorage.setItem('uc-theme-pair','{pair}')" if pair else "localStorage.removeItem('uc-theme-pair')"))
+        await p.reload()
+        await p.wait_for_timeout(200)
+        check(L + f'saved theme {saved} {pair or ""} falls back to {expect}', await p.evaluate(T) == expect and await p.evaluate("resolvedTheme()") == expect)
+    check(L + 'no JavaScript errors', not p.errors, p.errors)
+    await p.context.close()
+
+
 async def main():
     url = serve()
     async with async_playwright() as pw:
@@ -765,6 +877,7 @@ async def main():
         for lang, theme, size in [('en', 'dark', (390, 844)), ('el', 'light', (360, 740)), ('en', 'light', (820, 1180)),
                                   ('el', 'dark', (844, 390)), ('en', 'light', (740, 360))]:  # the last two: phones held sideways
             await phone(browser, url, lang, theme, size)
+        await own_themes(browser, url)
         await offline(browser)
         await currency_offline(browser, url)
         await browser.close()

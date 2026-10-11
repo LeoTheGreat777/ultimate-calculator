@@ -32,7 +32,7 @@ setupHoldKeys();
  document.addEventListener('click',e=>{if(themeMenuOpen()&&!e.target.closest('#themeMenu,#themeButton'))closeThemeMenu();if(historyClearConfirm&&!e.target.closest('#historyClearWrap'))clearHistoryConfirm()});
 $('#clearHistory').addEventListener('click',clearHistoryConfirm);$('#historyConfirmYes').addEventListener('click',deleteAllHistory);
 window.addEventListener('keydown',e=>{
- if(themeMenuKeydown(e))return;
+ if(themeEditorKeydown(e)||themeMenuKeydown(e))return;
  // Alt+1…9 jumps to a mode (Alt+← / → are left alone: browsers use them for Back / Forward)
  if(e.altKey&&!e.ctrlKey&&!e.metaKey&&/^Digit[1-9]$/.test(e.code)){const n=MODE_LABELS[+e.code.slice(5)-1];if(n){e.preventDefault();switchMode(n)}return}
  if(e.ctrlKey||e.metaKey||e.altKey)return;

@@ -53,7 +53,8 @@ Everything the app serves is in `public/` (the web root for both GitHub Pages an
 | `dates.js` | Dates: day numbers, date pickers, Orthodox Easter and Greek public holidays, working days, the details list, the Working days chip |
 | `net.js` | Subnet: IPv4 parsing (`parseIp`, `parsePrefix` takes /24 or a mask), `dottedKey`, the details grid, the Subnet calculations |
 | `layout.js` | `fitLayout` (fits every mode to the screen), long text (`fitDisplayText`, `refuseKey`), zoom on big screens |
-| `ui.js` | theme, `setLanguage`/`applyLanguage`, modes and tabs (`switchMode`, `renderTool`), dialogs, hold keys, install |
+| `theme.js` | themes: the ready-made ones, own themes (`deriveTheme`), Match device (`themePair`), the theme menu and the own theme editor |
+| `ui.js` | `setLanguage`/`applyLanguage`, modes and tabs (`switchMode`, `renderTool`), dialogs, hold keys, install |
 | `help.js` | Tips & shortcuts text (`HELP`) and `showHelp` |
 | `main.js` | keypad and button wiring, the desktop keyboard handler, start-up. Loaded last |
 
@@ -129,7 +130,7 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   the number. Kept: choices (units picked, VAT add/remove, the kinds, Deg/Rad, f(x)), History, the fuel log. Typed values are
   not saved across visits; `saveTools`/`loadTools` keep only those choices. AC clears a tool.
 - **Storage:** all in the browser (`uc-history`, `uc-tools`, `uc-fuel-log`, `uc-rates`, `uc-lang`,
-  `uc-theme`). Use `store.get/set` – localStorage can throw.
+  `uc-theme`, `uc-theme-pair`, `uc-custom-themes`). Use `store.get/set` – localStorage can throw.
 - **Tool fields on a computer** edit like text boxes: a focused field keeps the browser's own Backspace, Delete and
   cursor (selection respected); the global handler only takes over when no field has the focus (keys go to the
   highlighted field, at the end). Comma and − are still the app's (one comma; − changes the sign).
@@ -168,13 +169,25 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   `window.__uiZoom`, CSS var `--z`). Viewport units must be written `calc(100dvh / var(--z,1))`, and any code that
   turns screen coordinates (clientX/Y, getBoundingClientRect, innerHeight) into CSS sizes must divide by
   `window.__uiZoom` (see `chZoom` in charts.js, `Z` in history.js).
-- **Themes:** Auto (follows the device); light: Light, Paper, Rose, Sky; dark: Dark, Black (OLED), Ocean, Violet, Ember, Forest. Every colour is a token in the theme blocks at the
-  top of styles.css (`html[data-theme]`); never write a colour into a rule, add a token instead. The `<head>` script and
-  `applyTheme` (ui.js) set `data-theme`; the theme button opens a menu (`THEMES`, `openThemeMenu`), each swatch shows the
-  theme's real colours via `[data-theme-preview]`. A new theme: a block in styles.css, its name in `THEMES`, texts in
-  `T` (`themeX`). Charts and graph lines read the tokens (`chColors`, `--series1..3`).
-  Check a new theme's contrast (text on card and keys, text on the accent) and look at it in every mode. Changing theme: circle reveal from the theme button (View
-  Transitions), fade fallback, instant with reduced motion.
+- **Themes** (theme.js): ready-made ones, light: Light, Paper, Rose, Sky; dark: Dark, Black (OLED), Ocean, Violet, Ember,
+  Forest (`LIGHT_PRESETS`, `DARK_PRESETS`); and an own theme in each group, `custom-light` / `custom-dark`. Every colour is a
+  token in the theme blocks at the top of styles.css (`html[data-theme]`); never write a colour into a rule, add a token
+  instead. `theme` is one theme or `'auto'` (**Match device**, a switch at the top of the menu): then the device picks
+  between a light and a dark theme, `themePair` (`uc-theme-pair`), and a tap in the menu sets that group's one (the menu
+  stays open). `resolvedTheme()` is what is on screen; an own theme that isn't made falls back to `light`/`dark`. The
+  `<head>` script in index.html repeats this logic before the first paint, so change both together.
+  **Own themes** are made from a background and an accent only: `deriveTheme(group,bg,accent)` works out every other
+  token and keeps it readable (text ≥ 7:1, muted ≥ 4.5, accent and chart lines ≥ 3 on the card and keys, text on the
+  accent ≥ 4.5; tested for many colours); `clampThemeBg` keeps a background in its group (by luminance). Saved in
+  `uc-custom-themes` with their tokens (`vars`, re-made on every start), which the `<head>` script turns into
+  `<style id="customThemes">` rules (`writeCustomCss` later), so they work like the ready-made ones, swatches included.
+  The editor (`openThemeEditor`, `#themeEditor`) is a panel at the bottom without dimming, so the app shows the colours
+  live (`themeDraft`); swatches plus "any colour" (`<input type="color">`); Save (Enter) / Cancel (Esc). Keys don't
+  reach the calculator while it is open. A new ready-made theme: a block in styles.css, its name in `LIGHT_PRESETS` or
+  `DARK_PRESETS` and in the `<head>` script, texts in `T` (`themeX`). Charts and graph lines read the tokens (`chColors`,
+  `--series1..3`). Check a new theme's contrast (text on card and keys, text on the accent) and look at it in every
+  mode. Changing theme: circle reveal from the theme button (View Transitions, `transitionTheme`), fade fallback,
+  instant with reduced motion.
 - **Dropdowns:** on desktop Chrome/Edge the unit menus use `appearance: base-select`, styled like the app; phones keep
   native pickers. While a dropdown has focus the global keydown handler leaves keys to it.
 - **± and holding keys:** holding ⌫ clears everything, holding − flips the sign (`negate`, Units: `unitKeyInput('negate')`);

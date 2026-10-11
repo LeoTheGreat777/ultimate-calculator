@@ -9,6 +9,7 @@
    [data-theme-preview] gives an element a theme's colours of its own (the swatches in the theme menu).
    A new theme is one more block here plus its name in THEMES (ui.js) and in the texts. */
 :root,[data-theme-preview="dark"]{color-scheme:dark;--bg:#070a0f;--card:#10151d;--card2:#171d26;--key:#1d2530;--key-hover:#293442;--text:#f5f7fa;--muted:#8f9bab;--accent:#6ea8fe;--accent2:#8bb9ff;--border:rgba(255,255,255,.08);--danger:#ff6666;--on-accent:#07101c;--unit-result:#596575;--series1:#6ea8fe;--series2:#f5a65b;--series3:#4cd38a}
+:root{--rainbow:conic-gradient(#ff4d4d,#ffd23f,#5fd35f,#3fd6e0,#4d7cff,#c04dff,#ff4d4d)}/* the "any colour" swatches (own themes) */
 html[data-theme="light"],[data-theme-preview="light"]{color-scheme:light;--bg:#f2f4f7;--card:#fff;--card2:#f5f7fa;--key:#e9edf2;--key-hover:#dde3ea;--text:#111722;--muted:#687384;--border:rgba(17,23,34,.1);--accent:#3478e5;--accent2:#2866c7;--danger:#ff6666;--on-accent:#07101c;--unit-result:#a3acb9;--series1:#3478e5;--series2:#e07b1a;--series3:#1f9d5a}
 /* Black: true black for OLED screens (black pixels are off), neutral greys, the same blue */
 html[data-theme="black"],[data-theme-preview="black"]{color-scheme:dark;--bg:#000;--card:#000;--card2:#0c0c0d;--key:#1a1a1c;--key-hover:#262629;--text:#f5f5f7;--muted:#8e8e93;--accent:#6ea8fe;--accent2:#8bb9ff;--border:rgba(255,255,255,.12);--danger:#ff6666;--on-accent:#07101c;--unit-result:#5c5c62;--series1:#6ea8fe;--series2:#f5a65b;--series3:#4cd38a}
@@ -625,6 +626,41 @@ html.landscape .calculator-card.graph-mode .keypad .key{height:auto!important;mi
 .theme-swatch-auto{display:flex}
 .theme-swatch-auto span{flex:1;align-self:stretch;display:grid;place-items:center;background:var(--bg)}
 .theme-swatch-auto i{width:8px;box-shadow:none;background:var(--accent)}
+/* Match device (a switch: one light and one dark theme), the two groups, an own theme's row with its edit button */
+.theme-auto[aria-checked="true"]{background:transparent}
+.theme-auto:hover,.theme-auto[aria-checked="true"]:hover{background:var(--key)}
+.theme-option-text small{display:block;margin-top:1px;font-size:11.5px;font-weight:550;color:var(--muted)}
+.theme-switch{position:relative;flex:0 0 auto;width:36px;height:22px;border-radius:11px;background:var(--key);border:1px solid var(--border);transition:background-color .2s}
+.theme-switch i{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--muted);transition:transform .2s,background-color .2s}
+.theme-auto[aria-checked="true"] .theme-switch{background:var(--accent)}
+.theme-auto[aria-checked="true"] .theme-switch i{transform:translateX(14px);background:var(--on-accent)}
+.theme-group{padding:6px 10px 3px;font-size:11px;font-weight:750;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.theme-group.now::after{content:'';display:inline-block;width:6px;height:6px;margin-left:7px;border-radius:50%;background:var(--accent);vertical-align:2px}
+.theme-row{display:flex;align-items:center;gap:2px}
+.theme-row .theme-option{flex:1;min-width:0}
+.theme-edit{flex:0 0 40px;height:42px;display:grid;place-items:center;padding:0;border:0;border-radius:11px;background:transparent;color:var(--muted);cursor:pointer}
+.theme-edit:hover{background:var(--key);color:var(--text)}
+.theme-edit:focus{outline:none}
+.theme-edit:focus-visible{outline:2px solid var(--accent2);outline-offset:-2px}
+.theme-swatch-new{background:var(--rainbow)}
+/* ---------- Own theme editor (theme.js, openThemeEditor): a panel at the bottom, no dimming, so the app shows the colours live ---------- */
+.theme-editor{position:fixed;left:50%;bottom:max(12px,env(safe-area-inset-bottom));z-index:105;transform:translateX(-50%);width:min(500px,calc(100vw / var(--z,1) - 24px));max-height:calc(100dvh / var(--z,1) - 24px);overflow-y:auto;padding:14px 16px 16px;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:22px;box-shadow:0 18px 60px rgba(0,0,0,.45)}
+.theme-editor.hidden{display:none}
+.theme-editor h2{margin:0;font-size:18px}
+.te-label{margin:12px 0 8px;font-size:11.5px;font-weight:750;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.te-row{display:flex;flex-wrap:wrap;gap:8px}
+.te-sw{position:relative;flex:0 0 auto;width:34px;height:34px;padding:0;border-radius:50%;border:1px solid var(--border);background:var(--c);cursor:pointer}
+.te-sw[aria-checked="true"],.te-any.on{box-shadow:0 0 0 2px var(--card),0 0 0 4px var(--accent2)}
+.te-sw:focus{outline:none}
+.te-sw:focus-visible,.te-any:focus-within{outline:2px solid var(--text);outline-offset:4px}
+.te-any{display:block;overflow:hidden;background:var(--rainbow)}
+.te-any input{position:absolute;inset:0;width:100%;height:100%;margin:0;padding:0;border:0;opacity:0;cursor:pointer}
+.te-any.on::after{content:'';position:absolute;inset:8px;border-radius:50%;background:var(--c);box-shadow:0 0 0 2px var(--card);pointer-events:none}
+.te-actions{display:flex;gap:10px;margin-top:16px}
+.te-btn{flex:1;min-height:44px;border:0;border-radius:14px;background:var(--key);color:var(--text);font:inherit;font-size:15px;font-weight:650;cursor:pointer}
+.te-btn:hover{background:var(--key-hover)}
+.te-btn.primary{background:var(--accent);color:var(--on-accent)}
+.te-btn.primary:hover{filter:brightness(1.08)}
 /* ---------- Scientific (calculator.js): the f(x) switch and DEG/RAD on the display, 15 keys above the basic ones ---------- */
 .sci-bar{position:absolute;top:8px;left:8px;z-index:3;display:flex;gap:6px}
 .calculator-card.tool-mode .sci-bar,.calculator-card.graph-mode .sci-bar{display:none}
