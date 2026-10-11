@@ -56,6 +56,11 @@ const HELP={
   ['«Πρόσθεση»: ποια ημερομηνία είναι σε τόσες ημέρες. Το ± κάνει τις ημέρες αρνητικές, για να πας πίσω.','“Add days”: which date it is so many days later. ± makes the days negative, to go back.'],
   ['Το «Εργάσιμες» πάνω αριστερά μετρά μόνο Δευτέρα με Παρασκευή χωρίς τις αργίες, π.χ. για άδειες και προθεσμίες.','“Working days” at the top left counts only Monday to Friday without public holidays, for leave and deadlines.'],
   ['Οι αργίες είναι οι ελληνικές, μαζί με όσες αλλάζουν με το Πάσχα (Καθαρά Δευτέρα, Μεγάλη Παρασκευή, Δευτέρα του Πάσχα, Αγίου Πνεύματος). Το ? δείχνει ποιες έπεσαν μέσα.','The public holidays are Greece’s, including the ones that move with Easter (Clean Monday, Good Friday, Easter Monday, Whit Monday). ? lists the ones that fall inside.']]},
+ net:{tips:[
+  ['«Υποδίκτυο»: γράψε μια διεύθυνση IP και το πρόθεμα (24) ή τη μάσκα (255.255.255.0). Βγαίνουν το δίκτυο, το broadcast, η πρώτη και η τελευταία διεύθυνση και πόσες συσκευές χωρούν.','“Subnet”: type an IP address and the prefix (24) or the mask (255.255.255.0). You get the network, the broadcast, the first and last host and how many hosts fit.'],
+  ['Το πλήκτρο . γράφει την τελεία. Στο πληκτρολόγιο, το / μετά τη διεύθυνση πάει στο πρόθεμα, και μια επικόλληση όπως 10.0.0.5/16 γεμίζει και τα δύο.','The . key types the dot. On a keyboard, / after the address goes to the prefix, and pasting something like 10.0.0.5/16 fills in both.'],
+  ['«Συσκευές»: πόσες συσκευές χρειάζεσαι, και βγαίνει το μικρότερο υποδίκτυο που τις χωράει, με τη μάσκα του.','“Hosts”: how many hosts you need, and you get the smallest subnet that fits them, with its mask.'],
+  ['Το ? δείχνει τη διεύθυνση, τη μάσκα, το δίκτυο και το broadcast σε δυαδικό. Το /31 έχει 2 διευθύνσεις (σύνδεση σημείου προς σημείο) και το /32 μία.','? shows the address, mask, network and broadcast in binary. /31 has 2 addresses (a point-to-point link) and /32 one.']]},
  fuel:{tips:[
   ['Συμπλήρωσε απόσταση, κατανάλωση και τιμή. Το κόστος βγαίνει αμέσως.','Fill in distance, consumption and price. The cost shows up right away.'],
   ['Την κατανάλωση σε L/100 km τη δείχνει ο υπολογιστής ταξιδιού του αυτοκινήτου. Για ταξίδι με επιστροφή, βάλε διπλή απόσταση.','The car’s trip computer shows consumption in L/100 km. For a round trip, enter double the distance.'],

@@ -676,3 +676,15 @@ html.landscape .calculator-card.sci-on .bottom-actions{display:none}
 .cal-foot{display:flex;justify-content:center;margin-top:6px}
 .cal-today{height:32px;padding:0 14px;border:1px solid var(--border);border-radius:999px;background:var(--card2);color:var(--text);font:inherit;font-size:13px;font-weight:650;cursor:pointer}
 @media (prefers-reduced-motion:reduce){.cal-pop{animation:none}}
+
+/* Subnet: the details under the fields, two to a row */
+.net-details{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 6px;margin-top:8px}
+.net-details div{display:flex;flex-direction:column;min-width:0;padding:5px 8px;border-radius:9px;background:var(--card)}
+.net-details span{font-size:11px;color:var(--muted)}
+.net-details strong{font-size:13.5px;font-weight:650;color:var(--text);font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.calculator-card.mobile-tool .net-details{margin-top:6px;gap:3px 8px}
+.calculator-card.mobile-tool .net-details div{padding:3px 6px}
+.calculator-card.mobile-tool .net-details strong{font-size:12.5px}
+/* a phone held sideways has no room for them: the range and the rest are under ? */
+html.landscape .calculator-card.mobile-tool .net-details{display:none}
+

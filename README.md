@@ -43,6 +43,7 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 - VAT add/remove calculator (VAT rounded to cents, as on invoices)
 - Percent: price after a discount, % change between two values, and a tip calculator that splits the bill between people
 - Dates: days between two dates and a date plus or minus days, picked with the device's own calendar; all days or working days only (Greek public holidays)
+- Subnet (IPv4): network, broadcast, host range, mask and wildcard from an address and a prefix or mask, and the smallest subnet for a number of hosts
 - Interest: a loan's monthly payment and total interest, how long a loan takes with the payment you can afford, and what savings grow to with monthly deposits, with charts
 - Charts and step-by-step explanations for every tool
 - Each tool remembers the values typed in it; AC clears them
@@ -53,7 +54,7 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 - English and Greek language support
 - Installable on phones: an install button opens the install dialog on Android, and shows a short Add to Home Screen guide on iPhone
 - Mobile-friendly calculator controls
-- One-tap mode tabs (Calculator, Units, Graph, VAT, Percent, Interest, Dates, Fuel, Energy); Alt+1–9 on a keyboard
+- One-tap mode tabs (Calculator, Units, Graph, VAT, Percent, Interest, Dates, Fuel, Energy, Subnet); Alt+1–9 for the first nine on a keyboard
 - Calculation explanations presented in a readable step-by-step view
 - Tips for every mode, with keyboard shortcuts on computers, from the footer (or ? on a keyboard)
 

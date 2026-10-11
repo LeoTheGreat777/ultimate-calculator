@@ -126,6 +126,7 @@ function renderTool(){
  $$('#toolPanel input[data-tool-input]').forEach(i=>fitDisplayText(i,12));
  setActiveToolInput($('#toolPanel input[data-tool-input]'));
  renderToggles();
+ if(mode==='net')renderNetDetails(null);// its cells take room: in place before fitting the layout
  renderToolKeypad();setActiveToolInput(toolActiveInput);// again, now that the keypad is there
  fitLayout();
 
@@ -142,7 +143,7 @@ function setMode(next){
  syncModeTabs();
 }
 // The modes, one tap each: a strip of tabs at the top of the card (scrolls sideways when they don't all fit).
-const MODE_LABELS=['calc','units','graph','vat','pct','loan','dates','fuel','energy'];
+const MODE_LABELS=['calc','units','graph','vat','pct','loan','dates','fuel','energy','net'];
 function renderModeTabs(){
  const track=$('#modeTabs .mode-tabs-track');if(!track)return;
  track.innerHTML=MODE_LABELS.map(m=>'<button class="mode-tab" role="tab" type="button" data-mode="'+m+'"><span class="mode-tab-icon" aria-hidden="true">'+modeIcon(m)+'</span><span class="mode-tab-label">'+esc(modeText(m))+'</span></button>').join('');

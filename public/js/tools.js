@@ -38,7 +38,7 @@ function renderToolDisplay(){
  d.classList.toggle('tool-empty',!toolResult);
  fitDisplayText($('#result'),24);
 }
-const FIELD_EXAMPLES={fuelD:'250',fuelC:'7,2',fuelP:'1,85',energyP:'100',energyH:'8',energyD:'30',energyR:'0,20',amount:'100',vatRate:'24%',pctPrice:'80',pctOff:'25%',pctFrom:'80',pctTo:'100',tipBill:'60',tipRate:'10%',tipPeople:'3',loanAmount:'10.000',payAmount:'10.000',payRate:'4%',payMonthly:'300',loanRate:'4%',loanYears:'5',saveStart:'1.000',saveMonthly:'100',saveRate:'3%',saveYears:'10',dateDays:'30',value:'10'};
+const FIELD_EXAMPLES={fuelD:'250',fuelC:'7,2',fuelP:'1,85',energyP:'100',energyH:'8',energyD:'30',energyR:'0,20',amount:'100',vatRate:'24%',pctPrice:'80',pctOff:'25%',pctFrom:'80',pctTo:'100',tipBill:'60',tipRate:'10%',tipPeople:'3',loanAmount:'10.000',payAmount:'10.000',payRate:'4%',payMonthly:'300',loanRate:'4%',loanYears:'5',saveStart:'1.000',saveMonthly:'100',saveRate:'3%',saveYears:'10',dateDays:'30',netIp:'192.168.1.10',netPrefix:'24',netHosts:'50',value:'10'};
 let vatAction='add';
 const liveToolNumber=id=>{const raw=normalizeNumericInput($('#'+id)?.value??'');if(raw==='')return null;const n=Number(raw);return Number.isFinite(n)?n:null};
 // On phones the fields are filled only from the app's own keypad, so the native keyboard never opens.
@@ -48,23 +48,26 @@ const field=(id,label)=>{const value=toolState[mode]?.inputs?.[id]??'';
 function setActiveToolInput(input){toolActiveInput=input||null;$$('#toolPanel input[data-tool-input]').forEach(i=>i.classList.toggle('tool-active',i===toolActiveInput));
  // the , key is ± for a whole number that may be negative (Dates' days), dimmed for other fields without decimals (People)
  const k=$('#keypad .tool-key[data-value=","]'),type=toolActiveInput&&FIELD_TYPE[toolActiveInput.id];
- if(k){k.textContent=type==='int'?'±':',';k.classList.toggle('key-off',!!type&&type!=='int')}}
+ if(k){k.textContent=type==='int'?'±':type==='ip'||type==='mask'?'.':',';k.classList.toggle('key-off',!!type&&type!=='int'&&type!=='ip'&&type!=='mask')}}
 function setToolResult(main,detail='',how=null){toolResult={main,detail,how};if(toolState[mode])toolState[mode].result=toolResult;howData=how;renderToolDisplay();}
 // Tools with kinds on a switch above their fields (Percent, Interest): each kind has its own fields.
 // Tip has defaults like the VAT rate. People is a whole number. The tip's three short fields share one row.
 const KIND_FIELDS={pct:{discount:['pctPrice','pctOff'],change:['pctFrom','pctTo'],tip:['tipBill','tipRate','tipPeople']},
  loan:{loan:['loanAmount','loanRate','loanYears'],payoff:['payAmount','payRate','payMonthly'],savings:['saveStart','saveMonthly','saveRate','saveYears']},
- dates:{between:['dateFrom','dateTo'],add:['dateStart','dateDays']}};
-const KIND_LABELS={pct:['pctDiscount','pctChange','pctTip'],loan:['loanLoan','loanPayoff','loanSavings'],dates:['dateBetween','dateAdd']};
+ dates:{between:['dateFrom','dateTo'],add:['dateStart','dateDays']},
+ net:{subnet:['netIp','netPrefix'],hosts:['netHosts']}};
+const KIND_LABELS={pct:['pctDiscount','pctChange','pctTip'],loan:['loanLoan','loanPayoff','loanSavings'],dates:['dateBetween','dateAdd'],net:['netKindSubnet','netKindHosts']};
 const ONE_ROW_KINDS=new Set(['tip']);
-let toolKind={pct:'discount',loan:'loan',dates:'between'};
+let toolKind={pct:'discount',loan:'loan',dates:'between',net:'subnet'};
 let dateCount='all';// Dates: count all days, or working days only
 const kindFields=(m=mode)=>KIND_FIELDS[m]?.[toolKind[m]]||[];
-const TOOL_DEFAULTS={vat:{vatRate:'24'},pct:{tipRate:'10',tipPeople:'1'},dates:{dateFrom:()=>isoDate(todayNumber()),dateStart:()=>isoDate(todayNumber())}};
+const TOOL_DEFAULTS={net:{netPrefix:'24'},vat:{vatRate:'24'},pct:{tipRate:'10',tipPeople:'1'},dates:{dateFrom:()=>isoDate(todayNumber()),dateStart:()=>isoDate(todayNumber())}};
 // Fields that aren't plain numbers: 'count' (People: digits only), 'int' (whole, may be negative: Dates' days; the
 // , key becomes ±), 'date' (the device's own date picker, <input type="date">, value YYYY-MM-DD; not typed on the keypad).
-const FIELD_TYPE={tipPeople:'count',dateDays:'int',dateFrom:'date',dateTo:'date',dateStart:'date'};
-const noDecimalField=id=>!!FIELD_TYPE[id],noSignField=id=>FIELD_TYPE[id]==='count'||FIELD_TYPE[id]==='date';
+// 'ip' and 'mask' (Subnet: digits and dots, 1.2.3.4; a mask field also takes a prefix like 24; the , key types a dot).
+const FIELD_TYPE={tipPeople:'count',dateDays:'int',dateFrom:'date',dateTo:'date',dateStart:'date',netIp:'ip',netPrefix:'mask',netHosts:'count'};
+const dottedField=id=>FIELD_TYPE[id]==='ip'||FIELD_TYPE[id]==='mask';
+const noDecimalField=id=>!!FIELD_TYPE[id]&&!dottedField(id),noSignField=id=>!!FIELD_TYPE[id]&&FIELD_TYPE[id]!=='int';
 function fillToolDefaults(m){const d=TOOL_DEFAULTS[m];if(d&&toolState[m])Object.entries(d).forEach(([id,v])=>{if(!toolState[m].inputs[id])toolState[m].inputs[id]=typeof v==='function'?v():v})}
 // Segmented switches (VAT add/remove, Percent discount/change/tip) work like iOS: tap a side, drag the thumb, or swipe.
 const TOGGLES={vat:{options:['add','remove'],labels:['addVat','removeVat'],get:()=>vatAction,set:v=>setVatAction(v)}};
@@ -86,13 +89,13 @@ function setToolKind(m,next){
  // like changing mode: the kind you leave starts over
  kindFields(m).forEach(id=>delete toolState[m].inputs[id]);
  toolKind[m]=next;renderToggles();
- if(mode===m){fillToolDefaults(m);renderKindFields();if(m==='dates'){renderToolKeypad();setActiveToolInput(toolActiveInput);fitLayout()}runActiveTool()}
+ if(mode===m){fillToolDefaults(m);renderKindFields();if(m==='net'){renderNetDetails(null);fitLayout()}if(m==='dates'){renderToolKeypad();setActiveToolInput(toolActiveInput);fitLayout()}runActiveTool()}
  saveTools();
 }
 // The switch and the fields of a tool with kinds. Changing kind replaces only the fields, so the switch keeps its slide animation.
 // In landscape a kind's fields share one row (--f fields), so the switch above them still fits beside the keypad.
 const kindGridClass=()=>'tool-grid kind-grid'+(ONE_ROW_KINDS.has(toolKind[mode])?' cols-3':'');
-function kindPanelHtml(){return toggleHtml(mode,true)+'<div class="'+kindGridClass()+'" style="--f:'+kindFields().length+'">'+kindFieldsHtml()+'</div>'}
+function kindPanelHtml(){return toggleHtml(mode,true)+'<div class="'+kindGridClass()+'" style="--f:'+kindFields().length+'">'+kindFieldsHtml()+'</div>'+(mode==='net'?'<div id="netDetails" class="net-details"></div>':'')}
 function kindFieldsHtml(){return kindFields().map(id=>field(id,t(id))).join('')}
 function renderKindFields(){
  const grid=$('#toolPanel .tool-grid');if(!grid||!KIND_FIELDS[mode])return;
@@ -357,6 +360,7 @@ function toolKeyInput(key){
  let value=input.value;
  if(key==='clear')value='';
  else if(key==='backspace')value=value.slice(0,-1);
+ else if(dottedField(input.id)){const v=dottedKey(value,key);if(v===null){refuseKey(input);return false}value=v}// 192.168.1.10 (net.js)
  else if(FIELD_TYPE[input.id]==='int'&&(key==='.'||key===','))value=value.startsWith('-')?value.slice(1):'-'+value;// the ± key
  else if((noDecimalField(input.id)&&(key==='.'||key===','))||(noSignField(input.id)&&key==='-')){refuseKey(input);return false}
  else if(key==='.'||key===','){if(!/[.,]/.test(value))value+=(value===''||value==='-')?'0,':','}
@@ -374,6 +378,7 @@ function runActiveTool(){
  if(mode==='pct'){window._runPct?.();return}
  if(mode==='loan'){window._runLoan?.();return}
  if(mode==='dates'){window._runDates?.();return}
+ if(mode==='net'){window._runNet?.();return}
  if(mode==='units'){window._runUnits?.();return}
 }
 
@@ -386,11 +391,19 @@ $('#toolPanel').addEventListener('focusin',e=>{if(e.target.matches('input[data-t
 $('#toolPanel').addEventListener('click',e=>{const input=e.target.closest('.tool-field')?.querySelector('input[data-tool-input]');if(input)setActiveToolInput(input)});
 $('#toolPanel').addEventListener('beforeinput',e=>{
  if(!e.target.matches('input[data-tool-input]')||e.inputType?.startsWith('delete'))return;
+ if(e.data&&dottedField(e.target.id)){if(!/^[0-9.\/]+$/.test(e.data))e.preventDefault();return}
  if(e.data&&!(noSignField(e.target.id)?/^[0-9]+$/:noDecimalField(e.target.id)?/^[0-9-]+$/:/^[0-9.,-]+$/).test(e.data))e.preventDefault();
 });
 $('#toolPanel').addEventListener('keydown',e=>{
  if(!e.target.matches('input[data-tool-input]'))return;// date pickers keep all their keys
  if(e.ctrlKey||e.metaKey||e.altKey)return;
+ if(dottedField(e.target.id)&&/^[.,]$/.test(e.key)){
+  // a dot where the cursor is, if one fits there (the window's handler would type a comma)
+  e.preventDefault();e.stopPropagation();const i=e.target,a=i.selectionStart??i.value.length,b=i.selectionEnd??a;
+  if(dottedKey(i.value.slice(0,a),'.')===null){refuseKey(i);return}
+  i.setRangeText('.',a,b,'end');i.dispatchEvent(new Event('input',{bubbles:true}));return;
+ }
+ if(e.key==='/'&&e.target.id==='netIp'){e.preventDefault();const n=$('#netPrefix');if(n){n.focus();n.select();setActiveToolInput(n)}return}// 192.168.1.10/24
  if((noDecimalField(e.target.id)&&/^[.,]$/.test(e.key))||(noSignField(e.target.id)&&e.key==='-')){e.preventDefault();refuseKey(e.target);return}
  // − changes the sign, as on the keypad (typed into the middle it would make the number unreadable)
  if(e.key==='-'){e.preventDefault();setActiveToolInput(e.target);toolKeyInput('-');return}
@@ -404,6 +417,13 @@ $('#toolPanel').addEventListener('input',e=>{
  const key=input.id;
  if(!key)return;
  let raw=input.value;
+ if(dottedField(key)){
+   // typed or pasted on a keyboard: "192.168.1.10/24" fills both fields; anything that isn't an address is refused
+   if(key==='netIp'&&raw.includes('/')){const [a,b]=raw.split('/');raw=a;const n=$('#netPrefix');if(n&&b){n.value=b.replace(/\D/g,'').slice(0,2);toolState[mode].inputs.netPrefix=n.value}}
+   const ok=/^(\d{1,3}(\.\d{0,3}){0,3})?$/.test(raw)&&raw.split('.').every(p=>p===''||(+p<=255&&!(p.length>1&&p[0]==='0')));
+   if(!ok){input.value=toolState[mode]?.inputs?.[key]??'';refuseKey(input);return}
+   input.value=raw;toolState[mode].inputs[key]=raw;fitDisplayText(input,12,true);runActiveTool();return;
+ }
   if(digitCount(raw)>MAX_DIGITS){input.value=toolState[mode]?.inputs?.[key]??'';refuseKey(input);return}// typed or pasted on a keyboard: 15 digits at most
  if(/^0\d/.test(raw))raw=raw.replace(/^0+(?=\d)/,'');
  if(raw!==input.value)input.value=raw;

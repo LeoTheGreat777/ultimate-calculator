@@ -313,6 +313,29 @@ async def desktop(browser, url, lang, theme):
     await p.click('.tool-key[data-value=","]')
     st = [await p.evaluate('dateDays.value'), await p.evaluate(R), await p.evaluate(X)]
     check(L + 'Dates: ± goes back', st == ['-5', '18/10/2026', t('Sunday', 'Κυριακή', lang)], st)
+    # Subnet: address + prefix or mask, a / jumps to the prefix; hosts -> prefix
+    await p.evaluate("switchMode('net');setToolKind('net','subnet')")
+    await p.click('#netIp')
+    await p.keyboard.type('192.168.1.130')
+    await p.keyboard.press('/')
+    await p.keyboard.type('255.255.255.192')
+    st = [await p.evaluate(R), await p.evaluate(X), await p.evaluate("netDetails.textContent.includes('192.168.1.191')")]
+    check(L + 'Subnet: 192.168.1.130 with 255.255.255.192', st == ['192.168.1.128/26', t('62 hosts · Private · Class C', '62 συσκευές · Ιδιωτική · Κλάση C', lang), True], st)
+    await p.evaluate("netPrefix.value='31';netPrefix.dispatchEvent(new Event('input',{bubbles:true}))")
+    check(L + 'Subnet: /31 has 2 addresses', (await p.evaluate(X)).startswith('2 '), await p.evaluate(X))
+    await p.click('#netIp')
+    await p.keyboard.press('Control+a')
+    await p.keyboard.type('10.300')
+    check(L + 'Subnet: a part over 255 is refused', await p.evaluate('netIp.value') == '10.30', await p.evaluate('netIp.value'))
+    await p.keyboard.press(',')
+    await p.keyboard.type('1.2.3.')
+    check(L + 'Subnet: the comma key types a dot, and no fifth part', await p.evaluate('netIp.value') == '10.30.1.23', await p.evaluate('netIp.value'))
+    await p.click('[data-choice="hosts"]')
+    await p.click('#netHosts')
+    await p.keyboard.type('50')
+    st = [await p.evaluate(R), await p.evaluate(X)]
+    check(L + 'Subnet: 50 hosts need a /26', st == ['/26', t('255.255.255.192 · 62 hosts', '255.255.255.192 · 62 συσκευές', lang)], st)
+    await p.evaluate("setToolKind('net','subnet')")
     # changing mode clears the mode you leave (only Calculator -> Units carries the number)
     await p.evaluate("switchMode('vat')")
     await p.click('.tool-key[data-action="clear-all"]')
@@ -595,11 +618,12 @@ async def phone(browser, url, lang, theme, size):
         await p.tap(f'.key[data-value="{key}"]')
     await p.tap('.key[data-action="equals"]')
     check(L + 'keypad works', await p.evaluate(R) == '8')
-    for m in ['calc', 'sci', 'units', 'graph', 'vat', 'pct', 'tip', 'loan', 'savings', 'dates', 'fuel', 'energy']:
+    for m in ['calc', 'sci', 'units', 'graph', 'vat', 'pct', 'tip', 'loan', 'savings', 'dates', 'fuel', 'energy', 'net']:
         # 'sci' is the Calculator with the scientific keys on
         # 'tip' is Percent's tip, the kind with the most fields
         await p.evaluate("switchMode('calc');if(!sciMode)toggleSci()" if m == 'sci' else "switchMode('pct');setToolKind('pct','tip')" if m == 'tip'
-                         else "switchMode('loan');setToolKind('loan','savings')" if m == 'savings' else f"switchMode('{m}')")
+                         else "switchMode('loan');setToolKind('loan','savings')" if m == 'savings'
+                         else "switchMode('net');setToolKind('net','subnet');for(const[k,v] of [['netIp','10.0.0.5'],['netPrefix','16']]){const i=document.getElementById(k);i.value=v;i.dispatchEvent(new Event('input',{bubbles:true}))}" if m == 'net' else f"switchMode('{m}')")
         await p.wait_for_timeout(200)
         # compared with the real screen size: a phone browser widens the page to fit content that is too wide
         fits = await p.evaluate("""([vw,vh])=>{const scroll=document.documentElement.classList.contains('page-scroll');

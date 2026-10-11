@@ -1,6 +1,6 @@
 # Ultimate Calculator – notes for Claude
 
-An all-in-one calculator web app: calculator, graph, unit converter, VAT, percent/discount/tip, interest (loan/savings), dates, fuel and energy tools.
+An all-in-one calculator web app: calculator, graph, unit converter, VAT, percent/discount/tip, interest (loan/savings), dates, fuel, energy and subnet (IPv4) tools.
 Plain HTML/CSS/vanilla JS, no framework, no build step, no backend. English and Greek; new users start
 in English and dark theme (people who used the app before keep Greek / their theme, see the script in the
 `<head>` of `public/index.html`). Numbers always use Greek formatting: `1.234,56`.
@@ -50,6 +50,7 @@ Everything the app serves is in `public/` (the web root for both GitHub Pages an
 | `units.js` | unit data and names, conversion, the two values, `unitKeyInput` |
 | `tools.js` | VAT, Percent, Interest, Fuel, Energy: fields, saved values, calculations, switches, `toolKeyInput`, tool field events |
 | `dates.js` | Dates: day numbers, date pickers, Orthodox Easter and Greek public holidays, working days, the details list, the Working days chip |
+| `net.js` | Subnet: IPv4 parsing (`parseIp`, `parsePrefix` takes /24 or a mask), `dottedKey`, the details grid, the Subnet calculations |
 | `layout.js` | `fitLayout` (fits every mode to the screen), long text (`fitDisplayText`, `refuseKey`), zoom on big screens |
 | `ui.js` | theme, `setLanguage`/`applyLanguage`, modes and tabs (`switchMode`, `renderTool`), dialogs, hold keys, install |
 | `help.js` | Tips & shortcuts text (`HELP`) and `showHelp` |
@@ -100,11 +101,13 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   Change them in all places together.
 - **Tool modes** are `TOOL_MODES` (core.js): use it rather than listing them. Defaults (VAT rate 24, tip 10% for 1 person)
   are `TOOL_DEFAULTS`, filled in on entering the mode and after AC. Percent (discount, change, tip), Interest (`loan`:
-  loan, payoff, savings) and Dates (between, add) have kinds on a switch above their fields: `KIND_FIELDS`, `KIND_LABELS`, `toolKind[mode]`, `setToolKind`,
+  loan, payoff, savings) Dates (between, add) and Subnet (`net`: subnet, hosts) have kinds on a switch above their fields: `KIND_FIELDS`, `KIND_LABELS`, `toolKind[mode]`, `setToolKind`,
   `kindPanelHtml`; switching kinds re-renders only the fields, AC (and changing kind) clears the kind on screen. In
   landscape a kind's fields share one row (`.kind-grid`, `--f`, one-line labels); the tip always does (`ONE_ROW_KINDS`). `FIELD_TYPE` marks fields that aren't plain numbers:
   'count' (People: digits only; the , key is dimmed), 'int' (Dates' days: may be negative; the , key becomes ±),
-  'date' (the device's own date picker, `<input type="date">`, value YYYY-MM-DD, not on the keypad). A tip split between people is rounded
+  'date' (the device's own date picker, `<input type="date">`, value YYYY-MM-DD, not on the keypad), 'ip'/'mask'
+  (`dottedField`: digits and dots, each part ≤ 255, checked by `dottedKey` and on keyboard input; the , key types a dot;
+  / in the address jumps to the prefix, a pasted 10.0.0.5/16 fills both). A tip split between people is rounded
   up to the cent (`ratCentsUp`) so the shares cover the bill. Interest (`loanNumbers`, floats like Fuel/Energy): yearly
   rate, interest monthly, months = round(years × 12) up to 1200; a loan's payment is rounded to cents; savings deposits
   come at the end of each month, an empty starting amount or deposit counts as 0. Payoff (`payoffNumbers`): months to
@@ -115,6 +118,8 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   "Between" has no number to type, so `#keypad.date-details` shows a details list instead of keys.
   With a mouse (`ownCalendar`), a date is a button (`datePickHtml`, its `value` is YYYY-MM-DD) opening the app's
   calendar (`openCalendar`, `#calPop`: days/months/years views, holidays dotted); touch devices keep `<input type="date">`.
+  Subnet (net.js): /31 = 2 addresses, /32 = 1, else 2^(32−p) − 2. Its details grid (`#netDetails`, `renderNetDetails`)
+  always shows its cells (– until a result) so the layout doesn't jump; hidden on sideways phones (the working under ? has it).
 - **Switches** (VAT add/remove, the kinds of Percent, Interest and Dates) are one generic segmented control: `TOGGLES`, `toggleHtml`,
   `renderToggles`, `setupToggleSlide` (tap, drag, swipe, ← →), `.seg-toggle` in styles.css (`--n` options, `--i` chosen).
 - **Changing mode clears the mode you leave** (`resetModeInput`, called by `switchMode`): numbers typed and results
@@ -141,7 +146,7 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   stays exact where the answer is exact and rounds floats to 15 digits otherwise. Shown with superscripts and sin⁻¹
   (`sciPretty`). Keyboard: ^ and !.
 - **Modes are tabs:** a strip of tabs at the top of the card (`MODE_LABELS`, `renderModeTabs`, `switchMode`), one tap
-  each, scrolling sideways when they don't fit; Alt+1…9 on a keyboard. When they don't all fit, a slim bar under them
+  each, scrolling sideways when they don't fit; Alt+1…9 on a keyboard (the tenth tab, Subnet, has none). When they don't all fit, a slim bar under them
   (`.tabs-scrollbar`, `syncTabEdges`, `flashTabsBar`) shows while they move and briefly on start; it can be dragged
   or pressed (`setupTabsBar`), spans the whole strip; with a mouse it shows while the mouse is over the tabs or its strip and
   fades out shortly after (the tabs can be mouse-dragged too). Phones keep their overscroll bounce; past an end (negative/over-max `scrollLeft`, or `tabsPull` measured from

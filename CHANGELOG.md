@@ -6,6 +6,17 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.12.0 – 2026-10-11
+
+### Added
+- **Subnet** tab (IPv4), with two kinds:
+  - **Subnet:** an IP address with a prefix (24) or a mask (255.255.255.0) gives the network, the broadcast, the first
+    and last host, the mask, the wildcard and the number of hosts, and says whether the address is private or public.
+    ? shows the working in binary.
+  - **Hosts:** how many hosts you need gives the smallest subnet that fits them, with its mask.
+  The keypad's . key types the dots; on a keyboard, / after the address goes to the prefix, and pasting 10.0.0.5/16
+  fills both fields.
+
 ## 0.11.3 – 2026-10-11
 
 ### Changed
