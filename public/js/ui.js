@@ -169,14 +169,38 @@ function syncTabEdges(){
  // the slim bar under the tabs: as wide as the part in view, where the view is. Pulled past an end (the bounce of a
  // touch screen), the thumb stays at that end and gets shorter, like a phone's own scroll bars.
  const bar=nav.querySelector('.tabs-scrollbar'),thumb=bar?.querySelector('span');if(!thumb||start&&end)return;
- const max=track.scrollWidth-track.clientWidth,x=track.scrollLeft,over=x<0?-x:x>max?x-max:0;
- const room=bar.clientWidth,w=Math.max(12,Math.max(28,room*track.clientWidth/track.scrollWidth)-over*1.5);
+ // tabsPull: how far a finger pulls past an end (Android stretches instead of moving the tabs, so it's measured here)
+ const max=track.scrollWidth-track.clientWidth,x=track.scrollLeft,over=Math.max(x<0?-x:x>max?x-max:0,tabsPull);
+ const room=bar.clientWidth,w=Math.max(10,Math.max(32,room*track.clientWidth/track.scrollWidth)-over*1.6);
  thumb.style.width=w+'px';thumb.style.transform='translateX('+(room-w)*Math.min(1,Math.max(0,x/Math.max(1,max)))+'px)';
 }
 // The bar can be grabbed, with a mouse or a finger: drag the thumb, or press the bar elsewhere to jump there.
+// With a mouse the tabs themselves can be dragged sideways too. On a phone the tabs bounce past their ends (the
+// phone's own overscroll) and the thumb shrinks against that end while they do.
+let tabsPull=0;
 function setupTabsBar(){
  const nav=$('#modeTabs'),bar=nav?.querySelector('.tabs-scrollbar'),track=nav?.querySelector('.mode-tabs-track');if(!bar||!track)return;
- let drag=null;
+ let drag=null,touch=null,grab=null,suppress=false;
+ // a finger pulling past an end
+ track.addEventListener('touchstart',e=>{const t=e.touches[0];touch={x:t.clientX,left:track.scrollLeft};nav.classList.remove('bar-release')},{passive:true});
+ track.addEventListener('touchmove',e=>{
+  if(!touch)return;const dx=(e.touches[0].clientX-touch.x)/(window.__uiZoom||1),m=track.scrollWidth-track.clientWidth;
+  const pull=track.scrollLeft<=1&&dx>0?dx-touch.left:track.scrollLeft>=m-1&&dx<0?-dx-(m-touch.left):0;
+  tabsPull=Math.max(0,pull)*.6;syncTabEdges();flashTabsBar();
+ },{passive:true});
+ const letGo=()=>{touch=null;if(!tabsPull)return;tabsPull=0;nav.classList.add('bar-release');syncTabEdges();setTimeout(()=>nav.classList.remove('bar-release'),400)};
+ track.addEventListener('touchend',letGo);track.addEventListener('touchcancel',letGo);
+ // dragging the tabs with a mouse (a click that doesn't move still picks the tab)
+ track.addEventListener('pointerdown',e=>{if(e.pointerType!=='mouse'||e.button>0||nav.classList.contains('all-fit'))return;grab={id:e.pointerId,x:e.clientX,left:track.scrollLeft,moved:false}});
+ track.addEventListener('pointermove',e=>{
+  if(!grab||e.pointerId!==grab.id)return;const dx=e.clientX-grab.x;
+  if(!grab.moved&&Math.abs(dx)<5)return;
+  if(!grab.moved){grab.moved=true;track.setPointerCapture?.(e.pointerId);nav.classList.add('tabs-grab')}
+  track.scrollLeft=grab.left-dx/(window.__uiZoom||1);
+ });
+ const drop=e=>{if(!grab||e.pointerId!==grab.id)return;if(grab.moved){suppress=true;setTimeout(()=>suppress=false,0)}grab=null;nav.classList.remove('tabs-grab')};
+ track.addEventListener('pointerup',drop);track.addEventListener('pointercancel',drop);
+ track.addEventListener('click',e=>{if(suppress){e.stopPropagation();e.preventDefault()}},true);
  const Z=()=>window.__uiZoom||1,max=()=>track.scrollWidth-track.clientWidth;
  const thumbW=()=>bar.querySelector('span').getBoundingClientRect().width/Z();
  const moveTo=clientX=>{const r=bar.getBoundingClientRect(),room=r.width/Z()-thumbW();track.scrollLeft=Math.min(max(),Math.max(0,(clientX/Z()-r.left/Z()-drag.grab)/Math.max(1,room)*max()))};

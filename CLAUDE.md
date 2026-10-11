@@ -143,7 +143,9 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
 - **Modes are tabs:** a strip of tabs at the top of the card (`MODE_LABELS`, `renderModeTabs`, `switchMode`), one tap
   each, scrolling sideways when they don't fit; Alt+1…9 on a keyboard. When they don't all fit, a slim bar under them
   (`.tabs-scrollbar`, `syncTabEdges`, `flashTabsBar`) shows while they move and briefly on start; it can be dragged
-  or pressed (`setupTabsBar`), and past an end (touch bounce) the thumb shrinks instead of moving out; and with a mouse
+  or pressed (`setupTabsBar`), spans the whole strip, and always shows with a mouse (the tabs can be mouse-dragged
+  too). Phones keep their overscroll bounce; past an end (negative/over-max `scrollLeft`, or `tabsPull` measured from
+  touch for Android's stretch) the thumb shrinks against that end; and with a mouse
   ‹ › buttons appear on hover at the edges that have more tabs. Add a new mode to `MODE_LABELS`, `ICONS`
   and `MODE_TRANSLATIONS`. Units is its own tab after Calculator. Going Calculator -> Units moves the calculator's
   number into the Units value last typed in (`unitSource`) and resets the calculator; nothing moves back.

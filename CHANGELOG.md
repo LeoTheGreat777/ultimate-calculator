@@ -6,6 +6,14 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.11.2 – 2026-10-11
+
+### Changed
+- The bar under the tabs now spans the whole tab strip and is thicker. On a computer it always shows, easy to grab, and
+  the tabs themselves can also be dragged sideways with the mouse.
+- On phones the tabs bounce past their ends again; while they do, the bar shrinks against that end instead of moving
+  out of the card, and grows back when you let go.
+
 ## 0.11.1 – 2026-10-10
 
 ### Changed
