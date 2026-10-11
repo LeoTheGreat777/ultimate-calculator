@@ -974,6 +974,51 @@ async def no_fuel_log(browser, url):
     await p.context.close()
 
 
+async def tool_charts(browser, url, phone):
+    """The tool charts: Fuel's what-if grid, VAT at every Greek rate, Energy per period, a loan year by year."""
+    L = '[charts%s] ' % (' phone' if phone else '')
+    p = await new_page(browser, url, 'en', 'dark', phone=phone)
+    async def fill(m, fields, kind=None):
+        await p.evaluate(f"switchMode('{m}')")
+        if kind:
+            await p.evaluate(f"setToolKind('loan','{kind}')")
+        for fid, v in fields:
+            await p.evaluate(f"(()=>{{const e=document.getElementById('{fid}');e.value='{v}';e.dispatchEvent(new Event('input',{{bubbles:true}}))}})()")
+        await p.evaluate("showToolChart()")
+        await p.wait_for_timeout(150)
+        fits = await p.evaluate("(()=>{const c=document.querySelector('#howModal .modal-card');return c.scrollWidth<=c.clientWidth+1})()")
+        check(L + f'{m} {kind or ""}: nothing sticks out sideways', fits)
+    await fill('fuel', [['fuelD', '70'], ['fuelC', '4,5'], ['fuelP', '2,3']])
+    got = await p.evaluate("[[...document.querySelectorAll('.what-if td')].map(t=>t.textContent),document.querySelector('.what-if td.me').textContent,document.querySelector('#result').textContent,document.querySelector('#toolChartLegend').textContent]")
+    check(L + 'fuel: 3 × 3 grid, the middle is the result', len(got[0]) == 9 and got[0][4] == got[1] == got[2] == '7,24 €' and got[0][0] == '6,16 €' and got[0][8] == '8,40 €', got)
+    check(L + 'fuel: return trip and per 100 km', '14,49 €' in got[3] and '10,35 €' in got[3], got[3])
+    await p.evaluate("closeHow()")
+    await fill('vat', [['amount', '100']])
+    got = await p.evaluate("[...document.querySelectorAll('#toolChartBody .crow')].map(r=>r.querySelector('.cl').textContent+'='+r.querySelector('.cv').firstChild.textContent+(r.classList.contains('hl')?'*':''))")
+    check(L + 'vat: the amount at 24, 13 and 6%, the rate typed highlighted', got == ['24%=124,00 €*', '13%=113,00 €', '6%=106,00 €'], got)
+    await p.evaluate("closeHow()")
+    await p.evaluate("(()=>{const e=document.getElementById('vatRate');e.value='17';e.dispatchEvent(new Event('input',{bubbles:true}))})()")
+    await p.evaluate("showToolChart()")
+    await p.wait_for_timeout(150)
+    got = await p.evaluate("[...document.querySelectorAll('#toolChartBody .crow .cl')].map(r=>r.textContent)")
+    check(L + 'vat: another rate typed is added in its place', got == ['24%', '17%', '13%', '6%'], got)
+    await p.evaluate("closeHow()")
+    await fill('energy', [['energyP', '2000'], ['energyH', '3'], ['energyD', '30'], ['energyR', '0,15']])
+    got = await p.evaluate("[...document.querySelectorAll('#toolChartBody .crow')].map(r=>r.querySelector('.cl').textContent+'='+r.querySelector('.cv').textContent+(r.classList.contains('hl')?'*':''))")
+    check(L + 'energy: hour, day, month (the days typed) and year with kWh',
+          got == ['Hour=0,30 €2 kWh', 'Day=0,90 €6 kWh', 'Month=27,00 €180 kWh*', 'Year=328,50 €2.190 kWh'], got)
+    await p.evaluate("closeHow()")
+    for kind, fields, total in [('loan', [['loanAmount', '20000'], ['loanRate', '5'], ['loanYears', '5']], 2645.20),
+                                ('payoff', [['payAmount', '10000'], ['payRate', '5'], ['payMonthly', '300']], 788.72)]:
+        await fill('loan', fields, kind)
+        got = await p.evaluate("[...document.querySelectorAll('#toolChartBody .crow .cv')].map(v=>v.firstChild.textContent)")
+        cents = sum(int(x.replace(' €', '').replace('.', '').replace(',', '')) for x in got)
+        check(L + f'{kind}: a row per year, the interest adds up to the total', len(got) == (5 if kind == 'loan' else 3) and cents == round(total * 100), [got, cents])
+        await p.evaluate("closeHow()")
+    check(L + 'no JavaScript errors', not p.errors, p.errors)
+    await p.context.close()
+
+
 async def update_keeps_themes(browser, url):
     """An update reloads the page: own themes, the chosen theme and the language stay; colours being edited are kept."""
     L = '[update] '
@@ -1272,6 +1317,8 @@ async def main():
         await icons(browser, url)
         await update_keeps_themes(browser, url)
         await no_fuel_log(browser, url)
+        await tool_charts(browser, url, False)
+        await tool_charts(browser, url, True)
         await ios_app(browser, url)
         await offline_status_and_turning(browser, url)
         await sideways_and_chips(browser, url)

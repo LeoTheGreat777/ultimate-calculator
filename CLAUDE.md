@@ -245,6 +245,12 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   Units has the same keypad as the calculator, including ( ).
 - **Tips:** a sheet per mode (`HELP`, `showHelp`), opened from the footer "Tips" link or the ? key; its keyboard
   shortcuts section only shows on devices with a keyboard. When behaviour changes, update the tips in both languages.
+- **Tool charts** (the bars button, `showToolChart`/`drawToolChart` in charts.js) answer a question rather than redraw
+  the result, mostly as HTML so numbers stay sharp: Fuel a 3×3 grid of the cost at ±0,10 €/L and ±0,5 L/100 km (the
+  middle is the result) plus return trip and per 100 km; VAT the same amount at 24, 13 and 6% (and the rate typed);
+  Energy cost and kWh per hour, day, month, year (the days typed highlighted); a loan or payoff year by year
+  (`loanYears`: interest per year, rounded so the years add up to the result's interest, and what's left). Bar rows
+  are `chRows` (`.chart-body` grid, `.crow`). Savings keeps its canvas line chart (`chLineChart`).
 - **No fuel log:** the save/saved-entries buttons in Fuel were removed on purpose (0.15.5); don't add them back.
 - **Copying:** tapping a finished result copies it (calculator and tools), so the copy button can be hidden
   on short screens.

@@ -347,6 +347,25 @@ body.graph-on .bottom-actions{display:none}
 .chart-dot{display:inline-block;width:10px;height:10px;border-radius:50%;flex:0 0 10px}
 .chart-note{margin:10px 0 0;color:var(--muted);font-size:13px;line-height:1.45}
 .chart-note:empty{display:none}
+.tool-chart[hidden],.chart-body:empty{display:none}
+.chart-body{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;column-gap:10px;row-gap:8px;margin-top:2px;font-size:13px}
+.chart-body:has(.what-if){display:block}
+.crow{display:contents}
+.crow .cl{color:var(--muted);font-weight:600;white-space:nowrap}
+.crow .cbar{height:14px;border-radius:5px;background:var(--card2);overflow:hidden;display:flex}
+.crow .cfill{display:flex;height:100%;min-width:3px;border-radius:5px;overflow:hidden}
+.crow .cs1{background:var(--series1)}
+.crow .cs2{background:var(--series2)}
+.crow .cv{text-align:right;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.crow .cv small{display:block;font-size:11px;font-weight:500;color:var(--muted)}
+.crow.hl .cl{color:var(--text)}
+.crow:not(.hl) .cfill{opacity:.55}
+.chart-body:not(:has(.crow.hl)) .crow .cfill{opacity:1}
+.what-if{width:100%;border-collapse:separate;border-spacing:4px;table-layout:fixed;font-variant-numeric:tabular-nums;margin:0 -4px;width:calc(100% + 8px)}
+.what-if th{font-size:11.5px;font-weight:600;color:var(--muted);padding:4px 2px;text-align:center;white-space:nowrap}
+.what-if tr th:first-child{text-align:left}
+.what-if td{background:var(--card2);border-radius:10px;padding:10px 2px;text-align:center;font-size:13.5px;font-weight:600;white-space:nowrap}
+.what-if td.me{background:var(--accent);color:var(--on-accent);font-weight:800}
 .graph-points .how-formula{display:flex;align-items:center;gap:8px;overflow-wrap:anywhere}
 .graph-point-line{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px solid var(--border);font-size:14px}
 .graph-point-line span{color:var(--muted)}

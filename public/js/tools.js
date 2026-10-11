@@ -161,8 +161,9 @@ const ratCents=x=>ratFromString(ratToRoundedDecimal(x,2));
 const ratCentsUp=x=>{const n=x.n*100n;let q=n/x.d;if(n%x.d!==0n&&n>0n)q++;return rat(q,100n)};
 // VAT the way invoices do it: the VAT amount is rounded to cents and the total is net + VAT, so the numbers always add up.
 // Exact fractions, so no floating-point rounding surprises. Used by the VAT tool and its chart. null if a field is empty.
-function vatNumbers(add=vatAction==='add'){
- const A=ratField('amount'),R=ratField('vatRate'),hundred=rat(100n);
+// R: the rate typed, or another one (the chart shows the amount at every Greek rate)
+function vatNumbers(add=vatAction==='add',R=ratField('vatRate')){
+ const A=ratField('amount'),hundred=rat(100n);
  if(!A||!R)return null;
  const factor=ratAdd(rat(1n),ratDiv(R,hundred));if(factor.n===0n)return null;
  const cents=ratCents;

@@ -43,7 +43,7 @@ const HELP={
   ['Ο συντελεστής ξεκινά στο 24%. Άλλαξέ τον αν χρειάζεσαι άλλον.','The rate starts at 24%. Change it if you need another one.'],
   ['Ο ΦΠΑ στρογγυλεύεται σε λεπτά, όπως στα τιμολόγια, οπότε τα ποσά πάντα συμφωνούν.','VAT is rounded to cents, as on invoices, so the amounts always add up.'],
   ['Σύρε τον διακόπτη ή πάτα ← → πάνω του για να αλλάξεις πρόσθεση και αφαίρεση.','Slide the switch, or press ← → on it, to change between add and remove.'],
-  ['Το ? δείχνει πώς βγήκε το ποσό και το κουμπί με τις στήλες το δείχνει σε διάγραμμα. Πάτα το αποτέλεσμα για να το αντιγράψεις.','? shows how the amount was worked out and the bars button shows it as a chart. Tap the result to copy it.']]},
+  ['Το ? δείχνει πώς βγήκε το ποσό. Το κουμπί με τις στήλες δείχνει το ίδιο ποσό με 24%, 13% και 6%. Πάτα το αποτέλεσμα για να το αντιγράψεις.','? shows how the amount was worked out. The bars button shows the same amount at 24%, 13% and 6%. Tap the result to copy it.']]},
  pct:{tips:[
   ['Τρία είδη στον διακόπτη: «Έκπτωση» δίνει την τελική τιμή, «Μεταβολή» πόσο τοις εκατό άλλαξε κάτι, «Φιλοδώρημα» πόσα πληρώνει ο καθένας.','Three kinds on the switch: “Discount” gives the final price, “Change” how much something changed in percent, “Tip” what each person pays.'],
   ['Μεταβολή: βάλε την παλιά τιμή στο «Από» και τη νέα στο «Σε». Π.χ. από 80 σε 100 είναι +25%.','Change: put the old value in “From” and the new one in “To”. From 80 to 100 is +25%, for example.'],
@@ -54,7 +54,7 @@ const HELP={
   ['«Διάρκεια»: πόσο καιρό θα πληρώνεις ένα δάνειο με τη δόση που αντέχεις, π.χ. 10.000 € με 300 € τον μήνα. Η τελευταία δόση είναι μικρότερη.','“Payoff time”: how long you will pay a loan with the payment you can afford, e.g. 10.000 € at 300 € a month. The last payment is smaller.'],
   ['«Αποταμίευση»: βάλε ό,τι έχεις ήδη, πόσα βάζεις κάθε μήνα, το επιτόκιο και τα χρόνια. Ένα από τα δύο ποσά αρκεί.','“Savings”: enter what you have now, what you add each month, the interest rate and the years. One of the two amounts is enough.'],
   ['Το επιτόκιο είναι ετήσιο και οι τόκοι υπολογίζονται κάθε μήνα, όπως στις τράπεζες. Τα χρόνια μπορούν να έχουν δεκαδικά: 2,5 είναι 30 μήνες.','The rate is yearly and interest is worked out every month, as banks do. Years can have decimals: 2,5 is 30 months.'],
-  ['Το κουμπί με τις στήλες δείχνει δάνειο και τόκους, ή πώς μεγαλώνουν οι αποταμιεύσεις. Τα ποσά είναι ενδεικτικά: η τράπεζα μπορεί να έχει έξοδα ή άλλες χρεώσεις.','The bars button shows the loan against the interest, or how your savings grow. The amounts are a guide: a bank may add fees or other charges.']]},
+  ['Το κουμπί με τις στήλες δείχνει πόσους τόκους πληρώνεις κάθε χρόνο και πόσα μένουν, ή πώς μεγαλώνουν οι αποταμιεύσεις. Τα ποσά είναι ενδεικτικά: η τράπεζα μπορεί να έχει έξοδα ή άλλες χρεώσεις.','The bars button shows the interest you pay each year and what’s left to pay, or how your savings grow. The amounts are a guide: a bank may add fees or other charges.']]},
  dates:{tips:[
   ['Πάτα μια ημερομηνία για να ανοίξει το ημερολόγιο της συσκευής. Η αρχή είναι η σημερινή ημερομηνία.','Tap a date to open your device’s calendar. The start is today’s date.'],
   ['«Διάστημα»: πόσες ημέρες είναι ανάμεσα σε δύο ημερομηνίες, σε εβδομάδες, μήνες και χρόνια, και πόσες είναι εργάσιμες.','“Between”: how many days lie between two dates, in weeks, months and years, and how many are working days.'],
@@ -69,12 +69,12 @@ const HELP={
  fuel:{tips:[
   ['Συμπλήρωσε απόσταση, κατανάλωση και τιμή. Το κόστος βγαίνει αμέσως.','Fill in distance, consumption and price. The cost shows up right away.'],
   ['Την κατανάλωση σε L/100 km τη δείχνει ο υπολογιστής ταξιδιού του αυτοκινήτου. Για ταξίδι με επιστροφή, βάλε διπλή απόσταση.','The car’s trip computer shows consumption in L/100 km. For a round trip, enter double the distance.'],
-  ['Το κουμπί με τις στήλες δείχνει πώς αλλάζει το κόστος με την απόσταση. Πάτα το αποτέλεσμα για να το αντιγράψεις.','The bars button shows how the cost changes with distance. Tap the result to copy it.']]},
+  ['Το κουμπί με τις στήλες δείχνει το κόστος με λίγο διαφορετική τιμή ή κατανάλωση, και με επιστροφή. Πάτα το αποτέλεσμα για να το αντιγράψεις.','The bars button shows the cost at a slightly different price or consumption, and for a return trip. Tap the result to copy it.']]},
  energy:{tips:[
   ['Την ισχύ σε W τη γράφει το ταμπελάκι ή το κουτί της συσκευής. Η τιμή ανά kWh είναι στον λογαριασμό του ρεύματος.','The power in W is on the device’s label or box. The price per kWh is on your electricity bill.'],
   ['Βάλε 30 ημέρες για το κόστος ενός μήνα ή 365 για έναν χρόνο.','Use 30 days for a month’s cost, or 365 for a year.'],
   ['Για συσκευές που ανάβουν και σβήνουν μόνες τους, όπως το ψυγείο, οι ώρες είναι κατά προσέγγιση.','For devices that switch on and off by themselves, like a fridge, the hours are an estimate.'],
-  ['Το κουμπί με τις στήλες δείχνει το κόστος ανά ημέρα, εβδομάδα, μήνα και χρόνο. Πάτα το αποτέλεσμα για να το αντιγράψεις.','The bars button shows the cost per day, week, month and year. Tap the result to copy it.']]}
+  ['Το κουμπί με τις στήλες δείχνει το κόστος και τις kWh ανά ώρα, ημέρα, μήνα και χρόνο. Πάτα το αποτέλεσμα για να το αντιγράψεις.','The bars button shows the cost and kWh per hour, day, month and year. Tap the result to copy it.']]}
 };
 HELP.currency.keys=HELP.units.keys;
 const HELP_TOOL_KEYS=[[['Tab'],'Επόμενο πεδίο','Next field'],[['Shift','Tab'],'Προηγούμενο πεδίο','Previous field'],[['0–9'],'Αριθμοί στο πεδίο','Type in the field'],[[',','.'],'Υποδιαστολή','Decimal point'],[['Backspace'],'Σβήνει την επιλογή ή το ψηφίο πριν τον κέρσορα','Delete the selection, or the digit before the cursor'],[['−'],'Αλλάζει το πρόσημο','Change the sign'],[['Esc'],'Κλείνει ανοιχτά παράθυρα','Close open windows'],[['Alt','1–9'],'Αλλαγή λειτουργίας','Switch mode'],[['?'],'Αυτές οι συμβουλές','These tips']];
