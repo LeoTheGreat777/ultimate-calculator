@@ -130,7 +130,7 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   the number. Kept: choices (units picked, VAT add/remove, the kinds, Deg/Rad, f(x)), History, the fuel log. Typed values are
   not saved across visits; `saveTools`/`loadTools` keep only those choices. AC clears a tool.
 - **Storage:** all in the browser (`uc-history`, `uc-tools`, `uc-fuel-log`, `uc-rates`, `uc-lang`,
-  `uc-theme`, `uc-theme-pair`, `uc-custom-themes`). Use `store.get/set` – localStorage can throw.
+  `uc-theme`, `uc-theme-pair`, `uc-custom-themes`, `uc-theme-recent`). Use `store.get/set` – localStorage can throw.
 - **Tool fields on a computer** edit like text boxes: a focused field keeps the browser's own Backspace, Delete and
   cursor (selection respected); the global handler only takes over when no field has the focus (keys go to the
   highlighted field, at the end). Comma and − are still the app's (one comma; − changes the sign).
@@ -182,8 +182,12 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   `uc-custom-themes` with their tokens (`vars`, re-made on every start), which the `<head>` script turns into
   `<style id="customThemes">` rules (`writeCustomCss` later), so they work like the ready-made ones, swatches included.
   The editor (`openThemeEditor`, `#themeEditor`) is a panel at the bottom without dimming, so the app shows the colours
-  live (`themeDraft`); swatches plus "any colour" (`<input type="color">`); Save (Enter) / Cancel (Esc). Keys don't
-  reach the calculator while it is open. A new ready-made theme: a block in styles.css, its name in `LIGHT_PRESETS` or
+  live (`themeDraft`); swatches plus "any colour" (`<input type="color">`). No Save/Cancel: every change is kept when it
+  closes (×, Esc, Enter, a press outside: `closeThemeEditor`; also saved when the app goes to the background), and
+  Recent (`themeRecent`, `uc-theme-recent`, 8 pairs per group, where you started included) brings back an earlier look.
+  The panel is built once per opening (`renderThemeEditor`) and then only updated in place (`updateThemeEditor`): never
+  replace the colour inputs while it is open, or the device's colour picker closes in the middle of a drag. Keys don't
+  reach the calculator while it is open; ← → move through a row of swatches. A new ready-made theme: a block in styles.css, its name in `LIGHT_PRESETS` or
   `DARK_PRESETS` and in the `<head>` script, texts in `T` (`themeX`). Charts and graph lines read the tokens (`chColors`,
   `--series1..3`). Check a new theme's contrast (text on card and keys, text on the accent) and look at it in every
   mode. Changing theme: circle reveal from the theme button (View Transitions, `transitionTheme`), fade fallback,

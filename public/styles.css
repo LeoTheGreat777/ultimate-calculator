@@ -642,7 +642,8 @@ html.landscape .calculator-card.graph-mode .keypad .key{height:auto!important;mi
 .theme-edit:hover{background:var(--key);color:var(--text)}
 .theme-edit:focus{outline:none}
 .theme-edit:focus-visible{outline:2px solid var(--accent2);outline-offset:-2px}
-.theme-swatch-new{background:var(--rainbow)}
+.theme-swatch-new{background:transparent;border:1.5px dashed var(--muted);color:var(--muted)}
+.theme-option:hover .theme-swatch-new{border-color:var(--accent2);color:var(--accent2)}
 /* ---------- Own theme editor (theme.js, openThemeEditor): a panel at the bottom, no dimming, so the app shows the colours live ---------- */
 .theme-editor{position:fixed;left:50%;bottom:max(12px,env(safe-area-inset-bottom));z-index:105;transform:translateX(-50%);width:min(500px,calc(100vw / var(--z,1) - 24px));max-height:calc(100dvh / var(--z,1) - 24px);overflow-y:auto;padding:14px 16px 16px;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:22px;box-shadow:0 18px 60px rgba(0,0,0,.45)}
 .theme-editor.hidden{display:none}
@@ -656,11 +657,9 @@ html.landscape .calculator-card.graph-mode .keypad .key{height:auto!important;mi
 .te-any{display:block;overflow:hidden;background:var(--rainbow)}
 .te-any input{position:absolute;inset:0;width:100%;height:100%;margin:0;padding:0;border:0;opacity:0;cursor:pointer}
 .te-any.on::after{content:'';position:absolute;inset:8px;border-radius:50%;background:var(--c);box-shadow:0 0 0 2px var(--card);pointer-events:none}
-.te-actions{display:flex;gap:10px;margin-top:16px}
-.te-btn{flex:1;min-height:44px;border:0;border-radius:14px;background:var(--key);color:var(--text);font:inherit;font-size:15px;font-weight:650;cursor:pointer}
-.te-btn:hover{background:var(--key-hover)}
-.te-btn.primary{background:var(--accent);color:var(--on-accent)}
-.te-btn.primary:hover{filter:brightness(1.08)}
+.te-pair{background:linear-gradient(135deg,var(--b) 0 52%,var(--c) 52% 100%)}
+.te-sw:hover{transform:scale(1.08)}
+.te-sw{transition:transform .12s ease}
 /* ---------- Scientific (calculator.js): the f(x) switch and DEG/RAD on the display, 15 keys above the basic ones ---------- */
 .sci-bar{position:absolute;top:8px;left:8px;z-index:3;display:flex;gap:6px}
 .calculator-card.tool-mode .sci-bar,.calculator-card.graph-mode .sci-bar{display:none}

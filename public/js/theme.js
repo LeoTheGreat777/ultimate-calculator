@@ -154,6 +154,7 @@ function toggleMatchDevice(){
 /* ---------- The theme menu ---------- */
 const themeMenuOpen=()=>!!$('#themeMenu')&&!$('#themeMenu').classList.contains('hidden');
 const themeKey=n=>n.startsWith('custom-')?'themeCustom':'theme'+n[0].toUpperCase()+n.slice(1);
+const PALETTE_ICON='<svg viewBox="0 0 24 24" width="17" height="17"><path d="M12 3.5a8.5 8.5 0 1 0 0 17c1.2 0 1.8-.8 1.8-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.7 1.7-1.7h2a4 4 0 0 0 4-4C20.5 6.9 16.7 3.5 12 3.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="7.5" cy="11" r="1.3" fill="currentColor"/><circle cx="10.5" cy="7.3" r="1.3" fill="currentColor"/><circle cx="15" cy="7.6" r="1.3" fill="currentColor"/></svg>';
 const EDIT_ICON='<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 function renderThemeMenu(){
  let m=$('#themeMenu');
@@ -173,7 +174,7 @@ function renderThemeMenu(){
  const option=n=>{
   const made=themeUsable(n),checked=auto?themePair[themeGroup(n)]===n:theme===n;
   // each swatch carries the theme's own colours (data-theme-preview), so it shows the real thing
-  const swatch=made?'<span class="theme-swatch" data-theme-preview="'+n+'" aria-hidden="true"><i></i></span>':'<span class="theme-swatch theme-swatch-new" aria-hidden="true"></span>';
+  const swatch=made?'<span class="theme-swatch" data-theme-preview="'+n+'" aria-hidden="true"><i></i></span>':'<span class="theme-swatch theme-swatch-new" aria-hidden="true">'+PALETTE_ICON+'</span>';
   const pick='<button type="button" class="theme-option" role="menuitemradio" aria-checked="'+(checked&&made)+'" data-theme-pick="'+n+'" data-mi="'+n+'">'+swatch+
    '<span class="theme-option-text">'+esc(t(themeKey(n))+(made||!n.startsWith('custom-')?'':'…'))+'</span><span class="theme-check" aria-hidden="true">✓</span></button>';
   if(!n.startsWith('custom-')||!made)return pick;
@@ -188,7 +189,7 @@ function renderThemeMenu(){
  if(focused)m.querySelector('[data-mi="'+focused+'"]')?.focus({preventScroll:true});
 }
 function openThemeMenu(){
- if(themeEditorOpen())closeThemeEditor(false);
+ if(themeEditorOpen())closeThemeEditor();
  renderThemeMenu();$('#themeMenu').classList.remove('hidden');$('.topbar').classList.add('menu-open');$('#themeButton').setAttribute('aria-expanded','true');
  if(hasKeyboard())$('#themeMenu .theme-option[aria-checked="true"]:not(.theme-auto)')?.focus({preventScroll:true});
 }
@@ -210,16 +211,27 @@ function themeMenuKeydown(e){
 }
 
 /* ---------- The editor for an own theme: a panel at the bottom; the app behind shows the colours live ---------- */
+// Every change shows at once and is kept: the panel closes with ×, Esc, Enter or a tap outside it. Recent colour pairs
+// (uc-theme-recent, per group, newest first) bring back an earlier look. The panel is built once per opening and then
+// only updated in place (updateThemeEditor), so the device's colour picker stays open while you drag in it.
 const THEME_BG_SWATCHES={
  dark:['#000000','#0b0f14','#0d1b2e','#1c1030','#0c2018','#2a0f14','#241a0c'],
  light:['#ffffff','#f2f4f7','#f7efe1','#efe8fb','#e3f0fa','#fbe8ee','#e6f4e3']
 };
 const THEME_ACCENT_SWATCHES=['#6ea8fe','#2ec5d3','#5fd3a3','#a3e635','#facc15','#ff9a3d','#ef4444','#ff4fa3','#b18cff','#8b9bb4'];
+const THEME_RECENT_MAX=8;
+let themeRecent=readJson('uc-theme-recent');
+for(const g of ['light','dark'])themeRecent[g]=(Array.isArray(themeRecent[g])?themeRecent[g]:[]).filter(r=>r&&HEX_RE.test(r.bg)&&HEX_RE.test(r.accent)).map(r=>({bg:r.bg.toLowerCase(),accent:r.accent.toLowerCase()})).slice(0,THEME_RECENT_MAX);
+const samePair=(a,b)=>a.bg===b.bg&&a.accent===b.accent;
+function rememberThemeColours(g,pair){
+ themeRecent[g]=[{bg:pair.bg,accent:pair.accent},...themeRecent[g].filter(r=>!samePair(r,pair))].slice(0,THEME_RECENT_MAX);
+ store.set('uc-theme-recent',JSON.stringify(themeRecent));
+}
 const themeEditorOpen=()=>!!themeDraft;
 // a new own theme starts from the colours of the theme now chosen in its group
 function themeStartColours(g){
- const base=theme!=='auto'&&themeGroup(theme)===g&&themeUsable(theme)?theme:themeUsable(themePair[g])?themePair[g]:g;
  if(customThemes[g])return {...customThemes[g]};
+ const base=theme!=='auto'&&themeGroup(theme)===g&&themeUsable(theme)?theme:themeUsable(themePair[g])?themePair[g]:g;
  const probe=document.createElement('span');probe.dataset.themePreview=base;probe.hidden=true;document.body.appendChild(probe);
  const cs=getComputedStyle(probe),hex=v=>{const m=v.trim().match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);if(!m)return null;const h=m[1];return '#'+(h.length===3?[...h].map(c=>c+c).join(''):h).toLowerCase()};
  const out={bg:hex(cs.getPropertyValue('--bg'))||THEME_BG_SWATCHES[g][0],accent:hex(cs.getPropertyValue('--accent'))||THEME_ACCENT_SWATCHES[0]};
@@ -228,56 +240,94 @@ function themeStartColours(g){
 function openThemeEditor(g){
  closeThemeMenu();
  themeDraft={group:g,...themeStartColours(g)};
+ rememberThemeColours(g,themeDraft);// where you started is always in Recent, to go back to
  let ed=$('#themeEditor');
  if(!ed){
   ed=document.createElement('div');ed.id='themeEditor';ed.className='theme-editor hidden';ed.setAttribute('role','dialog');ed.setAttribute('aria-labelledby','themeEditorTitle');
   document.body.appendChild(ed);
   ed.addEventListener('click',e=>{
-   const a=e.target.closest('[data-te]')?.dataset.te;if(a){closeThemeEditor(a==='save');return}
-   const s=e.target.closest('[data-te-colour]');if(s)setDraftColour(s.closest('[data-te-row]').dataset.teRow,s.dataset.teColour);
+   if(e.target.closest('[data-te-close]')){closeThemeEditor();return}
+   const r=e.target.closest('[data-te-recent]');if(r){const x=themeRecent[themeDraft.group][+r.dataset.teRecent];if(x)setDraft(x);return}
+   const s=e.target.closest('[data-te-colour]');if(s)setDraft({[s.closest('[data-te-row]').dataset.teRow]:s.dataset.teColour});
   });
-  ed.addEventListener('input',e=>{const i=e.target.closest('input[type=color]');if(i)setDraftColour(i.dataset.tePick,i.value)});
+  ed.addEventListener('input',e=>{const i=e.target.closest('input[type=color]');if(i)setDraft({[i.dataset.tePick]:i.value},i)});
  }
  renderThemeEditor();ed.classList.remove('hidden');
  writeCustomCss();applyTheme();
- if(hasKeyboard())ed.querySelector('[data-te-row="bg"] [aria-checked="true"]')?.focus({preventScroll:true})||ed.querySelector('[data-te-row="bg"] .te-sw')?.focus({preventScroll:true});
+ if(hasKeyboard())(ed.querySelector('[data-te-row="bg"] [aria-checked="true"]')||ed.querySelector('[data-te-row="bg"] .te-sw'))?.focus({preventScroll:true});
 }
-function setDraftColour(which,hex){
- if(!themeDraft||!HEX_RE.test(hex))return;
- themeDraft[which]=which==='bg'?clampThemeBg(hex,themeDraft.group):hex.toLowerCase();
- renderThemeEditor();writeCustomCss();applyTheme();
+// A change of background and/or accent. The colours on screen follow at most once a frame (the picker sends many while dragging).
+let themeDraftFrame=0;
+function setDraft(change,fromInput){
+ if(!themeDraft)return;
+ for(const k of ['bg','accent']){
+  const v=change[k];if(!HEX_RE.test(v||''))continue;
+  themeDraft[k]=k==='bg'?clampThemeBg(v,themeDraft.group):v.toLowerCase();
+ }
+ updateThemeEditor(fromInput);
+ if(!themeDraftFrame)themeDraftFrame=requestAnimationFrame(()=>{themeDraftFrame=0;if(themeDraft){writeCustomCss();applyTheme()}});
 }
+// The whole panel: on opening and after a language change.
 function renderThemeEditor(){
  const ed=$('#themeEditor');if(!ed||!themeDraft)return;
  const g=themeDraft.group,focused=document.activeElement?.closest?.('#themeEditor [data-mi]')?.dataset.mi;
- const row=(which,list)=>{
-  const v=themeDraft[which],own=!list.includes(v);
-  return '<div class="te-label" id="te-'+which+'">'+esc(t(which==='bg'?'themeBg':'themeAccent'))+'</div><div class="te-row" role="radiogroup" aria-labelledby="te-'+which+'" data-te-row="'+which+'">'+
-   list.map(c=>'<button type="button" class="te-sw" role="radio" aria-checked="'+(c===v)+'" aria-label="'+c+'" data-te-colour="'+c+'" data-mi="'+which+c+'" style="--c:'+c+'"></button>').join('')+
-   '<label class="te-sw te-any'+(own?' on':'')+'" title="'+esc(t('themeAnyColour'))+'" style="--c:'+v+'"><input type="color" value="'+v+'" data-te-pick="'+which+'" data-mi="'+which+'-any" aria-label="'+esc(t('themeAnyColour'))+'"></label></div>';
- };
- ed.innerHTML='<div class="section-heading"><h2 id="themeEditorTitle">'+esc(t(g==='light'?'themeCustomLight':'themeCustomDark'))+'</h2><button type="button" class="modal-close" data-te="cancel" aria-label="'+esc(t('close'))+'">×</button></div>'+
+ const row=(which,list)=>'<div class="te-label" id="te-'+which+'">'+esc(t(which==='bg'?'themeBg':'themeAccent'))+'</div><div class="te-row" role="radiogroup" aria-labelledby="te-'+which+'" data-te-row="'+which+'">'+
+   list.map(c=>'<button type="button" class="te-sw" role="radio" aria-label="'+c+'" data-te-colour="'+c+'" data-mi="'+which+c+'" style="--c:'+c+'"></button>').join('')+
+   '<label class="te-sw te-any" title="'+esc(t('themeAnyColour'))+'"><input type="color" data-te-pick="'+which+'" data-mi="'+which+'-any" aria-label="'+esc(t('themeAnyColour'))+'"></label></div>';
+ ed.innerHTML='<div class="section-heading"><h2 id="themeEditorTitle">'+esc(t(g==='light'?'themeCustomLight':'themeCustomDark'))+'</h2><button type="button" class="modal-close" data-te-close data-mi="close" aria-label="'+esc(t('close'))+'" title="'+esc(t('close'))+'">×</button></div>'+
   row('bg',THEME_BG_SWATCHES[g])+row('accent',THEME_ACCENT_SWATCHES)+
-  '<div class="te-actions"><button type="button" class="te-btn" data-te="cancel" data-mi="cancel">'+esc(t('cancel'))+'</button><button type="button" class="te-btn primary" data-te="save" data-mi="save">'+esc(t('save'))+'</button></div>';
+  '<div class="te-recent-wrap"><div class="te-label" id="te-recent">'+esc(t('themeRecent'))+'</div><div class="te-row" role="radiogroup" aria-labelledby="te-recent" data-te-recent-row></div></div>';
+ updateThemeEditor();
  if(focused)ed.querySelector('[data-mi="'+focused+'"]')?.focus({preventScroll:true});
 }
-// Save keeps the colours and chooses the theme (with Match device, for its group); Cancel goes back to before.
-function closeThemeEditor(save){
+// Marks the chosen swatches and refreshes Recent, without replacing the colour inputs (one may have its picker open).
+function updateThemeEditor(activeInput){
+ const ed=$('#themeEditor');if(!ed||!themeDraft)return;
+ for(const which of ['bg','accent']){
+  const v=themeDraft[which],rowEl=ed.querySelector('[data-te-row="'+which+'"]');if(!rowEl)continue;
+  let found=false;
+  rowEl.querySelectorAll('[data-te-colour]').forEach(b=>{const on=b.dataset.teColour===v;found=found||on;b.setAttribute('aria-checked',on)});
+  const any=rowEl.querySelector('.te-any'),input=any.querySelector('input');
+  any.classList.toggle('on',!found);any.style.setProperty('--c',v);
+  if(input!==activeInput)input.value=v;
+ }
+ const rec=ed.querySelector('[data-te-recent-row]'),list=themeRecent[themeDraft.group];
+ const focusedRecent=document.activeElement?.closest?.('[data-te-recent]')?.dataset.teRecent;
+ rec.innerHTML=list.map((r,i)=>'<button type="button" class="te-sw te-pair" role="radio" aria-checked="'+samePair(r,themeDraft)+'" aria-label="'+r.bg+' '+r.accent+'" data-te-recent="'+i+'" data-mi="recent'+i+'" style="--b:'+r.bg+';--c:'+r.accent+'"></button>').join('');
+ ed.querySelector('.te-recent-wrap').hidden=list.length<2&&samePair(list[0]||{},themeDraft);// only where you started: nothing to go back to yet
+ if(focusedRecent!=null)rec.querySelector('[data-te-recent="'+focusedRecent+'"]')?.focus({preventScroll:true});
+}
+// The colours are kept and the own theme chosen (with Match device, for its group). Also when the app goes to the
+// background with the panel open, so nothing is lost.
+function keepThemeDraft(){
  if(!themeDraft)return;
  const {group:g,bg,accent}=themeDraft;
- themeDraft=null;$('#themeEditor').classList.add('hidden');
- if(save){
-  customThemes[g]={bg,accent};saveCustomThemes();
-  if(theme==='auto'){themePair[g]='custom-'+g;store.set('uc-theme-pair',JSON.stringify(themePair))}
-  else{theme='custom-'+g;store.set('uc-theme',theme)}
- }
- writeCustomCss();applyTheme();
+ customThemes[g]={bg,accent};saveCustomThemes();
+ if(theme==='auto'){themePair[g]='custom-'+g;store.set('uc-theme-pair',JSON.stringify(themePair))}
+ else{theme='custom-'+g;store.set('uc-theme',theme)}
 }
-// Keys while the editor is open: Esc cancels, Enter saves (on Cancel or × it cancels), Space picks the swatch with
-// the focus, Tab moves; nothing reaches the calculator.
+function closeThemeEditor(){
+ if(!themeDraft)return;
+ keepThemeDraft();rememberThemeColours(themeDraft.group,themeDraft);
+ const hadFocus=!!document.activeElement?.closest?.('#themeEditor');
+ themeDraft=null;$('#themeEditor').classList.add('hidden');
+ writeCustomCss();applyTheme();
+ if(hadFocus&&hasKeyboard())$('#themeButton').focus({preventScroll:true});
+}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)keepThemeDraft()});
+// a press anywhere outside the panel closes it (and still does what it does there)
+document.addEventListener('pointerdown',e=>{if(themeEditorOpen()&&!e.target.closest?.('#themeEditor'))closeThemeEditor()},true);
+// Keys while the editor is open: Esc and Enter close it (Enter on a swatch picks it first), ← → move through a row
+// of swatches and pick, Tab moves between rows; nothing reaches the calculator.
 function themeEditorKeydown(e){
  if(!themeEditorOpen())return false;
- if(e.key==='Escape'){e.preventDefault();closeThemeEditor(false)}
- else if(e.key==='Enter'){e.preventDefault();closeThemeEditor(!document.activeElement?.closest?.('#themeEditor [data-te="cancel"]'))}
+ const a=document.activeElement,sw=a?.closest?.('#themeEditor .te-sw');
+ if(e.key==='Escape'){e.preventDefault();closeThemeEditor()}
+ else if(e.key==='Enter'){e.preventDefault();if(sw&&a.tagName==='BUTTON')a.click();closeThemeEditor()}
+ else if(sw&&['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)){
+  e.preventDefault();
+  const items=[...sw.closest('.te-row').querySelectorAll('button.te-sw')],i=items.indexOf(sw),n=items[(i+(e.key==='ArrowLeft'||e.key==='ArrowUp'?-1:1)+items.length)%items.length];
+  n?.focus({preventScroll:true});n?.click();
+ }
  return true;
 }
