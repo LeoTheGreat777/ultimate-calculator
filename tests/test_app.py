@@ -960,6 +960,20 @@ async def icons(browser, url):
     await p.context.close()
 
 
+async def no_fuel_log(browser, url):
+    """The fuel log was removed: no save/list buttons in Fuel, and entries saved by older versions are cleared."""
+    p = await new_page(browser, url, 'en', 'dark')
+    await p.evaluate("localStorage.setItem('uc-fuel-log','[{\"d\":1,\"c\":1,\"p\":1}]')")
+    await p.reload()
+    await p.wait_for_timeout(200)
+    await p.evaluate("switchMode('fuel')")
+    await p.wait_for_timeout(100)
+    got = await p.evaluate("[document.querySelectorAll('#fuelSaveButton,#fuelLogButton,.fuel-btn').length,localStorage.getItem('uc-fuel-log')]")
+    check('[fuel] no fuel log buttons, old saved entries cleared', got == [0, None], got)
+    check('[fuel] no JavaScript errors', not p.errors, p.errors)
+    await p.context.close()
+
+
 async def update_keeps_themes(browser, url):
     """An update reloads the page: own themes, the chosen theme and the language stay; colours being edited are kept."""
     L = '[update] '
@@ -1257,6 +1271,7 @@ async def main():
         await own_themes(browser, url)
         await icons(browser, url)
         await update_keeps_themes(browser, url)
+        await no_fuel_log(browser, url)
         await ios_app(browser, url)
         await offline_status_and_turning(browser, url)
         await sideways_and_chips(browser, url)

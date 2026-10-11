@@ -64,7 +64,6 @@ function render(){
  $('#clearButton').textContent=current&&!justCalculated&&!calcError?'C':'AC';// C clears the number being typed; with none, the key clears everything
  $('#howButton').classList.toggle('hidden',!howData);
  $('#chartButton')?.classList.add('hidden');
- syncFuelButtons();
  requestAnimationFrame(()=>{
    // too long to fit: the text gets smaller, then shows its end (what was typed last); the start fades out
    if(exprEl)fitDisplayText(exprEl,12,true);

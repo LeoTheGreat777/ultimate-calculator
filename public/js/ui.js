@@ -168,7 +168,7 @@ function switchMode(next){
 }
 // Changing mode starts the one you leave over: the numbers typed and the results go, so a tab is a quick way to clear.
 // Graph goes back to its example function. Choices stay (units picked, VAT add/remove, Percent's kind, Deg/Rad, f(x)),
-// and so do History and the fuel log. Calculator -> Units moves the number across first (switchMode).
+// and so does History. Calculator -> Units moves the number across first (switchMode).
 function resetModeInput(m){
  if(m==='calc'){clearAll();return}
  if(m==='graph'){graph=graphDefault();graphTrace=null;return}

@@ -43,7 +43,7 @@ Everything the app serves is in `public/` (the web root for both GitHub Pages an
 | `core.js` | `VERSION`, `$`, `store`, `esc`, the saved language and theme, the app's state variables |
 | `i18n.js` | interface text `T` (`t(key)`), mode names and icons, `AUTHORS` (credits) |
 | `numbers.js` | exact fractions (`rat`...), `evalExpr`, number formatting (`fmt`, `formatRat`, `money`...) |
-| `charts.js` | drawing helpers, tool charts, History chart, fuel log |
+| `charts.js` | drawing helpers, tool charts, History chart |
 | `graph.js` | Graph mode (parser, pan/zoom, key points, drawing) |
 | `calculator.js` | calculator keys (`digit`, `operator`, brackets, `negate`, `equals`, C/AC), display, explanation |
 | `history.js` | saved calculations, the History sheet and its gestures |
@@ -138,9 +138,9 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   `renderToggles`, `setupToggleSlide` (tap, drag, swipe, ← →), `.seg-toggle` in styles.css (`--n` options, `--i` chosen).
 - **Changing mode clears the mode you leave** (`resetModeInput`, called by `switchMode`): numbers typed and results
   go, in every mode (Percent, Interest, Dates: also changing kind; Graph goes back to `graphDefault`). Only Calculator -> Units carries
-  the number. Kept: choices (units picked, VAT add/remove, the kinds, Deg/Rad, f(x)), History, the fuel log. Typed values are
+  the number. Kept: choices (units picked, VAT add/remove, the kinds, Deg/Rad, f(x)), History. Typed values are
   not saved across visits; `saveTools`/`loadTools` keep only those choices. AC clears a tool.
-- **Storage:** all in the browser (`uc-history`, `uc-tools`, `uc-fuel-log`, `uc-rates`, `uc-lang`,
+- **Storage:** all in the browser (`uc-history`, `uc-tools`, `uc-rates`, `uc-lang`,
   `uc-theme`, `uc-theme-pair`, `uc-custom-themes`, `uc-theme-recent`). Use `store.get/set` – localStorage can throw.
 - **Tool fields on a computer** edit like text boxes: a focused field keeps the browser's own Backspace, Delete and
   cursor (selection respected); the global handler only takes over when no field has the focus (keys go to the
@@ -245,6 +245,7 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   Units has the same keypad as the calculator, including ( ).
 - **Tips:** a sheet per mode (`HELP`, `showHelp`), opened from the footer "Tips" link or the ? key; its keyboard
   shortcuts section only shows on devices with a keyboard. When behaviour changes, update the tips in both languages.
+- **No fuel log:** the save/saved-entries buttons in Fuel were removed on purpose (0.15.5); don't add them back.
 - **Copying:** tapping a finished result copies it (calculator and tools), so the copy button can be hidden
   on short screens.
 - **Offline:** `public/sw.js` (registered at the end of main.js) keeps a copy of the app in the cache `uc-app`. The page

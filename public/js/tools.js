@@ -1,5 +1,5 @@
 // The VAT, Percent (discount, % change, tip), Interest (loan, savings), Fuel and Energy tools: their fields, saved values, calculations and keypad input.
-// (Their charts and the fuel log are in charts.js.)
+// (Their charts are in charts.js.)
 // What was typed in a tool is forgotten when the mode changes (resetModeInput in ui.js) and isn't kept across visits;
 // only the choices are saved: VAT add/remove, the kind in Percent and Interest, the unit category and units picked, the Units side.
 const TOOLS_KEY='uc-tools';
@@ -31,7 +31,6 @@ function renderToolDisplay(){
  $('#howButton').classList.toggle('hidden',!toolResult?.how);
  $('#chartButton')?.classList.toggle('hidden',!toolChartAvailable());
  $('#chartButton')?.setAttribute('aria-label',t('chart'));
- syncFuelButtons();
  renderDateBar();
  $('#result').textContent=toolResult?.main||'0';
  $('#result').classList.toggle('long-value',String(toolResult?.main??'').length>18);

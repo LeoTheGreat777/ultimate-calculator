@@ -69,7 +69,6 @@ const HELP={
  fuel:{tips:[
   ['Συμπλήρωσε απόσταση, κατανάλωση και τιμή. Το κόστος βγαίνει αμέσως.','Fill in distance, consumption and price. The cost shows up right away.'],
   ['Την κατανάλωση σε L/100 km τη δείχνει ο υπολογιστής ταξιδιού του αυτοκινήτου. Για ταξίδι με επιστροφή, βάλε διπλή απόσταση.','The car’s trip computer shows consumption in L/100 km. For a round trip, enter double the distance.'],
-  ['Ο σελιδοδείκτης αποθηκεύει τον υπολογισμό. Η λίστα δίπλα δείχνει μέση τιμή, μέση κατανάλωση και σύνολα.','The bookmark saves the calculation. The list next to it shows the average price, average consumption and totals.'],
   ['Το κουμπί με τις στήλες δείχνει πώς αλλάζει το κόστος με την απόσταση. Πάτα το αποτέλεσμα για να το αντιγράψεις.','The bars button shows how the cost changes with distance. Tap the result to copy it.']]},
  energy:{tips:[
   ['Την ισχύ σε W τη γράφει το ταμπελάκι ή το κουτί της συσκευής. Η τιμή ανά kWh είναι στον λογαριασμό του ρεύματος.','The power in W is on the device’s label or box. The price per kWh is on your electricity bill.'],
