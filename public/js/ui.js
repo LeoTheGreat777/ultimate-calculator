@@ -248,6 +248,37 @@ const HOLD_KEYS=[
  {sel:'[data-action="backspace"],[data-g="back"]',run:()=>clearEverything()},
  {sel:'.key[data-value="-"]',when:()=>mode==='calc'||mode==='units',run:()=>{if(mode==='calc')negate();else toolKeyInput('negate')}}
 ];
+// Pressing a key: it lights up the moment it's touched and fades as it's let go (.pressed, every device), and on a
+// phone it ticks. Android: navigator.vibrate. iPhone has no vibrate for websites, but toggling a hidden <input switch>
+// plays the system's haptic tick (iOS 18+; older ones just do nothing). It needs the tap itself, so it runs on click.
+const IS_IOS=/iP(hone|od|ad)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+let hapticSwitch=null,lastPressTouch=false;
+function iosTick(){
+ if(!hapticSwitch){
+  const l=document.createElement('label'),i=document.createElement('input');
+  l.setAttribute('aria-hidden','true');l.className='haptic-switch';i.type='checkbox';i.setAttribute('switch','');i.tabIndex=-1;
+  l.appendChild(i);l.addEventListener('click',e=>e.stopPropagation());// a tick, not a click anything else should see
+  document.body.appendChild(l);hapticSwitch=l;
+ }
+ hapticSwitch.click();
+}
+function setupPressFeedback(){
+ const pad=$('#keypad');
+ pad.addEventListener('pointerdown',e=>{
+  const b=e.target.closest('button');if(!b||b.disabled)return;
+  lastPressTouch=e.pointerType!=='mouse';
+  b.classList.add('pressed');b._pressedAt=performance.now();
+  if(lastPressTouch&&!IS_IOS){try{navigator.vibrate?.(8)}catch{}}
+ });
+ // let go: fade back, after showing for at least a moment even on the quickest tap
+ const release=e=>{const b=e.target.closest?.('button.pressed');if(!b)return;
+  setTimeout(()=>b.classList.remove('pressed'),Math.max(0,90-(performance.now()-(b._pressedAt||0))))};
+ ['pointerup','pointercancel','pointerleave'].forEach(t=>pad.addEventListener(t,release,true));
+ pad.addEventListener('click',e=>{if(IS_IOS&&lastPressTouch&&e.target.closest('button'))iosTick()},true);
+}
+// iOS: a fast double tap starts selecting the key's label and shows the magnifier bubble. Nothing outside the fields is
+// meant to be selected (body is user-select:none), so selection never starts there.
+document.addEventListener('selectstart',e=>{const el=e.target.nodeType===1?e.target:e.target.parentElement;if(!el?.closest?.('input,textarea,select'))e.preventDefault()});
 function setupHoldKeys(){
  const pad=$('#keypad');let timer=0,fired=false,key=null;
  const holdKey=t=>{for(const h of HOLD_KEYS){const b=t?.closest?.(h.sel);if(b&&pad.contains(b)&&(!h.when||h.when()))return{b,h}}return null};

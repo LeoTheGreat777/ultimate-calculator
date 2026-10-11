@@ -27,7 +27,7 @@ $('#langButton').addEventListener('click',e=>{e.preventDefault();e.stopPropagati
 $('#themeButton').addEventListener('click',toggleThemeMenu);
 $('#installButton')?.addEventListener('click',installApp);
 $('#helpButton')?.addEventListener('click',showHelp);
-setupHoldKeys();
+setupHoldKeys();setupPressFeedback();
 // a click anywhere else closes the theme menu and the History "clear all?" question
  document.addEventListener('click',e=>{if(themeMenuOpen()&&!eventInside(e,'#themeMenu,#themeButton'))closeThemeMenu();if(historyClearConfirm&&!eventInside(e,'#historyClearWrap'))clearHistoryConfirm()});
 $('#clearHistory').addEventListener('click',clearHistoryConfirm);$('#historyConfirmYes').addEventListener('click',deleteAllHistory);

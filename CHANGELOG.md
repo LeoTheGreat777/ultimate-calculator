@@ -6,6 +6,16 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.15.0 – 2026-10-11
+
+### Added
+- Keys respond when you press them: they light up the moment you touch them and fade as you let go, on phones and
+  computers. Phones also give a small tick (vibration on Android, the system's haptic tick on iPhones with iOS 18 or
+  later).
+
+### Fixed
+- iPhone: pressing a key twice quickly no longer brings up the magnifier bubble.
+
 ## 0.14.8 – 2026-10-11
 
 ### Fixed

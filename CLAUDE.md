@@ -223,6 +223,12 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   and a detached target looks like a press outside (the menu closed when its own switch was pressed).
 - **Dropdowns:** on desktop Chrome/Edge the unit menus use `appearance: base-select`, styled like the app; phones keep
   native pickers. While a dropdown has focus the global keydown handler leaves keys to it.
+- **Pressing keys** (`setupPressFeedback`, ui.js): every key in `#keypad` lights up the moment it's touched (`.pressed`,
+  a `::after` layer of `--text`, so it suits every key colour and theme) and fades after it's let go, on every device. On
+  phones a tick: Android `navigator.vibrate(8)` on pointerdown; iPhone has no vibrate for websites, so on click it toggles
+  a hidden `<input type="checkbox" switch>` (`iosTick`), which plays the system haptic on iOS 18+ (Apple doesn't document
+  it; if it stops, nothing breaks). No sounds (the owner said no). `selectstart` is blocked outside fields: a fast double
+  tap on iOS otherwise starts selecting a key's label and shows the magnifier bubble.
 - **± and holding keys:** holding ⌫ clears everything, holding − flips the sign (`negate`, Units: `unitKeyInput('negate')`);
   F9 does ± on a keyboard. A tap on − is always minus. A minus made with ± is stored as `−` (U+2212), one typed with
   the − key as `-`; the maths reads both the same (`tokenize`, `normalizeUnitExpression`). Display (`formatInputDisplay`):
