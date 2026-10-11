@@ -91,7 +91,8 @@ if('serviceWorker' in navigator&&location.protocol!=='file:')addEventListener('l
 // reload if it differs. Offline, or if the check fails, nothing happens. no-store: past every cache, sw.js included.
 let lastVersionCheck=0;
 function checkForUpdate(){
- if(location.protocol==='file:'||Date.now()-lastVersionCheck<60000)return;
+ // not while the own theme editor is open: the reload would close the colour picker; the next return checks again
+ if(location.protocol==='file:'||Date.now()-lastVersionCheck<60000||themeEditorOpen())return;
  lastVersionCheck=Date.now();
  fetch('./',{cache:'no-store'}).then(r=>r.ok?r.text():'').then(html=>{const v=html.match(/id="footerVersion">v(\d+\.\d+\.\d+)</)?.[1];if(v&&v!==VERSION)location.reload()}).catch(()=>{});
 }

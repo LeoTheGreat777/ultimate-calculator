@@ -949,7 +949,38 @@ async def icons(browser, url):
     check('[icons] the manifest has any, maskable and monochrome icons', {'any', 'maskable', 'monochrome'} <= set(st['purposes']), st['purposes'])
     shown = await p.evaluate("[...document.querySelectorAll('.brand-mark .bm-curve,.brand-mark .bm-dot')].map(e=>getComputedStyle(e).stroke+'|'+getComputedStyle(e).fill)")
     check('[icons] the logo by the title takes the theme\'s colours', len(shown) == 2 and 'rgb(110, 168, 254)' in shown[0], shown)
+    # tab icons: drawn, not symbol characters (iPhone drew ↔ ◷ tiny and low); € % $ are letters
+    tabs = await p.evaluate("""[...document.querySelectorAll('.mode-tab')].map(b=>{const i=b.querySelector('.mode-tab-icon'),r=i.getBoundingClientRect();
+      return {m:b.dataset.mode,svg:!!i.querySelector('svg'),text:i.textContent.trim(),w:Math.round(r.width),h:Math.round(r.height)}})""")
+    drawn = [x for x in tabs if x['svg']]
+    check('[icons] tab icons are drawn, except the letters € % $',
+          {x['m'] for x in tabs if not x['svg']} == {'vat', 'pct', 'currency'} and len(drawn) == len(tabs) - 3, tabs)
+    check('[icons] drawn tab icons are all the same size', len({(x['w'], x['h']) for x in drawn}) == 1, drawn)
     check('[icons] no JavaScript errors', not p.errors, p.errors)
+    await p.context.close()
+
+
+async def update_keeps_themes(browser, url):
+    """An update reloads the page: own themes, the chosen theme and the language stay; colours being edited are kept."""
+    L = '[update] '
+    p = await new_page(browser, url, 'el', 'dark')
+    await p.evaluate("customThemes.dark={bg:'#101820',accent:'#ff8800'};saveCustomThemes();writeCustomCss();setTheme('custom-dark')")
+    await p.wait_for_timeout(600)
+    await p.reload()
+    await p.wait_for_timeout(300)
+    got = await p.evaluate("[document.documentElement.dataset.theme,localStorage.getItem('uc-lang'),customThemes.dark&&customThemes.dark.accent]")
+    check(L + 'own theme, its colours and the language survive a reload', got == ['custom-dark', 'el', '#ff8800'], got)
+    await p.evaluate("openThemeEditor('dark')")
+    await p.evaluate("themeDraft.accent='#22aaff';writeCustomCss()")
+    # pretend a newer version is out: the check must wait while the editor is open (it would close the colour picker)
+    fetched = await p.evaluate("""(async()=>{let n=0;const f=window.fetch;window.fetch=(...a)=>{n++;return f(...a)};
+      lastVersionCheck=0;checkForUpdate();await new Promise(r=>setTimeout(r,200));window.fetch=f;return n})()""")
+    check(L + 'no update check while the own theme editor is open', fetched == 0, fetched)
+    await p.reload()
+    await p.wait_for_timeout(300)
+    got = await p.evaluate("[document.documentElement.dataset.theme,JSON.parse(localStorage.getItem('uc-custom-themes')).dark.accent]")
+    check(L + 'a reload with the editor open keeps the colours being edited', got == ['custom-dark', '#22aaff'], got)
+    check(L + 'no JavaScript errors', not p.errors, p.errors)
     await p.context.close()
 
 
@@ -1225,6 +1256,7 @@ async def main():
             await phone(browser, url, lang, theme, size)
         await own_themes(browser, url)
         await icons(browser, url)
+        await update_keeps_themes(browser, url)
         await ios_app(browser, url)
         await offline_status_and_turning(browser, url)
         await sideways_and_chips(browser, url)

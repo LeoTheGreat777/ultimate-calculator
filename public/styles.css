@@ -547,7 +547,8 @@ html.theme-fade *,html.theme-fade *::before,html.theme-fade *::after{transition:
 .mode-tab{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;height:38px;border:1px solid var(--border);border-radius:12px;background:var(--card2);color:var(--muted);font:inherit;font-size:13px;font-weight:700;padding:0 12px;cursor:pointer;white-space:nowrap;touch-action:pan-x;transition:background .15s,color .15s,border-color .15s}
 .mode-tab:hover{color:var(--text)}
 .mode-tab:focus-visible{outline:2px solid var(--accent2);outline-offset:-2px}
-.mode-tab-icon{color:var(--accent2);font-size:14px;line-height:1}
+.mode-tab-icon{color:var(--accent2);font-size:14px;line-height:1;display:inline-flex;align-items:center;justify-content:center;min-width:15px;height:15px}
+.mode-tab-icon svg{display:block;width:15px;height:15px}
 .mode-tab.active{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .mode-tab.active .mode-tab-icon{color:var(--on-accent)}
 @media (prefers-reduced-motion:reduce){

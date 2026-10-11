@@ -317,6 +317,7 @@ function closeThemeEditor(){
  if(hadFocus&&hasKeyboard())$('#themeButton').focus({preventScroll:true});
 }
 document.addEventListener('visibilitychange',()=>{if(document.hidden)keepThemeDraft()});
+addEventListener('pagehide',keepThemeDraft);// a reload or a closed tab with the panel open keeps the colours too
 // a press anywhere outside the panel closes it (and still does what it does there)
 document.addEventListener('pointerdown',e=>{if(themeEditorOpen()&&!eventInside(e,'#themeEditor'))closeThemeEditor()},true);
 // Keys while the editor is open: Esc and Enter close it (Enter on a swatch picks it first), ← → move through a row

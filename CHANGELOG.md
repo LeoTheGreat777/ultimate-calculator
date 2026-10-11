@@ -6,6 +6,13 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.15.4 – 2026-10-11
+
+### Fixed
+- The tab icons look the same on every device: on iPhone some (Units, Dates, Interest) were tiny and sat too low.
+  Dates now has a calendar icon.
+- Colours you were picking for your own theme are no longer lost when the app updates itself or the page reloads.
+
 ## 0.15.3 – 2026-10-11
 
 ### Added

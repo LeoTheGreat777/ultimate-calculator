@@ -188,7 +188,8 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   blurred. The `<head>` script sets `html.ios-app` when `navigator.standalone` (Apple's own), and held upright the page
   starts 28px below the safe area (styles.css). Can't be seen in desktop browsers; the tests fake `navigator.standalone`.
 - **Symbols iOS turns into emoji:** don't use characters like ☀ ☾ for icons (iPhone draws ☀ as a colour emoji): draw
-  them (the theme button's `THEME_ICONS`), or add U+FE0E after an arrow or symbol in text (the tab icons ↔ ↗ ⛽).
+  them (the theme button's `THEME_ICONS`), or add U+FE0E after an arrow or symbol in text. The tab icons are drawn too
+  (`ICONS`, `tabSvg` in i18n.js, 16×16): symbol characters like ↔ ◷ came out tiny and low on iPhone; only € % $ stay text.
 - **Big screens:** on large desktop screens the whole app is scaled with CSS `zoom` on `<html>` (`applyUiZoom`,
   `window.__uiZoom`, CSS var `--z`). Viewport units must be written `calc(100dvh / var(--z,1))`, and any code that
   turns screen coordinates (clientX/Y, getBoundingClientRect, innerHeight) into CSS sizes must divide by
@@ -252,7 +253,8 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   version, but every file the app needs must be linked from index.html with `?v=`, and the app must not fetch anything
   else it needs to start. Coming back to the screen (`visibilitychange`, `focus`, bfcache `pageshow`) runs
   `checkForUpdate` (main.js, at most once a minute): it fetches the page with `no-store` (sw.js leaves those alone) and
-  reloads if its footer version differs from `VERSION`. Test with `offline()` in tests/test_app.py.
+  reloads if its footer version differs from `VERSION`. Not while the own theme editor is open (the reload would close
+  the colour picker); the editor's colours are also kept on `pagehide`, so a reload never loses them. Test with `offline()` in tests/test_app.py.
 - **Keyboard:** desktop typing is handled in the `window` `keydown` listener in `main.js`.
   Keys that do nothing in a mode are ignored.
 
