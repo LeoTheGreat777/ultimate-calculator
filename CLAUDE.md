@@ -170,6 +170,11 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   screen: `backOnScreen` in main.js) and on entering the tab; saved in `uc-rates`; `RATES_SNAPSHOT` before
   the first fetch (update it now and then). Strings, converted with fractions (`currencyRate`). Values show as money
   (`formatMoneyValue`: 2 decimals, more under 1); on phones the closed menus show only the code. Tests stub the URL.
+- **iPhone home-screen app:** iOS draws a soft blur under the status bar over the page, which made the title look
+  blurred. The `<head>` script sets `html.ios-app` when `navigator.standalone` (Apple's own), and held upright the page
+  starts 28px below the safe area (styles.css). Can't be seen in desktop browsers; the tests fake `navigator.standalone`.
+- **Symbols iOS turns into emoji:** don't use characters like ☀ ☾ for icons (iPhone draws ☀ as a colour emoji): draw
+  them (the theme button's `THEME_ICONS`), or add U+FE0E after an arrow or symbol in text (the tab icons ↔ ↗ ⛽).
 - **Big screens:** on large desktop screens the whole app is scaled with CSS `zoom` on `<html>` (`applyUiZoom`,
   `window.__uiZoom`, CSS var `--z`). Viewport units must be written `calc(100dvh / var(--z,1))`, and any code that
   turns screen coordinates (clientX/Y, getBoundingClientRect, innerHeight) into CSS sizes must divide by

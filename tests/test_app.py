@@ -868,7 +868,7 @@ async def own_themes(browser, url):
     await p.click('[data-te-row="accent"] [data-te-colour="#ef4444"]')
     await p.keyboard.press('Enter')
     check(L + 'Enter closes; with Match device the own light theme becomes the light one',
-          await p.evaluate("[theme,themePair.light,document.documentElement.dataset.theme,document.querySelector('#themeButton').textContent]") == ['auto', 'custom-light', 'custom-light', '☀'])
+          await p.evaluate("[theme,themePair.light,document.documentElement.dataset.theme,document.querySelector('#themeButton').dataset.icon]") == ['auto', 'custom-light', 'custom-light', 'sun'])
     await p.click('#themeButton')
     await p.click('[data-theme-auto]')
     await p.wait_for_timeout(100)
@@ -943,6 +943,37 @@ async def icons(browser, url):
     await p.context.close()
 
 
+async def ios_app(browser, url):
+    """iPhone home-screen app (navigator.standalone): the page starts below iOS's blur under the status bar and still fits."""
+    for size in [(390, 844), (375, 667), (844, 390)]:
+        ctx = await browser.new_context(viewport={'width': size[0], 'height': size[1]}, is_mobile=True, has_touch=True)
+        await ctx.add_init_script(SEED % ('en', 'dark') + ";Object.defineProperty(navigator,'standalone',{get:()=>true})")
+        p = await ctx.new_page()
+        p.errors = []
+        p.on('pageerror', lambda e: p.errors.append(str(e)))
+        await p.goto(url)
+        await p.wait_for_timeout(300)
+        L = f'[iPhone app {size[0]}x{size[1]}] '
+        st = await p.evaluate("""(()=>{const h=document.documentElement,pad=parseFloat(getComputedStyle(document.querySelector('.app-shell')).paddingTop),
+          k=document.querySelector('#keypad').getBoundingClientRect();
+          return {ios:h.classList.contains('ios-app'),landscape:h.classList.contains('landscape'),pad,fits:k.bottom<=innerHeight+1&&!h.classList.contains('page-scroll')}})()""")
+        upright = size[1] > size[0]
+        check(L + 'marked as the iPhone app', st['ios'], st)
+        check(L + ('the page starts lower, below the status bar blur' if upright else 'sideways: no extra space at the top'),
+              (st['pad'] >= 28) if upright else (st['pad'] < 28 and st['landscape']), st)
+        check(L + 'the keypad still fits without scrolling', st['fits'], st)
+        icons = [await p.evaluate("[themeButton.dataset.icon,!!themeButton.querySelector('svg'),themeButton.textContent.trim()]")]
+        await p.evaluate("setTheme('light')")
+        await p.wait_for_timeout(700)
+        icons.append(await p.evaluate("[themeButton.dataset.icon,!!themeButton.querySelector('svg'),themeButton.textContent.trim()]"))
+        check(L + 'the theme button draws a moon / sun, no ☀ ☾ characters', icons == [['moon', True, ''], ['sun', True, '']], icons)
+        check(L + 'no JavaScript errors', not p.errors, p.errors)
+        await ctx.close()
+    p = await new_page(browser, url, 'en', 'dark')
+    check('[not the iPhone app] no extra space at the top', not await p.evaluate("document.documentElement.classList.contains('ios-app')"))
+    await p.context.close()
+
+
 async def main():
     url = serve()
     async with async_playwright() as pw:
@@ -957,6 +988,7 @@ async def main():
             await phone(browser, url, lang, theme, size)
         await own_themes(browser, url)
         await icons(browser, url)
+        await ios_app(browser, url)
         await offline(browser)
         await currency_offline(browser, url)
         await browser.close()

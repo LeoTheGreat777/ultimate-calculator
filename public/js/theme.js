@@ -107,7 +107,7 @@ function applyTheme(){
  const root=document.documentElement,shown=themeDraft?'custom-'+themeDraft.group:resolvedTheme();
  root.dataset.theme=shown;
  const b=$('#themeButton');
- if(b){b.textContent=themeGroup(shown)==='light'?'☀':'☾';b.setAttribute('aria-label',t('theme'));b.title=t('theme')}
+ if(b){const icon=themeGroup(shown)==='light'?'sun':'moon';if(b.dataset.icon!==icon){b.innerHTML=THEME_ICONS[icon];b.dataset.icon=icon}b.setAttribute('aria-label',t('theme'));b.title=t('theme')}
  // the browser's own bar (Android, installed app) takes the theme's background
  $('meta[name="theme-color"]')?.setAttribute('content',getComputedStyle(root).getPropertyValue('--bg').trim()||'#0b0f14');
  if(themeMenuOpen())renderThemeMenu();
@@ -152,6 +152,8 @@ function toggleMatchDevice(){
 }
 
 /* ---------- The theme menu ---------- */
+// The theme button's icons are drawn: the characters ☀ ☾ looked different on every phone (a colour emoji on iPhone).
+const THEME_ICONS={sun:'<svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><circle cx="12" cy="12" r="4.2" fill="currentColor"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',moon:'<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M20.2 14.6A8.6 8.6 0 0 1 9.4 3.8a8.6 8.6 0 1 0 10.8 10.8z" fill="currentColor"/></svg>'};
 const themeMenuOpen=()=>!!$('#themeMenu')&&!$('#themeMenu').classList.contains('hidden');
 const themeKey=n=>n.startsWith('custom-')?'themeCustom':'theme'+n[0].toUpperCase()+n.slice(1);
 const PALETTE_ICON='<svg viewBox="0 0 24 24" width="17" height="17"><path d="M12 3.5a8.5 8.5 0 1 0 0 17c1.2 0 1.8-.8 1.8-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.7 1.7-1.7h2a4 4 0 0 0 4-4C20.5 6.9 16.7 3.5 12 3.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="7.5" cy="11" r="1.3" fill="currentColor"/><circle cx="10.5" cy="7.3" r="1.3" fill="currentColor"/><circle cx="15" cy="7.6" r="1.3" fill="currentColor"/></svg>';
