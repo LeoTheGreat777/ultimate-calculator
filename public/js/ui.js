@@ -243,9 +243,10 @@ function applyLanguage(){
 }
 // Holding ⌫ clears everything, the same as AC, in every mode.
 function clearEverything(){if(mode==='calc')clearAll();else if(mode==='units')toolKeyInput('clear');else if(mode==='graph')graphKey('clear');else clearToolFields()}
-// Holding a key for half a second: ⌫ clears everything, − changes the sign (±). A plain tap does the usual.
+// Holding a key for half a second: ⌫ and C clear everything (C turns into AC while still held, like the iPhone's
+// calculator), − changes the sign (±). A plain tap does the usual.
 const HOLD_KEYS=[
- {sel:'[data-action="backspace"],[data-g="back"]',run:()=>clearEverything()},
+ {sel:'[data-action="backspace"],[data-g="back"],[data-action="clear"]',run:()=>clearEverything()},
  {sel:'.key[data-value="-"]',when:()=>mode==='calc'||mode==='units',run:()=>{if(mode==='calc')negate();else toolKeyInput('negate')}}
 ];
 // Pressing a key: it lights up the moment it's touched, grows a little if held a moment (styles.css) and fades as it's

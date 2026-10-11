@@ -1137,6 +1137,39 @@ async def press_feedback(browser, url):
         if name == 'desktop':
             check(L + 'no vibrate with a mouse', not await p.evaluate("window.__vib.length"))
             check(L + 'no iPhone switches off iPhone', not await p.evaluate("document.querySelectorAll('.key-tick').length"))
+
+            async def hold(sel, ms=700):
+                b = await p.locator('#keypad ' + sel).bounding_box()
+                await p.mouse.move(b['x'] + b['width'] / 2, b['y'] + b['height'] / 2)
+                await p.mouse.down()
+                await p.wait_for_timeout(ms)
+                st = await p.evaluate(f"(()=>{{const b=document.querySelector('#keypad {sel}');return [b.textContent,b.classList.contains('pressed'),{scale}('#keypad {sel}')]}})()".replace('{scale}', scale))
+                await p.mouse.up()
+                await p.wait_for_timeout(100)
+                return st
+            # holding C (like the iPhone's calculator): turns into AC while still held and big, and clears everything
+            await p.evaluate("clearAll()")
+            for k in ['1', '2', '+', '3']:
+                await p.click(f'#keypad [data-value="{k}"]')
+            st = await hold('[data-action="clear"]')
+            after = await p.evaluate("[expression,current,document.querySelector('#result').textContent,document.querySelector('#clearButton').textContent]")
+            check(L + 'holding C turns it into AC while still held and big', st[0] == 'AC' and st[1] and st[2] > 1.1, st)
+            check(L + 'and clears everything, letting go does nothing more', after == ['', '', '0', 'AC'], after)
+            for k in ['4', '5']:
+                await p.click(f'#keypad [data-value="{k}"]')
+            await p.click('#keypad [data-action="clear"]')
+            check(L + 'a tap on C still clears just the number', await p.evaluate("[current,document.querySelector('#clearButton').textContent]") == ['', 'AC'])
+            await p.evaluate("switchMode('units')")
+            await p.click('#keypad [data-value="7"]')
+            await hold('[data-action="clear"]')
+            st = await p.evaluate("[unitValueFrom.value,unitValueTo.value,document.querySelector('#clearButton').textContent]")
+            check(L + 'Units: holding C clears both values', st[0] in ('', '0') and st[1] in ('', '0') and st[2] == 'AC', st)
+            await p.evaluate("switchMode('fuel')")
+            await p.click('#keypad [data-value="6"]')
+            await p.click('#keypad [data-value="8"]')
+            await hold('[data-action="clear"]')
+            st = await p.evaluate("[...document.querySelectorAll('#toolPanel input[data-tool-input]')].map(i=>i.value).join('')")
+            check(L + 'tools: holding C clears every field, like AC', st == '', st)
             await ctx.close()
             continue
         await p.evaluate("clearAll()")

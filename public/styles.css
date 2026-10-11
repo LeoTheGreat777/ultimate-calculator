@@ -462,10 +462,11 @@ html.page-scroll body{touch-action:pan-y!important}
 #keypad [data-action="backspace"],#keypad [data-g="back"]{-webkit-touch-callout:none}
 /* pressed, the same with a mouse and a finger (ui.js setupPressFeedback): lights up at once (a layer of the text colour,
    so it works on every key colour and theme) and, held a moment longer, grows a little over its neighbours; let go, it
-   fades and settles back. A quick tap only lights up: the grow waits .11s, then is quick (.12s, a slight overshoot) */
+   fades and settles back. A quick tap only lights up: the grow waits .09s (time for the key to get its own layer, so
+   the move starts without a hitch), then eases out over .3s: most of it in the first .1s, smooth to the end */
 #keypad button{position:relative;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;transition:background .1s,transform .2s cubic-bezier(.2,.8,.3,1)}
 #keypad button::after{content:'';position:absolute;inset:0;border-radius:inherit;background:var(--text);opacity:0;pointer-events:none;transition:opacity .22s ease-out}
-#keypad button.pressed{z-index:2;transform:scale(1.12);transition:background .1s,transform .12s cubic-bezier(.3,1.25,.5,1) .11s}
+#keypad button.pressed{z-index:2;transform:scale(1.12);will-change:transform;transition:background .1s,transform .3s cubic-bezier(.22,1,.36,1) .09s}
 #keypad button.pressed::after{opacity:.14;transition:none}
 @media (prefers-reduced-motion:reduce){
   #keypad button.pressed{transform:none}
@@ -474,7 +475,7 @@ html.page-scroll body{touch-action:pan-y!important}
 .key-tick{position:absolute;inset:0;z-index:1;border-radius:inherit;cursor:inherit;-webkit-tap-highlight-color:transparent}
 .key-tick input{position:absolute;width:1px;height:1px;margin:0;visibility:hidden;pointer-events:none}
 #keypad button:disabled .key-tick{display:none}
-#keypad button.holding{background:color-mix(in srgb,var(--key) 55%,var(--accent))!important;transition:background .5s linear,transform .12s cubic-bezier(.3,1.25,.5,1) .11s}
+#keypad button.holding{background:color-mix(in srgb,var(--key) 55%,var(--accent))!important;transition:background .5s linear,transform .3s cubic-bezier(.22,1,.36,1) .09s}
 #keypad .held{background:var(--accent)!important;color:var(--on-accent)!important;transition:none}
 /* Units switched on: the ↔ button stays lit, like a pressed key */
 /* ---------- Theme and language changes ---------- */

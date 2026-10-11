@@ -225,8 +225,8 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   native pickers. While a dropdown has focus the global keydown handler leaves keys to it.
 - **Pressing keys** (`setupPressFeedback`, ui.js), the same with a mouse and a finger, like the iPhone's calculator:
   every key in `#keypad` lights up the moment it's pressed (`.pressed`, a `::after` layer of `--text`, so it suits every
-  key colour and theme), held a moment longer it grows (after .11s, in .12s with a slight overshoot, to scale 1.12, over its neighbours;
-  the owner tuned it: a quick tap only lights up), and let go it
+  key colour and theme), held a moment longer it grows (after .09s, easing out over .3s, to scale 1.12, over its neighbours, `will-change`
+  set as it's pressed so the move starts smoothly; the owner tuned it: a quick tap only lights up), and let go it
   fades and settles back. No `:active` shrink anywhere on the keypad. On phones a tick: Android `navigator.vibrate(8)` on
   pointerdown. iPhone has no vibrate for websites; its own switch (`<input type="checkbox" switch>`, iOS 18+) ticks, but
   since iOS 26.5 only when a finger toggles it (a script's `label.click()` is silent). So on iPhone every key holds an
@@ -235,7 +235,8 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   click goes on to the keypad as the key press (the switch's own click is stopped). Apple doesn't document it; if it
   stops, nothing breaks. No sounds (the owner said no). `selectstart` is blocked outside fields: a fast double tap on iOS
   otherwise starts selecting a key's label and shows the magnifier bubble.
-- **± and holding keys:** holding ⌫ clears everything, holding − flips the sign (`negate`, Units: `unitKeyInput('negate')`);
+- **± and holding keys:** holding ⌫ or C clears everything (C turns into AC while still held and big, like the iPhone's
+  calculator; in the tools C stays C, AC is its own key), holding − flips the sign (`negate`, Units: `unitKeyInput('negate')`);
   F9 does ± on a keyboard. A tap on − is always minus. A minus made with ± is stored as `−` (U+2212), one typed with
   the − key as `-`; the maths reads both the same (`tokenize`, `normalizeUnitExpression`). Display (`formatInputDisplay`):
   after an operator any negative number is in brackets, `5×(−25)`; at the start only a ± one is, `(−5)`, a typed one
