@@ -65,5 +65,3 @@ function shortCurrencyLabels(){
  if(unitView!=='currency'||!isMobileDevice())return;
  ['#unitFrom','#unitTo'].forEach(id=>{const sel=$(id);if(!sel)return;[...sel.options].forEach(o=>{o.textContent=o.selected?o.value:UNIT_LABELS.currency[o.value]?.[lang==='el'?0:1]||o.value})});
 }
-// Coming back to the app on the Currency tab picks up newer rates.
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&mode==='units'&&unitView==='currency')refreshRates()});

@@ -95,6 +95,10 @@ function checkForUpdate(){
  lastVersionCheck=Date.now();
  fetch('./',{cache:'no-store'}).then(r=>r.ok?r.text():'').then(html=>{const v=html.match(/id="footerVersion">v(\d+\.\d+\.\d+)</)?.[1];if(v&&v!==VERSION)location.reload()}).catch(()=>{});
 }
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkForUpdate()});
-addEventListener('pageshow',e=>{if(e.persisted)checkForUpdate()});
-addEventListener('focus',checkForUpdate);
+// The same moments refresh the currency rates in the background, on any tab (at most hourly: refreshRates),
+// so the rates saved for offline use are as fresh as the last time the app was open.
+const backOnScreen=()=>{checkForUpdate();refreshRates()};
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')backOnScreen()});
+addEventListener('pageshow',e=>{if(e.persisted)backOnScreen()});
+addEventListener('focus',backOnScreen);
+addEventListener('load',()=>setTimeout(()=>refreshRates(),1500));// and once after the app opens

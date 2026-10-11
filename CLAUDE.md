@@ -160,7 +160,8 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   `currentTab()` gives the tab on screen (tabs, Tips use it), `switchMode('currency')` sets the view. The category menu
   is hidden (Units' own menu leaves `currency` out) and `#rateInfo` shows the pair's rate and the rates' date; tap
   to update. Rates (currency.js): ECB reference rates per euro from `https://api.frankfurter.dev/v1/latest` (CORS),
-  fetched on entering the tab and on coming back to it, at most hourly; saved in `uc-rates`; `RATES_SNAPSHOT` before
+  fetched at most hourly in the background (on start, and with `checkForUpdate` whenever the app comes back to the
+  screen: `backOnScreen` in main.js) and on entering the tab; saved in `uc-rates`; `RATES_SNAPSHOT` before
   the first fetch (update it now and then). Strings, converted with fractions (`currencyRate`). Values show as money
   (`formatMoneyValue`: 2 decimals, more under 1); on phones the closed menus show only the code. Tests stub the URL.
 - **Big screens:** on large desktop screens the whole app is scaled with CSS `zoom` on `<html>` (`applyUiZoom`,

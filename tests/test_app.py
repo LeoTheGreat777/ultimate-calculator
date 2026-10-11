@@ -744,6 +744,12 @@ async def currency_offline(browser, url):
         await p.tap(f'.key[data-value="{k}"]')
     st = await p.evaluate("[unitValueTo.value!=='0',rateInfo.textContent.includes('offline'),unitTo.options[unitTo.selectedIndex].textContent]")
     check('Currency offline: converts with the shipped rates and says offline', st == [True, True, 'USD'], st)
+    await ctx.unroute('https://api.frankfurter.dev/**')
+    await ctx.route('https://api.frankfurter.dev/**', lambda r: r.fulfill(status=200, content_type='application/json', body=RATES_JSON.replace('2026-10-09', '2026-10-10'),
+                                                                          headers={'Access-Control-Allow-Origin': '*'}))
+    await p.evaluate("switchMode('calc');rates.checked=0;document.dispatchEvent(new Event('visibilitychange'))")
+    await p.wait_for_function("JSON.parse(localStorage.getItem('uc-rates')||'{}').date==='2026-10-10'", timeout=5000)
+    check('Currency: back online, new rates are saved in the background on any tab', True)
     await ctx.close()
 
 
