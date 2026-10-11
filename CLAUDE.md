@@ -108,7 +108,7 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
 - **Credits:** the footer names come from `AUTHORS` in `i18n.js`, in Greek and English (first name first in both);
   the English names are also in `index.html` (footer and `<meta name="author">`) and both in the README.
   Change them in all places together.
-- **Tool modes** are `TOOL_MODES` (core.js): use it rather than listing them. Defaults (VAT rate 24, tip 10% for 1 person)
+- **Tool modes** are `TOOL_MODES` (core.js): use it rather than listing them. Defaults (VAT rate 24, Subnet /24, Dates today)
   are `TOOL_DEFAULTS`, filled in on entering the mode and after AC. Percent (discount, change, tip), Interest (`loan`:
   loan, payoff, savings) Dates (between, add) and Subnet (`net`: subnet, hosts) have kinds on a switch above their fields: `KIND_FIELDS`, `KIND_LABELS`, `toolKind[mode]`, `setToolKind`,
   `kindPanelHtml`; switching kinds re-renders only the fields, AC (and changing kind) clears the kind on screen. In
@@ -117,7 +117,8 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   'date' (the device's own date picker, `<input type="date">`, value YYYY-MM-DD, not on the keypad), 'ip'/'mask'
   (`dottedField`: digits and dots, each part ≤ 255, via `dottedKey`, which adds the dot itself after a third digit or
   before a digit that can't fit, and ignores a dot typed right after one; the , key types a dot;
-  / in the address jumps to the prefix, a pasted 10.0.0.5/16 fills both). A tip split between people is rounded
+  / in the address jumps to the prefix, a pasted 10.0.0.5/16 fills both). The tip has nothing filled in (the owner asked): People left empty means one person, and its
+  grey hint says 1. A tip split between people is rounded
   up to the cent (`ratCentsUp`) so the shares cover the bill. Interest (`loanNumbers`, floats like Fuel/Energy): yearly
   rate, interest monthly, months = round(years × 12) up to 1200; a loan's payment is rounded to cents; savings deposits
   come at the end of each month, an empty starting amount or deposit counts as 0. Payoff (`payoffNumbers`): months to
@@ -130,7 +131,8 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   calendar (`openCalendar`, `#calPop`: days/months/years views, holidays dotted); touch devices keep `<input type="date">`.
   Subnet (net.js): /31 = 2 addresses, /32 = 1, else 2^(32−p) − 2. Its details grid (`#netDetails`, `renderNetDetails`)
   always shows its cells (– until a result) so the layout doesn't jump; a long value (255.255.255.192) gets a smaller font,
-  never "…". Sideways it shows too when there is room; on very short screens `fitLandscape` hides it (`fit-no-details`)
+  never "…". Sideways the left side is wider (Subnet's keypad has three columns) and the details are two columns of
+  "label  value" lines, readable on a big iPhone; on shorter screens `fitLandscape` hides them (`fit-no-details`)
   and the working under ? still has it. "Between" in Dates says "Pick two dates." until both are picked, also sideways.
 - **Switches** (VAT add/remove, the kinds of Percent, Interest and Dates) are one generic segmented control: `TOGGLES`, `toggleHtml`,
   `renderToggles`, `setupToggleSlide` (tap, drag, swipe, ← →), `.seg-toggle` in styles.css (`--n` options, `--i` chosen).
@@ -150,11 +152,15 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   (`html.page-scroll`). Don't add fixed pixel heights per screen size or device; let `fitLayout` handle it,
   and call it after anything that changes the layout's height. Phones held sideways (any window wider than tall and
   at most 500px high) get the landscape layout: keypad on the right, the rest on the left (`fitLandscape`,
-  `html.landscape` in styles.css). Sideways the keys grow (tools up to 84px) until the card reaches the bottom, and once
-  everything fits the card is stretched to it (`html.land-fill`), so there is no empty strip below. The app is not
+  `html.landscape` in styles.css). Sideways the keys are the biggest that fit (a halving search, tools up to 84px), so every
+  tab's keys are the same size even when the left side is the taller one, and once everything fits the card is stretched
+  to the bottom (`html.land-fill`), so there is no empty strip below. iOS reports a turned phone's new size late, after
+  'resize': a ResizeObserver on the page fires 'resize' again when the width really changes (layout.js), and one on the
+  tabs re-measures their bar (ui.js). The app is not
   locked to portrait (iPhones can't be), so both must work.
 - **Scientific:** a view of the Calculator, not a mode: the f(x) switch on the display (`sciMode`, `uc-sci`; the only chip
-  there, the angle unit is the keypad's Deg/Rad key) adds 15
+  there, the angle unit is the keypad's Deg/Rad key; at the display's top-left in line with History, styled like ?, and
+  Dates' Working days chip sits in the same place) adds 15
   keys above the basic ones (beside them in landscape; `sciKeysHtml`, `.keypad.sci`). Functions apply to the value
   just typed / the result / the bracket just closed (`sciKey`, `lastValueStart`), else open `sin(`. x², xʸ, ʸ√x and x! take the whole value, so a negative one or a power gets brackets: (−3)², (9²)². 2nd swaps keys
   for inverses; Deg/Rad is `angleUnit` (`uc-angle`). The engine (numbers.js: `evalExpr`, `ratPow`, `sciFunction`)

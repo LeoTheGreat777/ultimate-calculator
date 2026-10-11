@@ -313,3 +313,6 @@ $('#modeTabs').addEventListener('wheel',e=>{const t=$('#modeTabs .mode-tabs-trac
 // arrow keys move between tabs when one has keyboard focus
 $('#modeTabs').addEventListener('keydown',e=>{if(e.key!=='ArrowLeft'&&e.key!=='ArrowRight')return;e.preventDefault();e.stopPropagation();const i=MODE_LABELS.indexOf(currentTab()),n=MODE_LABELS[Math.max(0,Math.min(MODE_LABELS.length-1,i+(e.key==='ArrowRight'?1:-1)))];switchMode(n);requestAnimationFrame(()=>$('#modeTabs .mode-tab.active')?.focus())});
 window.addEventListener('resize',()=>syncModeTabs(true));
+// The strip's own width: when it changes (the phone turned; iOS reports the new size late, after 'resize'), the bar
+// under the tabs is measured again, so it never keeps its old width and position.
+if(window.ResizeObserver){let w=0;new ResizeObserver(([e])=>{const nw=Math.round(e.contentRect.width);if(nw!==w){const first=!w;w=nw;if(!first)syncModeTabs(true)}}).observe($('#modeTabs'))}

@@ -47,7 +47,7 @@ const HELP={
  pct:{tips:[
   ['Τρία είδη στον διακόπτη: «Έκπτωση» δίνει την τελική τιμή, «Μεταβολή» πόσο τοις εκατό άλλαξε κάτι, «Φιλοδώρημα» πόσα πληρώνει ο καθένας.','Three kinds on the switch: “Discount” gives the final price, “Change” how much something changed in percent, “Tip” what each person pays.'],
   ['Μεταβολή: βάλε την παλιά τιμή στο «Από» και τη νέα στο «Σε». Π.χ. από 80 σε 100 είναι +25%.','Change: put the old value in “From” and the new one in “To”. From 80 to 100 is +25%, for example.'],
-  ['Φιλοδώρημα: ξεκινά στο 10% για ένα άτομο. Όταν μοιράζεστε, το ποσό του καθενός στρογγυλεύεται προς τα πάνω στο λεπτό, ώστε να καλύπτεται ο λογαριασμός.','Tip: starts at 10% for one person. When you split, each share is rounded up to the cent so the bill is covered.'],
+  ['Φιλοδώρημα: βάλε τον λογαριασμό και το ποσοστό· χωρίς αριθμό ατόμων είναι για ένα. Όταν μοιράζεστε, το ποσό του καθενός στρογγυλεύεται προς τα πάνω στο λεπτό, ώστε να καλύπτεται ο λογαριασμός.','Tip: type the bill and the tip %; with no number of people it is for one. When you split, each share is rounded up to the cent so the bill is covered.'],
   ['Το ? δείχνει πώς βγήκε το αποτέλεσμα. Πάτα το αποτέλεσμα για να το αντιγράψεις. Το AC καθαρίζει μόνο το είδος που βλέπεις.','? shows how the result was worked out. Tap the result to copy it. AC clears only the kind on screen.']]},
  loan:{tips:[
   ['«Δόση»: βάλε ποσό δανείου, επιτόκιο και χρόνια για να δεις τη μηνιαία δόση και πόσους τόκους θα πληρώσεις συνολικά.','“Payment”: enter the loan amount, interest rate and years to see the monthly payment and how much interest you pay in all.'],

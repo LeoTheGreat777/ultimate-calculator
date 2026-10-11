@@ -6,6 +6,17 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.14.7 – 2026-10-11
+
+### Changed
+- Subnet, phone sideways: the details are two easy-to-read columns, and the keys are as big as in the other tabs.
+- Tip has nothing filled in any more: type the bill and the tip %. With no number of people it's for one.
+- f(x) is a quieter button in line with the History button, matching the ? on the other side; Dates' Working days
+  sits in the same place.
+
+### Fixed
+- The bar under the tabs ran across the keys after turning the phone.
+
 ## 0.14.6 – 2026-10-11
 
 ### Changed

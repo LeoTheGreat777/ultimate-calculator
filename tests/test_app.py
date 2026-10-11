@@ -235,9 +235,14 @@ async def desktop(browser, url, lang, theme):
     await p.keyboard.type('60')
     check(L + 'Percent: 80 to 60 is -25%', await p.evaluate(R) == '-25%', await p.evaluate(R))
     await p.click('[data-choice="tip"]')
+    st = await p.evaluate("[tipBill.value,tipRate.value,tipPeople.value,tipRate.placeholder,tipPeople.placeholder]")
+    check(L + 'Tip: nothing filled in, only grey hints', st[:3] == ['', '', ''] and st[3] and st[4] == '1', st)
     await p.click('#tipBill')
     await p.keyboard.type('100')
-    check(L + 'Tip: 10% on 100 for one', await p.evaluate(R) == '110,00 €', await p.evaluate(R))
+    check(L + 'Tip: no result before a tip % is typed', await p.evaluate(R) in ('', '0', '0,00 €'), await p.evaluate(R))
+    await p.click('#tipRate')
+    await p.keyboard.type('10')
+    check(L + 'Tip: 10% on 100, People empty = one person', await p.evaluate(R) == '110,00 €', await p.evaluate(R))
     await p.click('#tipPeople')
     await p.keyboard.press('Backspace')
     await p.keyboard.type('3,5')
@@ -246,7 +251,7 @@ async def desktop(browser, url, lang, theme):
     check(L + 'Tip: split 3 ways rounds up to the cent', await p.evaluate(R) == '36,67 €', await p.evaluate(R))
     await p.click('.tool-key[data-action="clear-all"]')
     st = await p.evaluate("[tipBill.value,tipRate.value,tipPeople.value,toolState.pct.inputs.pctFrom??'']")
-    check(L + 'Percent: AC and changing kind start over (tip keeps its defaults)', st == ['', '10', '1', ''], st)
+    check(L + 'Percent: AC and changing kind start over (nothing filled back in)', st == ['', '', '', ''], st)
     await p.evaluate("setToolKind('pct','discount')")
     # Interest: loan payment and savings
     await p.evaluate("switchMode('loan');setToolKind('loan','loan')")
@@ -1027,6 +1032,52 @@ async def offline_status_and_turning(browser, url):
     await ctx.close()
 
 
+async def sideways_and_chips(browser, url):
+    """Sideways on a big iPhone (its space without the notch and home bar): Subnet's keys are as big as the other tabs'
+    and its details readable; the tab bar follows a width change with no resize event; f(x) lines up with History."""
+    sizes = {}
+    for mode in ['energy', 'net', 'calc']:
+        ctx = await browser.new_context(viewport={'width': 814, 'height': 409}, is_mobile=True, has_touch=True)
+        await ctx.add_init_script(SEED % ('en', 'dark'))
+        p = await ctx.new_page()
+        await p.goto(url)
+        await p.wait_for_timeout(300)
+        await p.evaluate(f"switchMode('{mode}')")
+        if mode == 'net':
+            await p.evaluate("for(const[k,v] of [['netIp','192.168.100.100'],['netPrefix','26']]){const i=document.getElementById(k);i.value=v;i.dispatchEvent(new Event('input',{bubbles:true}))}")
+        await p.wait_for_timeout(400)
+        sizes[mode] = await p.evaluate("Math.round(document.querySelector('#keypad button').getBoundingClientRect().height)")
+        if mode == 'net':
+            st = await p.evaluate("""(()=>{const s=[...document.querySelectorAll('#netDetails strong')];return {shown:s.length&&s[0].offsetParent!==null,
+              cut:s.filter(e=>e.scrollWidth>e.clientWidth+1).map(e=>e.textContent),font:Math.min(...s.map(e=>parseFloat(getComputedStyle(e).fontSize)))}})()""")
+            check('[sideways 814x409] Subnet: details shown, nothing cut, readable size', st['shown'] and not st['cut'] and st['font'] >= 12, st)
+        await ctx.close()
+    check('[sideways 814x409] Subnet keys are as big as Energy and Calculator keys', sizes['net'] == sizes['energy'] == sizes['calc'], sizes)
+    p = await new_page(browser, url, 'en', 'dark', phone=True)
+    await p.evaluate("toggleSci()")
+    for k in ['5', '+', '3']:
+        await p.tap(f'#keypad [data-value="{k}"]')
+    await p.tap('#keypad [data-action="equals"]')
+    await p.wait_for_timeout(200)
+    st = await p.evaluate("""(()=>{const r=s=>document.querySelector(s).getBoundingClientRect(),f=r('[data-bar=sci]'),h=r('#historyButton'),q=[...document.querySelectorAll('.how-button')].find(b=>b.offsetParent).getBoundingClientRect();
+      return {fxLeft:Math.round(f.left),histLeft:Math.round(h.left),fxH:Math.round(f.height),howH:Math.round(q.height),on:document.querySelector('[data-bar=sci]').classList.contains('on')}})()""")
+    check('[f(x)] lines up with the History button and is as tall as ?', abs(st['fxLeft'] - st['histLeft']) <= 1 and st['fxH'] == st['howH'] and st['on'], st)
+    check('[sideways/chips] no JavaScript errors (f(x))', not p.errors, p.errors)
+    await p.context.close()
+    # the tab bar: measured for a wide strip, then the strip narrows with no resize event (iOS reports a turned phone late)
+    p = await new_page(browser, url, 'en', 'dark', phone=True, size=(430, 932))
+    await p.evaluate("switchMode('net');flashTabsBar(5000)")
+    await p.wait_for_timeout(400)
+    await p.evaluate("document.querySelector('.app-shell').style.width='250px'")
+    await p.wait_for_timeout(400)
+    st = await p.evaluate("""(()=>{const t=document.querySelector('#modeTabs .tabs-scrollbar span').getBoundingClientRect(),n=document.querySelector('#modeTabs .tabs-scrollbar').getBoundingClientRect();
+      return {thumbRight:Math.round(t.right),barRight:Math.round(n.right),thumbLeft:Math.round(t.left),barLeft:Math.round(n.left)}})()""")
+    check('[tab bar] after the width changes without a resize event, the thumb is re-measured: inside the bar, at its end for the last tab',
+          st['thumbLeft'] >= st['barLeft'] - 1 and abs(st['thumbRight'] - st['barRight']) <= 2, st)
+    check('[sideways/chips] no JavaScript errors', not p.errors, p.errors)
+    await p.context.close()
+
+
 async def main():
     url = serve()
     async with async_playwright() as pw:
@@ -1043,6 +1094,7 @@ async def main():
         await icons(browser, url)
         await ios_app(browser, url)
         await offline_status_and_turning(browser, url)
+        await sideways_and_chips(browser, url)
         await offline(browser)
         await currency_offline(browser, url)
         await browser.close()

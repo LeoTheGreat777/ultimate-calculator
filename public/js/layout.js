@@ -91,9 +91,12 @@ function fitLandscape(card,root,avail,need,tool,setToolLayout){
  if(mode==='units')card.style.setProperty('--urow','36px');// the unit rows grow afterwards, into the room beside the keys
  let k;
  const grow=()=>{
-  k=kMin;card.style.setProperty(v,k+'px');
-  // a few passes: while the left side is the taller one, growing keys doesn't use the room yet, so keep going until it's filled
-  for(let i=0;i<6;i++){const spare=avail-need();if(spare<=0)break;k=Math.min(kMax,k+Math.floor(spare/rows));card.style.setProperty(v,k+'px')}
+  // the biggest keys that still fit (a halving search): the keypad then fills its column even when the left side is the
+  // taller one and sets the height, so Subnet's keys are as big as the other tabs'
+  const fits=x=>{card.style.setProperty(v,x+'px');return need()<=avail};
+  let lo=kMin,hi=kMax;
+  if(fits(lo)){while(lo<hi){const mid=Math.ceil((lo+hi)/2);if(fits(mid))lo=mid;else hi=mid-1}}
+  k=lo;card.style.setProperty(v,k+'px');
   return need()-avail;
  };
  let over=grow();
@@ -149,6 +152,9 @@ function fitLayout(){
  root.dataset.fitOver=Math.max(0,over);// how many px did not fit (used by tests)
 }
 window.addEventListener('resize',fitLayoutSoon);
+// iOS reports a turned phone's new size only after its 'resize' event, so everything measured on 'resize' (the layout,
+// the charts, the tabs) would keep the old size. When the page's width really changes, 'resize' runs once more.
+if(window.ResizeObserver){let pageW=0;new ResizeObserver(()=>{const w=document.documentElement.clientWidth;if(w===pageW)return;const first=!pageW;pageW=w;if(!first)dispatchEvent(new Event('resize'))}).observe(document.documentElement)}
 window.visualViewport?.addEventListener('resize',fitLayoutSoon);
 window.addEventListener('orientationchange',()=>setTimeout(fitLayout,250));
 document.fonts?.ready?.then(fitLayoutSoon);

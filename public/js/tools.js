@@ -38,7 +38,7 @@ function renderToolDisplay(){
  d.classList.toggle('tool-empty',!toolResult);
  fitDisplayText($('#result'),24);
 }
-const FIELD_EXAMPLES={fuelD:'250',fuelC:'7,2',fuelP:'1,85',energyP:'100',energyH:'8',energyD:'30',energyR:'0,20',amount:'100',vatRate:'24%',pctPrice:'80',pctOff:'25%',pctFrom:'80',pctTo:'100',tipBill:'60',tipRate:'10%',tipPeople:'3',loanAmount:'10.000',payAmount:'10.000',payRate:'4%',payMonthly:'300',loanRate:'4%',loanYears:'5',saveStart:'1.000',saveMonthly:'100',saveRate:'3%',saveYears:'10',dateDays:'30',netIp:'192.168.1.10',netPrefix:'24',netHosts:'50',value:'10'};
+const FIELD_EXAMPLES={fuelD:'250',fuelC:'7,2',fuelP:'1,85',energyP:'100',energyH:'8',energyD:'30',energyR:'0,20',amount:'100',vatRate:'24%',pctPrice:'80',pctOff:'25%',pctFrom:'80',pctTo:'100',tipBill:'60',tipRate:'10%',tipPeople:'1',loanAmount:'10.000',payAmount:'10.000',payRate:'4%',payMonthly:'300',loanRate:'4%',loanYears:'5',saveStart:'1.000',saveMonthly:'100',saveRate:'3%',saveYears:'10',dateDays:'30',netIp:'192.168.1.10',netPrefix:'24',netHosts:'50',value:'10'};
 let vatAction='add';
 const liveToolNumber=id=>{const raw=normalizeNumericInput($('#'+id)?.value??'');if(raw==='')return null;const n=Number(raw);return Number.isFinite(n)?n:null};
 // On phones the fields are filled only from the app's own keypad, so the native keyboard never opens.
@@ -61,7 +61,7 @@ const ONE_ROW_KINDS=new Set(['tip']);
 let toolKind={pct:'discount',loan:'loan',dates:'between',net:'subnet'};
 let dateCount='all';// Dates: count all days, or working days only
 const kindFields=(m=mode)=>KIND_FIELDS[m]?.[toolKind[m]]||[];
-const TOOL_DEFAULTS={net:{netPrefix:'24'},vat:{vatRate:'24'},pct:{tipRate:'10',tipPeople:'1'},dates:{dateFrom:()=>isoDate(todayNumber()),dateStart:()=>isoDate(todayNumber())}};
+const TOOL_DEFAULTS={net:{netPrefix:'24'},vat:{vatRate:'24'},dates:{dateFrom:()=>isoDate(todayNumber()),dateStart:()=>isoDate(todayNumber())}};
 // Fields that aren't plain numbers: 'count' (People: digits only), 'int' (whole, may be negative: Dates' days; the
 // , key becomes ±), 'date' (the device's own date picker, <input type="date">, value YYYY-MM-DD; not typed on the keypad).
 // 'ip' and 'mask' (Subnet: digits and dots, 1.2.3.4; a mask field also takes a prefix like 24; the , key types a dot).
@@ -275,7 +275,8 @@ function bindTools(){
     {title:el?'Σε ποσοστό του αρχικού':'As a percentage of the first',text:fmt(diff)+' ÷ '+fmt(A)+' × 100 = '+shown}],result:shown};
    setToolResult(shown,t('difference')+': '+signed(fmt(diff),diff.n>0n?1:0),how);return;
   }
-  const B=ratField('tipBill'),R=ratField('tipRate'),N=ratField('tipPeople');
+  // nothing is filled in: People left empty means one person (its grey hint says 1)
+  const B=ratField('tipBill'),R=ratField('tipRate'),N=($('#tipPeople')?.value??'').trim()===''?rat(1n,1n):ratField('tipPeople');
   if(!B||!R||!N||N.d!==1n||N.n<1n){setToolResult('','',null);return}
   const tip=ratCents(ratDiv(ratMul(B,R),H)),total=ratAdd(B,tip),people=Number(N.n),each=people>1?ratCentsUp(ratDiv(total,N)):total;
   const steps=[

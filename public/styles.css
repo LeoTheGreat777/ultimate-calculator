@@ -665,13 +665,14 @@ html.landscape .theme-group{padding-top:3px;padding-bottom:1px}
 .te-sw:hover{transform:scale(1.08)}
 .te-sw{transition:transform .12s ease}
 /* ---------- Scientific (calculator.js): the f(x) switch and DEG/RAD on the display, 15 keys above the basic ones ---------- */
-.sci-bar{position:absolute;top:8px;left:8px;z-index:3;display:flex;gap:6px}
+/* f(x): a quiet button at the display's top-left, in line with the history button above it and styled like ? (top-right) */
+.sci-bar{position:absolute;top:6px;left:0;z-index:3;display:flex;gap:6px}
 .calculator-card.tool-mode .sci-bar,.calculator-card.graph-mode .sci-bar{display:none}
-.date-bar{position:absolute;top:8px;left:8px;z-index:3;display:flex}
+.date-bar{position:absolute;top:6px;left:0;z-index:3;display:flex}/* in the same place as f(x) */
 .date-bar.hidden{display:none}
-.display-wrap.has-date-bar .expression{padding-left:104px}
-.sci-chip{height:28px;min-width:40px;padding:0 10px;border:1px solid var(--border);border-radius:999px;background:var(--card2);color:var(--muted);font:inherit;font-size:12px;font-weight:750;letter-spacing:.03em;cursor:pointer}
-.sci-chip.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.display-wrap.has-date-bar .expression{padding-left:124px}
+.sci-chip{height:34px;min-width:48px;padding:0 12px;border:1px solid var(--border);border-radius:999px;background:var(--card2);color:var(--muted);font:inherit;font-size:13px;font-weight:750;letter-spacing:.03em;cursor:pointer;transition:color .15s,background-color .15s,border-color .15s}
+.sci-chip.on{background:color-mix(in srgb,var(--accent) 14%,var(--card2));border-color:color-mix(in srgb,var(--accent) 55%,transparent);color:var(--accent2)}
 .sci-chip:focus{outline:none}
 .sci-chip:focus-visible{outline:2px solid var(--accent2);outline-offset:1px}
 .keypad.sci{display:flex;flex-direction:column;gap:8px}
@@ -728,13 +729,17 @@ html.landscape .calculator-card.sci-on .bottom-actions{display:none}
 /* sideways: the kind switches are slimmer (all tools), and Subnet's details fit beside the keys; if even then the
    screen is too short, fitLandscape hides them (fit-no-details) and ? still shows them */
 html.landscape .calculator-card.mobile-tool .seg-toggle button{min-height:28px}
-html.landscape .calculator-card.mobile-tool:has(.net-details) .display-wrap.tool-display .result{font-size:clamp(26px,8vh,40px)}
+html.landscape .calculator-card.mobile-tool:has(.net-details) .display-wrap.tool-display .result{font-size:clamp(24px,7vh,36px)}
 html.landscape .calculator-card.fit-no-details .net-details{display:none}
 html.landscape.land-fill body.fit .calculator-card:not(.graph-mode){flex:1 1 auto!important}/* sideways: the card reaches the bottom once everything fits (fitLandscape) */
 html.landscape .calculator-card.mobile-tool .net-details{margin-top:5px;gap:3px 6px}
-html.landscape .calculator-card.mobile-tool .net-details div{padding:2px 7px}
-html.landscape .calculator-card.mobile-tool .net-details span{font-size:10px;line-height:1.25}
-html.landscape .calculator-card.mobile-tool .net-details strong{font-size:12px;line-height:1.3}
+/* Subnet sideways: its keypad has only three columns, so the left side is wider, and the details are two columns of
+   "label  value" lines, wide enough for 255.255.255.192 in a readable size */
+html.landscape .calculator-card.mobile-tool:not(.fit-no-details):has(.net-details){grid-template-columns:minmax(0,1.3fr) minmax(0,1fr)}
+html.landscape .calculator-card.mobile-tool .net-details{grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 6px}
+html.landscape .calculator-card.mobile-tool .net-details div{flex-direction:row;align-items:baseline;justify-content:space-between;gap:8px;padding:2px 8px}
+html.landscape .calculator-card.mobile-tool .net-details span{flex:0 0 auto;font-size:11px;line-height:1.2}
+html.landscape .calculator-card.mobile-tool .net-details strong{flex:1 1 auto;min-width:0;text-align:right;font-size:12.5px;line-height:1.2}
 
 
 /* Currency: the rate and its date where Units has its category menu; tap it to update */
