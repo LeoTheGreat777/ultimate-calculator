@@ -169,8 +169,10 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   `window.__uiZoom`, CSS var `--z`). Viewport units must be written `calc(100dvh / var(--z,1))`, and any code that
   turns screen coordinates (clientX/Y, getBoundingClientRect, innerHeight) into CSS sizes must divide by
   `window.__uiZoom` (see `chZoom` in charts.js, `Z` in history.js).
-- **Themes** (theme.js): ready-made ones, light: Light, Paper, Rose, Sky; dark: Dark, Black (OLED), Ocean, Violet, Ember,
-  Forest (`LIGHT_PRESETS`, `DARK_PRESETS`); and an own theme in each group, `custom-light` / `custom-dark`. Every colour is a
+- **Themes** (theme.js): ready-made ones, light: Light, Paper; dark: Dark, Black (OLED) (`LIGHT_PRESETS`, `DARK_PRESETS`);
+  and an own theme in each group, `custom-light` / `custom-dark`, for everything else. Rose, Sky, Ocean, Violet, Ember
+  and Forest were removed on purpose in 0.14.2 (Graphite and Retro before them): don't add colourful presets back;
+  `REMOVED_THEMES` turns a saved one into the own theme with the same colours. Every colour is a
   token in the theme blocks at the top of styles.css (`html[data-theme]`); never write a colour into a rule, add a token
   instead. `theme` is one theme or `'auto'` (**Match device**, a switch at the top of the menu): then the device picks
   between a light and a dark theme, `themePair` (`uc-theme-pair`), and a tap in the menu sets that group's one (the menu
@@ -188,7 +190,7 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   The panel is built once per opening (`renderThemeEditor`) and then only updated in place (`updateThemeEditor`): never
   replace the colour inputs while it is open, or the device's colour picker closes in the middle of a drag. Keys don't
   reach the calculator while it is open; ← → move through a row of swatches. A new ready-made theme: a block in styles.css, its name in `LIGHT_PRESETS` or
-  `DARK_PRESETS` and in the `<head>` script, texts in `T` (`themeX`). Charts and graph lines read the tokens (`chColors`,
+  `DARK_PRESETS` and in the `<head>` script, texts in `T` (`themeX`). Sideways phones get shorter menu rows so it fits. Charts and graph lines read the tokens (`chColors`,
   `--series1..3`). Check a new theme's contrast (text on card and keys, text on the accent) and look at it in every
   mode. Changing theme: circle reveal from the theme button (View Transitions, `transitionTheme`), fade fallback,
   instant with reduced motion.

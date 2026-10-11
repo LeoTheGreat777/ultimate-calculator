@@ -6,6 +6,14 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.14.2 – 2026-10-11
+
+### Changed
+- Fewer ready-made themes: Light, Paper, Dark and Black. Rose, Sky, Ocean, Violet, Ember and Forest are gone, since
+  your own theme can make any of them. If you used one, it becomes your own theme with the same colours, so nothing
+  changes on your screen; you can tweak it with ✎.
+- The theme menu is shorter and fits on phones without scrolling.
+
 ## 0.14.1 – 2026-10-11
 
 ### Changed

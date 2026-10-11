@@ -874,12 +874,33 @@ async def own_themes(browser, url):
     await p.wait_for_timeout(100)
     check(L + 'Match device off: the theme on screen stays', await p.evaluate("[theme,document.documentElement.dataset.theme]") == ['custom-light', 'custom-light'])
     # broken or old saved values fall back safely
-    for saved, pair, expect in [('custom-light', None, 'light'), ('auto', '{"light":"black","dark":"rose"}', 'light'), ('nonsense', None, 'dark')]:
+    for saved, pair, expect in [('custom-light', None, 'light'), ('auto', '{"light":"black","dark":"paper"}', 'light'), ('nonsense', None, 'dark')]:
         await p.evaluate(f"localStorage.removeItem('uc-custom-themes');localStorage.setItem('uc-theme','{saved}');" +
                          (f"localStorage.setItem('uc-theme-pair','{pair}')" if pair else "localStorage.removeItem('uc-theme-pair')"))
         await p.reload()
         await p.wait_for_timeout(200)
         check(L + f'saved theme {saved} {pair or ""} falls back to {expect}', await p.evaluate(T) == expect and await p.evaluate("resolvedTheme()") == expect)
+    # the removed ready-made themes (0.14.2) become the own theme, with the same colours
+    for saved, pair, custom, expect in [
+            ('sky', None, None, {'theme': 'custom-light', 'shown': 'custom-light', 'bg': '#eef6fb', 'recent': []}),
+            ('auto', '{"light":"rose","dark":"ocean"}', None, {'theme': 'auto', 'pair': ['custom-light', 'custom-dark'], 'shown': 'custom-light', 'bg': '#fbf1f3'}),
+            ('ember', '{"light":"rose","dark":"dark"}', '{"dark":{"bg":"#1c1030","accent":"#a3e635"}}',
+             {'theme': 'custom-dark', 'shown': 'custom-dark', 'bg': '#120c08', 'recent': ['#120c08', '#1c1030'], 'lightRecent': ['#fbf1f3'], 'pair': ['light', 'dark']})]:
+        await p.evaluate("localStorage.clear();localStorage.setItem('uc-defaults','1');localStorage.setItem('uc-lang','en');" +
+                         f"localStorage.setItem('uc-theme','{saved}');" + (f"localStorage.setItem('uc-theme-pair','{pair}');" if pair else '') +
+                         (f"localStorage.setItem('uc-custom-themes','{custom}');" if custom else ''))
+        await p.reload()
+        await p.wait_for_timeout(200)
+        got = await p.evaluate("""({theme,shown:document.documentElement.dataset.theme,pair:[themePair.light,themePair.dark],
+          bg:getComputedStyle(document.documentElement).getPropertyValue('--bg').trim(),saved:localStorage.getItem('uc-theme'),
+          recent:themeRecent.dark.map(r=>r.bg),lightRecent:themeRecent.light.map(r=>r.bg)})""")
+        ok = all(got[k] == v for k, v in expect.items()) and got['saved'] == expect['theme']
+        check(L + f'removed theme {saved} {pair or ""} becomes the own theme', ok, got)
+        await p.reload()
+        await p.wait_for_timeout(200)
+        check(L + f'removed theme {saved}: the same after another reload', await p.evaluate(T) == expect['shown'])
+    await p.click('#themeButton')
+    check(L + 'the menu has Match device, 2 + Custom light, 2 + Custom dark', await p.locator('#themeMenu .theme-option').count() == 7)
     check(L + 'no JavaScript errors', not p.errors, p.errors)
     await p.context.close()
 

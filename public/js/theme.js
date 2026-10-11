@@ -7,7 +7,7 @@
 //   html[data-theme="custom-…"] rules, so they work like the others (also in [data-theme-preview] swatches).
 // - theme is 'auto' (Match device) or one theme. With 'auto' the device picks between two themes: themePair
 //   (uc-theme-pair) {light, dark}, one from each group.
-const LIGHT_PRESETS=['light','paper','rose','sky'],DARK_PRESETS=['dark','black','ocean','violet','ember','forest'];
+const LIGHT_PRESETS=['light','paper'],DARK_PRESETS=['dark','black'];
 const THEME_GROUPS={light:[...LIGHT_PRESETS,'custom-light'],dark:[...DARK_PRESETS,'custom-dark']};
 const THEMES=['auto',...THEME_GROUPS.light,...THEME_GROUPS.dark];
 const themeGroup=n=>THEME_GROUPS.light.includes(n)?'light':'dark';
@@ -331,3 +331,25 @@ function themeEditorKeydown(e){
  }
  return true;
 }
+
+/* ---------- Rose, Sky, Ocean, Violet, Ember and Forest were removed in 0.14.2 (own themes do the same) ---------- */
+// Whoever used one gets it as their own theme with the same background and accent, so it looks the same; an own theme
+// they already had goes to Recent. One that only waited in Match device's other slot goes to Recent.
+const REMOVED_THEMES={rose:['light','#fbf1f3','#c13a6e'],sky:['light','#eef6fb','#077a99'],ocean:['dark','#04111c','#2ec5d3'],
+ violet:['dark','#0e0a1a','#b18cff'],ember:['dark','#120c08','#ff9a3d'],forest:['dark','#07120f','#5fd3a3']};
+(()=>{
+ const saved=store.get('uc-theme'),pair=readJson('uc-theme-pair');
+ let changed=false;
+ for(const n of new Set([saved,pair.light,pair.dark])){
+  if(!REMOVED_THEMES[n])continue;
+  const [g,bg,accent]=REMOVED_THEMES[n],colours={bg,accent},inUse=saved===n||(saved==='auto'&&pair[g]===n);
+  if(!inUse&&pair[g]!==n)continue;// in the wrong slot: nothing to keep
+  changed=true;
+  if(!inUse){rememberThemeColours(g,colours);continue}
+  if(customThemes[g]&&!samePair(customThemes[g],colours))rememberThemeColours(g,customThemes[g]);
+  customThemes[g]=colours;rememberThemeColours(g,colours);
+  if(saved===n){theme='custom-'+g;store.set('uc-theme',theme)}
+  if(pair[g]===n)themePair[g]='custom-'+g;
+ }
+ if(changed){store.set('uc-theme-pair',JSON.stringify(themePair));saveCustomThemes();writeCustomCss()}
+})();
