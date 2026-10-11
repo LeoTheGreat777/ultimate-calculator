@@ -1,10 +1,13 @@
 // Shared basics: version, DOM and storage helpers, the saved language and theme, and the app's state.
 // Loaded first; every other script uses these globals.
-const VERSION='0.14.2';
+const VERSION='0.14.3';
 const NUMBER_LOCALE='de-DE';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 // localStorage can throw (blocked storage, private mode, quota full). Never let that break the app.
 const store={get:k=>{try{return localStorage.getItem(k)}catch{return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch{}},del:k=>{try{localStorage.removeItem(k)}catch{}}};
+// Was this click/press inside an element matching sel? Uses the event's path from when it started, so it stays right
+// when a handler has already re-drawn (replaced) the element that was pressed. Use it for every "a press outside closes it".
+const eventInside=(e,sel)=>e.composedPath().some(n=>n instanceof Element&&n.matches(sel));
 const reducedMotion=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function readLanguage(){

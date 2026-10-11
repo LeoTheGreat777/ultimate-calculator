@@ -880,6 +880,21 @@ async def own_themes(browser, url):
         await p.reload()
         await p.wait_for_timeout(200)
         check(L + f'saved theme {saved} {pair or ""} falls back to {expect}', await p.evaluate(T) == expect and await p.evaluate("resolvedTheme()") == expect)
+    # the menu stays open while its switch and the other slot change (colours that stay the same re-draw it at once)
+    await p.emulate_media(color_scheme='dark')
+    await p.evaluate("localStorage.clear();localStorage.setItem('uc-defaults','1');localStorage.setItem('uc-lang','en');localStorage.setItem('uc-theme','dark')")
+    await p.reload()
+    await p.wait_for_timeout(200)
+    await p.click('#themeButton')
+    states = []
+    for sel in ['[data-theme-auto]', '[data-theme-pick="paper"]', '[data-theme-auto]', '[data-theme-auto]']:
+        await p.click(sel)
+        await p.wait_for_timeout(50)
+        states.append(await p.evaluate("[themeMenuOpen(),theme,document.documentElement.dataset.theme]"))
+    check(L + 'Match device switch and the other slot keep the menu open', states == [[True, 'auto', 'dark'], [True, 'auto', 'dark'], [True, 'dark', 'dark'], [True, 'auto', 'dark']], states)
+    await p.click('#calculatorDisplay')
+    check(L + 'a click outside still closes the menu', not await p.evaluate('themeMenuOpen()'))
+    await p.emulate_media(color_scheme='light')
     # the removed ready-made themes (0.14.2) become the own theme, with the same colours
     for saved, pair, custom, expect in [
             ('sky', None, None, {'theme': 'custom-light', 'shown': 'custom-light', 'bg': '#eef6fb', 'recent': []}),

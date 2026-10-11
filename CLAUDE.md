@@ -194,6 +194,9 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   `--series1..3`). Check a new theme's contrast (text on card and keys, text on the accent) and look at it in every
   mode. Changing theme: circle reveal from the theme button (View Transitions, `transitionTheme`), fade fallback,
   instant with reduced motion.
+- **A press outside closes it** (theme menu, own theme editor, Dates calendar, History's "Delete all?"): check with
+  `eventInside(e,selector)` (core.js), never `e.target.closest`: a handler may already have re-drawn the pressed element,
+  and a detached target looks like a press outside (the menu closed when its own switch was pressed).
 - **Dropdowns:** on desktop Chrome/Edge the unit menus use `appearance: base-select`, styled like the app; phones keep
   native pickers. While a dropdown has focus the global keydown handler leaves keys to it.
 - **± and holding keys:** holding ⌫ clears everything, holding − flips the sign (`negate`, Units: `unitKeyInput('negate')`);

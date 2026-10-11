@@ -316,7 +316,7 @@ function closeThemeEditor(){
 }
 document.addEventListener('visibilitychange',()=>{if(document.hidden)keepThemeDraft()});
 // a press anywhere outside the panel closes it (and still does what it does there)
-document.addEventListener('pointerdown',e=>{if(themeEditorOpen()&&!e.target.closest?.('#themeEditor'))closeThemeEditor()},true);
+document.addEventListener('pointerdown',e=>{if(themeEditorOpen()&&!eventInside(e,'#themeEditor'))closeThemeEditor()},true);
 // Keys while the editor is open: Esc and Enter close it (Enter on a swatch picks it first), ← → move through a row
 // of swatches and pick, Tab moves between rows; nothing reaches the calculator.
 function themeEditorKeydown(e){

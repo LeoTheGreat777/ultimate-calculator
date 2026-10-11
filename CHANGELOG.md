@@ -6,6 +6,13 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.14.3 – 2026-10-11
+
+### Fixed
+- The theme menu closed when you pressed its Match device switch, or picked the theme for the other half of the day.
+  It now stays open until you tap outside it. The same check is now used for the Dates calendar and History's
+  "Delete all?", so they can't close by mistake either.
+
 ## 0.14.2 – 2026-10-11
 
 ### Changed

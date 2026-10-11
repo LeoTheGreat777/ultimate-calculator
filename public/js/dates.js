@@ -206,6 +206,6 @@ function calKey(e){
  else return;
  if(k.startsWith('Arrow'))e.preventDefault();
 }
-document.addEventListener('pointerdown',e=>{if(cal&&!e.target.closest('#calPop')&&e.target.closest('.date-pick')!==cal.btn)closeCalendar()},true);
+document.addEventListener('pointerdown',e=>{if(cal&&!eventInside(e,'#calPop')&&!e.composedPath().includes(cal.btn))closeCalendar()},true);
 document.addEventListener('click',e=>{const b=e.target.closest('.date-pick');if(!b)return;e.preventDefault();if(cal&&cal.btn===b)closeCalendar();else openCalendar(b)});
 addEventListener('resize',()=>closeCalendar());

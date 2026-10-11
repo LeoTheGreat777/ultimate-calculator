@@ -29,7 +29,7 @@ $('#installButton')?.addEventListener('click',installApp);
 $('#helpButton')?.addEventListener('click',showHelp);
 setupHoldKeys();
 // a click anywhere else closes the theme menu and the History "clear all?" question
- document.addEventListener('click',e=>{if(themeMenuOpen()&&!e.target.closest('#themeMenu,#themeButton'))closeThemeMenu();if(historyClearConfirm&&!e.target.closest('#historyClearWrap'))clearHistoryConfirm()});
+ document.addEventListener('click',e=>{if(themeMenuOpen()&&!eventInside(e,'#themeMenu,#themeButton'))closeThemeMenu();if(historyClearConfirm&&!eventInside(e,'#historyClearWrap'))clearHistoryConfirm()});
 $('#clearHistory').addEventListener('click',clearHistoryConfirm);$('#historyConfirmYes').addEventListener('click',deleteAllHistory);
 window.addEventListener('keydown',e=>{
  if(themeEditorKeydown(e)||themeMenuKeydown(e))return;
