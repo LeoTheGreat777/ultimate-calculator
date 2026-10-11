@@ -100,7 +100,8 @@ input,select{-webkit-user-select:text;user-select:text}
 html.landscape .date-rows div{padding:6px 4px}
 html.landscape .date-rows dt{font-size:13px}
 html.landscape .date-rows dd{font-size:14px}
-html.landscape .date-note{display:none}
+html.landscape .date-rows ~ .date-note{display:none}/* the working days note; "Pick two dates." still shows */
+.date-details > .date-note:only-child{margin:auto;text-align:center;font-size:14px}
 html.landscape .tool-grid.kind-grid{grid-template-columns:repeat(var(--f,2),minmax(0,1fr))}
 /* one line per label there, so a long one can't make the row taller */
 html.landscape .tool-grid.kind-grid .tool-field span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -719,12 +720,21 @@ html.landscape .calculator-card.sci-on .bottom-actions{display:none}
 .net-details{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 6px;margin-top:8px}
 .net-details div{display:flex;flex-direction:column;min-width:0;padding:5px 8px;border-radius:9px;background:var(--card)}
 .net-details span{font-size:11px;color:var(--muted)}
-.net-details strong{font-size:13.5px;font-weight:650;color:var(--text);font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.net-details strong{font-size:13.5px;font-weight:650;color:var(--text);font-variant-numeric:tabular-nums;overflow:hidden;white-space:nowrap}
 .calculator-card.mobile-tool .net-details{margin-top:6px;gap:3px 8px}
 .calculator-card.mobile-tool .net-details div{padding:3px 6px}
 .calculator-card.mobile-tool .net-details strong{font-size:12.5px}
 /* a phone held sideways has no room for them: the range and the rest are under ? */
-html.landscape .calculator-card.mobile-tool .net-details{display:none}
+/* sideways: the kind switches are slimmer (all tools), and Subnet's details fit beside the keys; if even then the
+   screen is too short, fitLandscape hides them (fit-no-details) and ? still shows them */
+html.landscape .calculator-card.mobile-tool .seg-toggle button{min-height:28px}
+html.landscape .calculator-card.mobile-tool:has(.net-details) .display-wrap.tool-display .result{font-size:clamp(26px,8vh,40px)}
+html.landscape .calculator-card.fit-no-details .net-details{display:none}
+html.landscape.land-fill body.fit .calculator-card:not(.graph-mode){flex:1 1 auto!important}/* sideways: the card reaches the bottom once everything fits (fitLandscape) */
+html.landscape .calculator-card.mobile-tool .net-details{margin-top:5px;gap:3px 6px}
+html.landscape .calculator-card.mobile-tool .net-details div{padding:2px 7px}
+html.landscape .calculator-card.mobile-tool .net-details span{font-size:10px;line-height:1.25}
+html.landscape .calculator-card.mobile-tool .net-details strong{font-size:12px;line-height:1.3}
 
 
 /* Currency: the rate and its date where Units has its category menu; tap it to update */

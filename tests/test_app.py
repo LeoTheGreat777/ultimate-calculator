@@ -473,8 +473,8 @@ async def scientific(browser, url, lang, theme):
     L = f'[scientific {lang} {theme}] '
     check(L + 'starts in Basic, no scientific keys', await p.locator('.sci-key').count() == 0)
     await p.click('[data-bar="sci"]')
-    check(L + 'f(x) shows 15 scientific keys and DEG', await p.locator('.sci-key').count() == 15
-          and 'DEG' in await p.inner_text('#sciBar'))
+    check(L + 'f(x) shows 15 scientific keys, the Deg key, and no second chip on the display', await p.locator('.sci-key').count() == 15
+          and await p.inner_text('[data-sci="angle"]') == 'Deg' and await p.locator('#sciBar button').count() == 1)
 
     async def keys(*seq):
         """tap keys: digits/operators by value, scientific ones as 'sci:name', '=' and 'AC'"""
@@ -519,7 +519,7 @@ async def scientific(browser, url, lang, theme):
     check(L + '2nd sin = sin⁻¹: sin⁻¹(0,5) = 30°', got == ['sin⁻¹(0,5)', '30'], got)
     await p.click('[data-sci="2nd"]')
     await p.click('[data-sci="angle"]')
-    check(L + 'Rad on', 'RAD' in await p.inner_text('#sciBar'))
+    check(L + 'Rad on', await p.inner_text('[data-sci="angle"]') == 'Rad')
     got = await keys('sci:pi', 'sci:sin', '=')
     check(L + 'sin(π) = 0 in radians', got[1] == '0', got)
     await p.click('[data-sci="angle"]')
@@ -664,6 +664,11 @@ async def phone(browser, url, lang, theme, size):
         if size[0] > size[1] and size[1] <= 500:
             st = await p.evaluate("[document.documentElement.classList.contains('landscape'), document.documentElement.dataset.fitOver]")
             check(L + f'{m}: landscape layout fits without scrolling', st == [True, '0'], st)
+            gap = await p.evaluate("innerHeight-document.querySelector('.app-footer').getBoundingClientRect().bottom")
+            check(L + f'{m}: sideways the card reaches the bottom (no empty strip)', gap <= 14, gap)
+        if m == 'net':
+            cut = await p.evaluate("[...document.querySelectorAll('#netDetails strong')].filter(s=>s.offsetParent&&s.scrollWidth>s.clientWidth+1).map(s=>s.textContent)")
+            check(L + 'net: no detail value is cut off', not cut, cut)
     width = await p.evaluate('document.documentElement.scrollWidth')
     check(L + 'no sideways scrolling', width <= size[0], width)
     await p.tap('#themeButton')
@@ -974,6 +979,54 @@ async def ios_app(browser, url):
     await p.context.close()
 
 
+async def offline_status_and_turning(browser, url):
+    """Currency says offline as soon as the connection goes (no tap needed); numbers re-fit after turning the phone;
+    Subnet shows its details sideways when there is room."""
+    ctx = await browser.new_context(viewport={'width': 430, 'height': 932}, is_mobile=True, has_touch=True)
+    await ctx.add_init_script(SEED % ('en', 'dark'))
+    await ctx.route('https://api.frankfurter.dev/**', lambda r: r.fulfill(status=200, content_type='application/json', body=RATES_JSON,
+                                                                          headers={'Access-Control-Allow-Origin': '*'}))
+    p = await ctx.new_page()
+    p.errors = []
+    p.on('pageerror', lambda e: p.errors.append(str(e)))
+    await p.goto(url)
+    await p.evaluate("switchMode('currency')")
+    await p.wait_for_function("!rateInfo.classList.contains('loading')")
+    check('[offline] online: the rate line does not say offline', 'offline' not in await p.inner_text('#rateInfo'))
+    await ctx.set_offline(True)
+    await p.wait_for_timeout(150)
+    check('[offline] the connection drops: it says offline straight away, no tap needed', 'offline' in await p.inner_text('#rateInfo'))
+    await ctx.set_offline(False)
+    await p.wait_for_function("!rateInfo.textContent.includes('offline')", timeout=4000)
+    check('[offline] back online: "offline" goes away by itself', True)
+    # a result sized upright must re-fit when the phone turns (the column beside the keys is narrower)
+    await p.evaluate("switchMode('net');for(const[k,v] of [['netIp','192.168.100.100'],['netPrefix','26']]){const i=document.getElementById(k);i.value=v;i.dispatchEvent(new Event('input',{bubbles:true}))}")
+    await p.wait_for_timeout(300)
+    for w, h in [(700, 360), (932, 430)]:
+        await p.set_viewport_size({'width': w, 'height': h})
+        await p.wait_for_timeout(500)
+        st = await p.evaluate("""(()=>{const r=document.querySelector('#result'),d=document.querySelector('#calculatorDisplay').getBoundingClientRect(),b=r.getBoundingClientRect();
+          return {inside:b.right<=d.right+1&&b.left>=d.left-1,fits:r.scrollWidth<=r.clientWidth+1||r.classList.contains('fade-end')}})()""")
+        check(f'[turning] {w}x{h}: the result re-fits after turning the phone', st['inside'] and st['fits'], st)
+    # iOS reports a turned phone's new width late, after the app has laid itself out: the space shrinks with no resize
+    # event. Fitted text must follow its own box, so narrow the page without resizing the window.
+    await p.evaluate("document.querySelector('.app-shell').style.width='560px'")
+    await p.wait_for_timeout(400)
+    st = await p.evaluate("""(()=>{const r=document.querySelector('#result'),d=document.querySelector('#calculatorDisplay').getBoundingClientRect(),b=r.getBoundingClientRect();
+      return {inside:b.right<=d.right+1&&b.left>=d.left-1,fits:r.scrollWidth<=r.clientWidth+1||r.classList.contains('fade-end'),font:getComputedStyle(r).fontSize}})()""")
+    check('[turning] the space shrinks without a resize event: the result still re-fits', st['inside'] and st['fits'], st)
+    await p.evaluate("document.querySelector('.app-shell').style.width=''")
+    await p.wait_for_timeout(300)
+    shown = await p.evaluate("getComputedStyle(document.querySelector('#netDetails')).display!=='none'")
+    check('[turning] 932x430: Subnet shows its details sideways', shown)
+    await p.set_viewport_size({'width': 390, 'height': 844})
+    await p.wait_for_timeout(400)
+    cut = await p.evaluate("[...document.querySelectorAll('#netDetails strong')].filter(s=>s.scrollWidth>s.clientWidth+1).map(s=>s.textContent)")
+    check('[turning] upright again: no Subnet value cut off', not cut, cut)
+    check('[offline/turning] no JavaScript errors', not p.errors, p.errors)
+    await ctx.close()
+
+
 async def main():
     url = serve()
     async with async_playwright() as pw:
@@ -989,6 +1042,7 @@ async def main():
         await own_themes(browser, url)
         await icons(browser, url)
         await ios_app(browser, url)
+        await offline_status_and_turning(browser, url)
         await offline(browser)
         await currency_offline(browser, url)
         await browser.close()

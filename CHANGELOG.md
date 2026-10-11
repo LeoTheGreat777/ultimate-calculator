@@ -6,6 +6,20 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.14.6 – 2026-10-11
+
+### Changed
+- Scientific: only f(x) sits on the display now; the Deg/Rad key on the keypad already shows and changes the unit.
+- Currency says "offline" by itself as soon as there's no connection, without tapping the date, and updates the rates
+  when the connection comes back.
+- Phones held sideways: the app fills the screen to the bottom in every tab, and Subnet shows its details too
+  (on very short screens they stay under ?).
+
+### Fixed
+- Subnet: a long mask like 255.255.255.192 was cut off with "…"; it now gets a smaller font.
+- Turning the phone could leave a result too big for the space and cut off (192.168.1.0/2…); numbers now re-fit.
+- Dates, sideways: the right half was empty before both dates were picked; it now says "Pick two dates."
+
 ## 0.14.5 – 2026-10-11
 
 ### Fixed

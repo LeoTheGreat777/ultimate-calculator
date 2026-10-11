@@ -226,14 +226,13 @@ function sciKeysHtml(){
   return '<button class="key sci-key'+(k==='2nd'&&sciSecond?' on':'')+'" data-sci="'+key+'" type="button" aria-label="'+esc(sciAria(key))+'"'+(k==='2nd'?' aria-pressed="'+sciSecond+'"':'')+'>'+esc(sciLabel(key))+'</button>'}).join('')+'</div>';
 }
 // a finished result becomes the start of a new calculation (as when an operator follows it)
-// The switch on the display: f(x) turns Scientific on and off; with it on, DEG/RAD shows the angle unit (tap to change).
+// The switch on the display: f(x) turns Scientific on and off. (The angle unit is the Deg/Rad key on the keypad.)
 function renderSciBar(){
  const d=$('#calculatorDisplay');if(!d)return;
  let bar=$('#sciBar');
  if(!bar){bar=document.createElement('div');bar.id='sciBar';bar.className='sci-bar';d.appendChild(bar);
-  bar.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.bar==='sci')toggleSci();else sciKey('angle')})}
- const html='<button class="sci-chip'+(sciMode?' on':'')+'" data-bar="sci" type="button" aria-pressed="'+sciMode+'" aria-label="'+esc(t('scientific'))+'" title="'+esc(t('scientific'))+'">f(x)</button>'+
-  (sciMode?'<button class="sci-chip" data-bar="angle" type="button" aria-label="'+esc(sciAria('angle'))+'" title="'+esc(sciAria('angle'))+'">'+(angleUnit==='deg'?'DEG':'RAD')+'</button>':'');
+  bar.addEventListener('click',e=>{if(e.target.closest('[data-bar="sci"]'))toggleSci()})}
+ const html='<button class="sci-chip'+(sciMode?' on':'')+'" data-bar="sci" type="button" aria-pressed="'+sciMode+'" aria-label="'+esc(t('scientific'))+'" title="'+esc(t('scientific'))+'">f(x)</button>';
  if(bar.dataset.html!==html){bar.innerHTML=html;bar.dataset.html=html}
 }
 function toggleSci(){sciMode=!sciMode;sciSecond=false;store.set('uc-sci',sciMode?'1':'0');renderCalcKeypad();render();fitLayout()}

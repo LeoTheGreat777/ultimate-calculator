@@ -2,8 +2,15 @@
 // Text too long for its line (a result, a calculation, a Units value, a tool field): first a smaller font, down to
 // minSize; if it still does not fit, it scrolls sideways (swipe) and shows its start, or with showEnd its end –
 // what was typed last. The side that is cut off fades out (fade-start / fade-end).
+// Each fitted element remembers how it was fitted and is watched: when its width changes (the phone turned, the layout
+// re-fitted) it is fitted again, so a number sized for one width is never cut off at another.
+const fitWatch=window.ResizeObserver?new ResizeObserver(entries=>{for(const {target:el,contentRect} of entries){
+ if(!el.isConnected||el.dataset.fit!=='1'){fitWatch.unobserve(el);continue}
+ const w=Math.round(contentRect.width);if(w&&String(w)!==el.dataset.fitW)fitDisplayText(el,+el.dataset.fitMin||12,el.dataset.fitEnd==='1');
+}}):null;
 function fitDisplayText(el,minSize,showEnd=false){
  if(!el)return;
+ el.dataset.fitMin=minSize;el.dataset.fitEnd=showEnd?'1':'';
  el.classList.remove('near-limit');
  el.style.removeProperty('font-size');
  el.style.removeProperty('letter-spacing');
@@ -11,6 +18,7 @@ function fitDisplayText(el,minSize,showEnd=false){
  requestAnimationFrame(()=>{
    if(!el.isConnected)return;
    const width=el.clientWidth,contentWidth=el.scrollWidth;
+   const cs=getComputedStyle(el);el.dataset.fitW=Math.round(width-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight));fitWatch?.observe(el);// the same width the watcher sees
    if(width&&contentWidth>width+2){
      const base=parseFloat(getComputedStyle(el).fontSize);
      el.style.setProperty('font-size',Math.max(minSize,base*(width/contentWidth)*0.97)+'px','important');// beats the !important sizes of .unit-value
@@ -76,17 +84,24 @@ function applyUiZoom(){
 const LANDSCAPE='(orientation: landscape) and (max-height: 500px)';
 function fitLandscape(card,root,avail,need,tool,setToolLayout){
  if(tool)setToolLayout(true);
- const graph=mode==='graph',v=graph?'--gk':'--k',[kMax,kMin]=graph?[56,28]:tool?[56,32]:[68,34];
+ const graph=mode==='graph',v=graph?'--gk':'--k',[kMax,kMin]=graph?[56,28]:tool?[84,32]:[68,34];
  const rows=new Set([...$('#keypad').querySelectorAll('button')].map(b=>b.getBoundingClientRect().top|0)).size||5;
- let k=kMin;card.style.setProperty(v,k+'px');
+ root.classList.remove('land-fill');// measured at its natural height; filled to the bottom at the end
  card.style.setProperty('--disp','auto');// the display fills the height beside the keys
  if(mode==='units')card.style.setProperty('--urow','36px');// the unit rows grow afterwards, into the room beside the keys
- // twice: if the left side is the taller one, the first pass leaves room the keys can still use
- for(let i=0;i<2;i++){const spare=avail-need();if(spare<=0)break;k=Math.min(kMax,k+Math.floor(spare/rows));card.style.setProperty(v,k+'px')}
+ let k;
+ const grow=()=>{
+  k=kMin;card.style.setProperty(v,k+'px');
+  // a few passes: while the left side is the taller one, growing keys doesn't use the room yet, so keep going until it's filled
+  for(let i=0;i<6;i++){const spare=avail-need();if(spare<=0)break;k=Math.min(kMax,k+Math.floor(spare/rows));card.style.setProperty(v,k+'px')}
+  return need()-avail;
+ };
+ let over=grow();
+ if(over>0){card.classList.add('fit-no-copy');over=grow()}
+ if(over>0&&$('#netDetails')){card.classList.add('fit-no-details');over=grow()}// Subnet on a very short screen: the details stay under ?
  if(mode==='units'){const h=$('#calculatorDisplay').getBoundingClientRect().height/window.__uiZoom;card.style.setProperty('--urow',Math.max(36,Math.min(70,Math.floor((h-61)/2)))+'px')}
- let over=need()-avail;
- if(over>0){card.classList.add('fit-no-copy');over=need()-avail}
- if(over>0)root.classList.add('page-scroll');
+ over=need()-avail;
+ if(over>0)root.classList.add('page-scroll');else root.classList.add('land-fill');// the card reaches the bottom (Dates' list has no keys to grow)
  root.dataset.fitOver=Math.max(0,over);
 }
 let fitRaf=0;
@@ -99,11 +114,11 @@ function fitLayout(){
  // everything below is in CSS pixels (screen pixels / zoom)
  const avail=fitAvailHeight()/Z;
  const need=()=>Math.ceil((footer.getBoundingClientRect().bottom+window.scrollY)/Z+(parseFloat(getComputedStyle(shell).paddingBottom)||0));
- root.classList.remove('page-scroll');shell.style.height='';card.classList.remove('compact-display','fit-no-copy');
+ root.classList.remove('page-scroll');shell.style.height='';card.classList.remove('compact-display','fit-no-copy','fit-no-details');
  const tool=TOOL_MODES.includes(mode),touchTool=tool&&isMobileDevice();
  const setToolLayout=compact=>{card.classList.toggle('mobile-tool',compact);document.body.classList.toggle('mobile-tool-on',compact)};
  if(tool)setToolLayout(touchTool);
- const land=matchMedia(LANDSCAPE).matches;root.classList.toggle('landscape',land);
+ const land=matchMedia(LANDSCAPE).matches;root.classList.toggle('landscape',land);if(!land)root.classList.remove('land-fill');
  if(land){fitLandscape(card,root,avail,need,tool,setToolLayout);return}
  card.style.removeProperty('--gk');// back in portrait, Graph keys size themselves again (styles.css)
  if(mode==='graph'){if(avail<FIT.graphMin){root.classList.add('page-scroll');shell.style.height=FIT.graphMin+'px'}return}

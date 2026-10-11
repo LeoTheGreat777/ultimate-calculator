@@ -52,6 +52,7 @@ function renderNetDetails(cells){
  const box=$('#netDetails');if(!box)return;
  const list=cells||NET_CELLS[toolKind.net].map(k=>[k,'–']);
  box.innerHTML=list.map(([k,v])=>'<div><span>'+esc(t(k))+'</span><strong>'+esc(v)+'</strong></div>').join('');
+ box.querySelectorAll('strong').forEach(s=>fitDisplayText(s,9));// a long mask gets a smaller font, never "…"
 }
 function netCalculate(){
  const el=lang==='el',none=()=>{setToolResult('','',null);renderNetDetails(null)};

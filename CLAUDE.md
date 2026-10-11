@@ -81,7 +81,9 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   Units shows the reason on the other value (`unitError`). Never put "Error" into `current`.
 - **Long text:** `fitDisplayText(el,minSize,showEnd)` shrinks text to minSize, then scrolls it: a result shows its
   start, a calculation (typed or above a result) its end; the cut-off side fades (`fade-start`/`fade-end`). Used for the result and
-  expression lines, Units values and tool fields.
+  expression lines, Units values, tool fields and Subnet's details. A fitted element is watched (`fitWatch`, a
+  ResizeObserver): when its own width changes it is fitted again, so turning the phone never leaves a number sized for
+  the old width (iOS reports the new width late, after the resize event).
 - **Carry:** continuing after a result uses its full-precision value (`carryText`, `carry`), but the
   screen shows it rounded via `formatExpressionDisplay`. Use that function to display expressions.
 - **Brackets:** useless ones are dropped (`tidyParens`, `closeParen`): `((5))` -> `5`, open ones at the end
@@ -127,7 +129,9 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   With a mouse (`ownCalendar`), a date is a button (`datePickHtml`, its `value` is YYYY-MM-DD) opening the app's
   calendar (`openCalendar`, `#calPop`: days/months/years views, holidays dotted); touch devices keep `<input type="date">`.
   Subnet (net.js): /31 = 2 addresses, /32 = 1, else 2^(32−p) − 2. Its details grid (`#netDetails`, `renderNetDetails`)
-  always shows its cells (– until a result) so the layout doesn't jump; hidden on sideways phones (the working under ? has it).
+  always shows its cells (– until a result) so the layout doesn't jump; a long value (255.255.255.192) gets a smaller font,
+  never "…". Sideways it shows too when there is room; on very short screens `fitLandscape` hides it (`fit-no-details`)
+  and the working under ? still has it. "Between" in Dates says "Pick two dates." until both are picked, also sideways.
 - **Switches** (VAT add/remove, the kinds of Percent, Interest and Dates) are one generic segmented control: `TOGGLES`, `toggleHtml`,
   `renderToggles`, `setupToggleSlide` (tap, drag, swipe, ← →), `.seg-toggle` in styles.css (`--n` options, `--i` chosen).
 - **Changing mode clears the mode you leave** (`resetModeInput`, called by `switchMode`): numbers typed and results
@@ -146,8 +150,11 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   (`html.page-scroll`). Don't add fixed pixel heights per screen size or device; let `fitLayout` handle it,
   and call it after anything that changes the layout's height. Phones held sideways (any window wider than tall and
   at most 500px high) get the landscape layout: keypad on the right, the rest on the left (`fitLandscape`,
-  `html.landscape` in styles.css). The app is not locked to portrait (iPhones can't be), so both must work.
-- **Scientific:** a view of the Calculator, not a mode: the f(x) switch on the display (`sciMode`, `uc-sci`) adds 15
+  `html.landscape` in styles.css). Sideways the keys grow (tools up to 84px) until the card reaches the bottom, and once
+  everything fits the card is stretched to it (`html.land-fill`), so there is no empty strip below. The app is not
+  locked to portrait (iPhones can't be), so both must work.
+- **Scientific:** a view of the Calculator, not a mode: the f(x) switch on the display (`sciMode`, `uc-sci`; the only chip
+  there, the angle unit is the keypad's Deg/Rad key) adds 15
   keys above the basic ones (beside them in landscape; `sciKeysHtml`, `.keypad.sci`). Functions apply to the value
   just typed / the result / the bracket just closed (`sciKey`, `lastValueStart`), else open `sin(`. x², xʸ, ʸ√x and x! take the whole value, so a negative one or a power gets brackets: (−3)², (9²)². 2nd swaps keys
   for inverses; Deg/Rad is `angleUnit` (`uc-angle`). The engine (numbers.js: `evalExpr`, `ratPow`, `sciFunction`)
@@ -168,7 +175,8 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   to update. Rates (currency.js): ECB reference rates per euro from `https://api.frankfurter.dev/v1/latest` (CORS),
   fetched at most hourly in the background (on start, and with `checkForUpdate` whenever the app comes back to the
   screen: `backOnScreen` in main.js) and on entering the tab; saved in `uc-rates`; `RATES_SNAPSHOT` before
-  the first fetch (update it now and then). Strings, converted with fractions (`currencyRate`). Values show as money
+  the first fetch (update it now and then). The rate line says "offline" by itself when the last fetch failed or the
+  device has no connection (`ratesOffline`, `online`/`offline` events; back online it fetches again). Strings, converted with fractions (`currencyRate`). Values show as money
   (`formatMoneyValue`: 2 decimals, more under 1); on phones the closed menus show only the code. Tests stub the URL.
 - **iPhone home-screen app:** iOS draws a soft blur under the status bar over the page, which made the title look
   blurred. The `<head>` script sets `html.ios-app` when `navigator.standalone` (Apple's own), and held upright the page

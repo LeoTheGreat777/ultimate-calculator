@@ -43,9 +43,13 @@ function renderRateInfo(){
  const from=$('#unitFrom')?.value||'EUR',to=$('#unitTo')?.value||'USD',r=currencyRate(from,to);
  const p=rates.date.split('-'),when=p[2]+'/'+p[1]+'/'+p[0];
  el.innerHTML='<span class="rate-pair">1 '+esc(from)+' = '+esc(formatRateValue(r))+' '+esc(to)+'</span><span class="rate-date">'+
-  esc(ratesStatus==='loading'?t('ratesUpdating'):t('ratesOf').replace('{d}',when)+(ratesStatus==='offline'?' · '+t('ratesOffline'):''))+'</span>';
+  esc(ratesStatus==='loading'?t('ratesUpdating'):t('ratesOf').replace('{d}',when)+(ratesOffline()?' · '+t('ratesOffline'):''))+'</span>';
  el.classList.toggle('loading',ratesStatus==='loading');
 }
+// Offline: the last fetch failed, or the device says it has no connection (no need to tap the line to find out).
+const ratesOffline=()=>ratesStatus==='offline'||navigator.onLine===false;
+addEventListener('offline',()=>renderRateInfo());
+addEventListener('online',()=>{if(ratesStatus==='offline'||Date.now()-(rates.checked||0)>=RATES_STALE_MS)refreshRates(true);else renderRateInfo()});
 let ratesFetching=null;
 function refreshRates(force){
  if(ratesFetching||(!force&&Date.now()-(rates.checked||0)<RATES_STALE_MS))return ratesFetching;
