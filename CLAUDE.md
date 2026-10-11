@@ -95,9 +95,14 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   some modes have their own small tables (`gText`, `cText`, `fText`, and `HELP` for Tips & shortcuts).
   Switching language happens in place (`setLanguage` -> `applyLanguage`), no reload: anything that shows text
   must be re-rendered by `applyLanguage`, and a new text must look the same after a live switch as after a fresh load.
-- **Logo:** `public/icon.svg` is the source of the app icons; the PNGs (`icon-192/512.png`, `icon-maskable-512.png`,
-  `apple-touch-icon.png`) are rendered from it, so regenerate them together after changing it. The small logo by
-  the title is an inline SVG in `index.html` coloured by theme tokens (`.bm-*` classes), so new themes recolour it.
+- **Logo and icons:** one drawing (a screen with a graph over the keys + − =), in `tools/make-icons.py`: run it after
+  changing the drawing and it writes `public/icon.svg`, `favicon.svg` (the tab icon: bolder lines, dark on light browsers
+  and light on dark ones), the PNGs (`icon-192/512.png` rounded; `icon-maskable-512.png` and `apple-touch-icon.png` full
+  square; `icon-monochrome-512.png` for Android's themed icons) and the small logo by the title in `index.html`
+  (`<svg class="brand-mark">`, coloured by theme tokens through `.bm-*` classes, so every theme recolours it). The = sign's
+  spacing was chosen by the owner (`EQ_HOME`, `EQ_SMALL`); keep it. No letters in the icon, so it survives a rename.
+  iOS can't switch a web app's home screen icon for dark mode, so there is one, opaque and full square. The tests fail
+  if the files or the logo differ from what the script draws.
 - **Credits:** the footer names come from `AUTHORS` in `i18n.js`, in Greek and English (first name first in both);
   the English names are also in `index.html` (footer and `<meta name="author">`) and both in the README.
   Change them in all places together.

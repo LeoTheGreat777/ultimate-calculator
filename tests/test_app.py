@@ -920,6 +920,29 @@ async def own_themes(browser, url):
     await p.context.close()
 
 
+async def icons(browser, url):
+    """The icons: every file the manifest and the page name loads, and they match tools/make-icons.py (the one drawing)."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('make_icons', ROOT / 'tools/make-icons.py')
+    mk = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mk)
+    html = (PUBLIC / 'index.html').read_text()
+    check('[icons] icon.svg and favicon.svg are what tools/make-icons.py draws',
+          (PUBLIC / 'icon.svg').read_text() == mk.ICON and (PUBLIC / 'favicon.svg').read_text() == mk.FAVICON)
+    check('[icons] the logo by the title is what tools/make-icons.py draws', mk.LOGO in html)
+    p = await new_page(browser, url, 'en', 'dark')
+    st = await p.evaluate("""(async()=>{const m=await (await fetch('manifest.webmanifest')).json();
+      const srcs=[...m.icons.map(i=>i.src),document.querySelector('link[rel=icon]').getAttribute('href'),document.querySelector('link[rel=apple-touch-icon]').getAttribute('href')];
+      const ok=await Promise.all(srcs.map(s=>fetch(s).then(r=>r.ok).catch(()=>false)));
+      return {srcs,ok,purposes:m.icons.map(i=>i.purpose)}})()""")
+    check('[icons] every icon in the manifest and the page loads', all(st['ok']), st)
+    check('[icons] the manifest has any, maskable and monochrome icons', {'any', 'maskable', 'monochrome'} <= set(st['purposes']), st['purposes'])
+    shown = await p.evaluate("[...document.querySelectorAll('.brand-mark .bm-curve,.brand-mark .bm-dot')].map(e=>getComputedStyle(e).stroke+'|'+getComputedStyle(e).fill)")
+    check('[icons] the logo by the title takes the theme\'s colours', len(shown) == 2 and 'rgb(110, 168, 254)' in shown[0], shown)
+    check('[icons] no JavaScript errors', not p.errors, p.errors)
+    await p.context.close()
+
+
 async def main():
     url = serve()
     async with async_playwright() as pw:
@@ -933,6 +956,7 @@ async def main():
                                   ('el', 'dark', (844, 390)), ('en', 'light', (740, 360))]:  # the last two: phones held sideways
             await phone(browser, url, lang, theme, size)
         await own_themes(browser, url)
+        await icons(browser, url)
         await offline(browser)
         await currency_offline(browser, url)
         await browser.close()

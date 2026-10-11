@@ -6,6 +6,15 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.14.4 – 2026-10-11
+
+### Changed
+- **New app icon:** a screen with a graph over the + − = keys, no letters. The small logo next to the title takes
+  your theme's colours, your own themes too.
+- The browser tab icon is bolder and follows your browser: dark in light mode, light in dark mode.
+- On Android phones that colour their icons to match the wallpaper, the app's icon now joins in.
+- If you added the app to your home screen before, remove it and add it again to get the new icon there.
+
 ## 0.14.3 – 2026-10-11
 
 ### Fixed

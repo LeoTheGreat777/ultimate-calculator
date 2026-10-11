@@ -544,7 +544,8 @@ html.theme-fade *,html.theme-fade *::before,html.theme-fade *::after{transition:
 .brand-name{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .bm-screen{fill:var(--card2)}
 .bm-edge{fill:none;stroke:var(--border)}
-.bm-seg{stroke:var(--accent2);fill:none}
+.bm-curve{stroke:var(--accent);fill:none}
+.bm-dot{fill:var(--series2)}
 .bm-key{fill:var(--key)}
 .bm-lit{fill:var(--accent)}
 .bm-sym{stroke:var(--accent2);fill:none}
