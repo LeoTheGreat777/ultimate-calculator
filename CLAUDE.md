@@ -225,7 +225,8 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   native pickers. While a dropdown has focus the global keydown handler leaves keys to it.
 - **Pressing keys** (`setupPressFeedback`, ui.js), the same with a mouse and a finger, like the iPhone's calculator:
   every key in `#keypad` lights up the moment it's pressed (`.pressed`, a `::after` layer of `--text`, so it suits every
-  key colour and theme), held a moment longer (.14s) it grows a little (scale 1.07, over its neighbours), and let go it
+  key colour and theme), held a moment longer it grows (after .11s, in .12s with a slight overshoot, to scale 1.12, over its neighbours;
+  the owner tuned it: a quick tap only lights up), and let go it
   fades and settles back. No `:active` shrink anywhere on the keypad. On phones a tick: Android `navigator.vibrate(8)` on
   pointerdown. iPhone has no vibrate for websites; its own switch (`<input type="checkbox" switch>`, iOS 18+) ticks, but
   since iOS 26.5 only when a finger toggles it (a script's `label.click()` is silent). So on iPhone every key holds an

@@ -1126,7 +1126,7 @@ async def press_feedback(browser, url):
         check(L + 'at first it only lights up (a quick tap does not grow or shrink)', abs(quick - 1) < 0.01, quick)
         await p.wait_for_timeout(450)
         held = await p.evaluate(scale + "('#keypad [data-value=\"7\"]')")
-        check(L + 'held a moment, it grows a little', 1.04 < held < 1.1, held)
+        check(L + 'held a moment, it grows', 1.1 < held < 1.15, held)
         if name == 'desktop':
             await p.mouse.up()
         else:
