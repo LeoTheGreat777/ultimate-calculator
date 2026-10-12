@@ -88,7 +88,8 @@ input,select{-webkit-user-select:text;user-select:text}
 .tool-key.key-off{opacity:.35}
 /* Dates "between": the details take the keypad's place */
 .date-details{display:flex;flex-direction:column;gap:10px;padding:4px 2px 2px}
-.date-rows{margin:0;display:grid;gap:0}
+.date-rows{margin:0;display:grid;grid-template-columns:minmax(0,1fr);gap:0}
+.date-details{min-width:0}
 .date-rows div{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 4px;border-bottom:1px solid var(--border)}
 .date-rows div:last-child{border-bottom:0}
 .date-rows dt{color:var(--muted);font-size:14px;flex:0 0 auto}
@@ -99,6 +100,15 @@ input,select{-webkit-user-select:text;user-select:text}
 html.landscape .date-rows div{padding:6px 4px}
 html.landscape .date-rows dt{font-size:13px}
 html.landscape .date-rows dd{font-size:14px}
+.date-rows dd{white-space:normal;overflow-wrap:anywhere;line-height:1.3}/* a long line (the holidays) wraps instead of being cut */
+html.landscape .calculator-card.mobile-tool .tool-field input[type=date]{min-height:0}
+/* sideways on a very short screen (fitLandscape, after hiding the copy button): a little less padding in the tools */
+html.landscape .calculator-card.fit-tight .tool-panel{padding-top:5px;padding-bottom:5px}
+html.landscape .calculator-card.fit-tight .seg-toggle button{min-height:24px}
+html.landscape .calculator-card.fit-tight .tool-field input{padding-top:4px;padding-bottom:4px}
+html.landscape .calculator-card.fit-tight .date-rows div{padding:4px}
+html.landscape .calculator-card.fit-tight .expression-row{height:28px}
+html.landscape .calculator-card.fit-tight .how-button{flex-basis:28px;width:28px;height:28px}
 html.landscape .date-rows ~ .date-note{display:none}/* the working days note; "Pick two dates." still shows */
 .date-details > .date-note:only-child{margin:auto;text-align:center;font-size:14px}
 html.landscape .tool-grid.kind-grid{grid-template-columns:repeat(var(--f,2),minmax(0,1fr))}
@@ -362,7 +372,7 @@ body.graph-on .bottom-actions{display:none}
 .crow.hl .cl{color:var(--text)}
 .crow:not(.hl) .cfill{opacity:.55}
 .chart-body:not(:has(.crow.hl)) .crow .cfill{opacity:1}
-.what-if{width:100%;border-collapse:separate;border-spacing:4px;table-layout:fixed;font-variant-numeric:tabular-nums;margin:0 -4px;width:calc(100% + 8px)}
+.what-if{width:100%;border-collapse:separate;border-spacing:4px;table-layout:fixed;font-variant-numeric:tabular-nums}
 .what-if th{font-size:11.5px;font-weight:600;color:var(--muted);padding:4px 2px;text-align:center;white-space:nowrap}
 .what-if tr th:first-child{text-align:left}
 .what-if td{background:var(--card2);border-radius:10px;padding:10px 2px;text-align:center;font-size:13.5px;font-weight:600;white-space:nowrap}

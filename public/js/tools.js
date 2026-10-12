@@ -43,7 +43,7 @@ const liveToolNumber=id=>{const raw=normalizeNumericInput(fieldValue(id));if(raw
 // On phones the fields are filled only from the app's own keypad, so the native keyboard never opens.
 const field=(id,label)=>{const value=toolState[mode]?.inputs?.[id]??'';
  if(FIELD_TYPE[id]==='date'&&ownCalendar())return datePickHtml(id,label,value);// a computer: the app's calendar (dates.js)
- if(FIELD_TYPE[id]==='date')return '<label class="tool-field"><span>'+esc(label)+'</span><input id="'+id+'" type="date" min="1000-01-01" max="9999-12-31" value="'+esc(value)+'" data-date-input="true"></label>';const touch=isMobileDevice();return '<label class="tool-field"><span>'+esc(label)+'</span><input id="'+id+'" type="text" inputmode="'+(touch?'none':'decimal')+'"'+(touch?' readonly':'')+' autocomplete="off" spellcheck="false" value="'+esc(value)+'" placeholder="'+esc(String(typeof FIELD_EXAMPLES[id]==='function'?FIELD_EXAMPLES[id]():FIELD_EXAMPLES[id]??''))+'" data-tool-input="true"></label>'};
+ if(FIELD_TYPE[id]==='date')return '<label class="tool-field"><span>'+esc(label)+'</span><input id="'+id+'" type="date" min="1000-01-01" max="9999-12-31" value="'+esc(value)+'" data-date-input="true"></label>';const touch=isMobileDevice();return '<label class="tool-field"><span'+(FIELD_SHORT[id]?' data-short="'+esc(FIELD_SHORT[id][lang==='el'?0:1])+'"':'')+'>'+esc(label)+'</span><input id="'+id+'" type="text" inputmode="'+(touch?'none':'decimal')+'"'+(touch?' readonly':'')+' autocomplete="off" spellcheck="false" value="'+esc(value)+'" placeholder="'+esc(String(typeof FIELD_EXAMPLES[id]==='function'?FIELD_EXAMPLES[id]():FIELD_EXAMPLES[id]??''))+'" data-tool-input="true"></label>'};
 function setActiveToolInput(input){toolActiveInput=input||null;$$('#toolPanel input[data-tool-input]').forEach(i=>i.classList.toggle('tool-active',i===toolActiveInput));
  // the , key is ± for a whole number that may be negative (Dates' days), dimmed for other fields without decimals (People)
  const k=$('#keypad .tool-key[data-value=","]'),type=toolActiveInput&&FIELD_TYPE[toolActiveInput.id];
@@ -66,6 +66,19 @@ const TOOL_DEFAULTS={net:{netPrefix:'24'},vat:{vatRate:'24'},dates:{dateFrom:()=
 // 'ip' and 'mask' (Subnet: digits and dots, 1.2.3.4; a mask field also takes a prefix like 24; the , key types a dot).
 const FIELD_TYPE={tipPeople:'count',dateDays:'int',dateFrom:'date',dateTo:'date',dateStart:'date',netIp:'ip',netPrefix:'mask',netHosts:'count'};
 const dottedField=id=>FIELD_TYPE[id]==='ip'||FIELD_TYPE[id]==='mask';
+// A shorter label for when the long one doesn't fit on its line (sideways, the fields share one row): fitShortLabels.
+const FIELD_SHORT={fuelD:['Απόσταση','Distance'],fuelC:['L/100 km','L/100 km'],fuelP:['Τιμή / L','Price / L'],energyP:['Ισχύς (W)','Power (W)'],
+ energyH:['Ώρες/ημέρα','Hours/day'],energyD:['Ημέρες','Days'],energyR:['€/kWh','€/kWh'],payMonthly:['Δόση/μήνα','Per month'],
+ pctPrice:['Τιμή','Price'],saveMonthly:['Τον μήνα','Monthly'],loanAmount:['Δάνειο','Loan'],payAmount:['Δάνειο','Loan']};
+// Each label shows its long text, or its short one if the long one is cut (only one-line labels can be cut: sideways).
+function fitShortLabels(){
+ for(const s of document.querySelectorAll('#toolPanel .tool-field span[data-short]')){
+  if(s.dataset.label!=null)continue;// showing "Up to 50%" (refuseLimit)
+  const long=t(s.closest('.tool-field').querySelector('input')?.id);
+  if(s.textContent!==long)s.textContent=long;
+  if(s.scrollWidth>s.clientWidth+1)s.textContent=s.dataset.short;
+ }
+}
 // Besides the 15 digits, these fields have a sensible top: a key that would go past it is refused, and for a moment
 // the field's label says how far it goes (refuseLimit). [max, unit]
 const FIELD_MAX={vatRate:[50,'%'],pctOff:[100,'%'],tipRate:[100,'%'],loanRate:[50,'%'],payRate:[50,'%'],saveRate:[50,'%'],

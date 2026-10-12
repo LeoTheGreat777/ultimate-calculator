@@ -6,6 +6,14 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.16.3 – 2026-10-12
+
+### Fixed
+- Phone held sideways:
+  - Dates: the details list no longer runs off the right edge, and the public holidays wrap instead of being cut.
+  - Fuel and Energy put their fields in one row like the other tools; a label too long for its space gets a shorter one.
+  - On small phones (iPhone SE size) every tab fits without scrolling, with keys as big as in the Calculator.
+
 ## 0.16.2 – 2026-10-11
 
 ### Changed

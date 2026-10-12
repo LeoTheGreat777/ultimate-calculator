@@ -1108,6 +1108,46 @@ async def screen_reader(browser, url):
     await p.context.close()
 
 
+async def sideways_every_tab(browser, url):
+    """Every tab held sideways, from a small phone in Safari (iPhone SE, 667×330) to a big one: nothing scrolls, nothing
+    sticks out of the screen (Dates' list included), and every tab but Graph and Scientific has the same key size."""
+    fill = {'vat': [['amount', '1234567,89']], 'pct': [['pctPrice', '1250'], ['pctOff', '25']], 'fuel': [['fuelD', '1250'], ['fuelC', '6,5'], ['fuelP', '1,85']],
+            'energy': [['energyP', '2000'], ['energyH', '3'], ['energyD', '30'], ['energyR', '0,15']], 'loan': [['loanAmount', '250000'], ['loanRate', '4'], ['loanYears', '30']],
+            'net': [['netIp', '192.168.100.100'], ['netPrefix', '26']], 'dates': [['dateTo', '2027-03-15']]}
+    for w, h in [(667, 330), (814, 409)]:
+        for lang in ['en', 'el']:
+            L = f'[sideways {w}x{h} {lang}] '
+            ctx = await browser.new_context(viewport={'width': w, 'height': h}, is_mobile=True, has_touch=True)
+            await ctx.add_init_script(SEED % (lang, 'dark'))
+            p = await ctx.new_page()
+            p.errors = []
+            p.on('pageerror', lambda e: p.errors.append(str(e)))
+            await p.goto(url)
+            await p.wait_for_timeout(300)
+            bad, keys = [], {}
+            for m, kind in [('calc', None), ('units', None), ('currency', None), ('vat', None), ('pct', 'discount'), ('pct', 'tip'), ('loan', 'loan'),
+                            ('loan', 'payoff'), ('loan', 'savings'), ('dates', 'between'), ('dates', 'add'), ('fuel', None), ('energy', None), ('net', 'subnet')]:
+                await p.evaluate(f"switchMode('{m}')")
+                if kind:
+                    await p.evaluate(f"setToolKind('{m}','{kind}')")
+                for fid, v in fill.get(m, []):
+                    await p.evaluate(f"(()=>{{const e=document.getElementById('{fid}');if(!e)return;e.value='{v}';e.dispatchEvent(new Event('input',{{bubbles:true}}))}})()")
+                await p.wait_for_timeout(200)
+                st = await p.evaluate("""(()=>{const W=innerWidth,out=[];if(document.documentElement.classList.contains('page-scroll'))out.push('scrolls');
+                  document.querySelectorAll('#calculatorCard *').forEach(e=>{const r=e.getBoundingClientRect();if(r.width&&r.right>W+1&&!e.closest('.mode-tabs,.hidden'))out.push('off: '+e.tagName+'.'+String(e.className).slice(0,20))});
+                  document.querySelectorAll('#toolPanel .tool-field span').forEach(e=>{if(e.offsetParent&&e.scrollWidth>e.clientWidth+1)out.push('label cut: '+e.textContent)});
+                  const k=[...document.querySelectorAll('#keypad button')].filter(b=>b.offsetParent).map(b=>Math.round(b.getBoundingClientRect().height));
+                  return {out:[...new Set(out)],k:k.length?Math.min(...k):null}})()""")
+                if st['out']:
+                    bad.append([m + (':' + kind if kind else ''), st['out']])
+                if st['k']:
+                    keys[m + (':' + kind if kind else '')] = st['k']
+            check(L + 'every tab fits: no scrolling, nothing off screen, no cut label', not bad, bad)
+            check(L + 'keys are the same size in every tab', len(set(keys.values())) == 1, keys)
+            check(L + 'no JavaScript errors', not p.errors, p.errors)
+            await ctx.close()
+
+
 async def update_keeps_themes(browser, url):
     """An update reloads the page: own themes, the chosen theme and the language stay; colours being edited are kept."""
     L = '[update] '
@@ -1411,6 +1451,7 @@ async def main():
         await field_limits(browser, url, False)
         await field_limits(browser, url, True)
         await screen_reader(browser, url)
+        await sideways_every_tab(browser, url)
         await ios_app(browser, url)
         await offline_status_and_turning(browser, url)
         await sideways_and_chips(browser, url)

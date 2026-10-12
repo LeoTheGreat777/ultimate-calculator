@@ -101,6 +101,7 @@ function fitLandscape(card,root,avail,need,tool,setToolLayout){
  };
  let over=grow();
  if(over>0){card.classList.add('fit-no-copy');over=grow()}
+ if(over>0&&tool){card.classList.add('fit-tight');over=grow()}
  if(over>0&&$('#netDetails')){card.classList.add('fit-no-details');over=grow()}// Subnet on a very short screen: the details stay under ?
  if(mode==='units'){const h=$('#calculatorDisplay').getBoundingClientRect().height/window.__uiZoom;card.style.setProperty('--urow',Math.max(36,Math.min(70,Math.floor((h-61)/2)))+'px')}
  over=need()-avail;
@@ -117,12 +118,13 @@ function fitLayout(){
  // everything below is in CSS pixels (screen pixels / zoom)
  const avail=fitAvailHeight()/Z;
  const need=()=>Math.ceil((footer.getBoundingClientRect().bottom+window.scrollY)/Z+(parseFloat(getComputedStyle(shell).paddingBottom)||0));
- root.classList.remove('page-scroll');shell.style.height='';card.classList.remove('compact-display','fit-no-copy','fit-no-details');
+ root.classList.remove('page-scroll');shell.style.height='';card.classList.remove('compact-display','fit-no-copy','fit-no-details','fit-tight');
  const tool=TOOL_MODES.includes(mode),touchTool=tool&&isMobileDevice();
  const setToolLayout=compact=>{card.classList.toggle('mobile-tool',compact);document.body.classList.toggle('mobile-tool-on',compact)};
  if(tool)setToolLayout(touchTool);
  const land=matchMedia(LANDSCAPE).matches;root.classList.toggle('landscape',land);if(!land)root.classList.remove('land-fill');
- if(land){fitLandscape(card,root,avail,need,tool,setToolLayout);return}
+ if(tool)fitShortLabels();
+ if(land){fitLandscape(card,root,avail,need,tool,setToolLayout);if(tool)fitShortLabels();return}
  card.style.removeProperty('--gk');// back in portrait, Graph keys size themselves again (styles.css)
  if(mode==='graph'){if(avail<FIT.graphMin){root.classList.add('page-scroll');shell.style.height=FIT.graphMin+'px'}return}
  const attempt=spec=>{

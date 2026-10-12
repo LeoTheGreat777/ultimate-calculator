@@ -162,7 +162,11 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   at most 500px high) get the landscape layout: keypad on the right, the rest on the left (`fitLandscape`,
   `html.landscape` in styles.css). Sideways the keys are the biggest that fit (a halving search, tools up to 84px), so every
   tab's keys are the same size even when the left side is the taller one, and once everything fits the card is stretched
-  to the bottom (`html.land-fill`), so there is no empty strip below. iOS reports a turned phone's new size late, after
+  to the bottom (`html.land-fill`), so there is no empty strip below. On a very short screen (an iPhone SE in Safari, 667×330) `fitLandscape` first hides the copy
+  button, then tightens the tools (`fit-tight`: less padding, a smaller ? row) before letting the page scroll. Fuel and Energy
+  share one row sideways like the kinds (`kind-grid`, `--f:3/4`); a label that doesn't fit its one line switches to its short
+  form (`FIELD_SHORT`, `fitShortLabels`, run by `fitLayout`). `sideways_every_tab` in the tests checks every tab at 667×330
+  and 814×409: no scrolling, nothing off screen, no cut label, the same key size. iOS reports a turned phone's new size late, after
   'resize': a ResizeObserver on the page fires 'resize' again when the width really changes (layout.js), and one on the
   tabs re-measures their bar (ui.js). The app is not
   locked to portrait (iPhones can't be), so both must work.
