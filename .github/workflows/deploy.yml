@@ -19,10 +19,10 @@ on:
 permissions:
   contents: read
 
-# If two pushes to the same branch land close together, only the newest one deploys
-# (a push to preview never cancels one to main).
+# If two pushes to the same branch land close together, only the newest one deploys. A push to preview, and the
+# re-publish it asks main for (preview_only), never cancel a run of main's own.
 concurrency:
-  group: deploy-${{ github.ref }}
+  group: deploy-${{ github.ref }}-${{ inputs.preview_only && 'preview' || 'full' }}
   cancel-in-progress: true
 
 jobs:
