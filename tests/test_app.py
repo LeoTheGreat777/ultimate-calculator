@@ -383,6 +383,9 @@ async def desktop(browser, url, lang, theme):
     await p.keyboard.type('50')
     await p.evaluate("switchMode('fuel');switchMode('vat')")
     st = await p.evaluate("[amount.value,vatRate.value,document.querySelector('#result').textContent]")
+    # the strip's scrolling, with every mode pinned so they don't all fit
+    await p.evaluate("pinnedModes=MODE_LABELS.slice();document.querySelector('.app-shell').style.width='330px';renderModeTabs()")
+    await p.wait_for_timeout(100)
     bar = await p.evaluate("(()=>{const n=modeTabs,t=n.querySelector('.mode-tabs-track');t.scrollLeft=9999;t.dispatchEvent(new Event('scroll'));return [n.classList.contains('show-bar'),n.classList.contains('at-end'),!!n.querySelector('.tabs-scrollbar span').style.width]})()")
     check(L + 'tabs: the scroll bar shows while they move', bar == [True, True, True], bar)
     await p.evaluate("modeTabs.querySelector('.mode-tabs-track').scrollLeft=0")
@@ -406,6 +409,7 @@ async def desktop(browser, url, lang, theme):
     check(L + 'tabs: dragging the tabs with the mouse scrolls them without switching', moved == [True, 'vat'], moved)
     pulled = await p.evaluate("(()=>{const t=modeTabs.querySelector('.mode-tabs-track');t.scrollLeft=0;syncTabEdges();const s=modeTabs.querySelector('.tabs-scrollbar span'),w=s.getBoundingClientRect().width;tabsPull=30;syncTabEdges();const r=[s.getBoundingClientRect().width<w-20,Math.round(s.getBoundingClientRect().left-modeTabs.querySelector('.tabs-scrollbar').getBoundingClientRect().left)];tabsPull=0;syncTabEdges();return r})()")
     check(L + 'tabs: pulled past the start, the thumb shrinks against it', pulled == [True, 0], pulled)
+    await p.evaluate("pinnedModes=readPins();document.querySelector('.app-shell').style.width='';renderModeTabs()")
     check(L + 'mode change: VAT starts empty again', st == ['', '24', '0'], st)
     await p.evaluate("switchMode('calc')")
     await calc(p, '5+3')
@@ -992,8 +996,10 @@ async def icons(browser, url):
     shown = await p.evaluate("[...document.querySelectorAll('.brand-mark .bm-curve,.brand-mark .bm-dot')].map(e=>getComputedStyle(e).stroke+'|'+getComputedStyle(e).fill)")
     check('[icons] the logo by the title takes the theme\'s colours', len(shown) == 2 and 'rgb(110, 168, 254)' in shown[0], shown)
     # tab icons: drawn, not symbol characters (iPhone drew ↔ ◷ tiny and low); € % $ are letters
-    tabs = await p.evaluate("""[...document.querySelectorAll('.mode-tab')].map(b=>{const i=b.querySelector('.mode-tab-icon'),r=i.getBoundingClientRect();
+    await p.evaluate("openModes()")
+    tabs = await p.evaluate("""[...document.querySelectorAll('#modesList .mode-pick')].map(b=>{const i=b.querySelector('.mode-pick-icon'),r=i.getBoundingClientRect();
       return {m:b.dataset.mode,svg:!!i.querySelector('svg'),text:i.textContent.trim(),w:Math.round(r.width),h:Math.round(r.height)}})""")
+    await p.evaluate("closeModes()")
     drawn = [x for x in tabs if x['svg']]
     check('[icons] tab icons are drawn, except the letters € % $',
           {x['m'] for x in tabs if not x['svg']} == {'vat', 'pct', 'currency'} and len(drawn) == len(tabs) - 3, tabs)
@@ -1182,6 +1188,64 @@ async def sideways_every_tab(browser, url):
             check(L + 'keys are the same size in every tab', len(set(keys.values())) == 1, keys)
             check(L + 'no JavaScript errors', not p.errors, p.errors)
             await ctx.close()
+
+
+async def all_modes(browser, url):
+    """Navigation: the strip shows the pinned modes (and the one on screen); ⊞ opens every mode, grouped, with a search;
+    pins are kept; Ctrl+K opens it, Esc closes; on a phone the pinned tabs fit (the others show as icons)."""
+    L = '[all modes] '
+    p = await new_page(browser, url, 'en', 'dark')
+    strip = "[...document.querySelectorAll('#modeTabs .mode-tab')].map(b=>b.dataset.mode)"
+    check(L + 'the strip starts with Calculator, Units, Currency, VAT', await p.evaluate(strip) == ['calc', 'units', 'currency', 'vat'], await p.evaluate(strip))
+    await p.click('#modesButton')
+    await p.wait_for_timeout(100)
+    got = await p.evaluate("[!modesModal.classList.contains('hidden'),document.querySelectorAll('#modesList .mode-group').length,[...document.querySelectorAll('#modesList .mode-pick')].map(b=>b.dataset.mode),document.activeElement.id]")
+    check(L + 'the sheet has every mode in 3 groups, the search has the focus', got[0] and got[1] == 3 and sorted(got[2]) == sorted(['calc', 'units', 'currency', 'graph', 'vat', 'pct', 'loan', 'dates', 'fuel', 'energy', 'net']) and got[3] == 'modesSearch', got)
+    for q, want in [('tip', ['pct']), ('loan', ['loan']), ('ip', ['net']), ('καυσ', ['fuel']), ('ΦΠΑ', ['vat']), ('zzz', [])]:
+        await p.fill('#modesSearch', q)
+        got = await p.evaluate("[...document.querySelectorAll('#modesList .mode-pick')].map(b=>b.dataset.mode)")
+        check(L + f'search "{q}"', got == want, got)
+    check(L + 'nothing found says so', await p.evaluate("!!document.querySelector('#modesList .modes-none')"))
+    await p.fill('#modesSearch', 'subnet')
+    await p.keyboard.press('Enter')
+    await p.wait_for_timeout(150)
+    got = await p.evaluate(f"[mode,modesModal.classList.contains('hidden'),{strip},document.querySelector('.mode-tab.active').classList.contains('unpinned')]")
+    check(L + 'Enter opens the first match; it joins the strip while open', got == ['net', True, ['calc', 'units', 'currency', 'vat', 'net'], True], got)
+    await p.evaluate("switchMode('calc')")
+    check(L + 'and leaves the strip after', await p.evaluate(strip) == ['calc', 'units', 'currency', 'vat'])
+    await p.keyboard.press('Control+k')
+    await p.wait_for_timeout(100)
+    check(L + 'Ctrl+K opens it', await p.evaluate("!modesModal.classList.contains('hidden')"))
+    await p.click('#modesList [data-pin="fuel"]')
+    await p.click('#modesList [data-pin="units"]')
+    got = await p.evaluate(f"[{strip},!modesModal.classList.contains('hidden'),document.querySelector('[data-pin=fuel]').getAttribute('aria-pressed')]")
+    check(L + 'pinning and unpinning change the strip at once, the sheet stays open', got == [['calc', 'currency', 'vat', 'fuel'], True, 'true'], got)
+    await p.keyboard.press('Escape')
+    check(L + 'Esc closes it', await p.evaluate("modesModal.classList.contains('hidden')"))
+    await p.reload()
+    await p.wait_for_timeout(300)
+    check(L + 'pins are kept', await p.evaluate(strip) == ['calc', 'currency', 'vat', 'fuel'], await p.evaluate(strip))
+    await p.keyboard.press('Alt+Digit2')
+    check(L + 'Alt+2 still goes to Units', await p.evaluate('mode') == 'units')
+    await p.evaluate("setLanguage('el')")
+    await p.wait_for_timeout(600)
+    await p.click('#modesButton')
+    got = await p.evaluate("[modesTitle.textContent,modesButton.getAttribute('aria-label'),document.querySelector('#modesList .mode-group h3').textContent]")
+    check(L + 'in Greek', got == ['Όλες οι λειτουργίες', 'Όλες οι λειτουργίες', 'Καθημερινά'], got)
+    await p.mouse.click(5, 5)
+    check(L + 'a press outside closes it', await p.evaluate("modesModal.classList.contains('hidden')"))
+    check(L + 'no JavaScript errors', not p.errors, p.errors)
+    await p.context.close()
+    for size in [(390, 844), (814, 409)]:
+        p = await new_page(browser, url, 'el', 'light', phone=True, size=size)
+        got = await p.evaluate("(()=>{const t=document.querySelector('#modeTabs .mode-tabs-track');return [t.scrollWidth<=t.clientWidth+1,[...t.children].filter(b=>b.querySelector('.mode-tab-label').offsetParent).map(b=>b.dataset.mode)]})()")
+        check(L + f'phone {size[0]}: the 4 pinned tabs fit, only the current one with its name', got == [True, ['calc']], got)
+        await p.tap('#modesButton')
+        await p.wait_for_timeout(150)
+        got = await p.evaluate("""[document.activeElement.id,[...document.querySelectorAll('#modesList .mode-pick-name')].filter(n=>n.scrollWidth>n.clientWidth+1).map(n=>n.textContent)]""")
+        check(L + f'phone {size[0]}: no keyboard pops up, no name is cut', got[0] != 'modesSearch' and not got[1], got)
+        check(L + f'phone {size[0]}: no JavaScript errors', not p.errors, p.errors)
+        await p.context.close()
 
 
 async def update_keeps_themes(browser, url):
@@ -1488,6 +1552,7 @@ async def main():
         await field_limits(browser, url, True)
         await screen_reader(browser, url)
         await sideways_every_tab(browser, url)
+        await all_modes(browser, url)
         await ios_app(browser, url)
         await offline_status_and_turning(browser, url)
         await sideways_and_chips(browser, url)

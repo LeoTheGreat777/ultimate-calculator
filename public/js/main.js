@@ -32,7 +32,7 @@ setupHoldKeys();setupPressFeedback();
  document.addEventListener('click',e=>{if(themeMenuOpen()&&!eventInside(e,'#themeMenu,#themeButton'))closeThemeMenu();if(historyClearConfirm&&!eventInside(e,'#historyClearWrap'))clearHistoryConfirm()});
 $('#clearHistory').addEventListener('click',clearHistoryConfirm);$('#historyConfirmYes').addEventListener('click',deleteAllHistory);
 window.addEventListener('keydown',e=>{
- if(themeEditorKeydown(e)||themeMenuKeydown(e))return;
+ if(themeEditorKeydown(e)||themeMenuKeydown(e)||modesKeydown(e))return;
  // Alt+1…9 jumps to a mode (Alt+← / → are left alone: browsers use them for Back / Forward)
  if(e.altKey&&!e.ctrlKey&&!e.metaKey&&/^Digit[1-9]$/.test(e.code)){const n=MODE_LABELS[+e.code.slice(5)-1];if(n){e.preventDefault();switchMode(n)}return}
  if(e.ctrlKey||e.metaKey||e.altKey)return;
@@ -83,7 +83,7 @@ window.addEventListener('keydown',e=>{
 window.__UC_VERSION=VERSION;$('#footerVersion').textContent=`v${VERSION}`;
 // The test version (the preview branch, published at /preview/): a mark beside the version so it can't be mistaken for the app.
 if(location.pathname.startsWith('/preview/')){const b=document.createElement('span');b.className='preview-badge';b.textContent=lang==='el'?'Δοκιμαστική':'Preview';$('#footerVersion').after(b);document.title+=' (preview)'}
-loadTools();lang=readLanguage();bindTools();renderHistory();renderTool();renderModeTabs();syncModeTabs();setupHistorySheet();setupToggleSlide();bindHistoryChart();$('#chartButton')?.addEventListener('click',showToolChart);applyLanguage();applyTheme();window.addEventListener('pageshow',e=>{if(e.persisted&&mode!=='calc')setMode('calc')});
+loadTools();lang=readLanguage();bindTools();renderHistory();renderTool();renderModeTabs();syncModeTabs();setupModes();setupHistorySheet();setupToggleSlide();bindHistoryChart();$('#chartButton')?.addEventListener('click',showToolChart);applyLanguage();applyTheme();window.addEventListener('pageshow',e=>{if(e.persisted&&mode!=='calc')setMode('calc')});
 setupHistoryGestures();
 // The browser's own F-keys (help, search, full screen ...) stay out of the app's way; F9 is ± in the app.
 document.addEventListener('keydown',e=>{if(/^F(?:[1-8]|1[0-2])$/.test(e.key))e.stopImmediatePropagation()},true);

@@ -69,17 +69,23 @@ function setMode(next){
  if(next!=='calc'&&next!=='graph'){runActiveTool();if(next!=='units')renderToolDisplay()}
  syncModeTabs();
 }
-// The modes, one tap each: a strip of tabs at the top of the card (scrolls sideways when they don't all fit).
+// The modes, one tap each: a strip of tabs at the top of the card (scrolls sideways when they don't all fit). It shows
+// the pinned modes and the one on screen (stripModes, modes.js); every mode is in the ⊞ sheet.
 const MODE_LABELS=['calc','units','currency','graph','vat','pct','loan','dates','fuel','energy','net'];
 function renderModeTabs(){
  const track=$('#modeTabs .mode-tabs-track');if(!track)return;
- track.innerHTML=MODE_LABELS.map(m=>'<button class="mode-tab" role="tab" type="button" data-mode="'+m+'"><span class="mode-tab-icon" aria-hidden="true">'+modeIcon(m)+'</span><span class="mode-tab-label">'+esc(modeText(m))+'</span></button>').join('');
+ const pins=typeof pinnedModes!=='undefined'?pinnedModes:MODE_LABELS;
+ track.innerHTML=stripModes().map(m=>'<button class="mode-tab" role="tab" type="button" data-mode="'+m+'" aria-label="'+esc(modeText(m))+'" title="'+esc(modeText(m))+'"><span class="mode-tab-icon" aria-hidden="true">'+modeIcon(m)+'</span><span class="mode-tab-label">'+esc(modeText(m))+'</span></button>').join('');
+ track.querySelectorAll('.mode-tab').forEach(b=>b.classList.toggle('unpinned',!pins.includes(b.dataset.mode)));
  syncModeTabs(true);
 }
 // Highlight the current tab and bring it into view.
 function syncModeTabs(instant){
  const track=$('#modeTabs .mode-tabs-track');if(!track)return;
- if(!track.children.length){renderModeTabs();return}
+ // the mode on screen joins the strip while it isn't pinned (and leaves it after)
+ if(!track.children.length||[...track.children].map(b=>b.dataset.mode).join()!==stripModes().join()){renderModeTabs();return}
+ // when the tabs don't all fit, the ones not on screen show only their icon (their name is in aria-label and title)
+ const nav=$('#modeTabs');nav.classList.remove('icons');if(track.scrollWidth>track.clientWidth+1)nav.classList.add('icons');
  let active=null;
  [...track.children].forEach(b=>{const on=b.dataset.mode===currentTab();b.classList.toggle('active',on);b.setAttribute('aria-selected',String(on));b.tabIndex=on?0:-1;if(on)active=b});
  if(active){
@@ -217,6 +223,7 @@ function applyLanguage(){
  $('#historyButton').setAttribute('aria-label',t('history'));$('#historyButton').title=t('history');
  $('#modeTabs')?.setAttribute('aria-label',lang==='el'?'Λειτουργίες':'Modes');
  renderModeTabs();
+ {const b=$('#modesButton');if(b){b.setAttribute('aria-label',mText('title'));b.title=mText('title')}if(modesOpen())openModes()}
  $('#howTitle').textContent=t('how');
  $('#howButton')?.setAttribute('aria-label',t('how'));
  $('#historyPanel').setAttribute('aria-label',t('history'));
@@ -364,7 +371,7 @@ setupTabsBar();
 // a mouse wheel over the tabs scrolls them sideways (when they don't all fit)
 $('#modeTabs').addEventListener('wheel',e=>{const t=$('#modeTabs .mode-tabs-track');if(t.scrollWidth<=t.clientWidth)return;e.preventDefault();t.scrollLeft+=Math.abs(e.deltaY)>Math.abs(e.deltaX)?e.deltaY:e.deltaX},{passive:false});
 // arrow keys move between tabs when one has keyboard focus
-$('#modeTabs').addEventListener('keydown',e=>{if(e.key!=='ArrowLeft'&&e.key!=='ArrowRight')return;e.preventDefault();e.stopPropagation();const i=MODE_LABELS.indexOf(currentTab()),n=MODE_LABELS[Math.max(0,Math.min(MODE_LABELS.length-1,i+(e.key==='ArrowRight'?1:-1)))];switchMode(n);requestAnimationFrame(()=>$('#modeTabs .mode-tab.active')?.focus())});
+$('#modeTabs').addEventListener('keydown',e=>{if(e.key!=='ArrowLeft'&&e.key!=='ArrowRight')return;e.preventDefault();e.stopPropagation();const list=stripModes(),i=list.indexOf(currentTab()),n=list[Math.max(0,Math.min(list.length-1,i+(e.key==='ArrowRight'?1:-1)))];switchMode(n);requestAnimationFrame(()=>$('#modeTabs .mode-tab.active')?.focus())});
 window.addEventListener('resize',()=>syncModeTabs(true));
 // The strip's own width: when it changes (the phone turned; iOS reports the new size late, after 'resize'), the bar
 // under the tabs is measured again, so it never keeps its old width and position.

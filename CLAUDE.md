@@ -61,6 +61,7 @@ Everything the app serves is in `public/` (the web root for both GitHub Pages an
 | `layout.js` | `fitLayout` (fits every mode to the screen), long text (`fitDisplayText`, `refuseKey`), zoom on big screens |
 | `theme.js` | themes: the ready-made ones, own themes (`deriveTheme`), Match device (`themePair`), the theme menu and the own theme editor |
 | `ui.js` | `setLanguage`/`applyLanguage`, modes and tabs (`switchMode`, `renderTool`), dialogs, hold keys, install |
+| `modes.js` | the All modes sheet (⊞): groups, search, pins (`uc-pins`), which tabs the strip shows (`stripModes`) |
 | `help.js` | Tips & shortcuts text (`HELP`) and `showHelp` |
 | `main.js` | keypad and button wiring, the desktop keyboard handler, start-up. Loaded last |
 
@@ -146,7 +147,7 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   go, in every mode (Percent, Interest, Dates: also changing kind; Graph goes back to `graphDefault`). Only Calculator -> Units carries
   the number. Kept: choices (units picked, VAT add/remove, the kinds, Deg/Rad, f(x)), History. Typed values are
   not saved across visits; `saveTools`/`loadTools` keep only those choices. AC clears a tool.
-- **Storage:** all in the browser (`uc-history`, `uc-tools`, `uc-rates`, `uc-lang`,
+- **Storage:** all in the browser (`uc-history`, `uc-tools`, `uc-rates`, `uc-lang`, `uc-pins`,
   `uc-theme`, `uc-theme-pair`, `uc-custom-themes`, `uc-theme-recent`). Use `store.get/set` – localStorage can throw.
 - **Number fields** (every tool field but dates and IP/mask, `groupedField`) show thousands as they are typed: 10000 ->
   10.000 (`groupDigits` in the `input` handler, the cursor kept in place). In them a dot is always a thousands dot and the
@@ -184,6 +185,14 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   for inverses; Deg/Rad is `angleUnit` (`uc-angle`). The engine (numbers.js: `evalExpr`, `ratPow`, `sciFunction`)
   stays exact where the answer is exact and rounds floats to 15 digits otherwise. Shown with superscripts and sin⁻¹
   (`sciPretty`). Keyboard: ^ and !.
+- **All modes** (modes.js): the ⊞ button beside History (`#modesButton`) opens a sheet (`#modesModal`, `openModes`) with
+  every mode in groups (`MODE_GROUPS`) and a search (`modeMatches`: names in both languages plus `MODE_WORDS`, word
+  starts, accents and capitals ignored; Enter opens the first; Ctrl+K / ⌘K opens it, Esc closes, a press outside closes).
+  The strip shows only the pinned modes (`pinnedModes`, `uc-pins`, default Calculator, Units, Currency, VAT; the pin on
+  each tile) in `MODE_LABELS` order, plus the mode on screen while it isn't pinned (`.unpinned`, dashed). When they don't
+  all fit, the tabs not on screen show only their icon (`.mode-tabs.icons`; names in aria-label/title). A new mode: also
+  a group in `MODE_GROUPS` and words in `MODE_WORDS`. On phones the search isn't focused (no keyboard popping up); long
+  names shrink a little (`fitModeNames`), never "…".
 - **Modes are tabs:** a strip of tabs at the top of the card (`MODE_LABELS`, `renderModeTabs`, `switchMode`), one tap
   each, scrolling sideways when they don't fit; Alt+1…9 on a keyboard (Energy and Subnet, the last two, have none). When they don't all fit, a slim bar under them
   (`.tabs-scrollbar`, `syncTabEdges`, `flashTabsBar`) shows while they move and briefly on start; it can be dragged
