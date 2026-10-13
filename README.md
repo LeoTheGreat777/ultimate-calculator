@@ -59,9 +59,9 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 - Calculation explanations presented in a readable step-by-step view
 - Tips for every mode, with keyboard shortcuts on computers, from the footer (or ? on a keyboard)
 
-## Authors
+## Author
 
-Leonidas Kampaxis and Efstathios Konstantinos Tsakiris (Λεωνίδας Κάμπαξης και Ευστάθιος Κωνσταντίνος Τσακίρης)
+Leonidas Kampaxis (Λεωνίδας Κάμπαξης)
 
 ## Technology
 

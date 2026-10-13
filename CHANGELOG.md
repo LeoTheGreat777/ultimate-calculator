@@ -6,6 +6,12 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.17.1 – 2026-10-13
+
+### Fixed
+- All modes: with a mouse, the whole tile lights up under the pointer, pin included.
+- All modes on a computer: long Greek names (Αριθμομηχανή, Ημερομηνίες) are no longer cut.
+
 ## 0.17.0 – 2026-10-13
 
 ### Added
@@ -413,8 +419,6 @@ Each version lists what was **Added**, **Changed** and **Fixed**, written for th
 - Several cases where brackets or C could split a negative number from its minus sign.
 
 ## 0.4 – 7 to 9 October 2026
-
-The first versions built with Efstathios Konstantinos Tsakiris.
 
 - Graph mode: up to three functions, with roots, minima, maxima and intersections marked; pan, zoom, and save as an image.
 - Charts in the VAT, Fuel and Energy tools, and a chart of the History.

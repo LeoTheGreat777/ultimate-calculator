@@ -770,7 +770,7 @@ html.landscape .calculator-card.mobile-tool .net-details strong{flex:1 1 auto;mi
 .modes-button{width:40px;padding:0;justify-content:center;flex:0 0 auto;color:var(--accent2)}
 .modes-button[aria-expanded="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .mode-tab.unpinned{border-style:dashed}
-.modes-card{width:min(500px,calc(calc(100vw / var(--z,1)) - 32px));display:flex;flex-direction:column;gap:10px}
+.modes-card{width:min(560px,calc(calc(100vw / var(--z,1)) - 32px));display:flex;flex-direction:column;gap:10px}
 .modes-search{width:100%;border:1px solid var(--border);border-radius:12px;background:var(--card2);color:var(--text);padding:10px 12px;font:inherit;font-size:15px;outline:none;-webkit-appearance:none;appearance:none}
 .modes-search:focus{border-color:var(--accent)}
 .modes-search::placeholder{color:var(--muted)}
@@ -783,7 +783,7 @@ html.landscape .calculator-card.mobile-tool .net-details strong{flex:1 1 auto;mi
 .mode-pick-icon{color:var(--accent2);display:inline-flex;flex:none}
 .mode-pick-icon svg{width:16px;height:16px;display:block}
 .mode-pick-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.mode-pick:hover{background:var(--key-hover)}
+@media (hover:hover) and (pointer:fine){.mode-tile:hover{background:var(--key-hover);border-color:var(--accent2)}}/* the whole tile, pin included */
 .mode-pick:focus-visible,.mode-pin:focus-visible{outline:2px solid var(--accent2);outline-offset:-2px}
 .mode-pin{flex:none;width:30px;border:0;background:transparent;color:var(--muted);opacity:.45;cursor:pointer;display:grid;place-items:center;border-radius:0 12px 12px 0}
 .mode-pin svg{width:15px;height:15px;transform:rotate(30deg)}

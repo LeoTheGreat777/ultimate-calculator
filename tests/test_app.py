@@ -454,7 +454,7 @@ async def desktop(browser, url, lang, theme):
     other = 'en' if lang == 'el' else 'el'
     await p.evaluate(f"switchMode('calc');setLanguage('{other}')")
     await p.wait_for_timeout(400)
-    names = 'Δημιουργοί: Λεωνίδας Κάμπαξης' if other == 'el' else 'Created by Leonidas Kampaxis'
+    names = 'Δημιουργός: Λεωνίδας Κάμπαξης' if other == 'el' else 'Created by Leonidas Kampaxis'
     check(L + 'language switches in place', names in await p.inner_text('#createdBy') and await p.evaluate('lang') == other)
     await p.keyboard.press('?')
     await p.wait_for_timeout(150)
@@ -1220,6 +1220,14 @@ async def all_modes(browser, url):
     await p.keyboard.press('Control+k')
     await p.wait_for_timeout(100)
     check(L + 'Ctrl+K opens it', await p.evaluate("!modesModal.classList.contains('hidden')"))
+    bg = "getComputedStyle(document.querySelector('#modesList [data-pin=pct]').closest('.mode-tile')).backgroundColor"
+    await p.mouse.move(1, 1)
+    rest = await p.evaluate(bg)
+    await p.hover('#modesList .mode-pick[data-mode=pct]')
+    on_name = await p.evaluate(bg)
+    await p.hover('#modesList [data-pin=pct]')
+    on_pin = await p.evaluate(bg)
+    check(L + 'the mouse over a mode lights up its whole tile, pin included', on_name != rest and on_pin == on_name, [rest, on_name, on_pin])
     await p.click('#modesList [data-pin="fuel"]')
     await p.click('#modesList [data-pin="units"]')
     got = await p.evaluate(f"[{strip},!modesModal.classList.contains('hidden'),document.querySelector('[data-pin=fuel]').getAttribute('aria-pressed')]")
@@ -1236,6 +1244,8 @@ async def all_modes(browser, url):
     await p.click('#modesButton')
     got = await p.evaluate("[modesTitle.textContent,modesButton.getAttribute('aria-label'),document.querySelector('#modesList .mode-group h3').textContent]")
     check(L + 'in Greek', got == ['Όλες οι λειτουργίες', 'Όλες οι λειτουργίες', 'Καθημερινά'], got)
+    cut = await p.evaluate("[...document.querySelectorAll('#modesList .mode-pick-name')].filter(n=>n.scrollWidth>n.clientWidth+1).map(n=>n.textContent)")
+    check(L + 'in Greek on a computer, no name is cut', not cut, cut)
     await p.mouse.click(5, 5)
     check(L + 'a press outside closes it', await p.evaluate("modesModal.classList.contains('hidden')"))
     check(L + 'no JavaScript errors', not p.errors, p.errors)

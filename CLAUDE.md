@@ -113,9 +113,9 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   spacing was chosen by the owner (`EQ_HOME`, `EQ_SMALL`); keep it. No letters in the icon, so it survives a rename.
   iOS can't switch a web app's home screen icon for dark mode, so there is one, opaque and full square. The tests fail
   if the files or the logo differ from what the script draws.
-- **Credits:** the footer names come from `AUTHORS` in `i18n.js`, in Greek and English (first name first in both);
-  the English names are also in `index.html` (footer and `<meta name="author">`) and both in the README.
-  Change them in all places together.
+- **Credits:** the owner, Leonidas Kampaxis, is the app's only credited author (his decision): `AUTHORS` in `i18n.js`, in
+  Greek and English, the English name also in `index.html` (footer and `<meta name="author">`) and both in the README.
+  Don't add other names anywhere (footer, README, changelog). Change them in all places together.
 - **Tool modes** are `TOOL_MODES` (core.js): use it rather than listing them. Defaults (VAT rate 24, Subnet /24, Dates today)
   are `TOOL_DEFAULTS`, filled in on entering the mode and after AC. Percent (discount, change, tip), Interest (`loan`:
   loan, payoff, savings) Dates (between, add) and Subnet (`net`: subnet, hosts) have kinds on a switch above their fields: `KIND_FIELDS`, `KIND_LABELS`, `toolKind[mode]`, `setToolKind`,
