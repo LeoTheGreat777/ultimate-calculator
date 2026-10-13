@@ -8,6 +8,7 @@ Serves public/ on a free port, checks the app in Chromium at desktop and phone s
 themes, and exits with an error if anything fails. Add a check here when you add or fix a feature.
 """
 import asyncio
+import os
 import functools
 import http.server
 import re
@@ -30,6 +31,9 @@ def check(name, ok, detail=''):
     results.append(bool(ok))
     if not ok or '-v' in sys.argv:
         print(('PASS ' if ok else 'FAIL ') + name + (f'  | {detail}' if detail != '' else ''))
+    if not ok and os.environ.get('GITHUB_ACTIONS'):
+        # on GitHub a failed check is also an annotation on the run, readable without opening the log
+        print('::error title=' + name.replace(':', ' ').replace(',', ' ')[:200] + '::' + str(detail).replace('\n', ' ')[:900])
 
 
 def serve(directory=PUBLIC):
