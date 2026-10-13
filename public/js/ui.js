@@ -85,7 +85,13 @@ function syncModeTabs(instant){
  // the mode on screen joins the strip while it isn't pinned (and leaves it after)
  if(!track.children.length||[...track.children].map(b=>b.dataset.mode).join()!==stripModes().join()){renderModeTabs();return}
  // when the tabs don't all fit, the ones not on screen show only their icon (their name is in aria-label and title)
- const nav=$('#modeTabs');nav.classList.remove('icons');if(track.scrollWidth>track.clientWidth+1)nav.classList.add('icons');
+ const nav=$('#modeTabs');nav.classList.remove('icons');track.querySelectorAll('.mode-tab-label').forEach(l=>l.style.fontSize='');
+ if(track.scrollWidth>track.clientWidth+1){
+  nav.classList.add('icons');
+  // still a little too wide (a long Greek name, a wide font): the name on screen gets a bit smaller first
+  const lab=track.querySelector('.mode-tab[data-mode="'+currentTab()+'"] .mode-tab-label');
+  for(let px=12.5;lab&&px>=11&&track.scrollWidth>track.clientWidth+1;px-=.5)lab.style.fontSize=px+'px';
+ }
  let active=null;
  [...track.children].forEach(b=>{const on=b.dataset.mode===currentTab();b.classList.toggle('active',on);b.setAttribute('aria-selected',String(on));b.tabIndex=on?0:-1;if(on)active=b});
  if(active){
