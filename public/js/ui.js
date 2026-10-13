@@ -212,6 +212,7 @@ function applyLanguage(){
  {const l=lang==='el'?'Γλώσσα: Ελληνικά':'Language: English';$('#langButton').setAttribute('aria-label',l);$('#langButton').title=l}
  nameKeys();
  $('#copyButton').textContent=t('copy');
+ {const b=$('.preview-badge');if(b)b.textContent=lang==='el'?'Δοκιμαστική':'Preview';}
  $('#historyButtonText').textContent=t('history');
  $('#historyButton').setAttribute('aria-label',t('history'));$('#historyButton').title=t('history');
  $('#modeTabs')?.setAttribute('aria-label',lang==='el'?'Λειτουργίες':'Modes');

@@ -6,6 +6,12 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.16.4 – 2026-10-13
+
+### Changed
+- Behind the scenes: test versions can be tried at uc.kampaxis.com/preview/ before they reach the app (marked
+  "Preview"). Nothing changes in the app itself.
+
 ## 0.16.3 – 2026-10-12
 
 ### Fixed

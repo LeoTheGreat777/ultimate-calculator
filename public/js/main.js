@@ -80,7 +80,10 @@ window.addEventListener('keydown',e=>{
  else if(e.key==='Enter'||e.key==='='){e.preventDefault();equals()}
  else if(e.key==='Backspace'){e.preventDefault();backspace()}
 });
-window.__UC_VERSION=VERSION;$('#footerVersion').textContent=`v${VERSION}`;loadTools();lang=readLanguage();bindTools();renderHistory();renderTool();renderModeTabs();syncModeTabs();setupHistorySheet();setupToggleSlide();bindHistoryChart();$('#chartButton')?.addEventListener('click',showToolChart);applyLanguage();applyTheme();window.addEventListener('pageshow',e=>{if(e.persisted&&mode!=='calc')setMode('calc')});
+window.__UC_VERSION=VERSION;$('#footerVersion').textContent=`v${VERSION}`;
+// The test version (the preview branch, published at /preview/): a mark beside the version so it can't be mistaken for the app.
+if(location.pathname.startsWith('/preview/')){const b=document.createElement('span');b.className='preview-badge';b.textContent=lang==='el'?'Δοκιμαστική':'Preview';$('#footerVersion').after(b);document.title+=' (preview)'}
+loadTools();lang=readLanguage();bindTools();renderHistory();renderTool();renderModeTabs();syncModeTabs();setupHistorySheet();setupToggleSlide();bindHistoryChart();$('#chartButton')?.addEventListener('click',showToolChart);applyLanguage();applyTheme();window.addEventListener('pageshow',e=>{if(e.persisted&&mode!=='calc')setMode('calc')});
 setupHistoryGestures();
 // The browser's own F-keys (help, search, full screen ...) stay out of the app's way; F9 is ± in the app.
 document.addEventListener('keydown',e=>{if(/^F(?:[1-8]|1[0-2])$/.test(e.key))e.stopImmediatePropagation()},true);

@@ -704,6 +704,42 @@ async def phone(browser, url, lang, theme, size):
     await p.context.close()
 
 
+async def preview_site(browser):
+    """The test version (preview branch) is published at /preview/ on the same site: it works from there, is marked
+    Preview, and the app at / and the one at /preview/ keep separate offline copies that don't delete each other's files."""
+    L = '[preview] '
+    folder = Path(tempfile.mkdtemp())
+    shutil.copytree(PUBLIC, folder, dirs_exist_ok=True)
+    shutil.copytree(PUBLIC, folder / 'preview', dirs_exist_ok=True)
+    url = serve(folder)
+    ctx = await browser.new_context(viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True)
+    await ctx.add_init_script(SEED % ('en', 'dark'))
+    p = await ctx.new_page()
+    errors = []
+    p.on('pageerror', lambda e: errors.append(str(e)))
+    await p.goto(url)
+    await p.evaluate("navigator.serviceWorker.ready")
+    check(L + 'the app at / has no Preview mark', not await p.evaluate("!!document.querySelector('.preview-badge')"))
+    await p.goto(url + 'preview/')
+    await p.evaluate("navigator.serviceWorker.ready")
+    await p.wait_for_timeout(300)
+    got = await p.evaluate("[document.querySelector('.preview-badge')?.textContent,document.title]")
+    check(L + 'the version at /preview/ is marked Preview', got[0] == 'Preview' and got[1].endswith('(preview)'), got)
+    check(L + 'it calculates', await calc(p, '6*7') == '42')
+    await p.evaluate("setLanguage('el')")
+    await p.wait_for_timeout(600)
+    check(L + 'the mark follows the language', await p.evaluate("document.querySelector('.preview-badge').textContent") == 'Δοκιμαστική')
+    keys = lambda name: f"caches.open('{name}').then(c=>c.keys()).then(k=>k.map(r=>new URL(r.url).pathname))"
+    await p.wait_for_function(f"{keys('uc-app/preview/')}.then(k=>k.some(u=>u.endsWith('/preview/js/main.js')))", timeout=5000)
+    await p.goto(url)
+    await p.wait_for_timeout(800)
+    got = await p.evaluate(f"Promise.all([{keys('uc-app')},{keys('uc-app/preview/')}])")
+    check(L + 'separate offline copies: / has no /preview/ files, and /preview/ keeps its own',
+          any(u == '/js/main.js' for u in got[0]) and not any(u.startswith('/preview/') for u in got[0]) and any(u.endswith('/preview/js/main.js') for u in got[1]), got)
+    check(L + 'no JavaScript errors', not errors, errors)
+    await ctx.close()
+
+
 async def offline(browser):
     """The app opens without internet (sw.js), and still updates: a new version replaces the saved copy."""
     folder = Path(tempfile.mkdtemp())
@@ -1457,6 +1493,7 @@ async def main():
         await sideways_and_chips(browser, url)
         await press_feedback(browser, url)
         await offline(browser)
+        await preview_site(browser)
         await currency_offline(browser, url)
         await browser.close()
     print(f'{sum(results)}/{len(results)} checks passed')

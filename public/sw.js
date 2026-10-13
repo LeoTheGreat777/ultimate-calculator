@@ -6,9 +6,10 @@
 // Every fresh page saves the files it uses and deletes those of older versions. Other files (icons, manifest) come from
 // the saved copy and are refreshed in the background.
 // Registered by main.js. No build step: there is nothing here to update when the version changes.
-const CACHE = 'uc-app';
-const TIMEOUT = 3000;
 const SCOPE = new URL(self.registration.scope);
+// One saved copy per address: the app at / and the test version at /preview/ (the preview branch) keep their own.
+const CACHE = 'uc-app' + (SCOPE.pathname === '/' ? '' : SCOPE.pathname);
+const TIMEOUT = 3000;
 const VERSIONED = /[?&]v=/;
 
 self.addEventListener('install', event => {
@@ -19,7 +20,7 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   // Caches from older service workers are removed; this one takes over open pages straight away.
   event.waitUntil(caches.keys()
-    .then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key))))
+    .then(keys => Promise.all(keys.filter(key => key !== CACHE && !key.startsWith('uc-app/')).map(key => caches.delete(key))))
     .then(() => self.clients.claim()));
 });
 
@@ -28,6 +29,7 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET' || request.cache === 'no-store') return;  // no-store: the app's version check (main.js)
   const url = new URL(request.url);
   if (url.origin !== SCOPE.origin || !url.pathname.startsWith(SCOPE.pathname)) return;
+  if (SCOPE.pathname === '/' && url.pathname.startsWith('/preview/')) return;  // the test version has its own
   const isPage = request.mode === 'navigate' && (url.pathname === SCOPE.pathname || url.pathname === SCOPE.pathname + 'index.html');
   event.respondWith(isPage ? page(event) : file(event));
 });

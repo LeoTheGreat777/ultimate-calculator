@@ -2,27 +2,37 @@ name: Test and deploy
 
 # Every push to main: run the browser tests, then (only if they pass) publish the site to GitHub Pages
 # and the Docker image to ghcr.io. If the tests fail, nothing is deployed and the live versions stay as they are.
+# The preview branch is a test version of the app: it is published to /preview/ on the same site (uc.kampaxis.com/preview/),
+# never to the Docker image, and a push to it never changes the app at the root.
 on:
   push:
     branches:
       - main
+      - preview
   workflow_dispatch:
 
 permissions:
   contents: read
 
-# If two pushes land close together, only the newest one deploys.
+# If two pushes to the same branch land close together, only the newest one deploys
+# (a push to preview never cancels one to main).
 concurrency:
-  group: deploy
+  group: deploy-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  # The branch that was pushed is tested; a push to preview also tests main, since the site is published with both.
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    strategy:
+      matrix:
+        branch: ${{ fromJSON(github.ref_name == 'preview' && '["main","preview"]' || '["main"]') }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.branch }}
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -51,18 +61,44 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    # one Pages deploy at a time; the newest has the latest of both branches
+    concurrency:
+      group: pages
+      cancel-in-progress: true
     steps:
-      - name: Checkout
+      - name: Checkout main
         uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main
+
+      # The test version, if there is one: the preview branch's public/ folder becomes /preview/.
+      - name: Checkout preview
+        id: preview
+        continue-on-error: true
+        uses: actions/checkout@v4
+        with:
+          ref: preview
+          path: preview
+
+      - name: Put the site together
+        run: |
+          mkdir site
+          cp -r main/public/. site/
+          if [ "${{ steps.preview.outcome }}" = "success" ] && [ -d preview/public ]; then
+            mkdir site/preview
+            cp -r preview/public/. site/preview/
+            echo "preview published at /preview/"
+          fi
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      # The site is exactly the public/ folder, the same files the Docker image serves.
+      # The site is main's public/ folder (the same files the Docker image serves), plus /preview/.
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
         with:
-          path: public
+          path: site
 
       - name: Deploy to GitHub Pages
         id: deployment
@@ -70,6 +106,7 @@ jobs:
 
   docker:
     needs: test
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:

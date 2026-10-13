@@ -301,6 +301,7 @@ html.landscape .tool-grid.kind-grid .tool-field span{white-space:nowrap;overflow
 .help-link:hover,.help-link:focus-visible{color:var(--accent2);background:var(--card2)}
 .help-link:focus-visible{outline:2px solid var(--accent2);outline-offset:1px}
 .help-link-icon{width:14px;height:14px;flex:none;display:block}
+.preview-badge{margin-left:6px;padding:1px 6px;border-radius:999px;background:var(--accent);color:var(--on-accent);font-weight:700;font-size:10px}
 .modal.help-open .modal-card{width:min(520px,calc(calc(100vw / var(--z,1)) - 32px))}
 .help{display:flex;flex-direction:column;gap:18px}
 .help-heading{margin:0 0 6px;font-size:11px;font-weight:750;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
