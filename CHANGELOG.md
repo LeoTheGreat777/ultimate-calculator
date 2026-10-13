@@ -6,6 +6,14 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.17.0 – 2026-10-13
+
+### Added
+- All modes: the new button next to History opens every mode, grouped, with a search ("tip", "loan", "καυσ"…).
+  On a computer, Ctrl+K opens it.
+- Pin the modes you use: the bar at the top shows only your pinned ones (Calculator, Units, Currency and VAT to
+  start with), plus the one you're in. When they don't all fit, the others show as icons.
+
 ## 0.16.5 – 2026-10-13
 
 ### Fixed
