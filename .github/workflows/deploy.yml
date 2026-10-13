@@ -10,6 +10,11 @@ on:
       - main
       - preview
   workflow_dispatch:
+    inputs:
+      preview_only:
+        description: 'Only re-publish the site (for a new preview); skip the Docker image'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -50,8 +55,24 @@ jobs:
       - name: Browser tests
         run: python3 tests/test_app.py
 
+  # Only main may publish to GitHub Pages (the github-pages environment's rule), so a tested preview asks main to do it:
+  # main's run puts the site together from main and the latest preview.
+  ask-main-to-publish:
+    needs: test
+    if: github.ref == 'refs/heads/preview'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write
+    steps:
+      - name: Run this workflow on main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run deploy.yml --repo "${{ github.repository }}" --ref main -f preview_only=true
+
   pages:
     needs: test
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -106,7 +127,7 @@ jobs:
 
   docker:
     needs: test
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && inputs.preview_only != true
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
