@@ -4,7 +4,7 @@
 // the app (RATES_SNAPSHOT) is used. Rates are exact decimals (strings): amount × rate(to) ÷ rate(from), via fractions.
 const RATES_URL='https://api.frankfurter.dev/v1/latest';
 const RATES_KEY='uc-rates';
-const RATES_SNAPSHOT={date:'2026-10-09',rates:{USD:'1.1206',JPY:'177.34',CZK:'24.369',DKK:'7.4751',GBP:'0.84763',HUF:'365.08',PLN:'4.3835',RON:'5.3406',SEK:'11.1675',CHF:'0.9313',ISK:'136.8',NOK:'10.7155',TRY:'55.1033',AUD:'1.6052',BRL:'5.6086',CAD:'1.5942',CNY:'7.4992',HKD:'8.794',IDR:'20036.94',ILS:'3.426',INR:'108.3965',KRW:'1503.27',MXN:'20.395',MYR:'4.5777',NZD:'1.9961',PHP:'70.397',SGD:'1.4348',THB:'37.574',ZAR:'18.527'}};
+const RATES_SNAPSHOT={date:'2026-10-13',rates:{USD:'1.1188',JPY:'176.91',CZK:'24.368',DKK:'7.4753',GBP:'0.8446',HUF:'364.31',PLN:'4.3768',RON:'5.3363',SEK:'11.1698',CHF:'0.9312',ISK:'136.2',NOK:'10.6685',TRY:'55.2325',AUD:'1.6033',BRL:'5.6125',CAD:'1.5933',CNY:'7.489',HKD:'8.7802',IDR:'20004.87',ILS:'3.4404',INR:'106.6',KRW:'1500.81',MXN:'20.5126',MYR:'4.5714',NZD:'1.9931',PHP:'70.225',SGD:'1.4319',THB:'37.58',ZAR:'18.4561'}};
 const RATES_STALE_MS=60*60*1000;// ask again after an hour (the ECB publishes once a working day, around 16:00 CET)
 const CURRENCY_NAMES={EUR:['Ευρώ','Euro'],USD:['Δολάριο ΗΠΑ','US dollar'],GBP:['Λίρα Αγγλίας','Pound sterling'],CHF:['Φράγκο Ελβετίας','Swiss franc'],
  AUD:['Δολάριο Αυστραλίας','Australian dollar'],BGN:['Λεβ Βουλγαρίας','Bulgarian lev'],BRL:['Ρεάλ Βραζιλίας','Brazilian real'],CAD:['Δολάριο Καναδά','Canadian dollar'],

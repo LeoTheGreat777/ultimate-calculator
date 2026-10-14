@@ -163,6 +163,7 @@ function flashTabsBar(ms=1200){const nav=$('#modeTabs');if(!nav||nav.classList.c
 // there) and the calculator starts fresh; nothing comes back the other way (Units does its own math).
 function switchMode(next){
  if(next===currentTab()){syncModeTabs();return}
+ recordModeHistory();// the mode you leave keeps its result in its own History
  // Currency is the Units mode showing currencies: the tab sets unitView, the mode is 'units'
  const tab=next;next=tab==='currency'?'units':tab;
  if(mode==='calc'&&next==='units'){
@@ -330,6 +331,7 @@ function setupHoldKeys(){
  pad.addEventListener('contextmenu',e=>{if(holdKey(e.target))e.preventDefault()});
 }
 function copyResult(){
+ setTimeout(recordModeHistory,0);// a result copied is a result worth keeping
  // Copies what the screen shows: the result, the expression being typed, or in Units the converted value.
  const unitResult=()=>{const side=unitSource==='to'?'from':'to';return formatUnitResult(unitExpressions[side]??'')};
  const value=mode==='calc'?(justCalculated?fmt(lastResult):(expression+current?formatExpressionDisplay(expression+current):'')):mode==='units'?unitResult():(toolResult?.main??'');

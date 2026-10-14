@@ -1289,6 +1289,112 @@ async def esc_everywhere(browser, url):
     await p.context.close()
 
 
+async def history_per_mode(browser, url):
+    """History per mode: each tool, Units, Currency and Graph keep their own results (saved on leaving, AC/Esc, copy, kind
+    change, =), shown in their language; tapping one brings its numbers back; the Calculator's History is unchanged."""
+    L = '[history per mode] '
+    p = await new_page(browser, url, 'en', 'dark')
+    fill = lambda fid, v: p.evaluate(f"(()=>{{const e=document.getElementById('{fid}');e.value='{v}';e.dispatchEvent(new Event('input',{{bubbles:true}}))}})()")
+    rows = "[...document.querySelectorAll('#historyList .history-item')].map(r=>r.querySelector('.history-expression').textContent+' | '+r.querySelector('.history-result').textContent)"
+    await calc(p, '6*7')
+    await p.evaluate("switchMode('vat')")
+    await fill('amount', '100')
+    await p.evaluate("switchMode('fuel')")
+    for fid, v in [['fuelD', '250'], ['fuelC', '7,2'], ['fuelP', '1,85']]:
+        await fill(fid, v)
+    await p.keyboard.press('Escape')
+    await p.evaluate("switchMode('vat')")
+    await fill('amount', '50')
+    await p.evaluate("setVatAction('remove')")
+    await p.evaluate("copyResult()")
+    await p.wait_for_timeout(50)
+    await p.evaluate("openHistory()")
+    await p.wait_for_timeout(250)
+    got = await p.evaluate(f"[historyTitle.textContent,{rows},document.getElementById('historyChartButton').classList.contains('hidden')]")
+    check(L + 'VAT shows only its own results, newest first, no chart button',
+          got[0] == 'History · VAT' and got[1] == ['50,00 € with 24% VAT | 40,32 €', '100,00 € + 24% VAT | 124,00 €'] and got[2], got)
+    await p.click('#historyList .history-main >> nth=1')
+    await p.wait_for_timeout(250)
+    got = await p.evaluate("[mode,amount.value,vatAction,document.querySelector('#result').textContent]")
+    check(L + 'tapping one brings back its amount and add/remove', got == ['vat', '100', 'add', '124,00 €'], got)
+    await p.evaluate("switchMode('fuel');openHistory()")
+    await p.wait_for_timeout(250)
+    got = await p.evaluate(rows)
+    check(L + 'Fuel has its own (saved by Esc)', got == ['250 km × 7,2 L/100 km × 1,85 €/L | 33,30 €'], got)
+    await p.evaluate("closeHistory();setLanguage('el')")
+    await p.wait_for_timeout(600)
+    await p.evaluate("openHistory()")
+    await p.wait_for_timeout(250)
+    got = await p.evaluate(f"[historyTitle.textContent,{rows}]")
+    check(L + 'after a language switch it reads in the new language', got[0] == 'Ιστορικό · Καύσιμα' and '33,30 €' in got[1][0] and 'L/100 km' in got[1][0], got)
+    await p.evaluate("closeHistory();setLanguage('en')")
+    await p.wait_for_timeout(600)
+    await p.evaluate("switchMode('calc');openHistory()")
+    await p.wait_for_timeout(250)
+    got = await p.evaluate(f"[historyTitle.textContent,{rows},document.getElementById('historyChartButton').classList.contains('hidden')]")
+    check(L + 'the Calculator keeps its own History and chart', got[0] == 'History' and got[1] == ['6×7 | 42'] and not got[2], got)
+    await p.evaluate("closeHistory()")
+    # Units: = saves; tapping brings back the category, units and number
+    await p.evaluate("switchMode('units')")
+    await p.select_option('#unitCategory', 'mass')
+    for k in ['2', '5']:
+        await p.evaluate(f"toolKeyInput('{k}')")
+    await p.evaluate("window._equalsUnits()")
+    await p.wait_for_timeout(50)
+    await p.evaluate("switchMode('calc');switchMode('units');openHistory()")
+    await p.wait_for_timeout(250)
+    got = await p.evaluate(rows)
+    check(L + 'Units keeps its conversions', len(got) == 1 and got[0].startswith('25 kg | = ') and got[0].endswith(' lb') or len(got) == 1 and got[0].startswith('25 '), got)
+    await p.click('#historyList .history-main')
+    await p.wait_for_timeout(250)
+    got = await p.evaluate("[unitCategory.value,unitValueFrom.value]")
+    check(L + 'tapping a conversion brings it back', got[0] == 'mass' and got[1] == '25', got)
+    # the same result twice is kept once; an empty tool has nothing to save
+    await p.evaluate("switchMode('vat')")
+    await fill('amount', '100')
+    await p.evaluate("switchMode('calc');switchMode('vat')")
+    await fill('amount', '100')
+    await p.evaluate("switchMode('calc');switchMode('pct');switchMode('calc');switchMode('vat');openHistory()")
+    await p.wait_for_timeout(250)
+    got = await p.evaluate(rows)
+    check(L + 'the same result twice is kept once', got.count('100,00 € + 24% VAT | 124,00 €') == 1, got)
+    await p.evaluate("closeHistory();switchMode('pct');openHistory()")
+    await p.wait_for_timeout(250)
+    check(L + 'a mode with nothing saved says so', await p.evaluate("!!document.querySelector('#historyList .empty')"))
+    await p.evaluate("closeHistory();switchMode('vat');openHistory()")
+    await p.click('#clearHistory')
+    await p.click('#historyConfirmYes')
+    await p.wait_for_timeout(150)
+    got = await p.evaluate("[!!document.querySelector('#historyList .empty'),historyItems().length,modeHistory('fuel').length]")
+    check(L + 'Delete all in VAT empties only VAT', got == [True, 1, 1], got)
+    check(L + 'no JavaScript errors', not p.errors, p.errors)
+    await p.context.close()
+
+
+async def shortcuts(browser, url):
+    """Home-screen shortcuts: the manifest lists them with icons that load and match tools/make-shortcut-icons.py's list,
+    and ./?mode=… opens that mode, then the address goes back to plain ./ ."""
+    L = '[shortcuts] '
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('msi', ROOT / 'tools/make-shortcut-icons.py')
+    msi = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(msi)
+    p = await new_page(browser, url, 'en', 'dark')
+    st = await p.evaluate("""(async()=>{const m=await (await fetch('manifest.webmanifest')).json();const s=m.shortcuts||[];
+      const ok=await Promise.all(s.flatMap(x=>x.icons.map(i=>fetch(i.src).then(r=>r.ok))));return {s,ok}})()""")
+    check(L + 'the manifest has the shortcuts the script makes, every icon loads', st['s'] == msi.manifest_entries() and st['ok'] and all(st['ok']), st)
+    for m in ['vat', 'currency', 'fuel']:
+        await p.goto(url + '?mode=' + m)
+        await p.wait_for_timeout(300)
+        got = await p.evaluate("[currentTab(),location.search]")
+        check(L + f'?mode={m} opens {m}, the address is plain again', got == [m, ''], got)
+    await p.goto(url + '?mode=nonsense')
+    await p.wait_for_timeout(300)
+    check(L + 'an unknown mode opens the Calculator', await p.evaluate("currentTab()") == 'calc')
+    check(L + 'no JavaScript errors', not p.errors, p.errors)
+    await p.context.close()
+
+
 async def update_keeps_themes(browser, url):
     """An update reloads the page: own themes, the chosen theme and the language stay; colours being edited are kept."""
     L = '[update] '
@@ -1595,6 +1701,8 @@ async def main():
         await sideways_every_tab(browser, url)
         await all_modes(browser, url)
         await esc_everywhere(browser, url)
+        await history_per_mode(browser, url)
+        await shortcuts(browser, url)
         await ios_app(browser, url)
         await offline_status_and_turning(browser, url)
         await sideways_and_chips(browser, url)

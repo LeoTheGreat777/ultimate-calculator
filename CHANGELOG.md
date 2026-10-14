@@ -6,6 +6,18 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.18.0 – 2026-10-14
+
+### Added
+- Every mode has its own History: VAT shows past VAT results, Fuel past trips, Units and Currency past conversions,
+  Graph past functions. A result is kept when you leave the mode, press AC or Esc, or copy it; tap one to bring its
+  numbers back. The Calculator's History is as before.
+- Shortcuts: long-press the app's icon on Android (or on a computer, once installed) to open Currency, VAT, Units or
+  Fuel straight away.
+
+### Changed
+- The currency rates the app carries for when it can't go online are from 13 October.
+
 ## 0.17.2 – 2026-10-14
 
 ### Changed

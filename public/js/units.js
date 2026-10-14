@@ -195,6 +195,7 @@ function convertUnitExpression(source='from'){
  updateUnitsDisplay();
 }
 function equalsUnits(){
+ setTimeout(recordModeHistory,0);
  const source=unitSource||unitActiveInput||'from';
  const other=source==='from'?'to':'from';
  const expr=tidyParens(String(unitExpressions[source]??'').trim());// brackets left open at the end are dropped, as in the calculator

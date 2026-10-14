@@ -96,7 +96,7 @@ function graphKey(k){
  if(k==null)return;
  let s=graph.fns[graph.active]??'';
  if(k==='back'){const m=s.match(/(?:asin|acos|atan|sqrt|sin|cos|tan|abs|exp|log|ln|√)\($/);s=m?s.slice(0,-m[0].length):s.slice(0,-1)}
- else if(k==='clear')s='';
+ else if(k==='clear'){recordModeHistory();s=''}// the functions go to Graph's History first
  // a function of up to 120 characters, numbers of up to 15 digits (as in the calculator)
  else if(s.length>=120||/^\d$/.test(k)&&numberFull(s)){refuseKey($('#graphFns .graph-fn.active .graph-fn-src'));return}
  else if(k==='paren'){const open=(s.match(/\(/g)||[]).length-(s.match(/\)/g)||[]).length;s+=open>0&&/[0-9.xπe)]$/.test(s)?')':'('}

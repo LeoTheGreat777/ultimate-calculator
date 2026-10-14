@@ -53,7 +53,7 @@ Everything the app serves is in `public/` (the web root for both GitHub Pages an
 | `charts.js` | drawing helpers, tool charts, History chart |
 | `graph.js` | Graph mode (parser, pan/zoom, key points, drawing) |
 | `calculator.js` | calculator keys (`digit`, `operator`, brackets, `negate`, `equals`, C/AC), display, explanation |
-| `history.js` | saved calculations, the History sheet and its gestures |
+| `history.js` | saved calculations, the History sheet and its gestures; every other mode's own History (`recordModeHistory`) |
 | `units.js` | unit data and names, conversion, the two values, `unitKeyInput` |
 | `currency.js` | Currency: ECB rates (fetched, saved, shipped snapshot), `units.currency`, money and rate formats, the rate line |
 | `tools.js` | VAT, Percent, Interest, Fuel, Energy: fields, saved values, calculations, switches, `toolKeyInput`, tool field events |
@@ -148,7 +148,18 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   go, in every mode (Percent, Interest, Dates: also changing kind; Graph goes back to `graphDefault`). Only Calculator -> Units carries
   the number. Kept: choices (units picked, VAT add/remove, the kinds, Deg/Rad, f(x)), History. Typed values are
   not saved across visits; `saveTools`/`loadTools` keep only those choices. AC clears a tool.
-- **Storage:** all in the browser (`uc-history`, `uc-tools`, `uc-rates`, `uc-lang`, `uc-pins`,
+- **History per mode** (history.js): the Calculator keeps its calculations in `uc-history` (its chart too); every other mode
+  keeps its own in `uc-history-modes` ({tab: entries}, 50 each): a tool's kind, choices and fields with its line in both
+  languages (`modeSnapshot` runs the tool once per language), Units'/Currency's category, units and values, Graph's
+  functions. Tools have no =, so `recordModeHistory` saves what is finished when you leave the mode, press AC/Esc, change
+  kind, copy the result, or the app goes to the background (also = in Units, AC in Graph); the same one twice is kept
+  once. The sheet shows the mode on screen (`History · VAT`); tapping an entry brings its numbers back
+  (`restoreModeEntry`), Delete all empties that mode only. A new mode: make `modeSnapshot`/`restoreModeEntry` know it.
+- **Home-screen shortcuts:** the manifest's `shortcuts` (long-press the app icon on Android or a computer) open
+  `./?mode=vat` etc.; main.js switches to that mode at start and puts the address back to `./`. The list and the icons
+  (each the mode's tab icon on the dark background) come from `tools/make-shortcut-icons.py`; run it after changing
+  them or a tab icon (the tests compare the manifest with it). iPhones don't offer shortcuts for web apps.
+- **Storage:** all in the browser (`uc-history`, `uc-history-modes`, `uc-tools`, `uc-rates`, `uc-lang`, `uc-pins`,
   `uc-theme`, `uc-theme-pair`, `uc-custom-themes`, `uc-theme-recent`). Use `store.get/set` – localStorage can throw.
 - **Number fields** (every tool field but dates and IP/mask, `groupedField`) show thousands as they are typed: 10000 ->
   10.000 (`groupDigits` in the `input` handler, the cursor kept in place). In them a dot is always a thousands dot and the

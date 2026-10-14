@@ -1,7 +1,16 @@
 // History: saved calculations, the bottom sheet that lists them, and its gestures.
 function historyItems(){try{return JSON.parse(store.get('uc-history')||'[]')}catch{return[]}}
 function saveHistory(item){const list=historyItems();const stored={...item,shown:item.shown||formatExpressionDisplay(item.expression),result:item.result&&typeof item.result==='object'&&'n'in item.result?ratToStoreDecimal(item.result):String(item.result)};list.unshift({id:Date.now()+Math.random(),...stored});store.set('uc-history',JSON.stringify(list.slice(0,100)));renderHistory()}
-function renderHistory(){const list=historyItems();$('#historyList').innerHTML=list.length?list.map(x=>`<div class="history-item"><button class="history-main" data-history="${x.id}" type="button"><div class="history-expression">${esc((x.shown||formatInputDisplay(x.expression)))}</div><div class="history-result">${esc(fmt(x.result&&typeof x.result==='string'?ratFromString(x.result):x.result))}</div></button><button class="history-delete" data-delete="${x.id}" type="button" aria-label="${esc(t('delete'))}">×</button></div>`).join(''):`<div class="empty">${esc(t('none'))}</div>`;historyChartRefresh()}
+function renderHistory(){
+ const tab=currentTab(),calc=tab==='calc';
+ $('#historyTitle').textContent=t('history')+(calc?'':' · '+modeText(tab));
+ $('#historyChartButton')?.classList.toggle('hidden',!calc);if(!calc)$('#historyChartWrap')?.classList.add('hidden');// the chart is the Calculator's
+ const row=(id,top,bottom)=>`<div class="history-item"><button class="history-main" data-history="${id}" type="button"><div class="history-expression">${esc(top)}</div><div class="history-result">${esc(bottom)}</div></button><button class="history-delete" data-delete="${id}" type="button" aria-label="${esc(t('delete'))}">×</button></div>`;
+ const rows=calc?historyItems().map(x=>row(x.id,x.shown||formatInputDisplay(x.expression),fmt(x.result&&typeof x.result==='string'?ratFromString(x.result):x.result)))
+  :modeHistory(tab).map(x=>{const [a,b]=modeEntryLines(x);return row(x.id,a,b)});
+ $('#historyList').innerHTML=rows.length?rows.join(''):`<div class="empty">${esc(calc?t('none'):t('noneMode'))}</div>`;
+ if(calc)historyChartRefresh();
+}
 
 function openHistory(){const p=$('#historyPanel'),b=$('#historyBackdrop');renderHistory();p.classList.remove('hidden');b.classList.remove('hidden');requestAnimationFrame(()=>{p.classList.add('open');b.classList.add('open')});p.classList.remove('expanded');$('#historyList').scrollTop=0}
 function closeHistory(){const p=$('#historyPanel'),b=$('#historyBackdrop');p.classList.remove('open','expanded');b.classList.remove('open');setTimeout(()=>{if(!p.classList.contains('open')){p.classList.add('hidden');b.classList.add('hidden')}},220)}
@@ -22,9 +31,15 @@ function clearHistoryConfirm(){
  if(historyClearConfirm){btn.classList.add('hidden');confirm.classList.remove('hidden');$('#historyConfirmText').textContent=t('confirm')}else{btn.classList.remove('hidden');confirm.classList.add('hidden')}
  wrap.classList.toggle('confirming',historyClearConfirm)
 }
-function deleteAllHistory(){store.del('uc-history');historyClearConfirm=false;$('#clearHistory').classList.remove('hidden');$('#historyConfirm').classList.add('hidden');$('#historyClearWrap').classList.remove('confirming');renderHistory()}
+function deleteAllHistory(){if(currentTab()==='calc')store.del('uc-history');else setModeHistory(currentTab(),[]);historyClearConfirm=false;$('#clearHistory').classList.remove('hidden');$('#historyConfirm').classList.add('hidden');$('#historyClearWrap').classList.remove('confirming');renderHistory()}
 function historyClick(e){
  const del=e.target.closest('[data-delete]'),item=e.target.closest('[data-history]');
+ if(currentTab()!=='calc'){// another mode's own history
+  const tab=currentTab();
+  if(del){setModeHistory(tab,modeHistory(tab).filter(x=>String(x.id)!==del.dataset.delete));renderHistory();return}
+  if(item){const x=modeHistory(tab).find(x=>String(x.id)===item.dataset.history);if(x)restoreModeEntry(x)}
+  return;
+ }
  if(del){store.set('uc-history',JSON.stringify(historyItems().filter(x=>String(x.id)!==del.dataset.delete)));renderHistory();return}
  if(item){const x=historyItems().find(x=>String(x.id)===item.dataset.history);if(!x)return;closeHistory();setMode('calc');carry=null;resultNegated=false;lastExpression=x.expression;lastShown=(x.shown||formatInputDisplay(x.expression));lastResult=ratFromString(String(x.result));justCalculated=true;expression='';current='';currentIsPercent=false;howData=explanationForExpression(x.expression,lastResult)||x.how||null;if(howData&&lastShown)howData.formula=lastShown;calcHowData=howData;lastOperation=parseLastOperation(x.expression);render();syncModeTabs()}
 }
@@ -223,3 +238,84 @@ function setupHistoryGestures() {
     if (panel.classList.contains('expanded')) panel.style.height = '';
   });
 }
+
+/* ---------- History per mode ----------
+   The Calculator keeps its calculations in uc-history (above). Every other mode keeps its own results in uc-history-modes
+   ({tab: [entries]}, newest first, up to 50 each): a tool's fields and choices, Units' and Currency's conversion, Graph's
+   functions. Tools have no =, so what is on screen is saved when it is finished with: leaving the mode, AC or Esc,
+   changing kind, copying the result, the app going to the background (and = in Units/Currency, AC in Graph).
+   The same result twice in a row is kept once. A tool's line is stored in both languages, so a switch shows it in the new one. */
+const MODE_HISTORY_MAX=50;
+function modeHistoryAll(){try{const o=JSON.parse(store.get('uc-history-modes')||'{}');return o&&typeof o==='object'&&!Array.isArray(o)?o:{}}catch{return {}}}
+function modeHistory(tab){const a=modeHistoryAll()[tab];return Array.isArray(a)?a:[]}
+function setModeHistory(tab,list){const o=modeHistoryAll();if(list.length)o[tab]=list.slice(0,MODE_HISTORY_MAX);else delete o[tab];store.set('uc-history-modes',JSON.stringify(o))}
+// What the mode on screen shows, worth keeping; null when there is nothing finished.
+function modeSnapshot(){
+ const tab=currentTab();
+ if(TOOL_MODES.includes(mode)){
+  if(!toolResult?.main||!toolResult?.how)return null;
+  const inputs={};for(const [k,v] of Object.entries(toolState[mode]?.inputs||{}))if(String(v??'').trim()!=='')inputs[k]=String(v);
+  const text={},shown=lang;
+  try{for(const l of ['el','en']){lang=l;runActiveTool();text[l]={f:toolResult?.how?.formula||'',r:toolResult?.main||''}}}finally{lang=shown;runActiveTool()}
+  if(!text.en.r)return null;
+  const choices=mode==='vat'?{vat:vatAction}:mode==='dates'?{dates:dateCount}:{};
+  return {tab,kind:toolKind[mode]||null,choices,inputs,text};
+ }
+ if(mode==='units'){
+  const src=unitSource==='to'?'to':'from',other=src==='from'?'to':'from',e=unitExpressions||{};
+  if(unitError||!String(e[src]??'').trim()||e[src]==='0'||!/^-?\d+(\.\d+)?$/.test(String(e[other]??'').trim()))return null;
+  return {tab,cat:$('#unitCategory')?.value||'length',from:$('#unitFrom')?.value,to:$('#unitTo')?.value,src,expr:{from:String(e.from),to:String(e.to)}};
+ }
+ if(mode==='graph'){
+  const fns=(graph?.fns||[]).map(f=>String(f).trim()).filter(Boolean);
+  if(!fns.length||JSON.stringify(fns)===JSON.stringify(graphDefault().fns))return null;
+  return {tab,fns};
+ }
+ return null;
+}
+const snapshotKey=x=>JSON.stringify([x.kind,x.choices,x.inputs,x.cat,x.from,x.to,x.expr,x.fns]);
+function recordModeHistory(){
+ if(mode==='calc')return;
+ let x;try{x=modeSnapshot()}catch{return}
+ if(!x)return;
+ const key=snapshotKey(x),list=modeHistory(x.tab).filter(e=>e.key!==key);// the same one again moves to the top
+ list.unshift({id:Date.now()+Math.random(),t:Date.now(),key,...x});setModeHistory(x.tab,list);
+ if(!$('#historyPanel').classList.contains('hidden'))renderHistory();
+}
+// A unit as written after a number: its symbol, or its name for the ones whose short form is a word.
+const UNIT_WORDS=new Set(['stremma','acre','day','week','knot','tsp','tbsp','cup','gal','qt','pt','grad']);
+const unitSymbol=(cat,u)=>cat==='currency'?u:UNIT_WORDS.has(u)?(UNIT_LABELS[cat]?.[u]?.[lang==='el'?0:1]||u).toLowerCase():u;
+// The two lines of an entry: what was put in, and the result.
+function modeEntryLines(x){
+ if(x.text){const s=x.text[lang]||x.text.en||{};return [s.f||'',s.r||'']}
+ if(x.expr){
+  const o=x.src==='from'?'to':'from',u=s=>unitSymbol(x.cat,s==='from'?x.from:x.to);
+  return [formatUnitDisplayValue(x.expr[x.src])+' '+u(x.src),'= '+formatUnitResult(x.expr[o])+' '+u(o)];
+ }
+ if(x.fns)return [x.fns.slice(1).map((f,i)=>GRAPH_NAMES[i+1]+'(x) = '+gPretty(f)).join(' · '),'f(x) = '+gPretty(x.fns[0])];
+ return ['',''];
+}
+// Brings an entry back: its mode, kind and choices, and its numbers (what was on screen is kept first).
+function restoreModeEntry(x){
+ recordModeHistory();closeHistory();
+ if(x.tab!==currentTab())switchMode(x.tab);
+ if(x.text){
+  const m=mode;
+  if(x.kind&&KIND_FIELDS[m]?.[x.kind])toolKind[m]=x.kind;
+  if(m==='vat'&&TOGGLES.vat.options.includes(x.choices?.vat))vatAction=x.choices.vat;
+  if(m==='dates'&&['all','work'].includes(x.choices?.dates))dateCount=x.choices.dates;
+  toolState[m]={inputs:{...x.inputs},result:null};
+  renderTool();runActiveTool();saveTools();fitLayout();
+ }else if(x.expr){
+  if(x.cat!=='currency')window._unitCategory=x.cat;
+  if(units[x.cat]?.[x.from]!==undefined&&units[x.cat]?.[x.to]!==undefined)unitPick[x.cat]={from:x.from,to:x.to};
+  unitExpressions={from:x.expr.from,to:x.expr.to};unitSource=unitActiveInput=x.src;unitError='';unitSourceTyped=false;unitReplaceOnNextKey=true;
+  renderTool();convertUnitExpression(x.src);fitLayout();
+ }else if(x.fns){
+  graph={...graphDefault(),fns:x.fns.slice(0,GRAPH_NAMES.length)};graphTrace=null;
+  renderTool();fitLayout();
+ }
+ syncModeTabs();
+}
+addEventListener('pagehide',()=>recordModeHistory());
+document.addEventListener('visibilitychange',()=>{if(document.hidden)recordModeHistory()});

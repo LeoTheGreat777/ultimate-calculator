@@ -84,7 +84,9 @@ function syncHelpButton(){const l=$('#helpLabel');if(l)l.textContent=t('tips')}
 function showHelp(){
  const tab=currentTab(),h=HELP[tab]||HELP.calc,i=lang==='el'?0:1,keys=h.keys||HELP_TOOL_KEYS;
  $('#howTitle').textContent=t('tips')+' · '+modeText(tab);
- $('#howContent').innerHTML='<div class="help"><section class="help-section"><ul class="help-tips">'+h.tips.map(x=>'<li>'+esc(x[i])+'</li>').join('')+'</ul></section>'+
+ // every mode but the Calculator: a word on its own History
+ const tips=tab==='calc'?h.tips:[...h.tips,['Το Ιστορικό εδώ κρατά τα αποτελέσματα αυτής της λειτουργίας, όταν φεύγεις, πατάς AC ή αντιγράφεις. Πάτα ένα για να ξαναφέρεις τους αριθμούς του.','History here keeps this mode\'s results, when you leave, press AC or copy. Tap one to bring its numbers back.']];
+ $('#howContent').innerHTML='<div class="help"><section class="help-section"><ul class="help-tips">'+tips.map(x=>'<li>'+esc(x[i])+'</li>').join('')+'</ul></section>'+
   (hasKeyboard()?'<section class="help-section"><h3 class="help-heading">'+esc(t('keyboard'))+'</h3><ul class="help-keys">'+keys.map(([k,el,en])=>'<li><span class="help-caps">'+k.map(x=>'<kbd>'+esc(x)+'</kbd>').join('')+'</span><span>'+esc(i?en:el)+'</span></li>').join('')+'</ul></section>':'')+'</div>';
  $('#howModal').classList.add('help-open');$('#howModal').classList.remove('hidden');
  $('#howContent').scrollTop=0;

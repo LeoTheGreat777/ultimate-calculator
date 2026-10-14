@@ -125,6 +125,7 @@ function renderToggles(){
 function setVatAction(next){if(!TOGGLES.vat.options.includes(next))return;vatAction=next;renderToggles();window._runVat?.(vatAction==='add');saveTools()}
 function setToolKind(m,next){
  if(!KIND_FIELDS[m]?.[next]||next===toolKind[m])return;
+ if(mode===m)recordModeHistory();
  // like changing mode: the kind you leave starts over
  kindFields(m).forEach(id=>delete toolState[m].inputs[id]);
  toolKind[m]=next;renderToggles();
@@ -373,6 +374,7 @@ function renderToolKeypad(){
    '<button class="tool-key tool-key-wide" data-value="0" type="button">0</button><button class="tool-key" data-value="," type="button">,</button>';
 }
 function clearToolFields(){
+ recordModeHistory();// AC / Esc: what was on screen goes to History first
  if(mode==='units'){
    unitError='';unitExpressions={from:'0',to:'0'};unitSourceTyped=false;
    unitSource=unitActiveInput==='to'?'to':'from';
