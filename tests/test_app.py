@@ -1262,6 +1262,33 @@ async def all_modes(browser, url):
         await p.context.close()
 
 
+async def esc_everywhere(browser, url):
+    """Esc clears every mode like its AC key, also from a focused field; an open window (Tips) closes first."""
+    L = '[esc] '
+    p = await new_page(browser, url, 'en', 'dark')
+    bad = []
+    for m, fid, v in [('vat', 'amount', '100'), ('pct', 'pctPrice', '80'), ('loan', 'loanAmount', '1000'), ('fuel', 'fuelD', '250'), ('energy', 'energyP', '100'), ('net', 'netIp', '10.0.0.1'), ('dates', 'dateDays', '5')]:
+        await p.evaluate(f"switchMode('{m}')")
+        if m == 'dates':
+            await p.evaluate("setToolKind('dates','add')")
+        await p.click(f'#{fid}')
+        await p.keyboard.type(v)
+        await p.keyboard.press('Escape')
+        got = await p.evaluate(f"[document.getElementById('{fid}').value,document.querySelector('#result').textContent]")
+        if got[0] != '':
+            bad.append([m, got])
+    check(L + 'Esc clears every tool, from a focused field too', not bad, bad)
+    await p.evaluate("switchMode('vat')")
+    await p.click('#amount')
+    await p.keyboard.type('100')
+    await p.evaluate("showHelp()")
+    await p.keyboard.press('Escape')
+    got = await p.evaluate("[document.getElementById('howModal').classList.contains('hidden'),document.getElementById('amount').value]")
+    check(L + 'with Tips open, Esc only closes it', got == [True, '100'], got)
+    check(L + 'no JavaScript errors', not p.errors, p.errors)
+    await p.context.close()
+
+
 async def update_keeps_themes(browser, url):
     """An update reloads the page: own themes, the chosen theme and the language stay; colours being edited are kept."""
     L = '[update] '
@@ -1567,6 +1594,7 @@ async def main():
         await screen_reader(browser, url)
         await sideways_every_tab(browser, url)
         await all_modes(browser, url)
+        await esc_everywhere(browser, url)
         await ios_app(browser, url)
         await offline_status_and_turning(browser, url)
         await sideways_and_chips(browser, url)

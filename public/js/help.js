@@ -78,7 +78,7 @@ const HELP={
   ['Το κουμπί με τις στήλες δείχνει το κόστος και τις kWh ανά ώρα, ημέρα, μήνα και χρόνο. Πάτα το αποτέλεσμα για να το αντιγράψεις.','The bars button shows the cost and kWh per hour, day, month and year. Tap the result to copy it.']]}
 };
 HELP.currency.keys=HELP.units.keys;
-const HELP_TOOL_KEYS=[[['Ctrl','K'],'Όλες οι λειτουργίες','All modes'],[['Tab'],'Επόμενο πεδίο','Next field'],[['Shift','Tab'],'Προηγούμενο πεδίο','Previous field'],[['0–9'],'Αριθμοί στο πεδίο','Type in the field'],[[',','.'],'Υποδιαστολή','Decimal point'],[['Backspace'],'Σβήνει την επιλογή ή το ψηφίο πριν τον κέρσορα','Delete the selection, or the digit before the cursor'],[['−'],'Αλλάζει το πρόσημο','Change the sign'],[['Esc'],'Κλείνει ανοιχτά παράθυρα','Close open windows'],[['Alt','1–9'],'Αλλαγή λειτουργίας','Switch mode'],[['?'],'Αυτές οι συμβουλές','These tips']];
+const HELP_TOOL_KEYS=[[['Ctrl','K'],'Όλες οι λειτουργίες','All modes'],[['Tab'],'Επόμενο πεδίο','Next field'],[['Shift','Tab'],'Προηγούμενο πεδίο','Previous field'],[['0–9'],'Αριθμοί στο πεδίο','Type in the field'],[[',','.'],'Υποδιαστολή','Decimal point'],[['Backspace'],'Σβήνει την επιλογή ή το ψηφίο πριν τον κέρσορα','Delete the selection, or the digit before the cursor'],[['−'],'Αλλάζει το πρόσημο','Change the sign'],[['Esc'],'Καθαρίζει τα πεδία (AC)','Clear the fields (AC)'],[['Alt','1–9'],'Αλλαγή λειτουργίας','Switch mode'],[['?'],'Αυτές οι συμβουλές','These tips']];
 const hasKeyboard=()=>matchMedia('(hover:hover) and (pointer:fine)').matches;
 function syncHelpButton(){const l=$('#helpLabel');if(l)l.textContent=t('tips')}
 function showHelp(){

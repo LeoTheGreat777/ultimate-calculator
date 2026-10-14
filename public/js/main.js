@@ -65,6 +65,7 @@ window.addEventListener('keydown',e=>{
    if(mode==='calc'){e.preventDefault();clearAll()}
    else if(mode==='units'&&!document.activeElement?.matches('select')){e.preventDefault();toolKeyInput('clear')}
    else if(mode==='graph'){e.preventDefault();graphKey('clear')}
+   else if(TOOL_MODES.includes(mode)){e.preventDefault();document.activeElement?.blur?.();clearToolFields()}// as the AC key, in every tool
    return;
  }
  if(mode==='units'&&!document.activeElement?.matches('select')){
