@@ -72,7 +72,7 @@ function setMode(next){
 }
 // The modes, one tap each: a strip of tabs at the top of the card (scrolls sideways when they don't all fit). It shows
 // the pinned modes and the one on screen (stripModes, modes.js); every mode is in the ⊞ sheet.
-const MODE_LABELS=['calc','units','currency','graph','vat','pct','loan','dates','fuel','energy','net'];
+const MODE_LABELS=['calc','units','currency','graph','vat','pct','loan','dates','fuel','energy','net','numbers','equation'];
 function renderModeTabs(){
  const track=$('#modeTabs .mode-tabs-track');if(!track)return;
  const pins=typeof pinnedModes!=='undefined'?pinnedModes:MODE_LABELS;

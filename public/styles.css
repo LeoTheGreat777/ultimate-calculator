@@ -873,3 +873,8 @@ html.landscape .mem-key{height:28px}
 @media (hover:hover) and (pointer:fine){.fn-item:hover,.fn-const:hover{border-color:var(--accent2);background:var(--key-hover)}}
 .fn-none.hidden{display:none}
 .calculator-card.compact-display .sci-chip,.calculator-card.mobile-tool .sci-chip{height:30px;padding:0 10px}/* as tall as ? there */
+/* ---------- Equations (numtools.js): the form being solved, above the fields ---------- */
+.eq-form{margin:6px 2px 2px;font-size:14px;font-weight:650;color:var(--accent2);text-align:center;letter-spacing:.01em;white-space:nowrap;overflow:hidden}
+html.landscape .eq-form{margin:4px 0 0;font-size:13px}
+.calculator-card.fit-tight .eq-form{margin-top:2px;font-size:12px}
+.calculator-card.fit-no-form .eq-form{display:none}

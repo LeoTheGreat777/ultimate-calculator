@@ -6,6 +6,15 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.24.0 – 2026-10-16
+
+### Added
+- Numbers: the GCD and LCM of two or three numbers, with their prime factors, and the prime factors of one number with
+  its divisors and their sum (up to 15 digits: 999.999.794.345.459 = 3.162.277 × 316.227.767).
+- Equations: ax² + bx + c = 0 with two real, one double or two complex roots (x² + 2x + 5 = 0 gives −1 ± 2i), the exact
+  roots in the working (x = −1 ± √2), and a system of two equations with two unknowns. ± beside 0 for negative numbers.
+- Both are under ⊞ (pin them to have them as tabs), with Tips and History like the other modes.
+
 ## 0.23.0 – 2026-10-16
 
 ### Added

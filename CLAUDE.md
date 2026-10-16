@@ -1,6 +1,6 @@
 # Ultimate Calculator – notes for Claude
 
-An all-in-one calculator web app: calculator, graph, unit converter, currency converter, VAT, percent/discount/tip, interest (loan/savings), dates, fuel, energy and subnet (IPv4) tools.
+An all-in-one calculator web app: calculator (scientific, complex numbers, memory), graph, unit converter, currency converter, VAT, percent/discount/tip, interest (loan/savings), dates, fuel, energy, subnet (IPv4), numbers (GCD/LCM, prime factors) and equations tools.
 Plain HTML/CSS/vanilla JS, no framework, no build step, no backend. English and Greek; new users start
 in English and dark theme (people who used the app before keep Greek / their theme, see the script in the
 `<head>` of `public/index.html`). Numbers always use Greek formatting: `1.234,56`.
@@ -62,6 +62,7 @@ Everything the app serves is in `public/` (the web root for both GitHub Pages an
 | `currency.js` | Currency: ECB rates (fetched, saved, shipped snapshot), `units.currency`, money and rate formats, the rate line |
 | `tools.js` | VAT, Percent, Interest, Fuel, Energy: fields, saved values, calculations, switches, `toolKeyInput`, tool field events |
 | `dates.js` | Dates: day numbers, date pickers, Orthodox Easter and Greek public holidays, working days, the details list, the Working days chip |
+| `numtools.js` | Numbers (GCD and LCM, prime factors with Miller–Rabin and Pollard's rho, divisors) and Equations (ax² + bx + c = 0, real or complex roots, exact √Δ; a 2×2 system by Cramer's rule): `numbersCalculate`, `equationCalculate` |
 | `net.js` | Subnet: IPv4 parsing (`parseIp`, `parsePrefix` takes /24 or a mask), `dottedKey`, the details grid, the Subnet calculations |
 | `layout.js` | `fitLayout` (fits every mode to the screen), long text (`fitDisplayText`, `refuseKey`), zoom on big screens |
 | `theme.js` | themes: the ready-made ones, own themes (`deriveTheme`), Match device (`themePair`), the theme menu and the own theme editor |
@@ -147,6 +148,13 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   never "…". Sideways the left side is wider (Subnet's keypad has three columns) and the details are two columns of
   "label  value" lines, readable on a big iPhone; on shorter screens `fitLandscape` hides them (`fit-no-details`)
   and the working under ? still has it. "Between" in Dates says "Pick two dates." until both are picked, also sideways.
+  Numbers (numtools.js; kinds `gcd`: a, b, c optional; `factors`: n) works on whole numbers with BigInt ('count' fields, up to
+  15 digits): GCD and LCM through the prime factorisations, the factors by trial division to 100000 and then Pollard's rho
+  with a Miller–Rabin test, the divisors' count and sum. Equations (kinds `quad`: a, b, c, an empty one counts as 0, a = 0
+  is the linear case; `sys2`: a₁ b₁ c₁ / a₂ b₂ c₂) are exact fractions: Δ exact, √Δ simplified in the working (x = −1 ± √2),
+  complex roots as a + bi (complex.js); a system with D = 0 has no or infinitely many solutions. The form line above the
+  fields (`eqForm`) goes on a very short sideways screen (`fit-no-form`); sideways the system's six fields share one row.
+  Their keypad has ± beside 0.
 - **Switches** (VAT add/remove, the kinds of Percent, Interest and Dates) are one generic segmented control: `TOGGLES`, `toggleHtml`,
   `renderToggles`, `setupToggleSlide` (tap, drag, swipe, ← →), `.seg-toggle` in styles.css (`--n` options, `--i` chosen).
 - **Changing mode clears the mode you leave** (`resetModeInput`, called by `switchMode`): numbers typed and results
@@ -217,7 +225,7 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   a group in `MODE_GROUPS` and words in `MODE_WORDS`. On phones the search isn't focused (no keyboard popping up); long
   names shrink a little (`fitModeNames`), never "…".
 - **Modes are tabs:** a strip of tabs at the top of the card (`MODE_LABELS`, `renderModeTabs`, `switchMode`), one tap
-  each, scrolling sideways when they don't fit; Alt+1…9 on a keyboard (Energy and Subnet, the last two, have none). When they don't all fit, a slim bar under them
+  each, scrolling sideways when they don't fit; Alt+1…9 on a keyboard (Energy, Subnet, Numbers and Equations, the last four, have none). When they don't all fit, a slim bar under them
   (`.tabs-scrollbar`, `syncTabEdges`, `flashTabsBar`) shows while they move and briefly on start; it can be dragged
   or pressed (`setupTabsBar`), spans the whole strip; with a mouse it shows while the mouse is over the tabs or its strip and
   fades out shortly after (the tabs can be mouse-dragged too). Phones keep their overscroll bounce; past an end (negative/over-max `scrollLeft`, or `tabsPull` measured from

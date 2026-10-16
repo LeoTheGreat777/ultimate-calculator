@@ -17,11 +17,14 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 - Works offline once opened: the app keeps a copy on the device and updates it when online
 - Step-by-step explanations of how a result was worked out
 - Brackets that change nothing are tidied away; C clears the number being typed, AC everything
+- Memory keys: MC, MR, M+, M−, MS (Ctrl+L, R, P, Q, M on a keyboard), kept after the app is closed
 
 ### Scientific
 - The f(x) switch on the calculator's display adds scientific keys: sin, cos, tan and their inverses, ln, log, powers, roots, 1/x, x!, π, e and EE
 - Degrees or radians; exact answers wherever they are exact (2¹⁰, √(9/4), sin 30°)
 - Functions apply to the number just typed or to the result: 30 then sin gives sin(30)
+- Hyperbolic functions and their inverses, cot, sec, csc, |x|, nCr, nPr and mod; π, e, φ and 41 physical constants (CODATA 2018) with a search
+- Complex numbers: i, polar entry (2∠30), exact arithmetic, every function, results as a + bi or r∠θ
 
 ### Unit Converter
 - Length, area (including stremma), mass, volume, speed, time, data, energy, power, pressure, angle and temperature conversions
@@ -38,7 +41,7 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 - Pan, zoom, fit to the curve and save the graph as an image
 
 ### Dedicated Calculators
-- Fuel cost calculator, with saved entries and their averages
+- Fuel cost calculator
 - Electricity/energy cost calculator
 - VAT add/remove calculator (VAT rounded to cents, as on invoices)
 - Percent: price after a discount, % change between two values, and a tip calculator that splits the bill between people
@@ -46,16 +49,18 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 - Currency: the European Central Bank's daily rates for about 30 currencies, with calculations inside the values; works offline with the last rates
 - Subnet (IPv4): network, broadcast, host range, mask and wildcard from an address and a prefix or mask, and the smallest subnet for a number of hosts
 - Interest: a loan's monthly payment and total interest, how long a loan takes with the payment you can afford, and what savings grow to with monthly deposits, with charts
+- Numbers: GCD and LCM of two or three numbers, prime factors and divisors of numbers up to 15 digits
+- Equations: ax² + bx + c = 0 with real or complex roots (exact, x = −1 ± √2), and a system of two equations
 - Charts and step-by-step explanations for every tool
-- Each tool remembers the values typed in it; AC clears them
+- Each mode keeps its own History; AC clears the values
 
 ### Interface
 - Responsive desktop and mobile layouts, in portrait and landscape (keypad beside the display when a phone is turned sideways)
-- Themes: Light, Paper, Rose, Sky, Dark, Black (true black for OLED screens), Ocean, Violet, Ember, Forest, or Auto to follow the device
+- Themes: Light, Paper, Dark, Black (true black for OLED screens), your own light and dark themes, or Match device
 - English and Greek language support
 - Installable on phones: an install button opens the install dialog on Android, and shows a short Add to Home Screen guide on iPhone
 - Mobile-friendly calculator controls
-- One-tap mode tabs (Calculator, Units, Currency, Graph, VAT, Percent, Interest, Dates, Fuel, Energy, Subnet); Alt+1–9 for the first nine on a keyboard
+- One-tap mode tabs for the pinned modes, and every mode (Calculator, Units, Currency, Graph, VAT, Percent, Interest, Dates, Fuel, Energy, Subnet, Numbers, Equations) under ⊞ with a search; Alt+1–9 for the first nine on a keyboard
 - Calculation explanations presented in a readable step-by-step view
 - Tips for every mode, with keyboard shortcuts on computers, from the footer (or ? on a keyboard)
 

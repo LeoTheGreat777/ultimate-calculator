@@ -37,7 +37,8 @@ function renderToolDisplay(){refreshSide();
  d.classList.toggle('tool-empty',!toolResult);
  fitDisplayText($('#result'),24);
 }
-const FIELD_EXAMPLES={fuelD:'250',fuelC:'7,2',fuelP:'1,85',energyP:'100',energyH:'8',energyD:'30',energyR:'0,20',amount:'100',vatRate:'24%',pctPrice:'80',pctOff:'25%',pctFrom:'80',pctTo:'100',tipBill:'60',tipRate:'10%',tipPeople:'1',loanAmount:'10.000',payAmount:'10.000',payRate:'4%',payMonthly:'300',loanRate:'4%',loanYears:'5',saveStart:'1.000',saveMonthly:'100',saveRate:'3%',saveYears:'10',dateDays:'30',netIp:'192.168.1.10',netPrefix:'24',netHosts:'50',value:'10'};
+const FIELD_EXAMPLES={fuelD:'250',fuelC:'7,2',fuelP:'1,85',energyP:'100',energyH:'8',energyD:'30',energyR:'0,20',amount:'100',vatRate:'24%',pctPrice:'80',pctOff:'25%',pctFrom:'80',pctTo:'100',tipBill:'60',tipRate:'10%',tipPeople:'1',loanAmount:'10.000',payAmount:'10.000',payRate:'4%',payMonthly:'300',loanRate:'4%',loanYears:'5',saveStart:'1.000',saveMonthly:'100',saveRate:'3%',saveYears:'10',dateDays:'30',netIp:'192.168.1.10',netPrefix:'24',netHosts:'50',value:'10',
+ numA:'48',numB:'18',numC:'',numN:'360',eqA:'1',eqB:'-3',eqC:'2',sxA1:'2',sxB1:'1',sxC1:'5',sxA2:'1',sxB2:'-1',sxC2:'1'};
 let vatAction='add';
 const liveToolNumber=id=>{const raw=normalizeNumericInput(fieldValue(id));if(raw==='')return null;const n=Number(raw);return Number.isFinite(n)?n:null};
 // On phones the fields are filled only from the app's own keypad, so the native keyboard never opens.
@@ -54,17 +55,20 @@ function setToolResult(main,detail='',how=null){toolResult={main,detail,how};if(
 const KIND_FIELDS={pct:{discount:['pctPrice','pctOff'],change:['pctFrom','pctTo'],tip:['tipBill','tipRate','tipPeople']},
  loan:{loan:['loanAmount','loanRate','loanYears'],payoff:['payAmount','payRate','payMonthly'],savings:['saveStart','saveMonthly','saveRate','saveYears']},
  dates:{between:['dateFrom','dateTo'],add:['dateStart','dateDays']},
- net:{subnet:['netIp','netPrefix'],hosts:['netHosts']}};
-const KIND_LABELS={pct:['pctDiscount','pctChange','pctTip'],loan:['loanLoan','loanPayoff','loanSavings'],dates:['dateBetween','dateAdd'],net:['netKindSubnet','netKindHosts']};
-const ONE_ROW_KINDS=new Set(['tip']);
-let toolKind={pct:'discount',loan:'loan',dates:'between',net:'subnet'};
+ net:{subnet:['netIp','netPrefix'],hosts:['netHosts']},
+ numbers:{gcd:['numA','numB','numC'],factors:['numN']},
+ equation:{quad:['eqA','eqB','eqC'],sys2:['sxA1','sxB1','sxC1','sxA2','sxB2','sxC2']}};
+const KIND_LABELS={pct:['pctDiscount','pctChange','pctTip'],loan:['loanLoan','loanPayoff','loanSavings'],dates:['dateBetween','dateAdd'],net:['netKindSubnet','netKindHosts'],numbers:['numKindGcd','numKindFactors'],equation:['eqKindQuad','eqKindSys']};
+const ONE_ROW_KINDS=new Set(['tip','gcd','quad','sys2']);// three fields to a row (sys2: two rows of a₁ b₁ c₁ / a₂ b₂ c₂)
+const KIND_COLS={};// fields to a row sideways, when not all of them (sys2 has all six in one row)
+let toolKind={pct:'discount',loan:'loan',dates:'between',net:'subnet',numbers:'gcd',equation:'quad'};
 let dateCount='all';// Dates: count all days, or working days only
 const kindFields=(m=mode)=>KIND_FIELDS[m]?.[toolKind[m]]||[];
 const TOOL_DEFAULTS={net:{netPrefix:'24'},vat:{vatRate:'24'},dates:{dateFrom:()=>isoDate(todayNumber()),dateStart:()=>isoDate(todayNumber())}};
 // Fields that aren't plain numbers: 'count' (People: digits only), 'int' (whole, may be negative: Dates' days; the
 // , key becomes ±), 'date' (the device's own date picker, <input type="date">, value YYYY-MM-DD; not typed on the keypad).
 // 'ip' and 'mask' (Subnet: digits and dots, 1.2.3.4; a mask field also takes a prefix like 24; the , key types a dot).
-const FIELD_TYPE={tipPeople:'count',dateDays:'int',dateFrom:'date',dateTo:'date',dateStart:'date',netIp:'ip',netPrefix:'mask',netHosts:'count'};
+const FIELD_TYPE={numA:'count',numB:'count',numC:'count',numN:'count',tipPeople:'count',dateDays:'int',dateFrom:'date',dateTo:'date',dateStart:'date',netIp:'ip',netPrefix:'mask',netHosts:'count'};
 const dottedField=id=>FIELD_TYPE[id]==='ip'||FIELD_TYPE[id]==='mask';
 // A shorter label for when the long one doesn't fit on its line (sideways, the fields share one row): fitShortLabels.
 const FIELD_SHORT={fuelD:['Απόσταση','Distance'],fuelC:['L/100 km','L/100 km'],fuelP:['Τιμή / L','Price / L'],energyP:['Ισχύς (W)','Power (W)'],
@@ -135,11 +139,16 @@ function setToolKind(m,next){
 // The switch and the fields of a tool with kinds. Changing kind replaces only the fields, so the switch keeps its slide animation.
 // In landscape a kind's fields share one row (--f fields), so the switch above them still fits beside the keypad.
 const kindGridClass=()=>'tool-grid kind-grid'+(ONE_ROW_KINDS.has(toolKind[mode])?' cols-3':'');
-function kindPanelHtml(){return toggleHtml(mode,true)+'<div class="'+kindGridClass()+'" style="--f:'+kindFields().length+'">'+kindFieldsHtml()+'</div>'+(mode==='net'?'<div id="netDetails" class="net-details"></div>':'')}
+// Equations: the form being solved, above its fields
+const EQ_FORMS={quad:'ax² + bx + c = 0',sys2:'a₁x + b₁y = c₁  ·  a₂x + b₂y = c₂'};
+const eqFormHtml=()=>mode==='equation'?'<p class="eq-form" id="eqForm">'+EQ_FORMS[toolKind.equation]+'</p>':'';
+const kindCols=()=>KIND_COLS[toolKind[mode]]||kindFields().length;
+function kindPanelHtml(){return toggleHtml(mode,true)+eqFormHtml()+'<div class="'+kindGridClass()+'" style="--f:'+kindCols()+'">'+kindFieldsHtml()+'</div>'+(mode==='net'?'<div id="netDetails" class="net-details"></div>':'')}
 function kindFieldsHtml(){return kindFields().map(id=>field(id,t(id))).join('')}
 function renderKindFields(){
  const grid=$('#toolPanel .tool-grid');if(!grid||!KIND_FIELDS[mode])return;
- grid.innerHTML=kindFieldsHtml();grid.className=kindGridClass();grid.style.setProperty('--f',String(kindFields().length));
+ grid.innerHTML=kindFieldsHtml();grid.className=kindGridClass();grid.style.setProperty('--f',String(kindCols()));
+ const form=$('#eqForm');if(form)form.textContent=EQ_FORMS[toolKind.equation];
  $$('#toolPanel input[data-tool-input]').forEach(i=>fitDisplayText(i,12));
  setActiveToolInput($('#toolPanel input[data-tool-input]'));
  fitLayout();
@@ -371,7 +380,8 @@ function renderToolKeypad(){
    '<button class="tool-key" data-value="7" type="button">7</button><button class="tool-key" data-value="8" type="button">8</button><button class="tool-key" data-value="9" type="button">9</button>'+
    '<button class="tool-key" data-value="4" type="button">4</button><button class="tool-key" data-value="5" type="button">5</button><button class="tool-key" data-value="6" type="button">6</button>'+
    '<button class="tool-key" data-value="1" type="button">1</button><button class="tool-key" data-value="2" type="button">2</button><button class="tool-key" data-value="3" type="button">3</button>'+
-   '<button class="tool-key tool-key-wide" data-value="0" type="button">0</button><button class="tool-key" data-value="," type="button">,</button>';
+   // Equations need negative numbers: ± takes half of the 0 key's place
+   (mode==='equation'?'<button class="tool-key" data-value="-" type="button" aria-label="'+esc(lang==='el'?'Αλλαγή προσήμου':'Change sign')+'">±</button><button class="tool-key" data-value="0" type="button">0</button>':'<button class="tool-key tool-key-wide" data-value="0" type="button">0</button>')+'<button class="tool-key" data-value="," type="button">,</button>';
 }
 function clearToolFields(){
  recordModeHistory();// AC / Esc: what was on screen goes to History first
@@ -422,6 +432,8 @@ function runActiveTool(){
  if(mode==='loan'){window._runLoan?.();return}
  if(mode==='dates'){window._runDates?.();return}
  if(mode==='net'){window._runNet?.();return}
+ if(mode==='numbers'){window._runNumbers?.();return}
+ if(mode==='equation'){window._runEquation?.();return}
  if(mode==='units'){window._runUnits?.();return}
 }
 

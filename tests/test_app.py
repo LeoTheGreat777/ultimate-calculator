@@ -670,11 +670,13 @@ async def phone(browser, url, lang, theme, size):
         await p.tap(f'.key[data-value="{key}"]')
     await p.tap('.key[data-action="equals"]')
     check(L + 'keypad works', await p.evaluate(R) == '8')
-    for m in ['calc', 'sci', 'units', 'currency', 'graph', 'vat', 'pct', 'tip', 'loan', 'savings', 'dates', 'fuel', 'energy', 'net']:
+    for m in ['calc', 'sci', 'units', 'currency', 'graph', 'vat', 'pct', 'tip', 'loan', 'savings', 'dates', 'fuel', 'energy', 'net', 'numbers', 'factors', 'equation', 'sys2']:
         # 'sci' is the Calculator with the scientific keys on
         # 'tip' is Percent's tip, the kind with the most fields
         await p.evaluate("switchMode('calc');if(!sciMode)toggleSci()" if m == 'sci' else "switchMode('pct');setToolKind('pct','tip')" if m == 'tip'
                          else "switchMode('loan');setToolKind('loan','savings')" if m == 'savings'
+                         else "switchMode('numbers');setToolKind('numbers','factors')" if m == 'factors'
+                         else "switchMode('equation');setToolKind('equation','sys2')" if m == 'sys2'
                          else "switchMode('net');setToolKind('net','subnet');for(const[k,v] of [['netIp','10.0.0.5'],['netPrefix','16']]){const i=document.getElementById(k);i.value=v;i.dispatchEvent(new Event('input',{bubbles:true}))}" if m == 'net' else f"switchMode('{m}')")
         await p.wait_for_timeout(200)
         # compared with the real screen size: a phone browser widens the page to fit content that is too wide
@@ -1162,7 +1164,9 @@ async def sideways_every_tab(browser, url):
     sticks out of the screen (Dates' list included), and every tab but Graph and Scientific has the same key size."""
     fill = {'vat': [['amount', '1234567,89']], 'pct': [['pctPrice', '1250'], ['pctOff', '25']], 'fuel': [['fuelD', '1250'], ['fuelC', '6,5'], ['fuelP', '1,85']],
             'energy': [['energyP', '2000'], ['energyH', '3'], ['energyD', '30'], ['energyR', '0,15']], 'loan': [['loanAmount', '250000'], ['loanRate', '4'], ['loanYears', '30']],
-            'net': [['netIp', '192.168.100.100'], ['netPrefix', '26']], 'dates': [['dateTo', '2027-03-15']]}
+            'net': [['netIp', '192.168.100.100'], ['netPrefix', '26']], 'dates': [['dateTo', '2027-03-15']],
+            'numbers': [['numA', '123456789012'], ['numB', '987654321'], ['numC', '360'], ['numN', '600851475143']],
+            'equation': [['eqA', '1'], ['eqB', '2'], ['eqC', '5'], ['sxA1', '2'], ['sxB1', '1'], ['sxC1', '5'], ['sxA2', '1'], ['sxB2', '-1'], ['sxC2', '1']]}
     for w, h in [(667, 330), (814, 409)]:
         for lang in ['en', 'el']:
             L = f'[sideways {w}x{h} {lang}] '
@@ -1175,7 +1179,8 @@ async def sideways_every_tab(browser, url):
             await p.wait_for_timeout(300)
             bad, keys = [], {}
             for m, kind in [('calc', None), ('units', None), ('currency', None), ('vat', None), ('pct', 'discount'), ('pct', 'tip'), ('loan', 'loan'),
-                            ('loan', 'payoff'), ('loan', 'savings'), ('dates', 'between'), ('dates', 'add'), ('fuel', None), ('energy', None), ('net', 'subnet')]:
+                            ('loan', 'payoff'), ('loan', 'savings'), ('dates', 'between'), ('dates', 'add'), ('fuel', None), ('energy', None), ('net', 'subnet'),
+                            ('numbers', 'gcd'), ('numbers', 'factors'), ('equation', 'quad'), ('equation', 'sys2')]:
                 await p.evaluate(f"switchMode('{m}')")
                 if kind:
                     await p.evaluate(f"setToolKind('{m}','{kind}')")
@@ -1207,7 +1212,7 @@ async def all_modes(browser, url):
     await p.click('#modesButton')
     await p.wait_for_timeout(100)
     got = await p.evaluate("[!modesModal.classList.contains('hidden'),document.querySelectorAll('#modesList .mode-group').length,[...document.querySelectorAll('#modesList .mode-pick')].map(b=>b.dataset.mode),document.activeElement.id]")
-    check(L + 'the sheet has every mode in 3 groups, the search has the focus', got[0] and got[1] == 3 and sorted(got[2]) == sorted(['calc', 'units', 'currency', 'graph', 'vat', 'pct', 'loan', 'dates', 'fuel', 'energy', 'net']) and got[3] == 'modesSearch', got)
+    check(L + 'the sheet has every mode in 3 groups, the search has the focus', got[0] and got[1] == 3 and sorted(got[2]) == sorted(['calc', 'units', 'currency', 'graph', 'vat', 'pct', 'loan', 'dates', 'fuel', 'energy', 'net', 'numbers', 'equation']) and got[3] == 'modesSearch', got)
     for q, want in [('tip', ['pct']), ('loan', ['loan']), ('ip', ['net']), ('καυσ', ['fuel']), ('ΦΠΑ', ['vat']), ('zzz', [])]:
         await p.fill('#modesSearch', q)
         got = await p.evaluate("[...document.querySelectorAll('#modesList .mode-pick')].map(b=>b.dataset.mode)")
@@ -1984,11 +1989,75 @@ async def complex_numbers(browser, url):
     await p.context.close()
 
 
+async def numbers_equations(browser, url):
+    """Numbers (GCD and LCM, prime factors and divisors) and Equations (ax² + bx + c = 0 with complex roots, a 2×2 system),
+    typed on the keypad, in both languages, with the working and History."""
+    L = '[numbers & equations] '
+    p = await new_page(browser, url, 'en', 'dark')
+    run = """([m,k,f])=>{switchMode(m);setToolKind(m,k);for(const[id,v] of Object.entries(f)){const e=document.getElementById(id);e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}))}
+      return [document.querySelector('#result').textContent,document.querySelector('#expression').textContent]}"""
+    cases = [('numbers', 'gcd', {'numA': '48', 'numB': '18', 'numC': '30'}, ['GCD 6 · LCM 720', '48 = 2⁴ × 3 · 18 = 2 × 3² · 30 = 2 × 3 × 5']),
+             ('numbers', 'gcd', {'numA': '12', 'numB': '35', 'numC': ''}, ['GCD 1 · LCM 420', '12 = 2² × 3 · 35 = 5 × 7']),
+             ('numbers', 'factors', {'numN': '360'}, ['2³ × 3² × 5', 'Divisors: 24 · sum 1.170']),
+             ('numbers', 'factors', {'numN': '97'}, ['97', 'A prime number']),
+             ('numbers', 'factors', {'numN': '600851475143'}, ['71 × 839 × 1.471 × 6.857', 'Divisors: 16 · sum 610.544.148.480']),
+             ('numbers', 'factors', {'numN': '999999794345459'}, ['3.162.277 × 316.227.767', 'Divisors: 4 · sum 1.000.000.113.735.504']),
+             ('equation', 'quad', {'eqA': '1', 'eqB': '2', 'eqC': '-1'}, ['x₁ = 0,414214, x₂ = -2,414214', 'Δ = 8 · two real roots']),
+             ('equation', 'quad', {'eqA': '1', 'eqB': '2', 'eqC': '5'}, ['x₁ = -1 + 2i, x₂ = -1 − 2i', 'Δ = -16 · two complex roots']),
+             ('equation', 'quad', {'eqA': '1', 'eqB': '-2', 'eqC': '1'}, ['x = 1', 'Δ = 0 · one double root']),
+             ('equation', 'quad', {'eqA': '2', 'eqB': '', 'eqC': '-8'}, ['x₁ = 2, x₂ = -2', 'Δ = 64 · two real roots']),
+             ('equation', 'quad', {'eqA': '0', 'eqB': '2', 'eqC': '-4'}, ['x = 2', 'Linear (a = 0)']),
+             ('equation', 'sys2', {'sxA1': '2', 'sxB1': '1', 'sxC1': '5', 'sxA2': '1', 'sxB2': '-1', 'sxC2': '1'}, ['x = 2, y = 1', 'D = -3']),
+             ('equation', 'sys2', {'sxA1': '1', 'sxB1': '1', 'sxC1': '2', 'sxA2': '2', 'sxB2': '2', 'sxC2': '4'}, ['Infinitely many solutions', 'D = 0']),
+             ('equation', 'sys2', {'sxA1': '1', 'sxB1': '1', 'sxC1': '2', 'sxA2': '2', 'sxB2': '2', 'sxC2': '5'}, ['No solution', 'D = 0'])]
+    bad = []
+    for m, k, f, want in cases:
+        got = await p.evaluate(run, [m, k, f])
+        if got != want:
+            bad.append((k, f, got, want))
+    check(L + 'GCD/LCM, prime factors (big ones too), quadratic (complex, double, linear), 2×2 system', not bad, bad)
+    st = await p.evaluate("[howData.formula,howData.steps.map(s=>s.title).join(' | ')]")
+    check(L + 'the system has its working (Cramer)', st[0] and 'D' in st[1], st)
+    await p.evaluate(run, ['equation', 'quad', {'eqA': '1', 'eqB': '0', 'eqC': '-2'}])
+    st = await p.evaluate("howData.steps.map(s=>s.text||'').join(' | ')")
+    check(L + 'the working gives the exact roots: ±√2', '√2' in st, st)
+    # typed on the keypad: ± for a negative coefficient; the counting fields take no comma
+    await p.evaluate("switchMode('equation');setToolKind('equation','quad')")
+    await p.click('.tool-key[data-action="clear-all"]')
+    await p.click('#eqA')
+    for k in ['1']:
+        await p.click(f'#keypad [data-value="{k}"]')
+    await p.click('#eqB')
+    await p.click('#keypad [data-value="4"]')
+    await p.click('#eqC')
+    await p.click('#keypad [data-value="3"]')
+    await p.click('#keypad [data-value="-"]')
+    check(L + 'typed with ± : x² + 4x − 3', await p.evaluate("[eqC.value,document.querySelector('#result').textContent]") == ['-3', 'x₁ = 0,645751, x₂ = -4,645751'], await p.evaluate("[eqC.value,document.querySelector('#result').textContent]"))
+    await p.evaluate("switchMode('numbers');setToolKind('numbers','factors')")
+    await p.click('.tool-key[data-action="clear-all"]')
+    await p.click('#numN')
+    for k in ['1', '2']:
+        await p.click(f'#keypad [data-value="{k}"]')
+    await p.keyboard.type(',5')
+    check(L + 'a number to factor takes no comma', await p.evaluate("numN.value") == '125', await p.evaluate("numN.value"))
+    check(L + '125 = 5³', await p.evaluate("document.querySelector('#result').textContent") == '5³')
+    await p.evaluate("setLanguage('el')")
+    await p.wait_for_timeout(500)
+    check(L + 'Greek after a live switch', await p.evaluate("[document.querySelector('#expression').textContent,document.querySelector('[data-tab=\\'numbers\\']')?.textContent||MODE_TRANSLATIONS.numbers[0]]") == ['Διαιρέτες: 4 · άθροισμα 156', 'Αριθμοί'],
+          await p.evaluate("[document.querySelector('#expression').textContent]"))
+    await p.evaluate("switchMode('calc')")
+    st = await p.evaluate("(JSON.parse(localStorage.getItem('uc-history-modes')||'{}').numbers||[]).length")
+    check(L + 'History keeps the factorisation when leaving the mode', st >= 1, st)
+    await p.evaluate("setLanguage('en')")
+    check(L + 'no JavaScript errors', not p.errors, p.errors)
+    await p.context.close()
+
+
 async def foldables(browser, url):
     """Foldables: an inner screen held sideways (iPhone Duo, Galaxy Fold: wide, not phone-short) gets the sideways layout
     with big keys and nothing scrolls; half open like a book (two screen segments), the fold falls between the display
     and the keypad."""
-    tabs = ['calc', 'units', 'currency', 'graph', 'vat', 'pct', 'loan', 'dates', 'fuel', 'energy', 'net']
+    tabs = ['calc', 'units', 'currency', 'graph', 'vat', 'pct', 'loan', 'dates', 'fuel', 'energy', 'net', 'numbers', 'equation']
     for size in [(924, 693), (832, 620)]:
         L = f'[foldables {size[0]}x{size[1]}] '
         p = await new_page(browser, url, 'el', 'dark', phone=True, size=size)
@@ -2033,7 +2102,7 @@ async def big_screen_dialogs(browser, url):
         L = f'[big screen dialogs {lang}] '
         p = await new_page(browser, url, lang, 'dark', size=(1920, 1080))
         bad = []
-        for m in ['calc', 'units', 'currency', 'graph', 'vat', 'pct', 'loan', 'dates', 'fuel', 'energy', 'net']:
+        for m in ['calc', 'units', 'currency', 'graph', 'vat', 'pct', 'loan', 'dates', 'fuel', 'energy', 'net', 'numbers', 'equation']:
             await p.evaluate(f"closeHow();switchMode('{m}');showHelp()")
             if await p.evaluate(scrolls):
                 bad.append(m)
@@ -2095,6 +2164,7 @@ async def main():
         await memory_keys(browser, url)
         await more_functions(browser, url)
         await complex_numbers(browser, url)
+        await numbers_equations(browser, url)
         await offline(browser)
         await preview_site(browser)
         await currency_offline(browser, url)

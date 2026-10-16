@@ -75,6 +75,14 @@ const HELP={
   ['Συμπλήρωσε απόσταση, κατανάλωση και τιμή. Το κόστος βγαίνει αμέσως.','Fill in distance, consumption and price. The cost shows up right away.'],
   ['Την κατανάλωση σε L/100 km τη δείχνει ο υπολογιστής ταξιδιού του αυτοκινήτου. Για ταξίδι με επιστροφή, βάλε διπλή απόσταση.','The car’s trip computer shows consumption in L/100 km. For a round trip, enter double the distance.'],
   ['Το κουμπί με τις στήλες δείχνει το κόστος με λίγο διαφορετική τιμή ή κατανάλωση, και με επιστροφή. Πάτα το αποτέλεσμα για να το αντιγράψεις.','The bars button shows the cost at a slightly different price or consumption, and for a return trip. Tap the result to copy it.']]},
+ numbers:{tips:[
+  ['«ΜΚΔ · ΕΚΠ»: ο Μέγιστος Κοινός Διαιρέτης και το Ελάχιστο Κοινό Πολλαπλάσιο δύο ή τριών αριθμών, με τον τρόπο του σχολείου: από τους πρώτους παράγοντες.','“GCD · LCM”: the greatest common divisor and least common multiple of two or three numbers, the school way: from their prime factors.'],
+  ['«Παράγοντες»: ένας αριθμός ως γινόμενο πρώτων (360 = 2³ × 3² × 5), αν είναι πρώτος, πόσους διαιρέτες έχει και ποιους (στο ?).','“Factors”: a number as a product of primes (360 = 2³ × 3² × 5), whether it is prime, and how many divisors it has and which (under ?).'],
+  ['Δέχεται ακέραιους ως 15 ψηφία.','Whole numbers of up to 15 digits.']]},
+ equation:{tips:[
+  ['«ax² + bx + c»: οι ρίζες μιας εξίσωσης δευτέρου βαθμού, πραγματικές ή μιγαδικές, ακριβείς όπου γίνεται (x = −1 ± √2). Με a = 0 λύνει την bx + c = 0.','“ax² + bx + c”: the roots of a quadratic, real or complex, exact where they can be (x = −1 ± √2). With a = 0 it solves bx + c = 0.'],
+  ['«Σύστημα 2×2»: οι εξισώσεις a₁x + b₁y = c₁ και a₂x + b₂y = c₂, με ορίζουσες (κανόνας του Cramer).','“2×2 system”: the equations a₁x + b₁y = c₁ and a₂x + b₂y = c₂, by determinants (Cramer’s rule).'],
+  ['Το ± αλλάζει το πρόσημο του αριθμού που γράφεις. Το ? δείχνει τη λύση βήμα βήμα.','± changes the sign of the number you are typing. ? shows the solution step by step.']]},
  energy:{tips:[
   ['Την ισχύ σε W τη γράφει το ταμπελάκι ή το κουτί της συσκευής. Η τιμή ανά kWh είναι στον λογαριασμό του ρεύματος.','The power in W is on the device’s label or box. The price per kWh is on your electricity bill.'],
   ['Βάλε 30 ημέρες για το κόστος ενός μήνα ή 365 για έναν χρόνο.','Use 30 days for a month’s cost, or 365 for a year.'],
