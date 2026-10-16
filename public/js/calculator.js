@@ -2,6 +2,7 @@
 // After a result, the next calculation starts from its full-precision value (carry). On screen that value shows rounded, like the result did.
 function formatExpressionDisplay(s){
  s=String(s??'');
+ if(s.includes('⟪⟫'))return formatInputDisplay(s.replace(/⟪⟫/g,'\u0005')).replace(/\u0005/g,carryCx?'('+fmtCx(carryCx,'rect')+')':'');// a complex result carried on
  if(carry&&carry.raw){const i=s.indexOf(carry.raw);if(i===0)return carry.shown+formatInputDisplay(s.slice(carry.raw.length));if(i>0&&!/[0-9.]/.test(s[i-1])&&!/[0-9.]/.test(s[i+carry.raw.length]||''))return formatInputDisplay(s.slice(0,i))+carry.shown+formatInputDisplay(s.slice(i+carry.raw.length))}
  return formatInputDisplay(s);
 }
@@ -50,7 +51,7 @@ function clearButtonAction(){
  if(expression){clearAll();return}
  clearAll();
 }
-function backspace(){resetHow();if(justCalculated){clearAll();return}if(!current&&carry&&expression===carry.raw){expression=carry.plain;carry=null}if(current){current=current.slice(0,-1);if(current==='−')current='-';currentIsPercent=false}else if(expression){const f=expression.match(FN_OPEN_END)||expression.match(/⟨\w+⟩$/);expression=expression.slice(0,-(f?f[0].length:1))}render()}
+function backspace(){resetHow();if(justCalculated){clearAll();return}if(!current&&carry&&expression===carry.raw){expression=carry.plain;carry=null}if(current){current=current.slice(0,-1);if(current==='−')current='-';currentIsPercent=false}else if(expression){const f=expression.match(FN_OPEN_END)||expression.match(/⟨\w+⟩$|⟪⟫$/);expression=expression.slice(0,-(f?f[0].length:1))}render()}
 function digit(v){
  if(v===',')v='.';
  if(memFresh&&current&&!justCalculated){current='';currentIsPercent=false}// after MR, M+ …: a new number
@@ -59,7 +60,7 @@ function digit(v){
  if(justCalculated){expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null}
  // after a closed bracket or a percent, a new number is multiplied: (8+9)5 → (8+9)×5, 10%5 → 10%×5 (as in Units)
  if(currentIsPercent){expression+=current+'×';current='';currentIsPercent=false}
- else if(!current&&/[)πeφ⟩!]$/.test(expression))expression+='×';
+ else if(!current&&/[)πeφ⟩⟫i!]$/.test(expression))expression+='×';
  if(v==='.'&&current.includes('.'))return;
  if(v==='.'&&(!current||current==='-'))current+='0.';else if(current==='0'&&v!=='.')current=v;else current+=v;
  render()
@@ -121,8 +122,7 @@ function parenthesis(ch){
 }
 function operator(op){
  resetHow();
- if(justCalculated){expression=carryText(lastResult,18);if(resultNegated&&lastResult.n<0n)carry.shown='(−'+fmt(carry.value)+')';// turned negative with ±: (−84)+…
-  resultNegated=false;current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null}
+ if(justCalculated)continueFromResult();// the result goes on: 84+…
  if(current==='-'&&expression){current=''}
  if(op==='-'&&!current&&/[×÷(^CPm]$/.test(expression)){current='-';render();return}
  if(!current&&!expression){if(op==='-'){current='-';render()}return;}if(!current&&/\($/.test(expression))return;
@@ -137,7 +137,7 @@ function negate(){
  if(justCalculated){
   if(!lastResult)return;
   const prevShown=lastShown||formatExpressionDisplay(lastExpression);
-  carry=null;resultNegated=!resultNegated;lastResult=ratMul(lastResult,rat(-1n));lastExpression='-('+lastExpression+')';lastShown='−('+prevShown+')';lastOperation=null;
+  carry=null;resultNegated=!resultNegated;lastResult=vNeg(lastResult);lastExpression='-('+lastExpression+')';lastShown='−('+prevShown+')';lastOperation=null;
   howData=explanationForExpression(lastExpression,lastResult)||{formula:lastShown,steps:[lastShown+' = '+fmt(lastResult)],result:fmt(lastResult)};
   if(howData&&!howData.spaced)howData.formula=lastShown;calcHowData=howData;
   render();return;
@@ -161,7 +161,7 @@ function parseLastOperation(full){const m=String(full).match(/^(.*?)([+\-×÷])(
 function repeatEquals(){
  if(!justCalculated||!lastOperation)return false;
  resetHow();
- try{const rhs=lastOperation.rhs,base=carryText(lastResult,24),full=base+lastOperation.op+rhs,value=evalExpr(full);lastExpression=full;lastShown=formatExpressionDisplay(full);lastResult=value;justCalculated=true;resultNegated=false;howData=explanationForExpression(full,value)||{formula:formatExpressionDisplay(full),steps:[`${formatExpressionDisplay(full)} = ${fmt(value)}`],result:fmt(value)};calcHowData=howData;saveHistory({expression:full,result:value,how:howData});render();return true}catch(e){calcError=calcErrorKind(e);render();return true}
+ try{const rhs=lastOperation.rhs,base=isCx(lastResult)?(carryCx=lastResult,carry=null,'⟪⟫'):carryText(lastResult,24),full=base+lastOperation.op+rhs,value=evalExpr(full);lastExpression=full;lastShown=formatExpressionDisplay(full);lastResult=value;justCalculated=true;resultNegated=false;howData=explanationForExpression(full,value)||{formula:formatExpressionDisplay(full),steps:[`${formatExpressionDisplay(full)} = ${fmt(value)}`],result:fmt(value)};calcHowData=howData;saveHistory({expression:full,result:value,how:howData});render();return true}catch(e){calcError=calcErrorKind(e);render();return true}
 }
 function equals(){
  if(justCalculated&&repeatEquals())return;
@@ -184,17 +184,17 @@ let sciHyp=false;// hyp: sin, cos, tan become sinh, cosh, tanh (and their invers
 const SCI_KEYS=[['2nd'],['angle'],['sin','asin'],['cos','acos'],['tan','atan'],
  ['sq','cube'],['pow','root'],['sqrt','cbrt'],['ln','exp'],['log','pow10'],
  ['inv'],['fact'],['pi'],['e'],['ee'],
- ['hyp'],['ncr','npr'],['mod','abs'],['phi'],['more']];
+ ['hyp'],['ncr','npr'],['mod','abs'],['i','polar'],['more']];
 // a function's name on a key: asin -> sin⁻¹, asinh -> sinh⁻¹
 const fnLabel=n=>/^a(?:sin|cos|tan|cot|sec|csc)h?$/.test(n)?n.slice(1)+'⁻¹':n;
 function sciLabel(k){
  return {'2nd':'2nd',angle:angleUnit==='deg'?'Deg':'Rad',sin:'sin',cos:'cos',tan:'tan',asin:'sin⁻¹',acos:'cos⁻¹',atan:'tan⁻¹',
   sq:'x²',cube:'x³',pow:'xʸ',root:'ʸ√x',sqrt:'√x',cbrt:'∛x',ln:'ln',exp:'eˣ',log:'log',pow10:'10ˣ',inv:'1/x',fact:'x!',pi:'π',e:'e',ee:'EE',
-  hyp:'hyp',ncr:'nCr',npr:'nPr',mod:'mod',abs:'|x|',phi:'φ',more:'⋯'}[k]??fnLabel(k);
+  hyp:'hyp',ncr:'nCr',npr:'nPr',mod:'mod',abs:'|x|',phi:'φ',more:'⋯',i:'i',polar:'∠'}[k]??fnLabel(k);
 }
 function sciAria(k){
- const el={hyp:'Υπερβολικές συναρτήσεις',ncr:'Συνδυασμοί (nCr)',npr:'Διατάξεις (nPr)',mod:'Υπόλοιπο διαίρεσης (mod)',abs:'Απόλυτη τιμή',phi:'Χρυσή τομή φ',more:'Περισσότερες συναρτήσεις και σταθερές','2nd':'Δεύτερες συναρτήσεις',angle:angleUnit==='deg'?'Μοίρες (πάτα για ακτίνια)':'Ακτίνια (πάτα για μοίρες)',sq:'Τετράγωνο',cube:'Κύβος',pow:'Δύναμη',root:'Ρίζα y τάξης',sqrt:'Τετραγωνική ρίζα',cbrt:'Κυβική ρίζα',inv:'Αντίστροφο',fact:'Παραγοντικό',ee:'Επί 10 εις τη',exp:'e εις τη',pow10:'10 εις τη',ln:'Φυσικός λογάριθμος',log:'Λογάριθμος'};
- const en={hyp:'Hyperbolic functions',ncr:'Combinations (nCr)',npr:'Permutations (nPr)',mod:'Remainder (mod)',abs:'Absolute value',phi:'Golden ratio φ',more:'More functions and constants','2nd':'Second functions',angle:angleUnit==='deg'?'Degrees (tap for radians)':'Radians (tap for degrees)',sq:'Square',cube:'Cube',pow:'Power',root:'y-th root',sqrt:'Square root',cbrt:'Cube root',inv:'Reciprocal',fact:'Factorial',ee:'Times 10 to the power',exp:'e to the power',pow10:'10 to the power',ln:'Natural logarithm',log:'Logarithm'};
+ const el={i:'Φανταστική μονάδα i',polar:'Πολική μορφή: μέτρο ∠ γωνία',hyp:'Υπερβολικές συναρτήσεις',ncr:'Συνδυασμοί (nCr)',npr:'Διατάξεις (nPr)',mod:'Υπόλοιπο διαίρεσης (mod)',abs:'Απόλυτη τιμή',phi:'Χρυσή τομή φ',more:'Περισσότερες συναρτήσεις και σταθερές','2nd':'Δεύτερες συναρτήσεις',angle:angleUnit==='deg'?'Μοίρες (πάτα για ακτίνια)':'Ακτίνια (πάτα για μοίρες)',sq:'Τετράγωνο',cube:'Κύβος',pow:'Δύναμη',root:'Ρίζα y τάξης',sqrt:'Τετραγωνική ρίζα',cbrt:'Κυβική ρίζα',inv:'Αντίστροφο',fact:'Παραγοντικό',ee:'Επί 10 εις τη',exp:'e εις τη',pow10:'10 εις τη',ln:'Φυσικός λογάριθμος',log:'Λογάριθμος'};
+ const en={i:'Imaginary unit i',polar:'Polar form: size ∠ angle',hyp:'Hyperbolic functions',ncr:'Combinations (nCr)',npr:'Permutations (nPr)',mod:'Remainder (mod)',abs:'Absolute value',phi:'Golden ratio φ',more:'More functions and constants','2nd':'Second functions',angle:angleUnit==='deg'?'Degrees (tap for radians)':'Radians (tap for degrees)',sq:'Square',cube:'Cube',pow:'Power',root:'y-th root',sqrt:'Square root',cbrt:'Cube root',inv:'Reciprocal',fact:'Factorial',ee:'Times 10 to the power',exp:'e to the power',pow10:'10 to the power',ln:'Natural logarithm',log:'Logarithm'};
  return (lang==='el'?el:en)[k]||sciLabel(k);
 }
 function sciKeysHtml(){
@@ -208,13 +208,14 @@ function renderSciBar(){
  const d=$('#calculatorDisplay');if(!d)return;
  let bar=$('#sciBar');
  if(!bar){bar=document.createElement('div');bar.id='sciBar';bar.className='sci-bar';d.appendChild(bar);
-  bar.addEventListener('click',e=>{if(e.target.closest('[data-bar="sci"]'))toggleSci();else if(e.target.closest('[data-bar="mr"]'))memKey('mr')})}
- const html='<button class="sci-chip'+(sciMode?' on':'')+'" data-bar="sci" type="button" aria-pressed="'+sciMode+'" aria-label="'+esc(t('scientific'))+'" title="'+esc(t('scientific'))+'">f(x)</button>'+memChipHtml();
+  bar.addEventListener('click',e=>{if(e.target.closest('[data-bar="sci"]'))toggleSci();else if(e.target.closest('[data-bar="mr"]'))memKey('mr');else if(e.target.closest('[data-bar="cx"]'))setCxForm(cxForm==='rect'?'polar':'rect')})}
+ const html='<button class="sci-chip'+(sciMode?' on':'')+'" data-bar="sci" type="button" aria-pressed="'+sciMode+'" aria-label="'+esc(t('scientific'))+'" title="'+esc(t('scientific'))+'">f(x)</button>'+memChipHtml()+(justCalculated&&isCx(lastResult)?'<button class="sci-chip on cx-chip" data-bar="cx" type="button" aria-label="'+esc(cxForm==='rect'?(lang==='el'?'Δείξε ως μέτρο ∠ γωνία':'Show as size ∠ angle'):(lang==='el'?'Δείξε ως a + bi':'Show as a + bi'))+'">'+(cxForm==='rect'?'a+bi':'r∠θ')+'</button>':'');
  if(bar.dataset.html!==html){bar.innerHTML=html;bar.dataset.html=html}
 }
 function toggleSci(){sciMode=!sciMode;sciSecond=false;store.set('uc-sci',sciMode?'1':'0');renderCalcKeypad();render();fitLayout()}
 function continueFromResult(){
- expression=carryText(lastResult,18);if(resultNegated&&lastResult.n<0n)carry.shown='(−'+fmt(carry.value)+')';
+ if(isCx(lastResult)){carryCx=lastResult;carry=null;expression='⟪⟫'}// complex: carried whole (complex.js)
+ else{expression=carryText(lastResult,18);if(resultNegated&&lastResult.n<0n)carry.shown='(−'+fmt(carry.value)+')'}// turned negative with ±: (−84)+…
  resultNegated=false;current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null;
 }
 // where the last complete value at the end of the expression starts (-1 if it ends with an operator or "(")
@@ -222,8 +223,9 @@ const FN_BEFORE=FN_END;
 function lastValueStart(s){
  if(!s)return -1;let i;
  if(/!$/.test(s)){i=lastValueStart(s.replace(/!+$/,''));}
- else if(/[πeφ]$/.test(s))i=s.length-1;
+ else if(/[πeφi]$/.test(s))i=s.length-1;
  else if(/⟩$/.test(s))i=s.lastIndexOf('⟨');// a constant
+ else if(/⟫$/.test(s))i=s.lastIndexOf('⟪');// a complex result carried on
  else if(/[0-9.%]$/.test(s)){i=s.length;while(i>0&&/[0-9.%]/.test(s[i-1]))i--;if(/[-−]/.test(s[i-1]||'')&&(i===1||/[×÷(^]/.test(s[i-2])))i--}
  else if(/\)$/.test(s)){let d=0;for(i=s.length-1;i>=0;i--){if(s[i]===')')d++;else if(s[i]==='('&&--d===0)break}if(i<0)return -1;const f=s.slice(0,i).match(FN_BEFORE);if(f)i-=f[0].length}
  else return -1;
@@ -239,7 +241,7 @@ function sciKey(k){
  if(k==='angle'){angleUnit=angleUnit==='deg'?'rad':'deg';store.set('uc-angle',angleUnit);renderCalcKeypad();render();return}
  if(justCalculated){if(!lastResult)return;continueFromResult()}
  // a minus waiting for its number ("2×−"): a function or constant can follow it (2×−sin(30)); the rest cannot
- if(current==='-'||current==='−'){if(!SCI_FN[k]&&!['pi','e','phi','exp','pow10','inv'].includes(k)&&!k.startsWith('const:'))return;expression+='-';current=''}
+ if(current==='-'||current==='−'){if(!SCI_FN[k]&&!['pi','e','phi','i','exp','pow10','inv'].includes(k)&&!k.startsWith('const:'))return;expression+='-';current=''}
  else if(current){expression+=current;current='';currentIsPercent=false}
  const start=lastValueStart(expression),value=start>=0?expression.slice(start):'',head=start>=0?expression.slice(0,start):expression;
  const grouped=v=>{if(v[0]!=='(')return false;let d=0;for(let i=0;i<v.length;i++){d+=v[i]==='('?1:v[i]===')'?-1:0;if(d===0)return i===v.length-1}return false};
@@ -251,14 +253,15 @@ function sciKey(k){
  const whole=v=>/^[-−]/.test(v)||/\^/.test(topLevel(v))?'('+v+')':v;
  if(SCI_FN[k]){expression=value?head+SCI_FN[k]+wrap(value):expression+SCI_FN[k]+'(';}
  else if(k==='exp'||k==='pow10'){const b=k==='exp'?'e':'10';expression=value?head+b+'^'+(plainNumber(value)?value:wrap(value)):expression+b+'^(';}
- else if(k==='inv'){expression=value?head+'(1÷'+(plainNumber(value)||/^(?:[πeφ]|⟨\w+⟩)$/.test(value)?value:wrap(value))+')':expression+'1÷(';}
- else if(k==='pi'||k==='e'||k==='phi'||k.startsWith('const:')){const c=k==='pi'?'π':k==='e'?'e':k==='phi'?'φ':'⟨'+k.slice(6)+'⟩';expression+=(value?'×':'')+c;}
+ else if(k==='inv'){expression=value?head+'(1÷'+(plainNumber(value)||/^(?:[πeφi]|⟨\w+⟩)$/.test(value)?value:wrap(value))+')':expression+'1÷(';}
+ else if(k==='pi'||k==='e'||k==='phi'||k==='i'||k.startsWith('const:')){const c=k==='pi'?'π':k==='e'?'e':k==='phi'?'φ':k==='i'?'i':'⟨'+k.slice(6)+'⟩';expression+=(value?'×':'')+c;}
  else if(!value)return;// the rest need a value before them
  else if(k==='sq')expression=head+whole(value)+'^2';
  else if(k==='cube')expression=head+whole(value)+'^3';
  else if(k==='pow')expression=head+whole(value)+'^';
  else if(k==='root')expression=head+whole(value)+'^(1÷';
  else if(k==='fact')expression=head+whole(value)+'!';
+ else if(k==='polar')expression=head+whole(value)+'∠';// r∠θ: the size typed, the angle next
  else if(k==='ee')expression+='×10^';
  render();
 }

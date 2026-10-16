@@ -50,6 +50,7 @@ window.addEventListener('keydown',e=>{
  if(mode==='units'&&nothingOpen&&(e.key==='('||e.key===')')){e.preventDefault();toolKeyInput(e.key);return}
  // ^ power and ! factorial (also a "dead" ^ key that waits for a letter, as on some layouts)
  if(mode==='calc'&&nothingOpen&&(e.key==='^'||e.key==='!'||(e.key==='Dead'&&G_DEAD_CARET.includes(e.code)))){e.preventDefault();sciKey(e.key==='!'?'fact':'pow');return}
+ if(mode==='calc'&&nothingOpen&&e.key==='i'){e.preventDefault();sciKey('i');return}// the imaginary unit
  if(mode==='calc'&&e.key.length===1&&!/^[0-9+\-*/%.,()=]$/.test(e.key)){e.preventDefault();e.stopImmediatePropagation();return}
  if(mode==='graph'&&e.key!=='Escape'){if($('#howModal').classList.contains('hidden')&&$('#historyPanel').classList.contains('hidden')&&graphKeydown(e))e.preventDefault();return}
  // In a tool field that has the focus, Backspace is the browser's own: it deletes the selection, or the character before the cursor.

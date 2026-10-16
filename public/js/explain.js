@@ -24,10 +24,13 @@ const OP_TITLE={'*':[['Πολλαπλασιασμός','ο πολλαπλασι�
 const OP_SIGN={'+':'+','-':'−','*':'×','/':'÷',C:'C',P:'P',m:'mod'};
 // a number as shown, with … when it is rounded (1 ÷ 3 = 0,333333…), so 0,333333 × 3 = 1 doesn't look wrong
 // (worked-out numbers keep the plain -, as results do on the display)
-function ratShown(v){const s=formatRat(v);if(/×/.test(s))return s;
+function ratShown(v){
+ if(isCx(v)){const neg=v.im.n<0n,abs=neg?rat(-v.im.n,v.im.d):v.im,ims=(abs.n===abs.d?'':ratShown(abs))+'i';// 0,707107… + 0,707107…i
+  return v.re.n===0n?(neg?'-':'')+ims:ratShown(v.re)+(neg?' − ':' + ')+ims}
+ const s=formatRat(v);if(/×/.test(s))return s;
  let exact=false;try{exact=ratEq(ratFromString(s.replace(/\./g,'').replace(',','.')),v)}catch{}
  return s+(exact?'':'…')}
-const ratEq=(a,b)=>a.n*b.d===b.n*a.d;
+const ratEq=(a,b)=>vEq(a,b);
 // order classes: 1 powers, functions, nCr nPr; 2 × ÷ mod; 3 + −
 const binClass=op=>op==='*'||op==='/'||op==='m'?2:op==='C'||op==='P'?1:3;
 const TRIG=['sin','cos','tan','cot','sec','csc'],isTrig=n=>TRIG.includes(n),isArc=n=>n[0]==='a'&&TRIG.includes(n.slice(1));
@@ -38,13 +41,14 @@ function exprTree(input){
  const tokens=tokenize(input);let pos=0;const peek=()=>tokens[pos];
  function primary(){const at=pos,tok=tokens[pos++];if(!tok)throw Error('INCOMPLETE');
   if(tok.type==='('){const c=additive();if(peek()?.type!==')')throw Error('PAREN');pos++;return{k:'group',c,at}}
-  if(tok.type==='number'){const carried=carry&&tok.raw===carry.text;return{k:'num',v:tok.value,pct:tok.percent,raw:tok.raw,orig:true,carried,at}}
+  if(tok.type==='number'){if(tok.raw==='⟪⟫')return{k:'num',v:tok.value,shown:fmtCx(tok.value,'rect'),lit:true,at};// a complex result carried on
+   const carried=carry&&tok.raw===carry.text;return{k:'num',v:tok.value,pct:tok.percent,raw:tok.raw,orig:true,carried,at}}
   if(tok.type==='fn'){const c=peek()?.type==='('?primary():postfix();return{k:'fn',name:tok.name,c,at}}
   throw Error('SYNTAX')}
  function postfix(){let v=primary();while(peek()?.type==='!'){v={k:'fact',c:v,at:pos++}}return v}
- function power(){const b=postfix();if(peek()?.type==='^'){const at=pos++;return{k:'pow',b,e:unary(),at}}return b}
+ function power(){const b=postfix();if(peek()?.type==='^'){const at=pos++;return{k:'pow',b,e:unary(),at}}if(peek()?.type==='∠'){const at=pos++;return{k:'polar',b,e:unary(),at}}return b}
  function unary(){const tok=peek();if(tok&&(tok.type==='+'||tok.type==='-')){const at=pos++;const v=unary();if(tok.type==='+')return v;
-  if(v.k==='num')return{...v,v:ratMul(rat(-1n),v.v),neg:!v.neg};// −5 is one number
+  if(v.k==='num')return{...v,v:vNeg(v.v),neg:!v.neg};// −5 is one number
   return{k:'neg',c:v,at}}return power()}
  function comb(){let l=unary();while(['C','P'].includes(peek()?.type)){const at=pos,op=tokens[pos++].type;l={k:'bin',op,l,r:unary(),at}}return l}
  function mult(){let l=comb();while(['*','/','m'].includes(peek()?.type)){const at=pos,op=tokens[pos++].type;l={k:'bin',op,l,r:comb(),at}}return l}
@@ -55,20 +59,21 @@ function exprTree(input){
 // bracket (a negative number there needs no brackets). plain: no mark on the new number. deg: sin(30°).
 function exprText(n,lead=true,o={}){
  if(n.k==='num'){
-  const neg=n.v.n<0n;let s;
-  if(n.orig&&!n.carried){s=formatInputDisplay(n.raw);if(n.neg)s='−'+s}
+  const neg=!isCx(n.v)&&n.v.n<0n;let s;
+  if(n.shown)s=n.shown;// a complex number as written: 3 + 2i
+  else if(n.orig&&!n.carried){s=formatInputDisplay(n.raw);if(n.neg)s='−'+s}
   else s=ratShown(n.v);
-  if(neg&&!lead)s='('+s+')';
+  if(neg&&!lead||isCx(n.v)&&!n.orig&&n.v.re.n!==0n&&!o.whole)s='('+s+')';// 3 + 2i inside a calculation in brackets: (3 + 2i) × 2
   return n.hl&&!o.plain?HL_ON+s+HL_OFF:s;
  }
  if(n.k==='group')return '('+exprText(n.c,true,o)+')';
  if(n.k==='fn'){const lab=FN_LABEL[n.name]||n.name,inner=n.c.k==='group'?exprText(n.c.c,true,o):exprText(n.c,true,o);
   return lab+'('+inner+(o.deg&&isTrig(n.name)?'°':'')+')'}
- if(n.k==='pow'){
-  let b=exprText(n.b,lead,o);if(n.b.k==='num'&&n.b.v.n<0n&&lead)b='('+b+')';
-  const e=n.e;
-  if(e.k==='num'&&e.v.d===1n&&!e.pct&&!(e.orig&&/[πeφ⟨]/.test(e.raw))){const s=supText(String(e.v.n));return b+(e.hl&&!o.plain?HL_ON+s+HL_OFF:s)}
-  return b+'^'+exprText(e,false,o);
+ if(n.k==='pow'||n.k==='polar'){const e=n.e;
+  let b=exprText(n.b,lead,o);if(n.b.k==='num'&&!isCx(n.b.v)&&n.b.v.n<0n&&lead)b='('+b+')';
+  if(n.k==='polar')return b+'∠'+exprText(e,false,o)+(o.deg?'°':'');
+  if(e.k==='num'&&!isCx(e.v)&&e.v.d===1n&&!e.pct&&!(e.orig&&/[πeφ⟨i]/.test(e.raw))){const s=supText(String(e.v.n));return b+(e.hl&&!o.plain?HL_ON+s+HL_OFF:s)}
+  return b+'^'+(e.k==='num'&&isCx(e.v)?'('+exprText(e,true,{...o,whole:true})+')':exprText(e,false,o));// e^(πi)
  }
  if(n.k==='fact')return exprText(n.c,lead,o)+'!';
  if(n.k==='neg')return '−'+exprText(n.c,false,o);
@@ -77,21 +82,30 @@ function exprText(n,lead=true,o={}){
 function explanationForExpression(input,result){
  const el=lang==='el',L=(g,e)=>el?g:e,deg=angleUnit==='deg',V=ratShown;let lastV=null;
  let tree;try{tree=exprTree(input)}catch{return null}
- const formula=exprText(tree,true,{plain:true}),steps=[];
+ // 2i and 3 + 2i are numbers as written, not steps: 2 × i and 3 + 2i become one complex number each
+ (function fold(n){if(!n||n.k==='num')return;['c','b','e','l','r'].forEach(k=>n[k]&&fold(n[k]));
+  const real=x=>x.k==='num'&&!isCx(x.v)&&!x.pct,lit=x=>x.k==='num'&&(x.lit||x.raw==='i'),txt=x=>exprText(x,true,{plain:true,whole:true});
+  let v,shown;
+  if(n.k==='group'&&n.c.k==='num'&&n.c.lit){const c=n.c;for(const k of Object.keys(n))delete n[k];Object.assign(n,c);return}// (3 + 2i): its own brackets
+  if(n.k==='bin'&&n.op==='*'&&real(n.l)&&n.r.k==='num'&&n.r.raw==='i'){v=vMul(n.l.v,I_UNIT);shown=txt(n.l)+'i'}
+  else if(n.k==='bin'&&(n.op==='+'||n.op==='-')&&real(n.l)&&lit(n.r)&&isCx(n.r.v)&&n.r.v.re.n===0n){v=n.op==='+'?vAdd(n.l.v,n.r.v):vSub(n.l.v,n.r.v);shown=txt(n.l)+' '+OP_SIGN[n.op]+' '+txt(n.r)}
+  else return;
+  const at=n.at;for(const k of Object.keys(n))delete n[k];Object.assign(n,{k:'num',v,shown,lit:true,at})})(tree);
+ const formula=exprText(tree,true,{plain:true,whole:tree.k==='num'}),steps=[];// whole: no brackets around a lone 3 + 2i
  // the order rule, when the calculation mixes levels: "Order: brackets → × ÷ → + −, each from left to right."
  const levels=new Set();(function scan(n,inFn){if(!n)return;
   if(n.k==='group'){if(!inFn&&n.c.k!=='num')levels.add(0);scan(n.c,false)}
-  else if(n.k==='fn'){levels.add(1);scan(n.c,true)}else if(n.k==='pow'||n.k==='fact'){levels.add(1);scan(n.b||n.c);scan(n.e)}
+  else if(n.k==='fn'){levels.add(1);scan(n.c,true)}else if(n.k==='pow'||n.k==='polar'||n.k==='fact'){levels.add(1);scan(n.b||n.c);scan(n.e)}
   else if(n.k==='neg')scan(n.c);else if(n.k==='bin'){levels.add(binClass(n.op));scan(n.l);scan(n.r)}})(tree);
  const ops=[...levels].filter(x=>x>0);
  const rule=ops.length>1||(levels.has(0)&&ops.length)?L('Σειρά: ','Order: ')+[...levels].sort().map(x=>[L('παρενθέσεις','brackets'),L('δυνάμεις και συναρτήσεις','powers and functions'),'× ÷','+ −'][x]).join(' →\uFE0E ')+L(', από αριστερά προς τα δεξιά.',', each from left to right.'):'';
- const lim=v=>ratLimit(v);
+ const lim=v=>vLimit(v);
  const toNum=(n,v,hl=true)=>{for(const k of Object.keys(n))delete n[k];Object.assign(n,{k:'num',v,hl})};
  // brackets around a single number go, and so does a minus in front of one: no step of their own
  const tidy=n=>{if(!n||n.k==='num')return;
   ['c','b','e','l','r'].forEach(k=>n[k]&&tidy(n[k]));
   if(n.k==='group'&&n.c.k==='num'){const c=n.c;for(const k of Object.keys(n))delete n[k];Object.assign(n,c)}
-  else if(n.k==='neg'&&n.c.k==='num'){toNum(n,ratMul(rat(-1n),n.c.v),!!n.c.hl)}};
+  else if(n.k==='neg'&&n.c.k==='num'){toNum(n,vNeg(n.c.v),!!n.c.hl)}};
  const clearHl=n=>{if(!n)return;if(n.k==='num')n.hl=false;['c','b','e','l','r'].forEach(k=>n[k]&&clearHl(n[k]))};
  // a single percentage, 10% = 0,1
  if(tree.k==='num'&&tree.pct)steps.push({title:L('Ποσοστό','Percent'),text:exprText(tree,true,{plain:true})+' = '+V(ratMul(tree.v,rat(100n)))+' ÷ 100 = '+V(tree.v)});
@@ -101,7 +115,7 @@ function explanationForExpression(input,result){
    // the steps that can be done now (everything under them is a number), with how deep in brackets they are
    const ready=[],pending=[];
    (function walk(n,depth,anc){if(n.k==='num')return;pending.push({n,depth,anc});
-    const kids=n.k==='bin'?[n.l,n.r]:n.k==='pow'?[n.b,n.e]:[n.c],d2=n.k==='group'||n.k==='fn'?depth+1:depth;
+    const kids=n.k==='bin'?[n.l,n.r]:n.k==='pow'||n.k==='polar'?[n.b,n.e]:[n.c],d2=n.k==='group'||n.k==='fn'?depth+1:depth;
     if(kids.every(c=>c.k==='num'))ready.push({n,depth,anc});
     kids.forEach(c=>walk(c,d2,[...anc,n]))})(tree,0,[]);
    const cls=n=>n.k==='bin'?binClass(n.op):1;
@@ -118,48 +132,62 @@ function explanationForExpression(input,result){
    if(n.k==='bin'){
     const l=n.l.v,r=n.r.v,add=n.op==='+'||n.op==='-';
     if(add&&n.r.pct){// 8,5 + 15%: first 15% of 8,5, then the + as usual
-     const part=lim(ratMul(l,r)),p100=V(ratMul(r,rat(100n)));
+     const part=lim(vMul(l,r)),p100=V(ratMul(r,rat(100n)));
      steps.push({title:L('Το '+p100+'% του '+V(l),p100+'% of '+V(l)),text:V(l)+' × '+p100+' ÷ 100 = '+V(part)});
      toNum(n.r,part);steps[steps.length-1].line=exprText(tree);continue;
     }
-    v=lim(n.op==='+'?ratAdd(l,r):n.op==='-'?ratSub(l,r):n.op==='*'?ratMul(l,r):n.op==='C'?ratComb(l,r):n.op==='P'?ratPerm(l,r):n.op==='m'?ratMod(l,r):ratDiv(l,r));
+    v=lim(n.op==='+'?vAdd(l,r):n.op==='-'?vSub(l,r):n.op==='*'?vMul(l,r):n.op==='C'?ratComb(l,r):n.op==='P'?ratPerm(l,r):n.op==='m'?ratMod(l,r):vDiv(l,r));
+    // a real number and an imaginary one side by side (1 + 2i) are just one complex number: no step
+    if(add&&(!isCx(l)&&isCx(r)&&r.re.n===0n||isCx(l)&&l.re.n===0n&&!isCx(r))){toNum(n,v,false);tidy(tree);if(steps.length&&tree.k!=='num')steps[steps.length-1].line=exprText(tree);lastV=v;continue}
     title=T(n.op);
     const notes=[n.l,n.r].filter(x=>x.pct).map(x=>exprText(x,true,{plain:true})+' = '+V(x.v));// 50 × 10%: 10% = 0,1
     if(notes.length)title+=' ('+notes.join(', ')+')';
     text=exprText(n,true,{plain:true})+' = '+V(v);
     // written out where it helps: 5 C 2 = 5! ÷ (2! × 3!), 5 P 2 = 5! ÷ 3!, 17 mod 5: 17 = 3 × 5 + 2
-    const small=x=>x.d===1n&&x.n>=0n&&x.n<=20n;
+    const small=x=>!isCx(x)&&x.d===1n&&x.n>=0n&&x.n<=20n;
     if(n.op==='C'&&small(l)&&small(r)&&r.n<=l.n)text=exprText(n,true,{plain:true})+' = '+V(l)+'! ÷ ('+V(r)+'! × '+V(ratSub(l,r))+'!) = '+V(v);
     if(n.op==='P'&&small(l)&&small(r)&&r.n<=l.n)text=exprText(n,true,{plain:true})+' = '+V(l)+'! ÷ '+V(ratSub(l,r))+'! = '+V(v);
+    // complex × and ÷: written out, i² = −1, and the conjugate
+    if(n.op==='*'&&isCx(l)&&isCx(r)){title+=L(' (i² = −1)',' (i² = −1)');
+     const P=x=>x.n<0n?'('+V(x)+')':V(x);
+     text=exprText(n,true,{plain:true})+' = '+P(l.re)+'×'+P(r.re)+' − '+P(l.im)+'×'+P(r.im)+' + ('+P(l.re)+'×'+P(r.im)+' + '+P(l.im)+'×'+P(r.re)+')i = '+V(v)}
+    if(n.op==='/'&&isCx(r)){const c={re:r.re,im:vNeg(r.im)},den=ratAdd(ratMul(r.re,r.re),ratMul(r.im,r.im));
+     title=L('Διαίρεση: επί το συζυγές ','Divide: times the conjugate ')+'('+fmtCx(c,'rect')+')';
+     text=exprText(n,true,{plain:true})+' = ('+V(vMul(l,c))+') ÷ '+V(den)+' = '+V(v)}
     if(n.op==='m')text+=' ('+V(l)+' = '+V(rat(ratFloor(ratDiv(l,r))))+' × '+(r.n<0n?'('+V(r)+')':V(r))+' + '+V(v)+')';
    }else if(n.k==='fn'){
-    const a=(n.c.k==='group'?n.c.c:n.c).v;v=lim(sciFunction(n.name,a));
+    const a=(n.c.k==='group'?n.c.c:n.c).v;v=lim(sciFunctionV(n.name,a));
     const ft=FN_TITLE[n.name];title=L(ft[0],ft[1])+(isTrig(n.name)||isArc(n.name)?(deg?L(' (μοίρες)',' (degrees)'):L(' (ακτίνια)',' (radians)')):'');
     if(outside)title=L('Πρώτα η παρένθεση: ','Brackets first: ')+title.charAt(0).toLowerCase()+title.slice(1);
     text=exprText(n,true,{plain:true,deg})+' = '+V(v)+(isArc(n.name)&&deg?'°':'');
     // a whole answer can be checked by hand: √9 = 3 because 3 × 3 = 9
-    const whole=v.d===1n&&(v.n<0n?-v.n:v.n)<=1000000n;
+    const whole=!isCx(v)&&!isCx(a)&&v.d===1n&&(v.n<0n?-v.n:v.n)<=1000000n;
+    if(n.name==='√'&&!isCx(a)&&a.n<0n)title+=L(': αρνητικός αριθμός, άρα φανταστικό: √(−x) = i√x',': a negative number, so imaginary: √(−x) = i√x');
     if(whole&&(n.name==='√'||n.name==='∛')&&a.d===1n)title+=': '+Array(n.name==='√'?2:3).fill(V(v)).join(' × ')+' = '+V(a);
     if(whole&&n.name==='log'&&a.d===1n&&v.n>0n)title+=': 10'+supText(String(v.n))+' = '+V(a);
    }else if(n.k==='pow'){
-    const b=n.b.v,e=n.e.v;v=lim(ratPow(b,e));title=T('pow');
+    const b=n.b.v,e=n.e.v;v=lim(vPow(b,e));title=T('pow');
     const bs=exprText(n.b,false,{plain:true}),lhs=exprText(n,true,{plain:true});
-    if(e.d===1n&&e.n>=2n&&e.n<=5n&&bs.length<=10)text=lhs+' = '+Array(Number(e.n)).fill(bs).join(' × ')+' = '+V(v);// 2³ = 2 × 2 × 2
-    else if(e.d===1n&&e.n<0n&&e.n>=-5n&&bs.length<=10)text=lhs+' = 1 ÷ '+(n.b.v.n<0n?'('+V(b)+')':V(b))+supText(String(-e.n))+' = '+V(v);// 2⁻³ = 1 ÷ 2³
+    if(!isCx(e)&&e.d===1n&&e.n>=2n&&e.n<=5n&&bs.length<=12)text=lhs+' = '+Array(Number(e.n)).fill(bs).join(' × ')+' = '+V(v);// 2³ = 2 × 2 × 2
+    else if(!isCx(e)&&!isCx(b)&&e.d===1n&&e.n<0n&&e.n>=-5n&&bs.length<=10)text=lhs+' = 1 ÷ '+(n.b.v.n<0n?'('+V(b)+')':V(b))+supText(String(-e.n))+' = '+V(v);// 2⁻³ = 1 ÷ 2³
     else text=lhs+' = '+V(v);
+   }else if(n.k==='polar'){// r∠θ = r(cos θ + i sin θ)
+    v=lim(vPolar(n.b.v,n.e.v));title=L('Πολική μορφή: r(cos θ + i sin θ)','Polar form: r(cos θ + i sin θ)');
+    const t=exprText(n.e,true,{plain:true})+(deg?'°':'');
+    text=exprText(n,true,{plain:true,deg})+' = '+V(n.b.v)+' × (cos '+t+' + i sin '+t+') = '+V(v);
    }else if(n.k==='fact'){
     const a=n.c.v;v=lim(ratFactorial(a));title=T('fact');
-    text=exprText(n,true,{plain:true})+(a.d===1n&&a.n>=2n&&a.n<=7n?' = '+Array.from({length:Number(a.n)},(_,i)=>String(Number(a.n)-i)).join(' × '):'')+' = '+V(v);
+    text=exprText(n,true,{plain:true})+(!isCx(a)&&a.d===1n&&a.n>=2n&&a.n<=7n?' = '+Array.from({length:Number(a.n)},(_,i)=>String(Number(a.n)-i)).join(' × '):'')+' = '+V(v);
    }else return null;
    toNum(n,v);lastV=v;tidy(tree);
    steps.push({title,text,line:tree.k==='num'?'':exprText(tree)});
   }
  }catch{return null}
- if(tree.k!=='num'||formatRat(tree.v)!==formatRat(result))return null;// never show working that doesn't match
+ if(tree.k!=='num'||fmt(tree.v)!==fmt(result))return null;// never show working that doesn't match
  // a minus in front of everything (−2² = −4) is the last thing done
- if(lastV&&!ratEq(lastV,tree.v)&&ratEq(ratMul(lastV,rat(-1n)),tree.v))steps.push({title:L('Το μείον μπροστά','The minus in front'),text:'−('+V(lastV)+') = '+V(tree.v)});
+ if(lastV&&!ratEq(lastV,tree.v)&&ratEq(vNeg(lastV),tree.v))steps.push({title:L('Το μείον μπροστά','The minus in front'),text:'−('+V(lastV)+') = '+V(tree.v)});
  if(steps.length)delete steps[steps.length-1].line;// the last one is the result
- return{formula,rule,steps,result:formatRat(result),spaced:true};
+ return{formula,rule,steps,result:fmt(result),spaced:true};
 }
 
 // Units and Currency: the factor (or the formula, for temperatures) and the working, from the value typed in.

@@ -40,7 +40,7 @@ function formatRat(a,max=6){
  if(s==='0'||s.replace(/^-/,'').split('.')[0].length>MAX_SHOWN_DIGITS)return ratScientific(a);
  return formatGroupedNumber(s);
 }
-const fmt=n=>n&&typeof n==='object'&&'n'in n?formatRat(n,6):Number.isFinite(Number(n))?(Math.abs(Number(n))>=1e15?numScientific(Number(n)):new Intl.NumberFormat(NUMBER_LOCALE,{maximumFractionDigits:6}).format(Number(n))):'Error';
+const fmt=n=>isCx(n)?fmtCx(n):n&&typeof n==='object'&&'n'in n?formatRat(n,6):Number.isFinite(Number(n))?(Math.abs(Number(n))>=1e15?numScientific(Number(n)):new Intl.NumberFormat(NUMBER_LOCALE,{maximumFractionDigits:6}).format(Number(n))):'Error';
 const pretty=s=>String(s).replace(/\*/g,'×').replace(/\//g,'÷');
 function formatGroupedNumber(raw){
  const s=String(raw);
@@ -61,7 +61,7 @@ function formatGroupedNumber(raw){
 const SUP_DIGITS='⁰¹²³⁴⁵⁶⁷⁸⁹';
 const sciPretty=s=>s.replace(/a(sinh|cosh|tanh|coth|sech|csch|sin|cos|tan|cot|sec|csc)\(/g,'$1⁻¹(').replace(/\^([-−]?)(\d+)(?![\d.])/g,(m,sg,d)=>(sg?'⁻':'')+[...d].map(c=>SUP_DIGITS[c]).join(''));
 function formatInputDisplay(s){
- return pretty(sciPretty(constPretty(String(s)))).replace(/\d+(?:\.\d*)?/g,m=>formatGroupedNumber(m))
+ return pretty(sciPretty(constPretty(String(s)))).replace(/\d+(?:\.\d*)?/g,m=>formatGroupedNumber(m)).replace(/([\d)])×i(?![\w(])/g,'$1i')// 2×i shows as 2i
   .replace(/([×÷+\-])[-−](\d[\d.,]*%?)/g,'$1(−$2)').replace(/\([-−](?=\d)/g,'(−')
   .replace(/^−(\d[\d.,]*%?)/,'(−$1)');
 }
@@ -88,9 +88,9 @@ const FN_ALT=FN_NAMES.join('|');
 const FN_END=new RegExp('(?:'+FN_ALT+')$'),FN_OPEN_END=new RegExp('(?:'+FN_ALT+')\\($');
 // Two-number operators besides + − × ÷ ^ are written as one letter: C (nCr, combinations), P (nPr, permutations),
 // m (mod, the remainder; shown as " mod "). OP_END: the calculation ends with an operator (or "(").
-const OP_CHARS='+\\-×÷^CPm',OP_END=new RegExp('['+OP_CHARS+']$'),OP_OPEN_END=new RegExp('['+OP_CHARS+'(]$');
+const OP_CHARS='+\\-×÷^CPm∠',OP_END=new RegExp('['+OP_CHARS+']$'),OP_OPEN_END=new RegExp('['+OP_CHARS+'(]$');
 // A value ends here: a digit, %, a closing bracket, π, e, φ, a constant ⟨…⟩, a factorial !
-const VALUE_END=/[0-9.%)πeφ⟩!]$/;
+const VALUE_END=/[0-9.%)πeφ⟩⟫i!]$/;
 // ---------- Constants ----------
 // φ (the golden ratio) is one character; the physical constants are written ⟨id⟩ in the calculation and shown by their
 // symbol. Values: CODATA 2018 (exact since the 2019 SI where marked). [symbol, value, unit, Greek name, English name]
@@ -136,7 +136,7 @@ const CONSTS={
  eV:['eV','1.602176634e-19','J','Ηλεκτρονιοβόλτ','Electronvolt'],
  lP:['lₚ','1.616255e-35','m','Μήκος του Planck','Planck length'],
  tP:['tₚ','5.391247e-44','s','Χρόνος του Planck','Planck time']};
-const CONST_EXACT=new Set(['c','g','h','hbar','qe','NA','k','R','F','atm','eV','KJ','RK','Vm','sigma','c1','c2']);// exact since 2019 (or by definition)
+const CONST_EXACT=new Set(['c','g','h','qe','NA','k','atm','eV']);// exact values (SI 2019, or by definition); the others are rounded
 // "6.02214076e23" as an exact fraction
 function ratSci(str){const [m,e='0']=String(str).split('e'),r=ratFromString(m),k=BigInt(Math.abs(+e));return +e>=0?ratMul(r,rat(10n**k)):ratDiv(r,rat(10n**k))}
 const RAT_PHI=ratFromString('1.61803398874989484820458683436563812');
@@ -149,28 +149,32 @@ function tokenize(input){
   if('+-*/()^!'.includes(ch)){tokens.push({type:ch});i++;continue}
   if(ch==='π'||ch==='e'||ch==='φ'){tokens.push({type:'number',value:ch==='π'?RAT_PI:ch==='e'?RAT_E:RAT_PHI,percent:false,raw:ch});i++;continue}
   if(ch==='⟨'){const j=s.indexOf('⟩',i),k=j>0?s.slice(i+1,j):'';if(!CONSTS[k])throw Error('CHAR');tokens.push({type:'number',value:ratSci(CONSTS[k][1]),percent:false,raw:s.slice(i,j+1)});i=j+1;continue}
-  if(ch==='C'||ch==='P'||ch==='m'){tokens.push({type:ch});i++;continue}
+  if(ch==='C'||ch==='P'||ch==='m'||ch==='∠'){tokens.push({type:ch});i++;continue}
+  if(ch==='⟪'&&s[i+1]==='⟫'){if(!carryCx)throw Error('CHAR');tokens.push({type:'number',value:carryCx,percent:false,raw:'⟪⟫'});i+=2;continue}// a complex result carried on
   const name=FN_NAMES.find(n=>s.startsWith(n,i));if(name){tokens.push({type:'fn',name});i+=name.length;continue}
+  if(ch==='i'){tokens.push({type:'number',value:I_UNIT,percent:false,raw:'i'});i++;continue}// the imaginary unit (after the names: sin has an i)
   throw Error('CHAR')
  }return tokens
 }
 // Precedence: + − < × ÷ < sign < ^ (right to left, so 2^3^2 = 2^9) < ! < numbers, brackets, functions. −2^2 = −4.
 function evalExpr(input){
  const tokens=tokenize(input);let pos=0;const peek=()=>tokens[pos];
- const lim=v=>(ratLimit(v.value),v);// every step stays within the limits
+ const lim=v=>(vLimit(v.value),v);// every step stays within the limits (complex.js: v… work on real and complex values)
  function primary(){const tok=tokens[pos++];if(!tok)throw Error('INCOMPLETE');
   if(tok.type==='('){const v=additive();if(!peek()||peek().type!==')')throw Error('PAREN');pos++;return{value:v.value,percent:false}}
   if(tok.type==='number')return{value:tok.value,percent:tok.percent};
-  if(tok.type==='fn'){const arg=peek()?.type==='('?primary():postfix();return lim({value:sciFunction(tok.name,arg.value),percent:false})}
+  if(tok.type==='fn'){const arg=peek()?.type==='('?primary():postfix();return lim({value:sciFunctionV(tok.name,arg.value),percent:false})}
   throw Error('SYNTAX')}
- function postfix(){let v=primary();while(peek()?.type==='!'){pos++;v=lim({value:ratFactorial(v.value),percent:false})}return v}
- function power(){const base=postfix();if(peek()?.type==='^'){pos++;const exp=unary();return lim({value:ratPow(base.value,exp.value),percent:false})}return base}
- function unary(){const tok=peek();if(tok&&(tok.type==='+'||tok.type==='-')){pos++;const v=unary();return{value:tok.type==='-'?ratMul(rat(-1n),v.value):v.value,percent:v.percent}}return power()}
+ function postfix(){let v=primary();while(peek()?.type==='!'){pos++;if(isCx(v.value))throw Error('MATH');v=lim({value:ratFactorial(v.value),percent:false})}return v}
+ // ^ and ∠ (r∠θ, polar entry, as tight as ^: 2∠30×3 = (2∠30)×3)
+ function power(){const base=postfix();if(peek()?.type==='^'){pos++;const exp=unary();return lim({value:vPow(base.value,exp.value),percent:false})}
+  if(peek()?.type==='∠'){pos++;const t=unary();return lim({value:vPolar(base.value,t.value),percent:false})}return base}
+ function unary(){const tok=peek();if(tok&&(tok.type==='+'||tok.type==='-')){pos++;const v=unary();return{value:tok.type==='-'?vNeg(v.value):v.value,percent:v.percent}}return power()}
  // nCr, nPr: above × ÷ (as on Casio's calculators), 5×4C2 = 5×6
  function comb(){let left=unary();while(peek()&&['C','P'].includes(peek().type)){const op=tokens[pos++].type,right=unary();left=lim({value:op==='C'?ratComb(left.value,right.value):ratPerm(left.value,right.value),percent:false})}return left}
- function mult(){let left=comb();while(peek()&&['*','/','m'].includes(peek().type)){const op=tokens[pos++].type,right=comb();left=lim({value:op==='*'?ratMul(left.value,right.value):op==='m'?ratMod(left.value,right.value):ratDiv(left.value,right.value),percent:false})}return left}
- function additive(){let left=mult();while(peek()&&['+','-'].includes(peek().type)){const op=tokens[pos++].type,right=mult();const rv=right.percent?ratMul(left.value,right.value):right.value;left=lim({value:op==='+'?ratAdd(left.value,rv):ratSub(left.value,rv),percent:false})}return left}
- const out=additive();if(pos!==tokens.length)throw Error('SYNTAX');return ratLimit(out.value)
+ function mult(){let left=comb();while(peek()&&['*','/','m'].includes(peek().type)){const op=tokens[pos++].type,right=comb();left=lim({value:op==='*'?vMul(left.value,right.value):op==='m'?ratMod(left.value,right.value):vDiv(left.value,right.value),percent:false})}return left}
+ function additive(){let left=mult();while(peek()&&['+','-'].includes(peek().type)){const op=tokens[pos++].type,right=mult();const rv=right.percent?vMul(left.value,right.value):right.value;left=lim({value:op==='+'?vAdd(left.value,rv):vSub(left.value,rv),percent:false})}return left}
+ const out=additive();if(pos!==tokens.length)throw Error('SYNTAX');return vLimit(out.value)
 }
 
 // ---------- Scientific maths ----------
@@ -229,12 +233,12 @@ function ratFactorial(a){
  let r=1n;for(let i=2n;i<=a.n;i++)r*=i;return rat(r);
 }
 // nCr and nPr of whole numbers 0 ≤ r ≤ n (r > n gives 0), exact
-function ratWhole(a){if(a.d!==1n||a.n<0n)throw Error('MATH');return a.n}
+function ratWhole(a){if(isCx(a)||a.d!==1n||a.n<0n)throw Error('MATH');return a.n}
 function ratPerm(a,b){const n=ratWhole(a),r=ratWhole(b);if(r>n)return rat(0n);if(r>20000n)throw Error('BIG');let p=1n;for(let i=0n;i<r;i++)p*=n-i;return rat(p)}
 function ratComb(a,b){const n=ratWhole(a);let r=ratWhole(b);if(r>n)return rat(0n);if(n-r<r)r=n-r;if(r>20000n)throw Error('BIG');let p=1n;for(let i=1n;i<=r;i++)p=p*(n-r+i)/i;return rat(p)}
 // a mod b: the remainder, with the sign of b (as 17 mod 5 = 2, −17 mod 5 = 3), for any numbers
 function ratFloor(a){const q=a.n/a.d;return a.n<0n&&q*a.d!==a.n?q-1n:q}
-function ratMod(a,b){if(b.n===0n)throw Error('DIV0');return ratSub(a,ratMul(b,rat(ratFloor(ratDiv(a,b)))))}
+function ratMod(a,b){if(isCx(a)||isCx(b))throw Error('MATH');if(b.n===0n)throw Error('DIV0');return ratSub(a,ratMul(b,rat(ratFloor(ratDiv(a,b)))))}
 const RECIP_FN={cot:'tan',sec:'cos',csc:'sin',coth:'tanh',sech:'cosh',csch:'sinh'};
 function sciFunction(name,a){
  if(name==='abs')return a.n<0n?rat(-a.n,a.d):a;

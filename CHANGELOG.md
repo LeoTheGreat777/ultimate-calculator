@@ -6,6 +6,19 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.23.0 – 2026-10-16
+
+### Added
+- Complex numbers. The i key (and i on a keyboard) types the imaginary unit: (3 + 2i) × (1 − i) = 5 − i, exactly. With
+  2nd it becomes ∠ for polar form: 2∠30 is size 2 at 30°. Every function works on them, √ and ln of negative numbers
+  give their complex value (√−4 = 2i, e^(iπ) = −1), and a complex result goes on into the next calculation, into History
+  and into memory.
+- After a complex result, a+bi beside f(x) switches it to r∠θ (size and angle) and back.
+- The working explains them: i² = −1 when multiplying, the conjugate when dividing, and the polar form.
+
+### Changed
+- φ moved from its key to ⋯ (with π and e), to make room for i.
+
 ## 0.22.0 – 2026-10-16
 
 ### Added

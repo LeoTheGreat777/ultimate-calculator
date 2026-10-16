@@ -1,6 +1,6 @@
 // History: saved calculations, the bottom sheet that lists them, and its gestures.
 function historyItems(){try{return JSON.parse(store.get('uc-history')||'[]')}catch{return[]}}
-function saveHistory(item){const list=historyItems();const stored={...item,shown:item.shown||formatExpressionDisplay(item.expression),result:item.result&&typeof item.result==='object'&&'n'in item.result?ratToStoreDecimal(item.result):String(item.result)};list.unshift({id:Date.now()+Math.random(),...stored});store.set('uc-history',JSON.stringify(list.slice(0,100)));renderHistory()}
+function saveHistory(item){const list=historyItems();const stored={...item,shown:item.shown||formatExpressionDisplay(item.expression),expression:expandCarry(item.expression),result:item.result&&typeof item.result==='object'?vToStore(item.result):String(item.result)};list.unshift({id:Date.now()+Math.random(),...stored});store.set('uc-history',JSON.stringify(list.slice(0,100)));renderHistory()}
 function renderHistory(){
  const tab=currentTab(),calc=tab==='calc';
  $('#historyTitle').textContent=t('history')+(calc?'':' · '+modeText(tab));
@@ -13,7 +13,7 @@ function renderHistory(){
 function historyRowsHtml(tab=currentTab()){
  const calc=tab==='calc';
  const row=(id,top,bottom)=>`<div class="history-item"><button class="history-main" data-history="${id}" type="button"><div class="history-expression">${esc(top)}</div><div class="history-result">${esc(bottom)}</div></button><button class="history-delete" data-delete="${id}" type="button" aria-label="${esc(t('delete'))}">×</button></div>`;
- const rows=calc?historyItems().map(x=>row(x.id,x.shown||formatInputDisplay(x.expression),fmt(x.result&&typeof x.result==='string'?ratFromString(x.result):x.result)))
+ const rows=calc?historyItems().map(x=>row(x.id,x.shown||formatInputDisplay(x.expression),fmt(x.result&&typeof x.result==='string'?vFromStore(x.result):x.result)))
   :modeHistory(tab).map(x=>{const [a,b]=modeEntryLines(x);return row(x.id,a,b)});
  return rows.length?rows.join(''):`<div class="empty">${esc(calc?t('none'):t('noneMode'))}</div>`;
 }
@@ -47,7 +47,7 @@ function historyClick(e){
   return;
  }
  if(del){store.set('uc-history',JSON.stringify(historyItems().filter(x=>String(x.id)!==del.dataset.delete)));renderHistory();return}
- if(item){const x=historyItems().find(x=>String(x.id)===item.dataset.history);if(!x)return;closeHistory();setMode('calc');carry=null;resultNegated=false;lastExpression=x.expression;lastShown=(x.shown||formatInputDisplay(x.expression));lastResult=ratFromString(String(x.result));justCalculated=true;expression='';current='';currentIsPercent=false;howData=explanationForExpression(x.expression,lastResult)||x.how||null;if(howData&&lastShown&&!howData.spaced)howData.formula=lastShown;calcHowData=howData;lastOperation=parseLastOperation(x.expression);render();syncModeTabs()}
+ if(item){const x=historyItems().find(x=>String(x.id)===item.dataset.history);if(!x)return;closeHistory();setMode('calc');carry=null;resultNegated=false;lastExpression=x.expression;lastShown=(x.shown||formatInputDisplay(x.expression));lastResult=vFromStore(String(x.result));justCalculated=true;expression='';current='';currentIsPercent=false;howData=explanationForExpression(x.expression,lastResult)||x.how||null;if(howData&&lastShown&&!howData.spaced)howData.formula=lastShown;calcHowData=howData;lastOperation=parseLastOperation(x.expression);render();syncModeTabs()}
 }
 // History sheet gestures: drag the handle to resize or close it; wheel and keys scroll it from anywhere.
 function setupHistoryGestures() {

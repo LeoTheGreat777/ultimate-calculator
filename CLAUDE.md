@@ -52,6 +52,7 @@ Everything the app serves is in `public/` (the web root for both GitHub Pages an
 | `numbers.js` | exact fractions (`rat`...), `evalExpr`, number formatting (`fmt`, `formatRat`, `money`...) |
 | `charts.js` | drawing helpers, tool charts, History chart |
 | `graph.js` | Graph mode (parser, pan/zoom, key points, drawing) |
+| `complex.js` | complex numbers: `{re, im}` values, `vAdd`… `vPow`, `sciFunctionV`, `vPolar`, `fmtCx` (a+bi / r∠θ, `cxForm`), `vToStore`/`vFromStore`, `carryCx` |
 | `calculator.js` | calculator keys (`digit`, `operator`, brackets, `negate`, `equals`, C/AC), display, explanation |
 | `explain.js` | the working under ?: `explanationForExpression` (the calculation read into a tree like `evalExpr`, worked out step by step in school order, each step with its reason and the shorter calculation, `\u0001`/`\u0002` around the new number), `unitsHow` (Units/Currency), `howHtml` (draws any working, Subnet's bits too) |
 | `memory.js` | the memory keys MC MR M+ M− MS (`memKey`, `#memRow`, `uc-memory`), the M chip beside f(x), Ctrl shortcuts |
@@ -163,7 +164,7 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   `./?mode=vat` etc.; main.js switches to that mode at start and puts the address back to `./`. The list and the icons
   (each the mode's tab icon on the dark background) come from `tools/make-shortcut-icons.py`; run it after changing
   them or a tab icon (the tests compare the manifest with it). iPhones don't offer shortcuts for web apps.
-- **Storage:** all in the browser (`uc-history`, `uc-history-modes`, `uc-tools`, `uc-rates`, `uc-lang`, `uc-pins`, `uc-memory`,
+- **Storage:** all in the browser (`uc-history`, `uc-history-modes`, `uc-tools`, `uc-rates`, `uc-lang`, `uc-pins`, `uc-memory`, `uc-cxform`,
   `uc-theme`, `uc-theme-pair`, `uc-custom-themes`, `uc-theme-recent`). Use `store.get/set` – localStorage can throw.
 - **Number fields** (every tool field but dates and IP/mask, `groupedField`) show thousands as they are typed: 10000 ->
   10.000 (`groupDigits` in the `input` handler, the cursor kept in place). In them a dot is always a thousands dot and the
@@ -201,8 +202,8 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   for inverses; Deg/Rad is `angleUnit` (`uc-angle`). The engine (numbers.js: `evalExpr`, `ratPow`, `sciFunction`)
   stays exact where the answer is exact and rounds floats to 15 digits otherwise. Shown with superscripts and sin⁻¹
   (`sciPretty`). Keyboard: ^ and !.
-  A fourth row: **hyp** (`sciHyp`: sin cos tan become sinh cosh tanh, 2nd their inverses), **nCr** (2nd nPr), **mod** (2nd |x|), **φ**
-  and **⋯** (funcs.js: every function, cot sec csc and the hyperbolic ones with inverses, abs, and the constants, with a search).
+  A fourth row: **hyp** (`sciHyp`: sin cos tan become sinh cosh tanh, 2nd their inverses), **nCr** (2nd nPr), **mod** (2nd |x|), **i** (2nd ∠)
+  and **⋯** (φ is there, with π and e) (funcs.js: every function, cot sec csc and the hyperbolic ones with inverses, abs, and the constants, with a search).
   Functions are `FN_NAMES` (numbers.js, longest first; `FN_ALT`, `FN_END`, `FN_OPEN_END` build the regexes, so a new one is added
   in one place). nCr, nPr and mod are one-letter operators in the calculation: `C`, `P` (above × ÷, like Casio) and `m` (at × ÷;
   shown " mod "); `OP_END`/`OP_OPEN_END` know them, `VALUE_END` knows φ and constants. Constants (`CONSTS`, CODATA 2018, the
@@ -329,6 +330,14 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   (`ratShown`). Worked-out numbers keep the plain - like results; powers are superscripts (`supText`); trig steps say
   degrees or radians. Units/Currency compute theirs when ? is pressed (`unitsHow`, the `#unitHow` button in their toolbar).
   Arrows shown in text get U+FE0E (→\uFE0E), or iOS may draw them as emoji. On phones the dialog may use the whole height.
+- **Complex numbers** (complex.js): a value is a fraction when real, `{re, im}` (im ≠ 0) when not; `cx()` turns one with im 0
+  back into a fraction, so real calculations never see the difference. `evalExpr` uses `vAdd`, `vMul`, `vPow`,
+  `sciFunctionV`… (exact + − × ÷ and whole powers; floats rounded to 15 digits for the rest, a part under 1e−13 of the size
+  is 0). √, even roots and ln/log of a negative number are complex (√−4 = 2i); other real domain errors stay errors. `i` is a
+  number in the calculation (`2×i` shows as 2i), `∠` an operator as tight as ^ (r∠θ, θ in the angle unit). A complex result
+  carried on is `⟪⟫` (`carryCx`; History stores it written out, `expandCarry`); History and memory keep `re|im` strings
+  (`vToStore`/`vFromStore`). `fmt` shows complex values as a+bi or r∠θ (`cxForm`, `uc-cxform`, the chip in `#sciBar` after a
+  complex result). Mod, nCr, nPr and ! of a complex number are errors. The working folds 2 × i and 3 + 2i into written numbers.
 - **Memory** (memory.js; the owner asked for it after first declining): one exact number (`memory`, saved in `uc-memory`). The number
   on screen (`memScreenValue`) is the result, else the number being typed, else what is typed so far. MR types the memory as a
   number of up to 15 significant digits (very large/small ones as `(1.2×10^20)`); after any memory key the next digit starts
