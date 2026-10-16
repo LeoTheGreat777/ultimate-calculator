@@ -139,7 +139,7 @@ function unitEntry(){
  const before=v.slice(0,-m[0].length);// the minus is the number's own at the start or after × ÷ (, otherwise it is subtraction
  return (m[1]&&(before===''||/[*/(]$/.test(before))?m[1]:'')+m[2];
 }
-function updateUnitsDisplay(){
+function updateUnitsDisplay(){refreshSide();
  const from=$('#unitValueFrom'),to=$('#unitValueTo');
  if(!from||!to)return;
  if(mode==='units'&&$('#clearButton'))$('#clearButton').textContent=unitEntry()?'C':'AC';

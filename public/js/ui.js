@@ -233,6 +233,7 @@ function applyLanguage(){
  {const b=$('#modesButton');if(b){b.setAttribute('aria-label',mText('title'));b.title=mText('title')}if(modesOpen())openModes()}
  $('#howTitle').textContent=t('how');
  $('#howButton')?.setAttribute('aria-label',t('how'));
+ refreshSide(true);
  {const b=$('#unitHow');if(b){b.setAttribute('aria-label',t('how'));b.title=t('how')}}
  $('#historyPanel').setAttribute('aria-label',t('history'));
  $('#historyConfirmYes').textContent=t('confirmYes');

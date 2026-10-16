@@ -99,10 +99,13 @@ function toolChartAvailable(){return ['fuel','energy','vat','loan'].includes(mod
 function showToolChart(){
  if(!toolChartAvailable())return;
  $('#howTitle').textContent=cText('chart')+' · '+modeText(mode);
- $('#howContent').innerHTML='<div class="chart-heading" id="toolChartTitle"></div><div id="toolChartBody" class="chart-body"></div><canvas id="toolChart" class="tool-chart"></canvas><div id="toolChartLegend" class="chart-legend"></div><p id="toolChartNote" class="chart-note"></p>';
+ $('#howContent').innerHTML=toolChartHtml(true);
  $('#howModal').classList.remove('hidden');
  requestAnimationFrame(drawToolChart);
 }
+// The chart's parts; the dialog's have ids (the tests read them), the side panel's only classes.
+function toolChartHtml(ids){const a=k=>ids?' id="'+k+'"':'';
+ return '<div class="chart-heading tc-title"'+a('toolChartTitle')+'></div><div class="chart-body tc-body"'+a('toolChartBody')+'></div><canvas class="tool-chart tc-canvas"'+a('toolChart')+'></canvas><div class="chart-legend tc-legend"'+a('toolChartLegend')+'></div><p class="chart-note tc-note"'+a('toolChartNote')+'></p>'}
 // Rows of horizontal bars, drawn in HTML so the numbers stay sharp and readable at any size.
 // rows: [{label, parts:[value…] (series 1, 2), value, sub, hl}]; bars are to scale with the largest row.
 function chRows(rows){
@@ -127,9 +130,10 @@ function loanYears(v){
  }
  return years;
 }
-function drawToolChart(){
- const cv=$('#toolChart');if(!cv||$('#howModal').classList.contains('hidden'))return;
- const C=chColors(),num=id=>liveToolNumber(id),title=$('#toolChartTitle'),body=$('#toolChartBody'),legend=$('#toolChartLegend'),note=$('#toolChartNote');
+function drawToolChart(root){
+ if(!(root instanceof Element)){if(!$('#toolChart')||$('#howModal').classList.contains('hidden'))return;root=$('#howContent')}// (rAF passes a time)
+ const q=s=>root.querySelector(s),cv=q('.tc-canvas');if(!cv)return;
+ const C=chColors(),num=id=>liveToolNumber(id),title=q('.tc-title'),body=q('.tc-body'),legend=q('.tc-legend'),note=q('.tc-note');
  const html=h=>{body.innerHTML=h;cv.hidden=true},both=[{color:C.series[0]},{color:C.series[1]}];
  body.innerHTML='';cv.hidden=false;
  if(mode==='fuel'){
@@ -215,6 +219,7 @@ function redrawCharts(){
  if(mode==='graph'){renderGraphFns();drawGraphSoon()}
  if($('#toolChart')&&!$('#howModal').classList.contains('hidden'))drawToolChart();
  historyChartRefresh();
+ refreshSide(true);
 }
 window.addEventListener('resize',()=>requestAnimationFrame(redrawCharts));
 try{matchMedia('(prefers-color-scheme: light)').addEventListener('change',()=>requestAnimationFrame(redrawCharts))}catch{}

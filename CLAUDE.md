@@ -64,6 +64,7 @@ Everything the app serves is in `public/` (the web root for both GitHub Pages an
 | `theme.js` | themes: the ready-made ones, own themes (`deriveTheme`), Match device (`themePair`), the theme menu and the own theme editor |
 | `ui.js` | `setLanguage`/`applyLanguage`, modes and tabs (`switchMode`, `renderTool`), dialogs, hold keys, install |
 | `modes.js` | the All modes sheet (⊞): groups, search, pins (`uc-pins`), which tabs the strip shows (`stripModes`) |
+| `side.js` | big screens: History (left) and the working (right) beside the card, live (`refreshSide`, `renderSide`, `html.side-panels`) |
 | `help.js` | Tips & shortcuts text (`HELP`) and `showHelp` |
 | `main.js` | keypad and button wiring, the desktop keyboard handler, start-up. Loaded last |
 
@@ -179,7 +180,7 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   mode, and switches the tools to their compact layout when needed; only if nothing fits does the page scroll
   (`html.page-scroll`). Don't add fixed pixel heights per screen size or device; let `fitLayout` handle it,
   and call it after anything that changes the layout's height. Phones held sideways (any window wider than tall and
-  at most 500px high) get the landscape layout: keypad on the right, the rest on the left (`fitLandscape`,
+  at most 500px high, or a foldable's wide inner screen: Foldables below) get the landscape layout: keypad on the right, the rest on the left (`fitLandscape`,
   `html.landscape` in styles.css). Sideways the keys are the biggest that fit (a halving search, tools up to 84px), so every
   tab's keys are the same size even when the left side is the taller one, and once everything fits the card is stretched
   to the bottom (`html.land-fill`), so there is no empty strip below. On a very short screen (an iPhone SE in Safari, 667×330) `fitLandscape` first hides the copy
@@ -230,6 +231,21 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
 - **Symbols iOS turns into emoji:** don't use characters like ☀ ☾ for icons (iPhone draws ☀ as a colour emoji): draw
   them (the theme button's `THEME_ICONS`), or add U+FE0E after an arrow or symbol in text. The tab icons are drawn too
   (`ICONS`, `tabSvg` in i18n.js, 16×16): symbol characters like ↔ ◷ came out tiny and low on iPhone; only € % $ stay text.
+- **Side panels** (side.js, option A chosen by the owner): when there is room for a 260–300px panel on each side of the card
+  (a 1280px-wide window and up; never in the sideways layout or when the page scrolls), `html.side-panels` shows this mode's
+  History on the left (`historyRowsHtml`, the same list and `historyClick` as the sheet) and on the right the working
+  (`howHtml`; Units `unitsHow`; Graph `graphPointsHtml`) with a tool's chart under it (`toolChartHtml(false)`,
+  `drawToolChart(box)`: the dialog's chart parts keep their ids, the panel's have classes only). They are `position:fixed`
+  level with the card (`--side-l/r/top/h/w`). Anything that changes the screen calls `refreshSide()` (once per frame; the
+  calculator's `render`, `renderToolDisplay`, `updateUnitsDisplay`, Graph's points, History, `fitLayout`, language, theme).
+  In tests, scope selectors to the dialog or sheet (`#howContent …`, `#historyList …`): the panels have the same classes.
+- **Foldables:** `LANDSCAPE` (layout.js) also matches a touch screen at least 6:5 wide and at most 720px high (a foldable's inner
+  screen held sideways, e.g. iPhone Duo ~924×693, Galaxy Fold, Pixel Fold); there the sideways keys may grow to 96px
+  (`tall` in `fitLandscape`). Half open like a book, the browser reports two screen segments side by side
+  (`window.viewport.segments`, Chrome on Android; Safari has no such API yet): `html.hinge-v` forces the sideways layout
+  across the whole width with the column gap over the fold (`--hinge-w`). The tests emulate a fold with CDP
+  (`Emulation.setDeviceMetricsOverride` + `displayFeature`; a Playwright screenshot resets it). Not done: half open like a
+  laptop (segments one above the other).
 - **Big screens:** on large desktop screens the whole app is scaled with CSS `zoom` on `<html>` (`applyUiZoom`,
   `window.__uiZoom`, CSS var `--z`). Viewport units must be written `calc(100dvh / var(--z,1))`, and any code that
   turns screen coordinates (clientX/Y, getBoundingClientRect, innerHeight) into CSS sizes must divide by

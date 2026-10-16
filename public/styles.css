@@ -633,6 +633,9 @@ html.landscape .top-actions .icon-button,html.landscape .top-actions .language-b
 html.landscape .top-actions .icon-button{width:34px}
 html.landscape .app-footer{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;column-gap:10px;margin-top:5px;line-height:1.4}
 html.landscape .calculator-card,html.landscape .calculator-card.graph-mode,html.landscape .calculator-card.mobile-tool{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto auto;column-gap:12px;align-items:stretch;padding:8px}
+/* a fold down the middle (html.hinge-v, layout.js): the whole width, and the gap between the two sides over the fold */
+html.hinge-v .app-shell{width:100%}
+html.landscape.hinge-v .calculator-card,html.landscape.hinge-v .calculator-card.graph-mode,html.landscape.hinge-v .calculator-card.mobile-tool{column-gap:calc(var(--hinge-w,0px) + 32px)}
 html.landscape .calculator-toolbar{grid-column:1;grid-row:1}
 html.landscape #calculatorDisplay{grid-column:1;grid-row:2;height:auto!important;min-height:0!important}
 html.landscape #toolPanel{grid-column:1;grid-row:3;margin:6px 0 0}
@@ -829,3 +832,18 @@ html.landscape .mode-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1f
 .mode-tabs.icons .mode-tab:not(.active) .mode-tab-label{display:none}
 .mode-tabs.icons .mode-tab:not(.active){padding:0 8px}
 .mode-tabs.icons .mode-tab:not(.active) .mode-tab-icon{font-size:15px}
+/* ---------- Big screens: History and the working beside the app (side.js; html.side-panels when there is room) ---------- */
+.side-panel{display:none}
+html.side-panels .side-panel{display:flex;flex-direction:column;position:fixed;top:var(--side-top);width:var(--side-w,300px);max-height:var(--side-h);background:var(--card);border:1px solid var(--border);border-radius:22px;padding:14px 14px 8px;z-index:4;box-shadow:0 18px 50px rgba(0,0,0,.18)}
+.side-left{left:var(--side-l)}.side-right{left:var(--side-r)}
+.side-title{margin:0 2px 4px;font-size:15px;font-weight:700}
+.side-panel .side-list{margin-top:4px;min-height:0;overflow-y:auto;scrollbar-width:thin}
+.side-panel .history-result{font-size:17px}
+.side-scroll{min-height:0;overflow-y:auto;scrollbar-width:thin;margin:0 -6px;padding:0 6px}
+.side-work{margin-top:8px}
+.side-work .how-step{padding:12px}
+.side-work .how-result strong{font-size:28px}.side-work .how-result strong.long{font-size:22px}
+.side-empty{margin:4px 2px 8px;color:var(--muted);font-size:13px;line-height:1.5}
+.side-chart{margin-top:12px;padding-top:4px;border-top:1px solid var(--border)}
+.side-chart.hidden{display:none}
+.side-chart .what-if{font-size:11.5px}

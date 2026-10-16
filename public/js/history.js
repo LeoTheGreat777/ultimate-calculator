@@ -5,11 +5,17 @@ function renderHistory(){
  const tab=currentTab(),calc=tab==='calc';
  $('#historyTitle').textContent=t('history')+(calc?'':' · '+modeText(tab));
  $('#historyChartButton')?.classList.toggle('hidden',!calc);if(!calc)$('#historyChartWrap')?.classList.add('hidden');// the chart is the Calculator's
+ $('#historyList').innerHTML=historyRowsHtml(tab);
+ if(calc)historyChartRefresh();
+ refreshSide();
+}
+// The History list as HTML, for the sheet and for the panel beside the app on big screens (side.js)
+function historyRowsHtml(tab=currentTab()){
+ const calc=tab==='calc';
  const row=(id,top,bottom)=>`<div class="history-item"><button class="history-main" data-history="${id}" type="button"><div class="history-expression">${esc(top)}</div><div class="history-result">${esc(bottom)}</div></button><button class="history-delete" data-delete="${id}" type="button" aria-label="${esc(t('delete'))}">×</button></div>`;
  const rows=calc?historyItems().map(x=>row(x.id,x.shown||formatInputDisplay(x.expression),fmt(x.result&&typeof x.result==='string'?ratFromString(x.result):x.result)))
   :modeHistory(tab).map(x=>{const [a,b]=modeEntryLines(x);return row(x.id,a,b)});
- $('#historyList').innerHTML=rows.length?rows.join(''):`<div class="empty">${esc(calc?t('none'):t('noneMode'))}</div>`;
- if(calc)historyChartRefresh();
+ return rows.length?rows.join(''):`<div class="empty">${esc(calc?t('none'):t('noneMode'))}</div>`;
 }
 
 function openHistory(){const p=$('#historyPanel'),b=$('#historyBackdrop');renderHistory();p.classList.remove('hidden');b.classList.remove('hidden');requestAnimationFrame(()=>{p.classList.add('open');b.classList.add('open')});p.classList.remove('expanded');$('#historyList').scrollTop=0}
@@ -248,7 +254,7 @@ function setupHistoryGestures() {
 const MODE_HISTORY_MAX=50;
 function modeHistoryAll(){try{const o=JSON.parse(store.get('uc-history-modes')||'{}');return o&&typeof o==='object'&&!Array.isArray(o)?o:{}}catch{return {}}}
 function modeHistory(tab){const a=modeHistoryAll()[tab];return Array.isArray(a)?a:[]}
-function setModeHistory(tab,list){const o=modeHistoryAll();if(list.length)o[tab]=list.slice(0,MODE_HISTORY_MAX);else delete o[tab];store.set('uc-history-modes',JSON.stringify(o))}
+function setModeHistory(tab,list){const o=modeHistoryAll();if(list.length)o[tab]=list.slice(0,MODE_HISTORY_MAX);else delete o[tab];store.set('uc-history-modes',JSON.stringify(o));refreshSide()}
 // What the mode on screen shows, worth keeping; null when there is nothing finished.
 function modeSnapshot(){
  const tab=currentTab();

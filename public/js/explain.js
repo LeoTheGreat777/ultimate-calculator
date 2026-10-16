@@ -152,7 +152,7 @@ function unitsHow(){
  if(mode!=='units')return null;
  const el=lang==='el',L=(g,e)=>el?g:e,cc=$('#unitCategory')?.value,src=unitSource||unitActiveInput||'from';
  const su=src==='from'?$('#unitFrom')?.value:$('#unitTo')?.value,du=src==='from'?$('#unitTo')?.value:$('#unitFrom')?.value;
- const expr=String(unitExpressions[src]??'').trim();if(!cc||!su||!du||!expr)return null;
+ const expr=String(unitExpressions[src]??'').trim();if(!cc||!su||!du||!expr||expr==='0')return null;
  const kept=unitError,value=unitEvaluate(expr);unitError=kept;if(value===null)return null;// only reading: the error on screen stays
  const cur=cc==='currency',V=v=>cur?formatMoneyValue(v):formatRat(v).replace(/^-/,'−'),R=formatRateValue,u=x=>' '+x;
  const out=unitConvertValue(cc,value,su,du),steps=[];

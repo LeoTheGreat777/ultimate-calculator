@@ -23,7 +23,7 @@ function loadTools(){
  }catch{}
 }
 
-function renderToolDisplay(){
+function renderToolDisplay(){refreshSide();
  const d=$('#calculatorDisplay');
  d.classList.add('tool-display');
  d.classList.remove('calculated');

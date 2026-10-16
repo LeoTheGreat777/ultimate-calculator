@@ -559,7 +559,7 @@ async def scientific(browser, url, lang, theme):
     # History and the explanation keep the scientific text
     await p.keyboard.press('Escape')
     await keys('3', '0', 'sci:sin', '=')
-    check(L + 'History shows sin(30)', await p.evaluate("document.querySelector('.history-expression').textContent") == 'sin(30)')
+    check(L + 'History shows sin(30)', await p.evaluate("document.querySelector('#historyList .history-expression').textContent") == 'sin(30)')
     check(L + 'explanation: sin(30°) = 0,5', 'sin(30°) = 0,5' in await p.evaluate("howData.steps.map(s=>s.text||s).join('|')"))
     # the choice is remembered; Units keeps its own keypad
     await p.reload()
@@ -1041,7 +1041,7 @@ async def tool_charts(browser, url, phone):
         fits = await p.evaluate("(()=>{const c=document.querySelector('#howModal .modal-card');return c.scrollWidth<=c.clientWidth+1})()")
         check(L + f'{m} {kind or ""}: nothing sticks out sideways', fits)
     await fill('fuel', [['fuelD', '70'], ['fuelC', '4,5'], ['fuelP', '2,3']])
-    got = await p.evaluate("[[...document.querySelectorAll('.what-if td')].map(t=>t.textContent),document.querySelector('.what-if td.me').textContent,document.querySelector('#result').textContent,document.querySelector('#toolChartLegend').textContent]")
+    got = await p.evaluate("[[...document.querySelectorAll('#howContent .what-if td')].map(t=>t.textContent),document.querySelector('#howContent .what-if td.me').textContent,document.querySelector('#result').textContent,document.querySelector('#toolChartLegend').textContent]")
     check(L + 'fuel: 3 × 3 grid, the middle is the result', len(got[0]) == 9 and got[0][4] == got[1] == got[2] == '7,24 €' and got[0][0] == '6,16 €' and got[0][8] == '8,40 €', got)
     check(L + 'fuel: return trip and per 100 km', '14,49 €' in got[3] and '10,35 €' in got[3], got[3])
     await p.evaluate("closeHow()")
@@ -1776,6 +1776,89 @@ async def explanations(browser, url):
         await p.context.close()
 
 
+async def side_panels(browser, url):
+    """Big screens: History on the left and the working on the right, live; none where there is no room."""
+    L = '[side panels] '
+    p = await new_page(browser, url, 'en', 'dark', size=(1920, 1080))
+    await p.wait_for_timeout(100)
+    geo = "(()=>{const r=s=>document.querySelector(s).getBoundingClientRect(),c=r('#calculatorCard'),a=r('#sideHistory'),b=r('#sideWork');return [document.documentElement.classList.contains('side-panels'),a.right<=c.left-10,b.left>=c.right+10,a.left>=0,b.right<=innerWidth,Math.abs(a.top-c.top)<2,Math.abs(b.top-c.top)<2,a.width>=260]})()"
+    st = await p.evaluate(geo)
+    check(L + 'beside the card, level with it, on the screen', st == [True] * 8, st)
+    check(L + 'before a result: a hint', 'Press =' in await p.evaluate("sideWorkBody.textContent"))
+    for k in ['1', '2', '+', '7', '*', '3']:
+        await p.keyboard.type(k)
+    await p.keyboard.press('Enter')
+    await p.wait_for_timeout(100)
+    st = await p.evaluate("[[...document.querySelectorAll('#sideWorkBody .how-line strong')].map(s=>s.textContent),document.querySelector('#sideHistoryList .history-result').textContent]")
+    check(L + 'the working and the History update by themselves', st == [['Multiply first', 'Add'], '33'], st)
+    await p.keyboard.press('Escape')
+    await p.wait_for_timeout(100)
+    await p.click('#sideHistoryList .history-main')
+    await p.wait_for_timeout(100)
+    check(L + 'a History entry brings the calculation back', await p.evaluate(R) == '33', await p.evaluate(R))
+    await p.evaluate("switchMode('vat');(()=>{const e=document.getElementById('amount');e.value='100';e.dispatchEvent(new Event('input',{bubbles:true}))})()")
+    await p.wait_for_timeout(150)
+    st = await p.evaluate("[sideHistoryTitle.textContent,document.querySelectorAll('#sideWorkBody .how-line').length,[...document.querySelectorAll('#sideChart .crow .cl')].map(x=>x.textContent)]")
+    check(L + 'VAT: its own History, the working and the chart under it', st == ['History · VAT', 2, ['24%', '13%', '6%']], st)
+    await p.evaluate("switchMode('graph')")
+    await p.wait_for_timeout(250)
+    check(L + 'Graph: its key points', await p.evaluate("sideWorkTitle.textContent") == 'Key points' and await p.evaluate("document.querySelectorAll('#sideWorkBody .graph-point-line').length") >= 3)
+    await p.evaluate("setLanguage('el')")
+    await p.wait_for_timeout(900)
+    await p.evaluate("switchMode('calc')")
+    await p.wait_for_timeout(100)
+    check(L + 'a language switch reaches the panels', await p.evaluate("[sideHistoryTitle.textContent,sideWorkTitle.textContent]") == ['Ιστορικό', 'Πώς βγήκε'], await p.evaluate("[sideHistoryTitle.textContent,sideWorkTitle.textContent]"))
+    await p.set_viewport_size({'width': 1100, 'height': 800})
+    await p.wait_for_timeout(250)
+    check(L + 'no room, no panels', await p.evaluate("[document.documentElement.classList.contains('side-panels'),getComputedStyle(sideWork).display]") == [False, 'none'])
+    await p.context.close()
+    p = await new_page(browser, url, 'en', 'dark', phone=True)
+    await p.wait_for_timeout(100)
+    check('[side panels phone] none on a phone', not await p.evaluate("document.documentElement.classList.contains('side-panels')"))
+    await p.context.close()
+
+
+async def foldables(browser, url):
+    """Foldables: an inner screen held sideways (iPhone Duo, Galaxy Fold: wide, not phone-short) gets the sideways layout
+    with big keys and nothing scrolls; half open like a book (two screen segments), the fold falls between the display
+    and the keypad."""
+    tabs = ['calc', 'units', 'currency', 'graph', 'vat', 'pct', 'loan', 'dates', 'fuel', 'energy', 'net']
+    for size in [(924, 693), (832, 620)]:
+        L = f'[foldables {size[0]}x{size[1]}] '
+        p = await new_page(browser, url, 'el', 'dark', phone=True, size=size)
+        bad = []
+        for t in tabs:
+            await p.evaluate(f"switchMode('{t}')")
+            await p.wait_for_timeout(60)
+            st = await p.evaluate("[document.documentElement.classList.contains('landscape'),document.documentElement.classList.contains('page-scroll'),document.documentElement.scrollWidth<=innerWidth]")
+            if st != [True, False, True]:
+                bad.append((t, st))
+        check(L + 'every tab sideways, no scrolling', not bad, bad)
+        await p.evaluate("switchMode('calc')")
+        await p.wait_for_timeout(60)
+        k = await p.evaluate("document.querySelector('#keypad [data-value=\"7\"]').getBoundingClientRect().height")
+        check(L + 'keys bigger than on a phone held sideways', k > 70, k)
+        await p.context.close()
+    p = await new_page(browser, url, 'en', 'dark', phone=True, size=(1024, 768))
+    check('[foldables] a tablet sideways keeps its layout', not await p.evaluate("document.documentElement.classList.contains('landscape')"))
+    await p.context.close()
+    for name, (w, h, off, mask) in {'iPhone Duo-like': (924, 693, 452, 20), 'Surface Duo': (1114, 720, 540, 34)}.items():
+        L = f'[foldables {name}, half open] '
+        p = await new_page(browser, url, 'en', 'dark', phone=True, size=(w, h))
+        cdp = await p.context.new_cdp_session(p)
+        bad = []
+        for t in ['calc', 'loan', 'graph', 'units']:
+            await p.evaluate(f"switchMode('{t}')")
+            await cdp.send('Emulation.setDeviceMetricsOverride', {'width': w, 'height': h, 'deviceScaleFactor': 2, 'mobile': True, 'displayFeature': {'orientation': 'vertical', 'offset': off, 'maskLength': mask}})
+            await p.wait_for_timeout(250)
+            st = await p.evaluate("""(()=>{const s=window.viewport.segments,r=e=>document.querySelector(e).getBoundingClientRect();
+              return [s.length,document.documentElement.classList.contains('hinge-v'),r('#calculatorDisplay').right<=s[0].right,r('#keypad').left>=s[1].left,r('#keypad').right<=s[1].right]})()""")
+            if st != [2, True, True, True, True]:
+                bad.append((t, st))
+        check(L + 'the display on one side of the fold, the keypad on the other', not bad, bad)
+        await p.context.close()
+
+
 async def big_screen_dialogs(browser, url):
     """On a big screen the ? and Tips dialogs show everything without scrolling: Tips put the shortcuts beside the tips,
     and a long list of tips goes into two columns. Phones keep one column."""
@@ -1841,6 +1924,8 @@ async def main():
         await press_feedback(browser, url)
         await big_screen_dialogs(browser, url)
         await explanations(browser, url)
+        await side_panels(browser, url)
+        await foldables(browser, url)
         await offline(browser)
         await preview_site(browser)
         await currency_offline(browser, url)

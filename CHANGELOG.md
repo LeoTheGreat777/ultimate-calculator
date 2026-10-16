@@ -6,6 +6,17 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.20.0 – 2026-10-16
+
+### Added
+- On a computer screen with room beside the app, History sits on the left and the working on the right, both updating
+  as you go: no need to open them. In VAT, Fuel, Energy and Interest the chart is under the working; in Graph, the key
+  points.
+
+### Changed
+- Foldables: the inner screen of a foldable held sideways (iPhone Duo, Galaxy Fold, Pixel Fold) gets the sideways layout
+  with big keys, so no tab needs scrolling. Half open like a book, the fold falls between the display and the keypad.
+
 ## 0.19.0 – 2026-10-16
 
 ### Changed

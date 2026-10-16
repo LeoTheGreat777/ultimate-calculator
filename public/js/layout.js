@@ -81,10 +81,12 @@ function applyUiZoom(){
 }
 // A phone held sideways (or any short, wide window): the keypad goes on the right and everything else on the left
 // (styles.css, html.landscape). The keys get the height there is, and the display takes what is left beside them.
-const LANDSCAPE='(orientation: landscape) and (max-height: 500px)';
+// Also a touch screen that is clearly wider than tall and not tall enough for the upright layout's tools: a foldable
+// opened up and held sideways (the iPhone Duo's or a Galaxy Fold's inner screen in a browser), a small tablet sideways.
+const LANDSCAPE='(orientation: landscape) and (max-height: 500px), (pointer: coarse) and (min-aspect-ratio: 6/5) and (max-height: 720px)';
 function fitLandscape(card,root,avail,need,tool,setToolLayout){
  if(tool)setToolLayout(true);
- const graph=mode==='graph',v=graph?'--gk':'--k',[kMax,kMin]=graph?[56,28]:tool?[84,32]:[68,34];
+ const graph=mode==='graph',v=graph?'--gk':'--k',tall=avail>520,[kMax,kMin]=graph?[tall?72:56,28]:tool?[tall?96:84,32]:[tall?96:68,34];// taller: a foldable's inner screen
  const rows=new Set([...$('#keypad').querySelectorAll('button')].map(b=>b.getBoundingClientRect().top|0)).size||5;
  root.classList.remove('land-fill');// measured at its natural height; filled to the bottom at the end
  card.style.setProperty('--disp','auto');// the display fills the height beside the keys
@@ -110,7 +112,7 @@ function fitLandscape(card,root,avail,need,tool,setToolLayout){
 }
 let fitRaf=0;
 function fitLayoutSoon(){if(!fitRaf)fitRaf=requestAnimationFrame(()=>{fitRaf=0;fitLayout()})}
-function fitLayout(){
+function fitLayout(){refreshSide();
  const card=$('#calculatorCard'),shell=$('.app-shell'),footer=$('.app-footer'),root=document.documentElement;if(!card||!shell||!footer)return;
  document.body.classList.add('fit');
  if(applyUiZoom())requestAnimationFrame(redrawCharts);
@@ -122,7 +124,11 @@ function fitLayout(){
  const tool=TOOL_MODES.includes(mode),touchTool=tool&&isMobileDevice();
  const setToolLayout=compact=>{card.classList.toggle('mobile-tool',compact);document.body.classList.toggle('mobile-tool-on',compact)};
  if(tool)setToolLayout(touchTool);
- const land=matchMedia(LANDSCAPE).matches;root.classList.toggle('landscape',land);if(!land)root.classList.remove('land-fill');
+ // A foldable half open like a book (or a dual-screen phone spanned) reports two screen segments side by side: the
+ // sideways layout then puts the display on one side of the fold and the keypad on the other, the gap over the fold.
+ const segs=window.viewport?.segments,hinge=segs&&segs.length===2&&Math.abs(segs[0].top-segs[1].top)<1?Math.max(0,(segs[1].left-segs[0].right)/Z):null;
+ root.classList.toggle('hinge-v',hinge!==null);if(hinge!==null)root.style.setProperty('--hinge-w',hinge+'px');
+ const land=matchMedia(LANDSCAPE).matches||hinge!==null;root.classList.toggle('landscape',land);if(!land)root.classList.remove('land-fill');
  if(tool)fitShortLabels();
  if(land){fitLandscape(card,root,avail,need,tool,setToolLayout);if(tool)fitShortLabels();return}
  card.style.removeProperty('--gk');// back in portrait, Graph keys size themselves again (styles.css)

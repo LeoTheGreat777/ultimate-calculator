@@ -263,7 +263,7 @@ function drawGraph(){
   ctx.stroke();
  });
  // key points
- graphPts=graphKeyPoints(fs,x0,x1,Math.min(1200,Math.max(200,Math.round(w))));
+ graphPts=graphKeyPoints(fs,x0,x1,Math.min(1200,Math.max(200,Math.round(w))));refreshSide();
  // (not drawn when there are too many to tell apart, like sin(x) zoomed far out)
  if(graphPts.length<=w/8)graphPts.forEach(pt=>{const x=PX(pt.x),y=PY(pt.y);if(x<-6||x>w+6||y<-6||y>h+6)return;ctx.beginPath();ctx.arc(x,y,pt.type==='cross'?4.5:3.6,0,Math.PI*2);ctx.fillStyle=pt.type==='cross'?C.text:C.card2;ctx.fill();ctx.lineWidth=2;ctx.strokeStyle=pt.type==='cross'?C.card2:C.series[pt.i];ctx.stroke()});
  // trace under the pointer
@@ -275,7 +275,9 @@ function drawGraph(){
   if(ro){ro.textContent=graphTrace.point?gPointLabel(graphTrace.point):'x = '+chNum(graphTrace.x)+' · '+GRAPH_NAMES[graphTrace.i]+'(x) = '+chNum(graphTrace.y);ro.style.borderColor=col}
  }else if(ro){ro.textContent='';ro.style.borderColor=''}
 }
-function showGraphPoints(){
+function showGraphPoints(){$('#howTitle').textContent=gText('pointsTitle');$('#howContent').innerHTML=graphPointsHtml();$('#howModal').classList.remove('hidden')}
+// the roots, minima, maxima and intersections as a list (the ? dialog, and the panel beside the app: side.js)
+function graphPointsHtml(){
  const C=chColors(),pts=graphPts;
  let html='';
  graph.fns.forEach((src,i)=>{
@@ -287,7 +289,7 @@ function showGraphPoints(){
  if(cross.length)html+='<div class="how-step graph-points"><div class="how-formula">'+esc(gText('cross'))+'</div>'+cross.map(p=>'<div class="graph-point-line"><span>'+GRAPH_NAMES[p.i]+', '+GRAPH_NAMES[p.j]+'</span><strong>('+esc(chNum(p.x))+'; '+esc(chNum(p.y))+')</strong></div>').join('')+'</div>';
  if(!html)html='<div class="empty">'+esc(gText('none'))+'</div>';
  html+='<p class="chart-note">'+esc(gText('pointsNote'))+'</p>';
- $('#howTitle').textContent=gText('pointsTitle');$('#howContent').innerHTML=html;$('#howModal').classList.remove('hidden');
+ return html;
 }
 function graphSaveImage(button){
  const cv=$('#graphCanvas');if(!cv)return;const C=chColors(),dpr=cv.width/Math.max(1,cv.clientWidth);

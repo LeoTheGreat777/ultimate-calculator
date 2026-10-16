@@ -18,7 +18,7 @@ function inputLength(){const s=expression+current;return s.length-(carry&&carry.
 function carryText(r,digits){const abs=r.n<0n?{n:-r.n,d:r.d}:r,places=digits+Math.max(0,r.d.toString().length-abs.n.toString().length),raw=ratToDecimal(r,places);/* tiny values keep their digits too */carry={text:ratToDecimal(abs,places),value:abs,raw,shown:fmt(r)};carry.plain=/×/.test(carry.shown)?'':ratToRoundedDecimal(r,6);/* what ⌫ edits; one shown as × 10ⁿ is deleted whole */return raw}
 // explanationForExpression (the working under ?) is in explain.js
 function resetHow(){calcError='';howData=null;calcHowData=null;$('#howButton')?.classList.add('hidden')}
-function render(){
+function render(){refreshSide();
  if(mode!=='calc')return;
  renderSciBar();
  const raw=expression+current;
