@@ -847,3 +847,15 @@ html.side-panels .side-panel{display:flex;flex-direction:column;position:fixed;t
 .side-chart{margin-top:12px;padding-top:4px;border-top:1px solid var(--border)}
 .side-chart.hidden{display:none}
 .side-chart .what-if{font-size:11.5px}
+/* ---------- Memory (memory.js): a slim row above the keys in the Calculator; M and its value beside f(x) ---------- */
+.mem-row{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin:0 0 6px}
+.mem-row.hidden{display:none}
+.mem-key{height:30px;border:0;border-radius:10px;background:transparent;color:var(--accent2);font:inherit;font-size:13px;font-weight:700;letter-spacing:.03em;cursor:pointer;position:relative;overflow:hidden}
+.mem-key.empty{color:var(--muted);opacity:.55}
+@media (hover:hover) and (pointer:fine){.mem-key:hover{background:var(--key)}}
+.mem-key.pressed{background:var(--key)}
+.mem-chip{min-width:0;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--accent2)}
+/* sideways it takes the copy button's place (a tap on the result copies it) */
+html.landscape #memRow{grid-column:1;grid-row:4;margin:6px 0 0}
+html.landscape .calculator-card.has-mem .bottom-actions{display:none}
+html.landscape .mem-key{height:28px}

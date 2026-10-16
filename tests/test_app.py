@@ -1182,7 +1182,7 @@ async def sideways_every_tab(browser, url):
                 st = await p.evaluate("""(()=>{const W=innerWidth,out=[];if(document.documentElement.classList.contains('page-scroll'))out.push('scrolls');
                   document.querySelectorAll('#calculatorCard *').forEach(e=>{const r=e.getBoundingClientRect();if(r.width&&r.right>W+1&&!e.closest('.mode-tabs,.hidden'))out.push('off: '+e.tagName+'.'+String(e.className).slice(0,20))});
                   document.querySelectorAll('#toolPanel .tool-field span').forEach(e=>{if(e.offsetParent&&e.scrollWidth>e.clientWidth+1)out.push('label cut: '+e.textContent)});
-                  const k=[...document.querySelectorAll('#keypad button')].filter(b=>b.offsetParent).map(b=>Math.round(b.getBoundingClientRect().height));
+                  const k=[...document.querySelectorAll('#keypad button:not(.mem-key)')].filter(b=>b.offsetParent).map(b=>Math.round(b.getBoundingClientRect().height));
                   return {out:[...new Set(out)],k:k.length?Math.min(...k):null}})()""")
                 if st['out']:
                     bad.append([m + (':' + kind if kind else ''), st['out']])
@@ -1512,7 +1512,7 @@ async def sideways_and_chips(browser, url):
         if mode == 'net':
             await p.evaluate("for(const[k,v] of [['netIp','192.168.100.100'],['netPrefix','26']]){const i=document.getElementById(k);i.value=v;i.dispatchEvent(new Event('input',{bubbles:true}))}")
         await p.wait_for_timeout(400)
-        sizes[mode] = await p.evaluate("Math.round(document.querySelector('#keypad button').getBoundingClientRect().height)")
+        sizes[mode] = await p.evaluate("Math.round(document.querySelector('#keypad button:not(.mem-key)').getBoundingClientRect().height)")
         if mode == 'net':
             st = await p.evaluate("""(()=>{const s=[...document.querySelectorAll('#netDetails strong')];return {shown:s.length&&s[0].offsetParent!==null,
               cut:s.filter(e=>e.scrollWidth>e.clientWidth+1).map(e=>e.textContent),font:Math.min(...s.map(e=>parseFloat(getComputedStyle(e).fontSize)))}})()""")
@@ -1818,6 +1818,53 @@ async def side_panels(browser, url):
     await p.context.close()
 
 
+async def memory_keys(browser, url):
+    """Memory: MS, M+, M−, MR, MC in the Calculator, kept across visits, shown beside f(x), Ctrl shortcuts."""
+    L = '[memory] '
+    p = await new_page(browser, url, 'en', 'dark')
+    mem = "[localStorage.getItem('uc-memory'),document.querySelector('.mem-chip')?.textContent||'',document.querySelector('.mem-key[data-mem=\"mr\"]').classList.contains('empty')]"
+    check(L + 'nothing in memory: MR and MC look empty, no chip', await p.evaluate(mem) == [None, '', True])
+    await p.keyboard.type('450+380')
+    await p.keyboard.press('Enter')
+    await p.click('.mem-key[data-mem="ms"]')
+    st = await p.evaluate(mem)
+    check(L + 'MS keeps the result; the chip shows it', st[0].startswith('830') and st[1] == 'M 830' and not st[2], st)
+    await p.keyboard.type('20')
+    await p.click('.mem-key[data-mem="m+"]')
+    check(L + 'M+ adds the number being typed', await p.evaluate("fmt(memory)") == '850')
+    await p.keyboard.type('5')
+    check(L + 'after a memory key the next digit starts a new number', await p.evaluate(R) == '5', await p.evaluate(R))
+    await p.keyboard.press('Escape')
+    await p.keyboard.type('2*')
+    await p.click('.mem-key[data-mem="mr"]')
+    await p.keyboard.press('Enter')
+    check(L + 'MR brings it back into a calculation', await p.evaluate(R) == '1.700', await p.evaluate(R))
+    await p.keyboard.press('Escape')
+    await p.keyboard.type('1/3')
+    await p.keyboard.press('Enter')
+    await p.click('.mem-key[data-mem="m-"]')
+    check(L + 'M− takes the result away, exactly', await p.evaluate("ratEq(memory,ratFromString('849').n?ratSub(ratFromString('850'),ratDiv(rat(1n),rat(3n))):null)"))
+    await p.reload()
+    await p.wait_for_timeout(300)
+    check(L + 'kept across visits', await p.evaluate("fmt(memory)") == '849,666667' and await p.evaluate("document.querySelector('.mem-chip').textContent") == 'M 849,666667')
+    await p.keyboard.press('Control+l')
+    check(L + 'Ctrl+L clears it (MC)', await p.evaluate(mem) == [None, '', True])
+    await p.keyboard.type('7')
+    await p.keyboard.press('Control+m')
+    await p.keyboard.press('Control+p')
+    await p.keyboard.press('Escape')
+    await p.keyboard.press('Control+r')
+    check(L + 'Ctrl+M stores, Ctrl+P adds, Ctrl+R recalls', await p.evaluate(R) == '14', await p.evaluate(R))
+    await p.keyboard.press('Escape')
+    await p.click('.mem-key[data-mem="mc"]')
+    await p.click('.mem-key[data-mem="mr"]')
+    check(L + 'MR with nothing in memory does nothing', await p.evaluate(R) == '0')
+    await p.evaluate("switchMode('units')")
+    check(L + 'only the Calculator has the memory row', await p.evaluate("document.querySelector('#memRow').classList.contains('hidden')"))
+    check(L + 'no JavaScript errors', not p.errors, p.errors)
+    await p.context.close()
+
+
 async def foldables(browser, url):
     """Foldables: an inner screen held sideways (iPhone Duo, Galaxy Fold: wide, not phone-short) gets the sideways layout
     with big keys and nothing scrolls; half open like a book (two screen segments), the fold falls between the display
@@ -1926,6 +1973,7 @@ async def main():
         await explanations(browser, url)
         await side_panels(browser, url)
         await foldables(browser, url)
+        await memory_keys(browser, url)
         await offline(browser)
         await preview_site(browser)
         await currency_offline(browser, url)

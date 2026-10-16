@@ -6,6 +6,13 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.21.0 – 2026-10-16
+
+### Added
+- Memory keys in the Calculator: MS keeps the number on screen, M+ and M− add it or take it away, MR brings it back,
+  MC clears it. While something is in memory it shows beside f(x) (tap it to bring it back), and it stays there after
+  you close the app. On a computer: Ctrl+M, Ctrl+P, Ctrl+Q, Ctrl+R and Ctrl+L, as in Windows' calculator.
+
 ## 0.20.0 – 2026-10-16
 
 ### Added

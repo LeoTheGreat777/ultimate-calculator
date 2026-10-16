@@ -17,7 +17,7 @@ function inputLength(){const s=expression+current;return s.length-(carry&&carry.
 
 function carryText(r,digits){const abs=r.n<0n?{n:-r.n,d:r.d}:r,places=digits+Math.max(0,r.d.toString().length-abs.n.toString().length),raw=ratToDecimal(r,places);/* tiny values keep their digits too */carry={text:ratToDecimal(abs,places),value:abs,raw,shown:fmt(r)};carry.plain=/×/.test(carry.shown)?'':ratToRoundedDecimal(r,6);/* what ⌫ edits; one shown as × 10ⁿ is deleted whole */return raw}
 // explanationForExpression (the working under ?) is in explain.js
-function resetHow(){calcError='';howData=null;calcHowData=null;$('#howButton')?.classList.add('hidden')}
+function resetHow(){memFresh=false;calcError='';howData=null;calcHowData=null;$('#howButton')?.classList.add('hidden')}
 function render(){refreshSide();
  if(mode!=='calc')return;
  renderSciBar();
@@ -53,6 +53,7 @@ function clearButtonAction(){
 function backspace(){resetHow();if(justCalculated){clearAll();return}if(!current&&carry&&expression===carry.raw){expression=carry.plain;carry=null}if(current){current=current.slice(0,-1);if(current==='−')current='-';currentIsPercent=false}else if(expression){const f=expression.match(/(?:asin|acos|atan|sin|cos|tan|ln|log|√|∛)\($/);expression=expression.slice(0,-(f?f[0].length:1))}render()}
 function digit(v){
  if(v===',')v='.';
+ if(memFresh&&current&&!justCalculated){current='';currentIsPercent=false}// after MR, M+ …: a new number
  if(!justCalculated&&(digitCount(current)>=MAX_DIGITS&&!currentIsPercent||inputLength()>=MAX_INPUT)){refuseKey();return}// 15 digits a number, 150 characters
  resetHow();
  if(justCalculated){expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null}
@@ -200,8 +201,8 @@ function renderSciBar(){
  const d=$('#calculatorDisplay');if(!d)return;
  let bar=$('#sciBar');
  if(!bar){bar=document.createElement('div');bar.id='sciBar';bar.className='sci-bar';d.appendChild(bar);
-  bar.addEventListener('click',e=>{if(e.target.closest('[data-bar="sci"]'))toggleSci()})}
- const html='<button class="sci-chip'+(sciMode?' on':'')+'" data-bar="sci" type="button" aria-pressed="'+sciMode+'" aria-label="'+esc(t('scientific'))+'" title="'+esc(t('scientific'))+'">f(x)</button>';
+  bar.addEventListener('click',e=>{if(e.target.closest('[data-bar="sci"]'))toggleSci();else if(e.target.closest('[data-bar="mr"]'))memKey('mr')})}
+ const html='<button class="sci-chip'+(sciMode?' on':'')+'" data-bar="sci" type="button" aria-pressed="'+sciMode+'" aria-label="'+esc(t('scientific'))+'" title="'+esc(t('scientific'))+'">f(x)</button>'+memChipHtml();
  if(bar.dataset.html!==html){bar.innerHTML=html;bar.dataset.html=html}
 }
 function toggleSci(){sciMode=!sciMode;sciSecond=false;store.set('uc-sci',sciMode?'1':'0');renderCalcKeypad();render();fitLayout()}

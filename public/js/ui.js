@@ -5,6 +5,7 @@ function closeHow(){$('#howModal').classList.add('hidden');$('#howModal').classL
 function modeIcon(m){return ICONS[m]||''}
 function renderTool(){
  const calc=mode==='calc';
+ renderMemRow();// MC MR M+ M− MS: the Calculator only
  renderDateBar();// the Working days chip shows only in Dates: every tab change hides or shows it
  const card=$('#calculatorCard');
  card.classList.toggle('mobile-tool',!calc&&isMobileDevice()&&mode!=='units'&&mode!=='graph');
@@ -233,7 +234,7 @@ function applyLanguage(){
  {const b=$('#modesButton');if(b){b.setAttribute('aria-label',mText('title'));b.title=mText('title')}if(modesOpen())openModes()}
  $('#howTitle').textContent=t('how');
  $('#howButton')?.setAttribute('aria-label',t('how'));
- refreshSide(true);
+ refreshSide(true);renderMemRow();
  {const b=$('#unitHow');if(b){b.setAttribute('aria-label',t('how'));b.title=t('how')}}
  $('#historyPanel').setAttribute('aria-label',t('history'));
  $('#historyConfirmYes').textContent=t('confirmYes');

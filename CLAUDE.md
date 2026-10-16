@@ -54,6 +54,7 @@ Everything the app serves is in `public/` (the web root for both GitHub Pages an
 | `graph.js` | Graph mode (parser, pan/zoom, key points, drawing) |
 | `calculator.js` | calculator keys (`digit`, `operator`, brackets, `negate`, `equals`, C/AC), display, explanation |
 | `explain.js` | the working under ?: `explanationForExpression` (the calculation read into a tree like `evalExpr`, worked out step by step in school order, each step with its reason and the shorter calculation, `\u0001`/`\u0002` around the new number), `unitsHow` (Units/Currency), `howHtml` (draws any working, Subnet's bits too) |
+| `memory.js` | the memory keys MC MR M+ M− MS (`memKey`, `#memRow`, `uc-memory`), the M chip beside f(x), Ctrl shortcuts |
 | `history.js` | saved calculations, the History sheet and its gestures; every other mode's own History (`recordModeHistory`) |
 | `units.js` | unit data and names, conversion, the two values, `unitKeyInput` |
 | `currency.js` | Currency: ECB rates (fetched, saved, shipped snapshot), `units.currency`, money and rate formats, the rate line |
@@ -161,7 +162,7 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   `./?mode=vat` etc.; main.js switches to that mode at start and puts the address back to `./`. The list and the icons
   (each the mode's tab icon on the dark background) come from `tools/make-shortcut-icons.py`; run it after changing
   them or a tab icon (the tests compare the manifest with it). iPhones don't offer shortcuts for web apps.
-- **Storage:** all in the browser (`uc-history`, `uc-history-modes`, `uc-tools`, `uc-rates`, `uc-lang`, `uc-pins`,
+- **Storage:** all in the browser (`uc-history`, `uc-history-modes`, `uc-tools`, `uc-rates`, `uc-lang`, `uc-pins`, `uc-memory`,
   `uc-theme`, `uc-theme-pair`, `uc-custom-themes`, `uc-theme-recent`). Use `store.get/set` – localStorage can throw.
 - **Number fields** (every tool field but dates and IP/mask, `groupedField`) show thousands as they are typed: 10000 ->
   10.000 (`groupDigits` in the `input` handler, the cursor kept in place). In them a dot is always a thousands dot and the
@@ -321,6 +322,12 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   (`ratShown`). Worked-out numbers keep the plain - like results; powers are superscripts (`supText`); trig steps say
   degrees or radians. Units/Currency compute theirs when ? is pressed (`unitsHow`, the `#unitHow` button in their toolbar).
   Arrows shown in text get U+FE0E (→\uFE0E), or iOS may draw them as emoji. On phones the dialog may use the whole height.
+- **Memory** (memory.js; the owner asked for it after first declining): one exact number (`memory`, saved in `uc-memory`). The number
+  on screen (`memScreenValue`) is the result, else the number being typed, else what is typed so far. MR types the memory as a
+  number of up to 15 significant digits (very large/small ones as `(1.2×10^20)`); after any memory key the next digit starts
+  a new number (`memFresh`). The row is `#memRow`, outside `#keypad` so the keys keep the same size in every tab: upright
+  between the display and the keys, sideways under the display in the copy button's place (`has-mem`). The M chip sits in
+  `#sciBar` beside f(x). Keyboard: Ctrl+M MS, Ctrl+P M+, Ctrl+Q M−, Ctrl+R MR, Ctrl+L MC (`memKeydown`).
 - **Copying:** tapping a finished result copies it (calculator and tools), so the copy button can be hidden
   on short screens.
 - **Offline:** `public/sw.js` (registered at the end of main.js) keeps a copy of the app in the cache `uc-app`. The page

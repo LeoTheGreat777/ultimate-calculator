@@ -1,0 +1,85 @@
+// Memory, in the Calculator: MC clears it, MR brings it back, M+ and M− add the number on screen to it or take it away,
+// MS stores the number on screen. One number, kept across visits (uc-memory, exact, as a decimal string). The number on
+// screen is the result, else the number being typed, else what has been typed so far. While something is in memory the
+// chip beside f(x) shows it (tap it for MR). After a memory key the next digit starts a new number, as on a pocket
+// calculator. Keyboard (as in Windows' calculator): Ctrl+M MS, Ctrl+P M+, Ctrl+Q M−, Ctrl+R MR, Ctrl+L MC.
+let memory=(()=>{try{const s=store.get('uc-memory');return s?ratFromString(s):null}catch{return null}})();
+let memFresh=false;// a memory key was just used: the next digit starts a new number
+const MEM_KEYS=[['mc','MC'],['mr','MR'],['m+','M+'],['m-','M−'],['ms','MS']];
+const memText=k=>({el:{mc:'Καθαρισμός μνήμης',mr:'Ανάκληση μνήμης',ms:'Αποθήκευση στη μνήμη','m+':'Πρόσθεση στη μνήμη','m-':'Αφαίρεση από τη μνήμη',
+  row:'Μνήμη',now:'Μνήμη: {v}',cleared:'Η μνήμη καθάρισε'},
+ en:{mc:'Memory clear',mr:'Memory recall',ms:'Memory store','m+':'Memory add','m-':'Memory subtract',row:'Memory',now:'Memory: {v}',cleared:'Memory cleared'}}[lang==='el'?'el':'en'][k]);
+// The row (#memRow, between the display and the keys; sideways under the display, so the keys stay as big as in the
+// other tabs). Shown only in the Calculator (renderTool).
+function renderMemRow(){
+ const row=$('#memRow');if(!row)return;
+ row.classList.toggle('hidden',mode!=='calc');$('#calculatorCard')?.classList.toggle('has-mem',mode==='calc');if(mode!=='calc')return;
+ row.setAttribute('aria-label',memText('row'));
+ row.innerHTML=MEM_KEYS.map(([k,l])=>'<button class="mem-key'+((k==='mc'||k==='mr')&&!memory?' empty':'')+'" data-mem="'+k+'" type="button" aria-label="'+esc(memText(k))+'" title="'+esc(memText(k))+'">'+l+'</button>').join('');
+}
+function setupMemory(){
+ const row=$('#memRow');if(!row)return;
+ row.addEventListener('click',e=>{const b=e.target.closest('[data-mem]');if(b)memKey(b.dataset.mem)});
+ // lights up while pressed, like the keys
+ row.addEventListener('pointerdown',e=>{const b=e.target.closest('button');if(!b)return;b.classList.add('pressed');if(e.pointerType!=='mouse'&&!IS_IOS){try{navigator.vibrate?.(8)}catch{}}});
+ ['pointerup','pointercancel','pointerleave'].forEach(t=>row.addEventListener(t,e=>{const b=e.target.closest?.('button');if(b)setTimeout(()=>b.classList.remove('pressed'),90)},true));
+ renderMemRow();
+}
+function saveMemory(){if(memory)store.set('uc-memory',ratToStoreDecimal(memory));else store.del('uc-memory')}
+// the number on screen: the result, the number being typed, or what has been typed so far (an operator at the end left out)
+function memScreenValue(){
+ if(calcError)return null;
+ if(justCalculated)return lastResult;
+ try{
+  if(current&&current!=='-'&&current!=='−')return evalExpr(current);
+  const s=expression.replace(/(?:[+\-×÷^(]|(?:asin|acos|atan|sin|cos|tan|ln|log|√|∛)\()+$/,'');
+  return s?evalExpr(tidyParens(s)):null;
+ }catch{return null}
+}
+// the memory as a number to type: up to 15 significant digits (the most a typed number may have); very large or very
+// small ones as 1,2345 × 10ⁿ in brackets
+function memTyped(r){
+ const neg=r.n<0n,abs=neg?{n:-r.n,d:r.d}:r,x=ratToNumber(abs),trim=s=>s.includes('.')?s.replace(/0+$/,'').replace(/\.$/,''):s;
+ if(x!==0&&(x>=1e15||x<1e-6)){const [m,e]=x.toExponential(14).split('e');return {sci:true,text:(neg?'-':'')+trim(m)+'×10^'+(+e)}}
+ const intDigits=x>=1?Math.floor(Math.log10(x))+1:1;
+ return {sci:false,text:(neg?'−':'')+trim(ratToRoundedDecimal(abs,Math.max(0,15-intDigits)))};
+}
+function memKey(k){
+ if(mode!=='calc')return;
+ if(k==='mc'){memory=null;saveMemory();srSay(memText('cleared'))}
+ else if(k==='mr'){
+  if(!memory){refuseKey();return}
+  resetHow();
+  if(justCalculated){expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null;carry=null}
+  if(currentIsPercent){expression+=current+'×';current='';currentIsPercent=false}
+  else if(!current&&/[0-9.)πe!]$/.test(expression))expression+='×';
+  else if(current==='-'){expression+='-';current=''}
+  const m=memTyped(memory);
+  if(m.sci){current='';expression+='('+m.text+')'}else current=m.text;
+  if(inputLength()>MAX_INPUT){refuseKey();return}
+ }else{
+  const v=memScreenValue();if(v===null){refuseKey();return}
+  try{memory=k==='ms'?v:ratLimit(k==='m+'?ratAdd(memory||rat(0n),v):ratSub(memory||rat(0n),v))}catch{refuseKey();return}
+  if(memory.n===0n&&k!=='ms')memory=null;// back to nothing: as if cleared
+  saveMemory();srSay(memory?memText('now').replace('{v}',fmt(memory)):memText('cleared'));
+ }
+ memFresh=k!=='mc';
+ renderMemory();render();
+}
+// MC and MR look empty with nothing in memory; the chip beside f(x) shows what is in it
+function renderMemory(){
+ $$('#memRow .mem-key[data-mem="mc"],#memRow .mem-key[data-mem="mr"]').forEach(b=>b.classList.toggle('empty',!memory));
+}
+function memChipHtml(){
+ return memory?'<button class="sci-chip mem-chip" data-bar="mr" type="button" aria-label="'+esc(memText('now').replace('{v}',fmt(memory)))+'" title="'+esc(memText('mr'))+'">M '+esc(fmt(memory))+'</button>':'';
+}
+// said by a screen reader (the same aria-live note as refuseLimit's)
+function srSay(text){let n=$('#srNote');if(!n){n=document.createElement('div');n.id='srNote';n.className='sr-only';n.setAttribute('aria-live','polite');document.body.appendChild(n)}n.textContent='';requestAnimationFrame(()=>{n.textContent=text})}
+// Ctrl+M MS, Ctrl+P M+, Ctrl+Q M−, Ctrl+R MR, Ctrl+L MC (in the Calculator; returns true when the key was used)
+const MEM_SHORTCUTS={m:'ms',p:'m+',q:'m-',r:'mr',l:'mc'};
+function memKeydown(e){
+ if(mode!=='calc'||!(e.ctrlKey||e.metaKey)||e.altKey||e.shiftKey)return false;
+ const k=MEM_SHORTCUTS[e.key.toLowerCase()];if(!k)return false;
+ if(!$('#howModal').classList.contains('hidden')||!$('#historyPanel').classList.contains('hidden'))return false;
+ e.preventDefault();memKey(k);return true;
+}
