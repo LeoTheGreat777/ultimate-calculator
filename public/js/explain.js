@@ -7,21 +7,30 @@
 const SUP_MAP={'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','-':'⁻','−':'⁻'};
 const supText=s=>String(s).split('').map(c=>SUP_MAP[c]??c).join('');// 2^6 -> 2⁶, ^−300 -> ⁻³⁰⁰
 const HL_ON='\u0001',HL_OFF='\u0002';// around the number a step has just worked out (howHtml marks it)
-const FN_LABEL={asin:'sin⁻¹',acos:'cos⁻¹',atan:'tan⁻¹'};
+const FN_LABEL=new Proxy({},{get:(o,n)=>typeof n==='string'&&/^a(?:sin|cos|tan|cot|sec|csc)h?$/.test(n)?n.slice(1)+'⁻¹':undefined});// asinh -> sinh⁻¹
 const FN_TITLE={sin:['Ημίτονο','Sine'],cos:['Συνημίτονο','Cosine'],tan:['Εφαπτομένη','Tangent'],asin:['Τόξο ημιτόνου','Inverse sine'],
  acos:['Τόξο συνημιτόνου','Inverse cosine'],atan:['Τόξο εφαπτομένης','Inverse tangent'],ln:['Φυσικός λογάριθμος','Natural logarithm'],
- log:['Λογάριθμος (βάση 10)','Logarithm (base 10)'],'√':['Τετραγωνική ρίζα','Square root'],'∛':['Κυβική ρίζα','Cube root']};
+ log:['Λογάριθμος (βάση 10)','Logarithm (base 10)'],'√':['Τετραγωνική ρίζα','Square root'],'∛':['Κυβική ρίζα','Cube root'],
+ cot:['Συνεφαπτομένη','Cotangent'],sec:['Τέμνουσα','Secant'],csc:['Συντέμνουσα','Cosecant'],acot:['Τόξο συνεφαπτομένης','Inverse cotangent'],
+ asec:['Τόξο τέμνουσας','Inverse secant'],acsc:['Τόξο συντέμνουσας','Inverse cosecant'],abs:['Απόλυτη τιμή','Absolute value'],
+ sinh:['Υπερβολικό ημίτονο','Hyperbolic sine'],cosh:['Υπερβολικό συνημίτονο','Hyperbolic cosine'],tanh:['Υπερβολική εφαπτομένη','Hyperbolic tangent'],
+ coth:['Υπερβολική συνεφαπτομένη','Hyperbolic cotangent'],sech:['Υπερβολική τέμνουσα','Hyperbolic secant'],csch:['Υπερβολική συντέμνουσα','Hyperbolic cosecant']};
+// the inverse hyperbolic ones: "Αντίστροφο υπερβολικό ημίτονο", "Inverse hyperbolic sine"
+['sinh','cosh','tanh','coth','sech','csch'].forEach(n=>{const [g,e]=FN_TITLE[n];FN_TITLE['a'+n]=['Αντίστροφ'+(g.startsWith('Υπερβολικό ')?'ο ':'η ')+g.charAt(0).toLowerCase()+g.slice(1),'Inverse '+e.charAt(0).toLowerCase()+e.slice(1)]});
 // [title, Greek with its article for "Πρώτα …"]
 const OP_TITLE={'*':[['Πολλαπλασιασμός','ο πολλαπλασιασμός'],'Multiply'],'/':[['Διαίρεση','η διαίρεση'],'Divide'],'+':[['Πρόσθεση','η πρόσθεση'],'Add'],
- '-':[['Αφαίρεση','η αφαίρεση'],'Subtract'],pow:[['Δύναμη','η δύναμη'],'Power'],fact:[['Παραγοντικό','το παραγοντικό'],'Factorial']};
-const OP_SIGN={'+':'+','-':'−','*':'×','/':'÷'};
+ '-':[['Αφαίρεση','η αφαίρεση'],'Subtract'],pow:[['Δύναμη','η δύναμη'],'Power'],fact:[['Παραγοντικό','το παραγοντικό'],'Factorial'],
+ C:[['Συνδυασμοί','οι συνδυασμοί'],'Combinations'],P:[['Διατάξεις','οι διατάξεις'],'Permutations'],m:[['Υπόλοιπο διαίρεσης','το υπόλοιπο'],'Remainder (mod)']};
+const OP_SIGN={'+':'+','-':'−','*':'×','/':'÷',C:'C',P:'P',m:'mod'};
 // a number as shown, with … when it is rounded (1 ÷ 3 = 0,333333…), so 0,333333 × 3 = 1 doesn't look wrong
 // (worked-out numbers keep the plain -, as results do on the display)
 function ratShown(v){const s=formatRat(v);if(/×/.test(s))return s;
  let exact=false;try{exact=ratEq(ratFromString(s.replace(/\./g,'').replace(',','.')),v)}catch{}
  return s+(exact?'':'…')}
 const ratEq=(a,b)=>a.n*b.d===b.n*a.d;
-const isTrig=n=>['sin','cos','tan'].includes(n),isArc=n=>['asin','acos','atan'].includes(n);
+// order classes: 1 powers, functions, nCr nPr; 2 × ÷ mod; 3 + −
+const binClass=op=>op==='*'||op==='/'||op==='m'?2:op==='C'||op==='P'?1:3;
+const TRIG=['sin','cos','tan','cot','sec','csc'],isTrig=n=>TRIG.includes(n),isArc=n=>n[0]==='a'&&TRIG.includes(n.slice(1));
 
 // The calculation as a tree, read exactly like evalExpr (numbers.js) reads it. `at` is where the node's own sign is
 // in the calculation, for "left to right".
@@ -37,7 +46,8 @@ function exprTree(input){
  function unary(){const tok=peek();if(tok&&(tok.type==='+'||tok.type==='-')){const at=pos++;const v=unary();if(tok.type==='+')return v;
   if(v.k==='num')return{...v,v:ratMul(rat(-1n),v.v),neg:!v.neg};// −5 is one number
   return{k:'neg',c:v,at}}return power()}
- function mult(){let l=unary();while(['*','/'].includes(peek()?.type)){const at=pos,op=tokens[pos++].type;l={k:'bin',op,l,r:unary(),at}}return l}
+ function comb(){let l=unary();while(['C','P'].includes(peek()?.type)){const at=pos,op=tokens[pos++].type;l={k:'bin',op,l,r:unary(),at}}return l}
+ function mult(){let l=comb();while(['*','/','m'].includes(peek()?.type)){const at=pos,op=tokens[pos++].type;l={k:'bin',op,l,r:comb(),at}}return l}
  function additive(){let l=mult();while(['+','-'].includes(peek()?.type)){const at=pos,op=tokens[pos++].type;l={k:'bin',op,l,r:mult(),at}}return l}
  const t=additive();if(pos!==tokens.length)throw Error('SYNTAX');return t;
 }
@@ -57,7 +67,7 @@ function exprText(n,lead=true,o={}){
  if(n.k==='pow'){
   let b=exprText(n.b,lead,o);if(n.b.k==='num'&&n.b.v.n<0n&&lead)b='('+b+')';
   const e=n.e;
-  if(e.k==='num'&&e.v.d===1n&&!e.pct&&!(e.orig&&/[πe]/.test(e.raw))){const s=supText(String(e.v.n));return b+(e.hl&&!o.plain?HL_ON+s+HL_OFF:s)}
+  if(e.k==='num'&&e.v.d===1n&&!e.pct&&!(e.orig&&/[πeφ⟨]/.test(e.raw))){const s=supText(String(e.v.n));return b+(e.hl&&!o.plain?HL_ON+s+HL_OFF:s)}
   return b+'^'+exprText(e,false,o);
  }
  if(n.k==='fact')return exprText(n.c,lead,o)+'!';
@@ -72,7 +82,7 @@ function explanationForExpression(input,result){
  const levels=new Set();(function scan(n,inFn){if(!n)return;
   if(n.k==='group'){if(!inFn&&n.c.k!=='num')levels.add(0);scan(n.c,false)}
   else if(n.k==='fn'){levels.add(1);scan(n.c,true)}else if(n.k==='pow'||n.k==='fact'){levels.add(1);scan(n.b||n.c);scan(n.e)}
-  else if(n.k==='neg')scan(n.c);else if(n.k==='bin'){levels.add(n.op==='*'||n.op==='/'?2:3);scan(n.l);scan(n.r)}})(tree);
+  else if(n.k==='neg')scan(n.c);else if(n.k==='bin'){levels.add(binClass(n.op));scan(n.l);scan(n.r)}})(tree);
  const ops=[...levels].filter(x=>x>0);
  const rule=ops.length>1||(levels.has(0)&&ops.length)?L('Σειρά: ','Order: ')+[...levels].sort().map(x=>[L('παρενθέσεις','brackets'),L('δυνάμεις και συναρτήσεις','powers and functions'),'× ÷','+ −'][x]).join(' →\uFE0E ')+L(', από αριστερά προς τα δεξιά.',', each from left to right.'):'';
  const lim=v=>ratLimit(v);
@@ -94,7 +104,7 @@ function explanationForExpression(input,result){
     const kids=n.k==='bin'?[n.l,n.r]:n.k==='pow'?[n.b,n.e]:[n.c],d2=n.k==='group'||n.k==='fn'?depth+1:depth;
     if(kids.every(c=>c.k==='num'))ready.push({n,depth,anc});
     kids.forEach(c=>walk(c,d2,[...anc,n]))})(tree,0,[]);
-   const cls=n=>n.k==='bin'?(n.op==='*'||n.op==='/'?2:3):1;
+   const cls=n=>n.k==='bin'?binClass(n.op):1;
    ready.sort((a,b)=>b.depth-a.depth||cls(a.n)-cls(b.n)||a.n.at-b.n.at);
    const {n,depth,anc}=ready[0];if(!n)return null;
    clearHl(tree);
@@ -112,11 +122,16 @@ function explanationForExpression(input,result){
      steps.push({title:L('Το '+p100+'% του '+V(l),p100+'% of '+V(l)),text:V(l)+' × '+p100+' ÷ 100 = '+V(part)});
      toNum(n.r,part);steps[steps.length-1].line=exprText(tree);continue;
     }
-    v=lim(n.op==='+'?ratAdd(l,r):n.op==='-'?ratSub(l,r):n.op==='*'?ratMul(l,r):ratDiv(l,r));
+    v=lim(n.op==='+'?ratAdd(l,r):n.op==='-'?ratSub(l,r):n.op==='*'?ratMul(l,r):n.op==='C'?ratComb(l,r):n.op==='P'?ratPerm(l,r):n.op==='m'?ratMod(l,r):ratDiv(l,r));
     title=T(n.op);
     const notes=[n.l,n.r].filter(x=>x.pct).map(x=>exprText(x,true,{plain:true})+' = '+V(x.v));// 50 × 10%: 10% = 0,1
     if(notes.length)title+=' ('+notes.join(', ')+')';
     text=exprText(n,true,{plain:true})+' = '+V(v);
+    // written out where it helps: 5 C 2 = 5! ÷ (2! × 3!), 5 P 2 = 5! ÷ 3!, 17 mod 5: 17 = 3 × 5 + 2
+    const small=x=>x.d===1n&&x.n>=0n&&x.n<=20n;
+    if(n.op==='C'&&small(l)&&small(r)&&r.n<=l.n)text=exprText(n,true,{plain:true})+' = '+V(l)+'! ÷ ('+V(r)+'! × '+V(ratSub(l,r))+'!) = '+V(v);
+    if(n.op==='P'&&small(l)&&small(r)&&r.n<=l.n)text=exprText(n,true,{plain:true})+' = '+V(l)+'! ÷ '+V(ratSub(l,r))+'! = '+V(v);
+    if(n.op==='m')text+=' ('+V(l)+' = '+V(rat(ratFloor(ratDiv(l,r))))+' × '+(r.n<0n?'('+V(r)+')':V(r))+' + '+V(v)+')';
    }else if(n.k==='fn'){
     const a=(n.c.k==='group'?n.c.c:n.c).v;v=lim(sciFunction(n.name,a));
     const ft=FN_TITLE[n.name];title=L(ft[0],ft[1])+(isTrig(n.name)||isArc(n.name)?(deg?L(' (μοίρες)',' (degrees)'):L(' (ακτίνια)',' (radians)')):'');

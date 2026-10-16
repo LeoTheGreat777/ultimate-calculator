@@ -1,7 +1,7 @@
 // The app around the modes: language, switching modes (tabs), the explanation dialog, copying, holding keys,
 // and installing on a phone. Themes are in theme.js.
-function showHow(){if(mode==='units')howData=unitsHow();if(!howData)return;$('#howTitle').textContent=t('how');$('#howModal').classList.remove('help-open','help-wide');$('#howContent').innerHTML=howHtml(howData);$('#howModal').classList.remove('hidden')}
-function closeHow(){$('#howModal').classList.add('hidden');$('#howModal').classList.remove('help-open','help-wide')}
+function showHow(){if(mode==='units')howData=unitsHow();if(!howData)return;$('#howTitle').textContent=t('how');$('#howModal').classList.remove('help-open','help-wide','fn-open');$('#howContent').innerHTML=howHtml(howData);$('#howModal').classList.remove('hidden')}
+function closeHow(){if($('#howModal').contains(document.activeElement))document.activeElement.blur();$('#howModal').classList.add('hidden');$('#howModal').classList.remove('help-open','help-wide','fn-open')}
 function modeIcon(m){return ICONS[m]||''}
 function renderTool(){
  const calc=mode==='calc';
@@ -196,7 +196,7 @@ function calcNumberForUnits(){
   let value;
   if(justCalculated&&lastResult)value=lastResult;
   else{
-   let full=tidyParens(expression+current);if(/[+\-×÷^]$/.test(full))full=full.slice(0,-1);
+   let full=tidyParens(expression+current);if(OP_END.test(full))full=full.slice(0,-1);
    if(!full)return null;
    const open=(full.match(/\(/g)||[]).length-(full.match(/\)/g)||[]).length;if(open>0)full+=')'.repeat(open);
    value=evalExpr(full);

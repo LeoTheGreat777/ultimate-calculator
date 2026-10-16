@@ -55,6 +55,7 @@ Everything the app serves is in `public/` (the web root for both GitHub Pages an
 | `calculator.js` | calculator keys (`digit`, `operator`, brackets, `negate`, `equals`, C/AC), display, explanation |
 | `explain.js` | the working under ?: `explanationForExpression` (the calculation read into a tree like `evalExpr`, worked out step by step in school order, each step with its reason and the shorter calculation, `\u0001`/`\u0002` around the new number), `unitsHow` (Units/Currency), `howHtml` (draws any working, Subnet's bits too) |
 | `memory.js` | the memory keys MC MR M+ M− MS (`memKey`, `#memRow`, `uc-memory`), the M chip beside f(x), Ctrl shortcuts |
+| `funcs.js` | the ⋯ sheet: every function and constant by group, with a search (`openFunctions`, `.fn-open` on the ? dialog) |
 | `history.js` | saved calculations, the History sheet and its gestures; every other mode's own History (`recordModeHistory`) |
 | `units.js` | unit data and names, conversion, the two values, `unitKeyInput` |
 | `currency.js` | Currency: ECB rates (fetched, saved, shipped snapshot), `units.currency`, money and rate formats, the rate line |
@@ -194,12 +195,18 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   locked to portrait (iPhones can't be), so both must work.
 - **Scientific:** a view of the Calculator, not a mode: the f(x) switch on the display (`sciMode`, `uc-sci`; the only chip
   there, the angle unit is the keypad's Deg/Rad key; at the display's top-left in line with History, styled like ?, and
-  Dates' Working days chip sits in the same place) adds 15
+  Dates' Working days chip sits in the same place) adds 20
   keys above the basic ones (beside them in landscape; `sciKeysHtml`, `.keypad.sci`). Functions apply to the value
   just typed / the result / the bracket just closed (`sciKey`, `lastValueStart`), else open `sin(`. x², xʸ, ʸ√x and x! take the whole value, so a negative one or a power gets brackets: (−3)², (9²)². 2nd swaps keys
   for inverses; Deg/Rad is `angleUnit` (`uc-angle`). The engine (numbers.js: `evalExpr`, `ratPow`, `sciFunction`)
   stays exact where the answer is exact and rounds floats to 15 digits otherwise. Shown with superscripts and sin⁻¹
   (`sciPretty`). Keyboard: ^ and !.
+  A fourth row: **hyp** (`sciHyp`: sin cos tan become sinh cosh tanh, 2nd their inverses), **nCr** (2nd nPr), **mod** (2nd |x|), **φ**
+  and **⋯** (funcs.js: every function, cot sec csc and the hyperbolic ones with inverses, abs, and the constants, with a search).
+  Functions are `FN_NAMES` (numbers.js, longest first; `FN_ALT`, `FN_END`, `FN_OPEN_END` build the regexes, so a new one is added
+  in one place). nCr, nPr and mod are one-letter operators in the calculation: `C`, `P` (above × ÷, like Casio) and `m` (at × ÷;
+  shown " mod "); `OP_END`/`OP_OPEN_END` know them, `VALUE_END` knows φ and constants. Constants (`CONSTS`, CODATA 2018, the
+  exact ones in `CONST_EXACT`) are `⟨id⟩` in the calculation and their symbol on screen (`constPretty`); ⌫ removes one whole.
 - **All modes** (modes.js): the ⊞ button beside History (`#modesButton`) opens a sheet (`#modesModal`, `openModes`) with
   every mode in groups (`MODE_GROUPS`) and a search (`modeMatches`: names in both languages plus `MODE_WORDS`, word
   starts, accents and capitals ignored; Enter opens the first; Ctrl+K / ⌘K opens it, Esc closes, a press outside closes).

@@ -27,12 +27,13 @@ $('#langButton').addEventListener('click',e=>{e.preventDefault();e.stopPropagati
 $('#themeButton').addEventListener('click',toggleThemeMenu);
 $('#installButton')?.addEventListener('click',installApp);
 $('#helpButton')?.addEventListener('click',showHelp);
-setupHoldKeys();setupPressFeedback();setupSide();setupMemory();
+setupHoldKeys();setupPressFeedback();setupSide();setupMemory();setupFunctions();
 // a click anywhere else closes the theme menu and the History "clear all?" question
  document.addEventListener('click',e=>{if(themeMenuOpen()&&!eventInside(e,'#themeMenu,#themeButton'))closeThemeMenu();if(historyClearConfirm&&!eventInside(e,'#historyClearWrap'))clearHistoryConfirm()});
 $('#clearHistory').addEventListener('click',clearHistoryConfirm);$('#historyConfirmYes').addEventListener('click',deleteAllHistory);
 window.addEventListener('keydown',e=>{
  if(themeEditorKeydown(e)||themeMenuKeydown(e)||modesKeydown(e))return;
+ if(e.target.closest?.('.fn-search')&&e.key!=='Escape')return;// typing in the functions sheet's search
  // Alt+1…9 jumps to a mode (Alt+← / → are left alone: browsers use them for Back / Forward)
  if(e.altKey&&!e.ctrlKey&&!e.metaKey&&/^Digit[1-9]$/.test(e.code)){const n=MODE_LABELS[+e.code.slice(5)-1];if(n){e.preventDefault();switchMode(n)}return}
  if(memKeydown(e))return;// Ctrl+M, P, Q, R, L: the memory keys (memory.js)

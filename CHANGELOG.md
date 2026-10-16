@@ -6,6 +6,15 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.22.0 – 2026-10-16
+
+### Added
+- Scientific has a new row: hyp (sinh, cosh, tanh and their inverses), nCr and nPr (combinations, permutations), mod
+  (the remainder) and |x|, φ (the golden ratio), and ⋯.
+- ⋯ opens every function and constant, with a search: cot, sec, csc and their inverses, the six hyperbolic functions and
+  their inverses, and 41 physical constants (speed of light, Planck, Avogadro, Boltzmann, electron mass …, CODATA 2018).
+- The working under ? explains them too: 5 C 2 = 5! ÷ (2! × 3!) = 10, 17 mod 5 = 2 (17 = 3 × 5 + 2).
+
 ## 0.21.0 – 2026-10-16
 
 ### Added

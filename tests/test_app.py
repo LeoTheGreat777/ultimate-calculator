@@ -492,7 +492,7 @@ async def scientific(browser, url, lang, theme):
     L = f'[scientific {lang} {theme}] '
     check(L + 'starts in Basic, no scientific keys', await p.locator('.sci-key').count() == 0)
     await p.click('[data-bar="sci"]')
-    check(L + 'f(x) shows 15 scientific keys, the Deg key, and no second chip on the display', await p.locator('.sci-key').count() == 15
+    check(L + 'f(x) shows 20 scientific keys, the Deg key, and no second chip on the display', await p.locator('.sci-key').count() == 20
           and await p.inner_text('[data-sci="angle"]') == 'Deg' and await p.locator('#sciBar button').count() == 1)
 
     async def keys(*seq):
@@ -564,7 +564,7 @@ async def scientific(browser, url, lang, theme):
     # the choice is remembered; Units keeps its own keypad
     await p.reload()
     await p.wait_for_timeout(300)
-    check(L + 'Scientific kept after reload', await p.locator('.sci-key').count() == 15)
+    check(L + 'Scientific kept after reload', await p.locator('.sci-key').count() == 20)
     await p.evaluate("switchMode('units')")
     await p.wait_for_timeout(150)
     check(L + 'Units has no scientific keys', await p.locator('.sci-key').count() == 0)
@@ -1865,6 +1865,65 @@ async def memory_keys(browser, url):
     await p.context.close()
 
 
+async def more_functions(browser, url):
+    """Scientific: hyp, nCr/nPr, mod, |x|, φ, the ⋯ sheet of functions and constants, all worked out exactly where possible."""
+    L = '[functions] '
+    p = await new_page(browser, url, 'en', 'dark')
+    vals = await p.evaluate("""['5C2','5P2','10C0','3C5','17m5','-17m5','7.5m2','2×4C2','cot(45)','cot(90)','sec(60)','csc(30)','acot(1)','asec(2)','acsc(2)',
+      'sinh(0)','cosh(0)','tanh(0)','acosh(1)','atanh(0)','asinh(0)','abs(-2.5)','φ^2-φ','⟨c⟩','⟨NA⟩×⟨k⟩÷⟨R⟩'].map(e=>{try{return formatRat(evalExpr(e))}catch(x){return x.message}})""")
+    want = ['10', '20', '1', '0', '2', '3', '1,5', '12', '1', '0', '2', '2', '45', '60', '30', '0', '1', '0', '0', '0', '0', '2,5', '1', '299.792.458', '1']
+    check(L + 'nCr, nPr, mod, cot/sec/csc and inverses, hyperbolic, |x|, φ, constants', vals == want, list(zip(vals, want)))
+    errs = await p.evaluate("['5.5C2','-1C1','5m0','acosh(0.5)','atanh(1)','coth(0)','csc(0)'].map(e=>{try{return formatRat(evalExpr(e))}catch(x){return x.message}})")
+    check(L + 'outside their domain they say why', errs == ['MATH', 'MATH', 'DIV0', 'MATH', 'MATH', 'MATH', 'MATH'], errs)
+    await p.evaluate("toggleSci()")
+    await p.click('[data-sci="hyp"]')
+    check(L + 'hyp turns sin cos tan into sinh cosh tanh', await p.evaluate("[...document.querySelectorAll('.sci-key')].slice(2,5).map(b=>b.textContent)") == ['sinh', 'cosh', 'tanh'])
+    await p.click('[data-sci="2nd"]')
+    check(L + 'and 2nd into their inverses', await p.evaluate("document.querySelector('[data-sci=\"asinh\"]').textContent") == 'sinh⁻¹')
+    await p.click('[data-sci="2nd"]')
+    await p.keyboard.type('1')
+    await p.click('[data-sci="sinh"]')
+    await p.keyboard.press('Enter')
+    check(L + '1 sinh = 1,175201', await p.evaluate(R) == '1,175201', await p.evaluate(R))
+    await p.click('[data-sci="hyp"]')
+    await p.keyboard.press('Escape')
+    for k in ['5']:
+        await p.keyboard.type(k)
+    await p.click('[data-sci="ncr"]')
+    await p.keyboard.type('2')
+    check(L + 'nCr shows as 5C2', await p.evaluate(R) == '5C2', await p.evaluate(R))
+    await p.keyboard.press('Enter')
+    st = await p.evaluate("[document.querySelector('#result').textContent,howData.steps[0].text]")
+    check(L + '5C2 = 10, written out in the working', st == ['10', '5 C 2 = 5! ÷ (2! × 3!) = 10'], st)
+    await p.click('[data-sci="mod"]')
+    await p.keyboard.type('4')
+    check(L + 'mod after a result goes on from it', await p.evaluate(R) == '10 mod 4', await p.evaluate(R))
+    await p.keyboard.press('Enter')
+    check(L + '10 mod 4 = 2', await p.evaluate(R) == '2')
+    await p.keyboard.press('Escape')
+    await p.keyboard.type('2')
+    await p.click('[data-sci="more"]')
+    check(L + '⋯ opens the sheet with its groups', await p.evaluate("[document.querySelector('#howModal').classList.contains('fn-open'),document.querySelectorAll('#howContent .fn-group').length,document.querySelectorAll('#howContent .fn-const').length]") == [True, 5, 44])
+    await p.keyboard.type('speed light')
+    check(L + 'the search finds the speed of light', await p.evaluate("[...document.querySelectorAll('#howContent [data-fn]')].filter(b=>!b.hidden).map(b=>b.dataset.fn)") == ['const:c'])
+    await p.keyboard.press('Enter')
+    st = await p.evaluate("[document.querySelector('#howModal').classList.contains('hidden'),document.querySelector('#result').textContent]")
+    check(L + 'Enter puts it in, after × , and closes the sheet', st == [True, '2×c'], st)
+    await p.keyboard.press('Backspace')
+    check(L + '⌫ removes a constant whole', await p.evaluate("expression+current") == '2×', await p.evaluate("expression+current"))
+    await p.click('[data-sci="more"]')
+    await p.click('#howContent [data-fn="acot"]')
+    await p.keyboard.type('1')
+    await p.keyboard.press('Enter')
+    check(L + 'a function from the sheet: 2 × cot⁻¹(1) = 90', await p.evaluate("[document.querySelector('#expression').textContent,document.querySelector('#result').textContent]") == ['2×cot⁻¹(1)', '90'], await p.evaluate("[document.querySelector('#expression').textContent,document.querySelector('#result').textContent]"))
+    await p.keyboard.press('Escape')
+    await p.click('[data-sci="phi"]')
+    await p.keyboard.press('Enter')
+    check(L + 'φ = 1,618034', await p.evaluate(R) == '1,618034')
+    check(L + 'no JavaScript errors', not p.errors, p.errors)
+    await p.context.close()
+
+
 async def foldables(browser, url):
     """Foldables: an inner screen held sideways (iPhone Duo, Galaxy Fold: wide, not phone-short) gets the sideways layout
     with big keys and nothing scrolls; half open like a book (two screen segments), the fold falls between the display
@@ -1974,6 +2033,7 @@ async def main():
         await side_panels(browser, url)
         await foldables(browser, url)
         await memory_keys(browser, url)
+        await more_functions(browser, url)
         await offline(browser)
         await preview_site(browser)
         await currency_offline(browser, url)

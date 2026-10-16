@@ -32,7 +32,7 @@ function memScreenValue(){
  if(justCalculated)return lastResult;
  try{
   if(current&&current!=='-'&&current!=='−')return evalExpr(current);
-  const s=expression.replace(/(?:[+\-×÷^(]|(?:asin|acos|atan|sin|cos|tan|ln|log|√|∛)\()+$/,'');
+  const s=expression.replace(new RegExp('(?:[+\\-×÷^(CPm]|(?:'+FN_ALT+')\\()+$'),'');
   return s?evalExpr(tidyParens(s)):null;
  }catch{return null}
 }
@@ -52,7 +52,7 @@ function memKey(k){
   resetHow();
   if(justCalculated){expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null;carry=null}
   if(currentIsPercent){expression+=current+'×';current='';currentIsPercent=false}
-  else if(!current&&/[0-9.)πe!]$/.test(expression))expression+='×';
+  else if(!current&&VALUE_END.test(expression))expression+='×';
   else if(current==='-'){expression+='-';current=''}
   const m=memTyped(memory);
   if(m.sci){current='';expression+='('+m.text+')'}else current=m.text;

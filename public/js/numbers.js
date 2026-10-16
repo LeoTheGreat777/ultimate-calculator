@@ -59,9 +59,9 @@ function formatGroupedNumber(raw){
 // Scientific parts: whole-number powers as superscripts, 2^10 -> 2¹⁰ and ×10^3 -> ×10³ (a power still being typed,
 // "2^", or one in brackets, "2^(1÷3)", stays as it is); asin( -> sin⁻¹( and the same for cos and tan.
 const SUP_DIGITS='⁰¹²³⁴⁵⁶⁷⁸⁹';
-const sciPretty=s=>s.replace(/a(sin|cos|tan)\(/g,'$1⁻¹(').replace(/\^([-−]?)(\d+)(?![\d.])/g,(m,sg,d)=>(sg?'⁻':'')+[...d].map(c=>SUP_DIGITS[c]).join(''));
+const sciPretty=s=>s.replace(/a(sinh|cosh|tanh|coth|sech|csch|sin|cos|tan|cot|sec|csc)\(/g,'$1⁻¹(').replace(/\^([-−]?)(\d+)(?![\d.])/g,(m,sg,d)=>(sg?'⁻':'')+[...d].map(c=>SUP_DIGITS[c]).join(''));
 function formatInputDisplay(s){
- return pretty(sciPretty(String(s))).replace(/\d+(?:\.\d*)?/g,m=>formatGroupedNumber(m))
+ return pretty(sciPretty(constPretty(String(s)))).replace(/\d+(?:\.\d*)?/g,m=>formatGroupedNumber(m))
   .replace(/([×÷+\-])[-−](\d[\d.,]*%?)/g,'$1(−$2)').replace(/\([-−](?=\d)/g,'(−')
   .replace(/^−(\d[\d.,]*%?)/,'(−$1)');
 }
@@ -82,13 +82,74 @@ function ratLimit(r){
 }
 // ---------- Expressions: + − × ÷ %, brackets, and the scientific parts (functions, π, e, ^, !) ----------
 // Functions are written in the expression as a name and "(": sin( cos( tan( asin( acos( atan( ln( log( √( ∛(
-const FN_NAMES=['asin','acos','atan','sin','cos','tan','ln','log','√','∛'];
+// (also cot sec csc, the hyperbolic ones and every inverse, abs). Longest first, so "sinh(" isn't read as "sin" + "h(".
+const FN_NAMES=['sin','cos','tan','cot','sec','csc','sinh','cosh','tanh','coth','sech','csch'].flatMap(n=>[n,'a'+n]).concat(['ln','log','√','∛','abs']).sort((a,b)=>b.length-a.length);
+const FN_ALT=FN_NAMES.join('|');
+const FN_END=new RegExp('(?:'+FN_ALT+')$'),FN_OPEN_END=new RegExp('(?:'+FN_ALT+')\\($');
+// Two-number operators besides + − × ÷ ^ are written as one letter: C (nCr, combinations), P (nPr, permutations),
+// m (mod, the remainder; shown as " mod "). OP_END: the calculation ends with an operator (or "(").
+const OP_CHARS='+\\-×÷^CPm',OP_END=new RegExp('['+OP_CHARS+']$'),OP_OPEN_END=new RegExp('['+OP_CHARS+'(]$');
+// A value ends here: a digit, %, a closing bracket, π, e, φ, a constant ⟨…⟩, a factorial !
+const VALUE_END=/[0-9.%)πeφ⟩!]$/;
+// ---------- Constants ----------
+// φ (the golden ratio) is one character; the physical constants are written ⟨id⟩ in the calculation and shown by their
+// symbol. Values: CODATA 2018 (exact since the 2019 SI where marked). [symbol, value, unit, Greek name, English name]
+const CONSTS={
+ c:['c','299792458','m/s','Ταχύτητα του φωτός','Speed of light'],
+ G:['G','6.67430e-11','m³/(kg·s²)','Σταθερά της βαρύτητας','Gravitational constant'],
+ g:['g','9.80665','m/s²','Κανονική επιτάχυνση της βαρύτητας','Standard gravity'],
+ h:['h','6.62607015e-34','J·s','Σταθερά του Planck','Planck constant'],
+ hbar:['ħ','1.054571817e-34','J·s','Ανηγμένη σταθερά του Planck','Reduced Planck constant'],
+ qe:['qₑ','1.602176634e-19','C','Στοιχειώδες φορτίο','Elementary charge'],
+ me:['mₑ','9.1093837015e-31','kg','Μάζα του ηλεκτρονίου','Electron mass'],
+ mp:['mₚ','1.67262192369e-27','kg','Μάζα του πρωτονίου','Proton mass'],
+ mn:['mₙ','1.67492749804e-27','kg','Μάζα του νετρονίου','Neutron mass'],
+ mmu:['mμ','1.883531627e-28','kg','Μάζα του μιονίου','Muon mass'],
+ malpha:['mα','6.6446573357e-27','kg','Μάζα του σωματιδίου α','Alpha particle mass'],
+ u:['u','1.66053906660e-27','kg','Ατομική μονάδα μάζας','Atomic mass unit'],
+ NA:['Nₐ','6.02214076e23','1/mol','Σταθερά του Avogadro','Avogadro constant'],
+ k:['k','1.380649e-23','J/K','Σταθερά του Boltzmann','Boltzmann constant'],
+ R:['R','8.314462618','J/(mol·K)','Σταθερά των αερίων','Gas constant'],
+ F:['F','96485.33212','C/mol','Σταθερά του Faraday','Faraday constant'],
+ Vm:['Vₘ','0.02241396954','m³/mol','Γραμμομοριακός όγκος (0 °C, 1 atm)','Molar volume (0 °C, 1 atm)'],
+ atm:['atm','101325','Pa','Κανονική ατμόσφαιρα','Standard atmosphere'],
+ sigma:['σ','5.670374419e-8','W/(m²·K⁴)','Σταθερά Stefan–Boltzmann','Stefan–Boltzmann constant'],
+ b:['b','2.897771955e-3','m·K','Σταθερά του Wien','Wien displacement constant'],
+ c1:['c₁','3.741771852e-16','W·m²','Πρώτη σταθερά ακτινοβολίας','First radiation constant'],
+ c2:['c₂','1.438776877e-2','m·K','Δεύτερη σταθερά ακτινοβολίας','Second radiation constant'],
+ eps0:['ε₀','8.8541878128e-12','F/m','Διηλεκτρική σταθερά του κενού','Vacuum permittivity'],
+ mu0:['μ₀','1.25663706212e-6','N/A²','Μαγνητική διαπερατότητα του κενού','Vacuum permeability'],
+ Z0:['Z₀','376.730313668','Ω','Χαρακτηριστική αντίσταση του κενού','Impedance of free space'],
+ ke:['kₑ','8.9875517923e9','N·m²/C²','Σταθερά του Coulomb','Coulomb constant'],
+ alpha:['α','7.2973525693e-3','','Σταθερά λεπτής υφής','Fine-structure constant'],
+ Rinf:['R∞','10973731.568160','1/m','Σταθερά του Rydberg','Rydberg constant'],
+ a0:['a₀','5.29177210903e-11','m','Ακτίνα του Bohr','Bohr radius'],
+ re:['rₑ','2.8179403262e-15','m','Κλασική ακτίνα του ηλεκτρονίου','Classical electron radius'],
+ lc:['λc','2.42631023867e-12','m','Μήκος κύματος Compton','Compton wavelength'],
+ muB:['μB','9.2740100783e-24','J/T','Μαγνητόνη του Bohr','Bohr magneton'],
+ muN:['μN','5.0507837461e-27','J/T','Πυρηνική μαγνητόνη','Nuclear magneton'],
+ phi0:['Φ₀','2.067833848e-15','Wb','Κβάντο μαγνητικής ροής','Magnetic flux quantum'],
+ G0:['G₀','7.748091729e-5','S','Κβάντο αγωγιμότητας','Conductance quantum'],
+ KJ:['KJ','483597.8484e9','Hz/V','Σταθερά του Josephson','Josephson constant'],
+ RK:['RK','25812.80745','Ω','Σταθερά του von Klitzing','von Klitzing constant'],
+ Eh:['Eₕ','4.3597447222071e-18','J','Ενέργεια Hartree','Hartree energy'],
+ eV:['eV','1.602176634e-19','J','Ηλεκτρονιοβόλτ','Electronvolt'],
+ lP:['lₚ','1.616255e-35','m','Μήκος του Planck','Planck length'],
+ tP:['tₚ','5.391247e-44','s','Χρόνος του Planck','Planck time']};
+const CONST_EXACT=new Set(['c','g','h','hbar','qe','NA','k','R','F','atm','eV','KJ','RK','Vm','sigma','c1','c2']);// exact since 2019 (or by definition)
+// "6.02214076e23" as an exact fraction
+function ratSci(str){const [m,e='0']=String(str).split('e'),r=ratFromString(m),k=BigInt(Math.abs(+e));return +e>=0?ratMul(r,rat(10n**k)):ratDiv(r,rat(10n**k))}
+const RAT_PHI=ratFromString('1.61803398874989484820458683436563812');
+// constants by their symbol, and mod (m) as a word; one pass, so the m of mₑ isn't read as mod
+const constPretty=s=>s.replace(/⟨(\w+)⟩|m/g,(x,k)=>k?(CONSTS[k]?CONSTS[k][0]:x):' mod ');
 function tokenize(input){
  const s=String(input).replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-').replace(/\s+/g,'');const tokens=[];let i=0;// − is a minus made with ± (see formatInputDisplay)
  while(i<s.length){const ch=s[i];
   if(/[0-9.]/.test(ch)){const start=i;let dots=0;while(i<s.length&&/[0-9.]/.test(s[i])){if(s[i]==='.')dots++;i++}if(dots>1)throw Error('NUMBER');let raw=s.slice(start,i);if(s[i]==='%'){i++;tokens.push({type:'number',value:ratPercent(ratFromString(raw)),percent:true,raw:raw+'%'});}else{const exact=carry&&raw===carry.text;tokens.push({type:'number',value:exact?carry.value:ratFromString(raw),percent:false,raw})}continue}
   if('+-*/()^!'.includes(ch)){tokens.push({type:ch});i++;continue}
-  if(ch==='π'||ch==='e'){tokens.push({type:'number',value:ch==='π'?RAT_PI:RAT_E,percent:false,raw:ch});i++;continue}
+  if(ch==='π'||ch==='e'||ch==='φ'){tokens.push({type:'number',value:ch==='π'?RAT_PI:ch==='e'?RAT_E:RAT_PHI,percent:false,raw:ch});i++;continue}
+  if(ch==='⟨'){const j=s.indexOf('⟩',i),k=j>0?s.slice(i+1,j):'';if(!CONSTS[k])throw Error('CHAR');tokens.push({type:'number',value:ratSci(CONSTS[k][1]),percent:false,raw:s.slice(i,j+1)});i=j+1;continue}
+  if(ch==='C'||ch==='P'||ch==='m'){tokens.push({type:ch});i++;continue}
   const name=FN_NAMES.find(n=>s.startsWith(n,i));if(name){tokens.push({type:'fn',name});i+=name.length;continue}
   throw Error('CHAR')
  }return tokens
@@ -105,7 +166,9 @@ function evalExpr(input){
  function postfix(){let v=primary();while(peek()?.type==='!'){pos++;v=lim({value:ratFactorial(v.value),percent:false})}return v}
  function power(){const base=postfix();if(peek()?.type==='^'){pos++;const exp=unary();return lim({value:ratPow(base.value,exp.value),percent:false})}return base}
  function unary(){const tok=peek();if(tok&&(tok.type==='+'||tok.type==='-')){pos++;const v=unary();return{value:tok.type==='-'?ratMul(rat(-1n),v.value):v.value,percent:v.percent}}return power()}
- function mult(){let left=unary();while(peek()&&['*','/'].includes(peek().type)){const op=tokens[pos++].type,right=unary();left=lim({value:op==='*'?ratMul(left.value,right.value):ratDiv(left.value,right.value),percent:false})}return left}
+ // nCr, nPr: above × ÷ (as on Casio's calculators), 5×4C2 = 5×6
+ function comb(){let left=unary();while(peek()&&['C','P'].includes(peek().type)){const op=tokens[pos++].type,right=unary();left=lim({value:op==='C'?ratComb(left.value,right.value):ratPerm(left.value,right.value),percent:false})}return left}
+ function mult(){let left=comb();while(peek()&&['*','/','m'].includes(peek().type)){const op=tokens[pos++].type,right=comb();left=lim({value:op==='*'?ratMul(left.value,right.value):op==='m'?ratMod(left.value,right.value):ratDiv(left.value,right.value),percent:false})}return left}
  function additive(){let left=mult();while(peek()&&['+','-'].includes(peek().type)){const op=tokens[pos++].type,right=mult();const rv=right.percent?ratMul(left.value,right.value):right.value;left=lim({value:op==='+'?ratAdd(left.value,rv):ratSub(left.value,rv),percent:false})}return left}
  const out=additive();if(pos!==tokens.length)throw Error('SYNTAX');return ratLimit(out.value)
 }
@@ -165,7 +228,27 @@ function ratFactorial(a){
  if(a.d!==1n||a.n<0n)throw Error('MATH');if(a.n>3248n)throw Error('BIG');// 3249! > 10^10000
  let r=1n;for(let i=2n;i<=a.n;i++)r*=i;return rat(r);
 }
+// nCr and nPr of whole numbers 0 ≤ r ≤ n (r > n gives 0), exact
+function ratWhole(a){if(a.d!==1n||a.n<0n)throw Error('MATH');return a.n}
+function ratPerm(a,b){const n=ratWhole(a),r=ratWhole(b);if(r>n)return rat(0n);if(r>20000n)throw Error('BIG');let p=1n;for(let i=0n;i<r;i++)p*=n-i;return rat(p)}
+function ratComb(a,b){const n=ratWhole(a);let r=ratWhole(b);if(r>n)return rat(0n);if(n-r<r)r=n-r;if(r>20000n)throw Error('BIG');let p=1n;for(let i=1n;i<=r;i++)p=p*(n-r+i)/i;return rat(p)}
+// a mod b: the remainder, with the sign of b (as 17 mod 5 = 2, −17 mod 5 = 3), for any numbers
+function ratFloor(a){const q=a.n/a.d;return a.n<0n&&q*a.d!==a.n?q-1n:q}
+function ratMod(a,b){if(b.n===0n)throw Error('DIV0');return ratSub(a,ratMul(b,rat(ratFloor(ratDiv(a,b)))))}
+const RECIP_FN={cot:'tan',sec:'cos',csc:'sin',coth:'tanh',sech:'cosh',csch:'sinh'};
 function sciFunction(name,a){
+ if(name==='abs')return a.n<0n?rat(-a.n,a.d):a;
+ // cot, sec, csc (and coth, sech, csch): 1 ÷ tan, cos, sin (tan's 15-digit rounding keeps cot(45°) exactly 1)
+ if(name==='cot'){let t;try{t=sciFunction('tan',a)}catch{return rat(0n)}if(t.n===0n)throw Error('MATH');return ratDiv(rat(1n),t)}// where tan is undefined (90°) cot is 0
+ if(RECIP_FN[name]){const v=sciFunction(RECIP_FN[name],a);if(v.n===0n)throw Error('MATH');return ratDiv(rat(1n),v)}
+ // their inverses through the inverse of 1/x
+ if(name==='acot'){if(a.n===0n)return angleUnit==='deg'?rat(90n):ratFromFloat(Math.PI/2);return sciFunction('atan',ratDiv(rat(1n),a))}
+ if(['asec','acsc','acoth','asech','acsch'].includes(name)){if(a.n===0n)throw Error('MATH');return sciFunction({asec:'acos',acsc:'asin',acoth:'atanh',asech:'acosh',acsch:'asinh'}[name],ratDiv(rat(1n),a))}
+ if(['sinh','cosh','tanh','asinh','acosh','atanh'].includes(name)){
+  const x=ratToFloat(a);
+  if(name==='acosh'&&x<1||name==='atanh'&&(x<=-1||x>=1))throw Error('MATH');
+  const v=Math[name](x);if(!Number.isFinite(v))throw Error('BIG');return ratFromFloat(Math.abs(v)<1e-15&&name!=='cosh'?0:v);
+ }
  const x=ratToFloat(a),deg=angleUnit==='deg',snap=v=>Math.abs(v)<1e-12?0:v;
  if(name==='sin'||name==='cos'||name==='tan'){
   if(deg){// whole multiples of 90° are exact; others are reduced to 0…360 first, so large angles stay accurate
