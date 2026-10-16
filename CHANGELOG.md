@@ -6,6 +6,21 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.19.0 – 2026-10-16
+
+### Changed
+- ? explains calculations step by step, the way it's taught: brackets first, then powers, then × ÷, then + −. Each step
+  says why ("Multiply first") and shows the calculation again, shorter, with the new number marked.
+- Scientific calculations are explained too: sin(30°) = 0,5, 2³ = 2 × 2 × 2, √9 = 3 because 3 × 3 = 9, 5! written out.
+- Rounded numbers in the working end in … (1 ÷ 3 = 0,333333…), so the next step doesn't look wrong.
+- Subnet: ? shows the bits lined up, the network part and the host part in two colours, and fits on a phone without
+  scrolling.
+- Interest says what "i" is (the monthly rate); Dates says which weekend days and holidays were skipped.
+
+### Added
+- Units and Currency have a ? too: the factor or the rate used (through euros between two other currencies), and how
+  temperatures are converted.
+
 ## 0.18.1 – 2026-10-16
 
 ### Changed

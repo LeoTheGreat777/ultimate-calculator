@@ -53,6 +53,7 @@ Everything the app serves is in `public/` (the web root for both GitHub Pages an
 | `charts.js` | drawing helpers, tool charts, History chart |
 | `graph.js` | Graph mode (parser, pan/zoom, key points, drawing) |
 | `calculator.js` | calculator keys (`digit`, `operator`, brackets, `negate`, `equals`, C/AC), display, explanation |
+| `explain.js` | the working under ?: `explanationForExpression` (the calculation read into a tree like `evalExpr`, worked out step by step in school order, each step with its reason and the shorter calculation, `\u0001`/`\u0002` around the new number), `unitsHow` (Units/Currency), `howHtml` (draws any working, Subnet's bits too) |
 | `history.js` | saved calculations, the History sheet and its gestures; every other mode's own History (`recordModeHistory`) |
 | `units.js` | unit data and names, conversion, the two values, `unitKeyInput` |
 | `currency.js` | Currency: ECB rates (fetched, saved, shipped snapshot), `units.currency`, money and rate formats, the rate line |
@@ -298,6 +299,12 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   keys) keeps it. A new symbol key: add it to `KEY_NAMES`. Icon-only buttons need an `aria-label` in both languages,
   drawn decoration `aria-hidden` (chart bars), and a message that only shows visually is also put in `#srNote`
   (aria-live), as `refuseLimit` does. The Tips link's icon is a drawn lightbulb (the owner didn't want a ?).
+- **The working (?)** (explain.js): a tool's `how` is `{formula, steps:[{title, text, line?, bits?}], result, legend?, rule?}`, drawn by
+  `howHtml`. The Calculator's comes from `explanationForExpression`, which recomputes every step with the same exact maths and
+  returns null (no ?) rather than working that doesn't end in the result on screen; a rounded number in it ends in …
+  (`ratShown`). Worked-out numbers keep the plain - like results; powers are superscripts (`supText`); trig steps say
+  degrees or radians. Units/Currency compute theirs when ? is pressed (`unitsHow`, the `#unitHow` button in their toolbar).
+  Arrows shown in text get U+FE0E (→\uFE0E), or iOS may draw them as emoji. On phones the dialog may use the whole height.
 - **Copying:** tapping a finished result copies it (calculator and tools), so the copy button can be hidden
   on short screens.
 - **Offline:** `public/sw.js` (registered at the end of main.js) keeps a copy of the app in the cache `uc-app`. The page

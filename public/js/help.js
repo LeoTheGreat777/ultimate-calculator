@@ -44,7 +44,7 @@ const HELP={
   ['«Πρόσθεσε ΦΠΑ»: από την καθαρή τιμή βρίσκεις την τελική. «Αφαίρεσε ΦΠΑ»: από την τελική βρίσκεις την καθαρή και τον ΦΠΑ που είχε.','“Add VAT”: from the net price you get the final price. “Remove VAT”: from the final price you get the net price and the VAT in it.'],
   ['Ο συντελεστής ξεκινά στο 24%. Άλλαξέ τον αν χρειάζεσαι άλλον.','The rate starts at 24%. Change it if you need another one.'],
   ['Ο ΦΠΑ στρογγυλεύεται σε λεπτά, όπως στα τιμολόγια, οπότε τα ποσά πάντα συμφωνούν.','VAT is rounded to cents, as on invoices, so the amounts always add up.'],
-  ['Σύρε τον διακόπτη ή πάτα ← → πάνω του για να αλλάξεις πρόσθεση και αφαίρεση.','Slide the switch, or press ← → on it, to change between add and remove.'],
+  ['Σύρε τον διακόπτη ή πάτα ←\uFE0E →\uFE0E πάνω του για να αλλάξεις πρόσθεση και αφαίρεση.','Slide the switch, or press ←\uFE0E →\uFE0E on it, to change between add and remove.'],
   ['Το ? δείχνει πώς βγήκε το ποσό. Το κουμπί με τις στήλες δείχνει το ίδιο ποσό με 24%, 13% και 6%. Πάτα το αποτέλεσμα για να το αντιγράψεις.','? shows how the amount was worked out. The bars button shows the same amount at 24%, 13% and 6%. Tap the result to copy it.']]},
  pct:{tips:[
   ['Τρία είδη στον διακόπτη: «Έκπτωση» δίνει την τελική τιμή, «Μεταβολή» πόσο τοις εκατό άλλαξε κάτι, «Φιλοδώρημα» πόσα πληρώνει ο καθένας.','Three kinds on the switch: “Discount” gives the final price, “Change” how much something changed in percent, “Tip” what each person pays.'],

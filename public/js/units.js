@@ -40,10 +40,11 @@ function renderUnitsDisplay(){
  d.className='display-wrap unit-display';
  // The Currency tab is this screen with the category fixed (no menu; the rate and its date instead, currency.js).
  const cur=unitView==='currency',cats=cur?['currency']:Object.keys(units).filter(x=>x!=='currency');
- d.innerHTML='<div class="unit-display-toolbar'+(cur?' currency':'')+'"><select id="unitCategory" class="conversion-category'+(cur?' hidden':'')+'">'+cats.map(x=>'<option value="'+x+'">'+esc(t(x))+'</option>').join('')+'</select>'+(cur?'<button id="rateInfo" class="rate-info" type="button" aria-label="'+esc(t('ratesRefresh'))+'" title="'+esc(t('ratesRefresh'))+'"></button>':'')+'<button id="unitSwap" class="conversion-swap" type="button" aria-label="'+esc(t('swap'))+'">⇄</button></div><div class="unit-rows"><div class="unit-row" data-unit-row="from"><input id="unitValueFrom" class="unit-value" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" aria-label="'+esc(t('from'))+'"><select id="unitFrom" class="unit-unit"></select></div><div class="unit-row" data-unit-row="to"><input id="unitValueTo" class="unit-value" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" aria-label="'+esc(t('to'))+'"><select id="unitTo" class="unit-unit"></select></div></div>';
+ d.innerHTML='<div class="unit-display-toolbar'+(cur?' currency':'')+'"><select id="unitCategory" class="conversion-category'+(cur?' hidden':'')+'">'+cats.map(x=>'<option value="'+x+'">'+esc(t(x))+'</option>').join('')+'</select>'+(cur?'<button id="rateInfo" class="rate-info" type="button" aria-label="'+esc(t('ratesRefresh'))+'" title="'+esc(t('ratesRefresh'))+'"></button>':'')+'<button id="unitHow" class="conversion-swap unit-how" type="button" aria-label="'+esc(t('how'))+'" title="'+esc(t('how'))+'">?</button><button id="unitSwap" class="conversion-swap" type="button" aria-label="'+esc(t('swap'))+'">⇄</button></div><div class="unit-rows"><div class="unit-row" data-unit-row="from"><input id="unitValueFrom" class="unit-value" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" aria-label="'+esc(t('from'))+'"><select id="unitFrom" class="unit-unit"></select></div><div class="unit-row" data-unit-row="to"><input id="unitValueTo" class="unit-value" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" aria-label="'+esc(t('to'))+'"><select id="unitTo" class="unit-unit"></select></div></div>';
  const cat=$('#unitCategory');
  cat.value=cur?'currency':window._unitCategory||'length';
  $('#rateInfo')?.addEventListener('click',()=>refreshRates(true));
+ $('#unitHow')?.addEventListener('click',showHow);// the working: the factor or rate (explain.js, unitsHow)
  populateUnits(true);
 
  const bindInput=input=>{
@@ -145,6 +146,7 @@ function updateUnitsDisplay(){
  from.value=unitSideText('from');
  if(unitView==='currency'){renderRateInfo();shortCurrencyLabels()}
  to.value=unitSideText('to');
+ const how=$('#unitHow');if(how)how.disabled=!unitsHow();
  saveTools();
  const active=unitActiveInput==='to'?'to':'from';
  // too long: smaller, then the side being typed shows its end

@@ -560,7 +560,7 @@ async def scientific(browser, url, lang, theme):
     await p.keyboard.press('Escape')
     await keys('3', '0', 'sci:sin', '=')
     check(L + 'History shows sin(30)', await p.evaluate("document.querySelector('.history-expression').textContent") == 'sin(30)')
-    check(L + 'explanation: sin(30) = 0,5', 'sin(30) = 0,5' in await p.evaluate("howData.steps.map(s=>s.text||s).join('|')"))
+    check(L + 'explanation: sin(30°) = 0,5', 'sin(30°) = 0,5' in await p.evaluate("howData.steps.map(s=>s.text||s).join('|')"))
     # the choice is remembered; Units keeps its own keypad
     await p.reload()
     await p.wait_for_timeout(300)
@@ -1705,6 +1705,77 @@ async def press_feedback(browser, url):
         await ctx.close()
 
 
+async def explanations(browser, url):
+    """The working under ?: the calculation shrinks step by step in school order, each step says why, the new number
+    is marked; scientific steps, percentages, rounded numbers; Units, Currency, Subnet's bits, Interest, Dates."""
+    L = '[explanations] '
+    p = await new_page(browser, url, 'en', 'dark')
+    await p.route('**/api.frankfurter.dev/**', lambda r: r.fulfill(status=200, content_type='application/json', body=RATES_JSON))
+    async def how(e):
+        return await p.evaluate("(e)=>{const h=explanationForExpression(e,evalExpr(e));return h&&{f:h.formula,rule:h.rule,t:h.steps.map(s=>s.title),x:h.steps.map(s=>s.text),l:h.steps.map(s=>(s.line||'').replace(/\\u0001/g,'[').replace(/\\u0002/g,']')),r:h.result}}", e)
+    h = await how('12+7×3-4÷8')
+    check(L + 'school order, with the reason', h['t'] == ['Multiply first', 'Divide first', 'Add', 'Subtract'] and h['x'][0] == '7 × 3 = 21', h)
+    check(L + 'the calculation shrinks, the new number marked', h['l'][:3] == ['12 + [21] − 4 ÷ 8', '12 + 21 − [0,5]', '[33] − 0,5'] and h['l'][3] == '', h['l'])
+    check(L + 'the order rule and a spaced formula', h['f'] == '12 + 7 × 3 − 4 ÷ 8' and h['rule'].replace('\ufe0e', '').startswith('Order: × ÷ → + −'), h)
+    h = await how('(2+3)×4')
+    check(L + 'brackets first', h['t'][0] == 'Brackets first: add' and h['l'][0] == '[5] × 4', h)
+    h = await how('sin(30)+2^3+15%')
+    check(L + 'functions in degrees, powers written out, percent of the number before',
+          h['x'][:2] == ['sin(30°) = 0,5', '2³ = 2 × 2 × 2 = 8'] and h['t'][3] == '15% of 8,5' and h['x'][3] == '8,5 × 15 ÷ 100 = 1,275' and h['r'] == '9,775', h)
+    h = await how('-2^2')
+    check(L + 'a minus in front comes last', h['t'] == ['Power', 'The minus in front'] and h['r'] == '-4', h)
+    h = await how('1÷3×3')
+    check(L + 'a rounded number gets …', h['x'] == ['1 ÷ 3 = 0,333333…', '0,333333… × 3 = 1'], h)
+    h = await how('√(9)+5!')
+    check(L + 'roots checked by hand, factorial written out', h['t'][0] == 'Square root: 3 × 3 = 9' and h['x'][1] == '5! = 5 × 4 × 3 × 2 × 1 = 120', h)
+    bad = await p.evaluate("""(()=>{const out=[];for(const e of ['2+3×4−5÷2','(1+2)×(3+4)','2^10−1','((2+3)×4)^2','100−10%','50×10%','ln(e)+log(100)','−(2+3)×−4',
+      '3!+2^−2','sin(90)×cos(0)','1÷7×7','2^(1÷2)','∛(−27)','99999999×99999999','0,1+0,2','π×2^2','5−−3','10%','12,5%+100']){
+      try{const v=evalExpr(e.replace(/,/g,'.'));if(!explanationForExpression(e.replace(/,/g,'.'),v))out.push(e)}catch(x){out.push(e+': '+x)}}return out})()""")
+    check(L + 'every calculation gets a working that ends in its result', not bad, bad)
+    await p.evaluate("angleUnit='rad'")
+    h = await how('sin(0)')
+    check(L + 'radians say so', h['t'] == ['Sine (radians)'] and h['x'] == ['sin(0) = 0'], h)
+    await p.evaluate("angleUnit='deg'")
+    # Units and Currency have their own ? now
+    await p.evaluate("switchMode('units');const c=document.getElementById('unitCategory');c.value='temperature';c.dispatchEvent(new Event('change',{bubbles:true}))")
+    await p.evaluate("for(const [id,v] of [['unitFrom','°F'],['unitTo','K']]){const s=document.getElementById(id);s.value=v;s.dispatchEvent(new Event('change',{bubbles:true}))}")
+    for k in '212':
+        await p.click(f'#keypad [data-value="{k}"]')
+    await p.click('#unitHow')
+    st = await p.evaluate("[document.querySelector('#howModal').classList.contains('hidden'),[...document.querySelectorAll('#howContent .how-line-body div')].map(d=>d.textContent),document.querySelector('.how-result strong').textContent]")
+    check(L + 'Units: °F → K through °C', not st[0] and st[1] == ['(212 − 32) ÷ 1,8 = 100 °C', '100 + 273,15 = 373,15 K'] and st[2] == '373,15 K', st)
+    await p.evaluate("closeHow();switchMode('currency')")
+    await p.wait_for_timeout(200)
+    await p.evaluate("for(const [id,v] of [['unitFrom','USD'],['unitTo','GBP']]){const s=document.getElementById(id);s.value=v;s.dispatchEvent(new Event('change',{bubbles:true}))}")
+    for k in '100':
+        await p.click(f'#keypad [data-value="{k}"]')
+    st = await p.evaluate("unitsHow().steps.map(s=>s.text)")
+    check(L + 'Currency: USD → GBP through euros, at the ECB rates', st == ['100,00 USD ÷ 1,1206 = 89,24 EUR', '89,24 EUR × 0,84763 = 75,64 GBP'], st)
+    # Interest names the monthly rate i and writes powers small
+    await p.evaluate("switchMode('loan');setToolKind('loan','loan')")
+    await p.evaluate("for(const [f,v] of [['loanAmount','150000'],['loanRate','3,5'],['loanYears','25']]){const e=document.getElementById(f);e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}))}")
+    st = await p.evaluate("howData.steps.map(s=>s.text)")
+    check(L + 'Interest: i is said, (1 + i)⁻³⁰⁰', st[0].endswith('i = 0,00291667') and '(1 + i)⁻³⁰⁰' in st[2], st)
+    # Dates: adding working days says what was skipped
+    await p.evaluate("switchMode('dates');setToolKind('dates','add');setDateCount('work')")
+    await p.evaluate("for(const [f,v] of [['dateStart','2026-10-20'],['dateDays','10']]){const e=document.getElementById(f);e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}))}")
+    st = await p.evaluate("howData&&howData.steps.map(s=>s.text)")
+    check(L + 'Dates: the weekend days and the holiday skipped', st and '4 weekend days and 1 public holiday (28 October)' in st, st)
+    await p.evaluate("setDateCount('all')")
+    await p.context.close()
+    # Subnet: the bits lined up, and on a phone the whole working fits without scrolling
+    for lang in ['en', 'el']:
+        p = await new_page(browser, url, lang, 'dark', phone=True)
+        await p.evaluate("switchMode('net');setToolKind('net','subnet')")
+        await p.evaluate("for(const [f,v] of [['netIp','192.168.10.77'],['netPrefix','26']]){const e=document.getElementById(f);e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}))}")
+        await p.evaluate("showHow()")
+        st = await p.evaluate("""(()=>{const c=document.querySelector('#howModal .modal-card'),rows=[...document.querySelectorAll('.how-bits-row')];
+          return [c.scrollHeight<=c.clientHeight+1,rows.length,rows[0].querySelector('.nb').textContent.replace(/\\./g,'').length,rows[0].querySelector('.hb').textContent,
+          rows.every(r=>r.querySelector('code').scrollWidth<=r.querySelector('code').clientWidth+1)]})()""")
+        check(f'[explanations phone {lang}] Subnet: fits without scrolling, 26 network bits and 6 host bits, nothing cut', st == [True, 4, 26, '001101', True], st)
+        await p.context.close()
+
+
 async def big_screen_dialogs(browser, url):
     """On a big screen the ? and Tips dialogs show everything without scrolling: Tips put the shortcuts beside the tips,
     and a long list of tips goes into two columns. Phones keep one column."""
@@ -1769,6 +1840,7 @@ async def main():
         await sideways_and_chips(browser, url)
         await press_feedback(browser, url)
         await big_screen_dialogs(browser, url)
+        await explanations(browser, url)
         await offline(browser)
         await preview_site(browser)
         await currency_offline(browser, url)

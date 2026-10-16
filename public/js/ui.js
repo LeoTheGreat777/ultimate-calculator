@@ -1,6 +1,6 @@
 // The app around the modes: language, switching modes (tabs), the explanation dialog, copying, holding keys,
 // and installing on a phone. Themes are in theme.js.
-function showHow(){if(!howData)return;$('#howTitle').textContent=t('how');$('#howContent').innerHTML=`<div class="how-step"><div class="how-expression-label">${lang==='el'?'Πράξη':'Expression'}</div><div class="how-formula">${esc(howData.formula)}</div><div class="how-steps">${howData.steps.map((s,i)=>`<div class="how-line"><span>${i+1}</span><div class="how-line-body"><strong>${esc(s.title||'')}</strong><div>${esc(s.text||s)}</div></div></div>`).join('')}</div><div class="how-result"><span>${lang==='el'?'Αποτέλεσμα':'Result'}</span><strong>${esc(howData.result)}</strong></div></div>`;$('#howModal').classList.remove('hidden')}
+function showHow(){if(mode==='units')howData=unitsHow();if(!howData)return;$('#howTitle').textContent=t('how');$('#howModal').classList.remove('help-open','help-wide');$('#howContent').innerHTML=howHtml(howData);$('#howModal').classList.remove('hidden')}
 function closeHow(){$('#howModal').classList.add('hidden');$('#howModal').classList.remove('help-open','help-wide')}
 function modeIcon(m){return ICONS[m]||''}
 function renderTool(){
@@ -215,7 +215,7 @@ function setLanguage(next){
  run();
 }
 // The calculator's step-by-step explanation, in the current language.
-function refreshCalcHow(){if(justCalculated&&lastExpression&&lastResult!==null){howData=explanationForExpression(lastExpression,lastResult)||howData;if(howData&&lastShown)howData.formula=lastShown;calcHowData=howData}}
+function refreshCalcHow(){if(justCalculated&&lastExpression&&lastResult!==null){howData=explanationForExpression(lastExpression,lastResult)||howData;if(howData&&lastShown&&!howData.spaced)howData.formula=lastShown;calcHowData=howData}}
 function applyLanguage(){
  lang=readLanguage();
  const savedInputs={};
@@ -233,6 +233,7 @@ function applyLanguage(){
  {const b=$('#modesButton');if(b){b.setAttribute('aria-label',mText('title'));b.title=mText('title')}if(modesOpen())openModes()}
  $('#howTitle').textContent=t('how');
  $('#howButton')?.setAttribute('aria-label',t('how'));
+ {const b=$('#unitHow');if(b){b.setAttribute('aria-label',t('how'));b.title=t('how')}}
  $('#historyPanel').setAttribute('aria-label',t('history'));
  $('#historyConfirmYes').textContent=t('confirmYes');
  $('#historyTitle').textContent=t('history');

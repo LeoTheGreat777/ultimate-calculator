@@ -16,37 +16,7 @@ const calcErrorKind=e=>ERROR_TEXT[e?.message]?e.message:'MATH';
 function inputLength(){const s=expression+current;return s.length-(carry&&carry.raw&&s.includes(carry.raw)?carry.raw.length-1:0)}
 
 function carryText(r,digits){const abs=r.n<0n?{n:-r.n,d:r.d}:r,places=digits+Math.max(0,r.d.toString().length-abs.n.toString().length),raw=ratToDecimal(r,places);/* tiny values keep their digits too */carry={text:ratToDecimal(abs,places),value:abs,raw,shown:fmt(r)};carry.plain=/×/.test(carry.shown)?'':ratToRoundedDecimal(r,6);/* what ⌫ edits; one shown as × 10ⁿ is deleted whole */return raw}
-function explanationForExpression(input,result){
- let tokens;try{tokens=tokenize(input)}catch{return null}let pos=0;
- // a minus in front of a number or a bracket makes it negative: 3×-5, -(2+3)
- const primary=()=>{if(tokens[pos]?.type==='-'){pos++;const c=primary();return c.type==='number'?{...c,value:ratMul(c.value,rat(-1n)),raw:'-'+c.raw}:{type:'neg',child:c}}if(tokens[pos]?.type==='('){pos++;const child=additive();if(tokens[pos]?.type!==')')throw Error();pos++;return{type:'group',child}}const x=tokens[pos++];if(!x||x.type!=='number')throw Error();return{type:'number',value:x.value,percent:x.percent,raw:x.raw}};
- const mult=()=>{let left=primary();while(tokens[pos]&&['*','/'].includes(tokens[pos].type)){const op=tokens[pos++].type;left={type:'op',op,left,right:primary()}}return left};
- const additive=()=>{let left=mult();while(tokens[pos]&&['+','-'].includes(tokens[pos].type)){const op=tokens[pos++].type;left={type:'op',op,left,right:mult()}}return left};
- let tree;try{tree=additive();if(pos!==tokens.length)throw Error()}catch{return null}
- const renderNode=n=>n.type==='number'?n.raw:n.type==='neg'?'-'+renderNode(n.child):n.type==='group'?'('+renderNode(n.child)+')':renderNode(n.left)+n.op+renderNode(n.right);
- const steps=[],num=v=>formatRat(v),rnum=v=>{const t=formatRat(v);return /^-/.test(t)?'(−'+t.slice(1)+')':t};// 3 × (−5) = -15
- const walk=n=>{
-   if(n.type==='number')return n.value;
-   if(n.type==='group')return walk(n.child);
-   if(n.type==='neg')return ratMul(walk(n.child),rat(-1n));
-   const l=walk(n.left),r=walk(n.right),percent=n.right.type==='number'&&n.right.percent;
-   const rv=percent&&['+','-'].includes(n.op)?ratMul(l,r):r;
-   const v=n.op==='+'?ratAdd(l,rv):n.op==='-'?ratSub(l,rv):n.op==='*'?ratMul(l,rv):ratDiv(l,rv);
-   const op=({'+':'+','-':'−','*':'×','/':'÷'})[n.op];
-   if(percent&&['+','-'].includes(n.op)){
-     const pct=ratDiv(r,ratFromString('0.01'));
-     steps.push({title:lang==='el'?'Υπολόγισε το ποσοστό':'Calculate the percentage',text:num(l)+' × '+rnum(pct)+' ÷ 100 = '+formatRat(rv)});
-     steps.push({title:lang==='el'?'Έπειτα':'Then',text:num(l)+' '+op+' '+rnum(rv)+' = '+formatRat(v)});
-   }else{
-     const title=lang==='el'?(steps.length===0?'Πρώτα':n===tree?'Τέλος':'Στη συνέχεια'):(steps.length===0?'First':n===tree?'Finally':'Next');
-     steps.push({title,text:num(l)+' '+op+' '+rnum(rv)+' = '+formatRat(v)});
-   }
-   return v;
- };
- try{walk(tree)}catch{return null}
- return{formula:formatExpressionDisplay(input),steps,result:formatRat(result)}
-}
-
+// explanationForExpression (the working under ?) is in explain.js
 function resetHow(){calcError='';howData=null;calcHowData=null;$('#howButton')?.classList.add('hidden')}
 function render(){
  if(mode!=='calc')return;
@@ -168,7 +138,7 @@ function negate(){
   const prevShown=lastShown||formatExpressionDisplay(lastExpression);
   carry=null;resultNegated=!resultNegated;lastResult=ratMul(lastResult,rat(-1n));lastExpression='-('+lastExpression+')';lastShown='−('+prevShown+')';lastOperation=null;
   howData=explanationForExpression(lastExpression,lastResult)||{formula:lastShown,steps:[lastShown+' = '+fmt(lastResult)],result:fmt(lastResult)};
-  if(howData)howData.formula=lastShown;calcHowData=howData;
+  if(howData&&!howData.spaced)howData.formula=lastShown;calcHowData=howData;
   render();return;
  }
  // a minus made here is "−", so the display shows the number in brackets: 5 -> (−5) (formatInputDisplay)

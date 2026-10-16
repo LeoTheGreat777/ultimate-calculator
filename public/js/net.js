@@ -62,9 +62,9 @@ function netCalculate(){
   let p=32;while(usableHosts(p)<need)p--;
   const mask=prefixMask(p),hosts=usableHosts(p);
   const how={formula:fmt(need)+(el?' συσκευές':' hosts'),steps:[
-   {title:el?'Bits για τις συσκευές':'Host bits',text:'2^'+(32-p)+(p<31?' − 2 = ':' = ')+fmt(hosts)+' ≥ '+fmt(need)},
+   {title:el?'Bits για τις συσκευές: τα λιγότερα που φτάνουν':'Host bits: the fewest that are enough',text:'2'+supText(32-p)+(p<31?' − 2 = ':' = ')+fmt(hosts)+' ≥ '+fmt(need)},
    {title:el?'Πρόθεμα':'Prefix',text:'32 − '+(32-p)+' = /'+p},
-   {title:el?'Μάσκα':'Mask',text:ipBinary(mask)+' = '+ipText(mask)}],result:'/'+p};
+   {title:el?'Μάσκα':'Mask',bits:[{label:'/'+p,dec:ipText(mask),bits:ipBinary(mask),p}]}],result:'/'+p};
   setToolResult('/'+p,ipText(mask)+' · '+fmt(hosts)+' '+t(hosts===1?'netHost':'netHostsWord'),how);
   renderNetDetails([['netMask',ipText(mask)],['netWildcard',ipText(~mask>>>0)],['netBlock',fmt(2**(32-p))],['netSpare',fmt(hosts-need)]]);
   return;
@@ -73,14 +73,16 @@ function netCalculate(){
  if(ip===null||p===null)return none();
  const mask=prefixMask(p),wild=~mask>>>0,net=(ip&mask)>>>0,bc=(net|wild)>>>0,hosts=usableHosts(p);
  const first=p>=31?net:net+1,last=p>=31?bc:bc-1,kind=t(ipKind(ip));
- const how={formula:ipText(ip)+'/'+p,steps:[
-  {title:el?'Η διεύθυνση σε δυαδικό':'The address in binary',text:ipBinary(ip)},
-  {title:el?'Η μάσκα /'+p:'The mask /'+p,text:ipBinary(mask)+' = '+ipText(mask)},
-  {title:el?'Δίκτυο (διεύθυνση AND μάσκα)':'Network (address AND mask)',text:ipBinary(net)+' = '+ipText(net)},
-  {title:el?'Broadcast (δίκτυο OR wildcard)':'Broadcast (network OR wildcard)',text:ipBinary(bc)+' = '+ipText(bc)},
-  {title:el?'Διευθύνσεις για συσκευές':'Host addresses',text:ipText(first)+' – '+ipText(last)},
-  {title:el?'Wildcard (το αντίστροφο της μάσκας)':'Wildcard (the mask inverted)',text:ipText(wild)},
-  {title:el?'Συσκευές':'Hosts',text:p>=31?fmt(hosts)+(p===31?(el?' (σύνδεση σημείου προς σημείο)':' (point-to-point link)'):''):'2^'+(32-p)+' − 2 = '+fmt(hosts)}],result:ipText(net)+'/'+p};
+ // the bits lined up: the first p are the network, the rest the hosts (explain.js draws them in two colours)
+ const row=(label,n)=>({label,dec:ipText(n),bits:ipBinary(n),p}),hb=32-p;
+ const how={formula:ipText(ip)+' / '+p,
+  legend:[(el?'δίκτυο: ':'network: ')+p+' bits',(el?'συσκευές: ':'hosts: ')+hb+' bits'],steps:[
+  {title:el?'Διεύθυνση και μάσκα σε δυαδικό':'Address and mask in binary',bits:[row(el?'Διεύθυνση':'Address',ip),row(el?'Μάσκα /'+p:'Mask /'+p,mask)]},
+  {title:el?'Δίκτυο: bits συσκευών = 0':'Network: host bits = 0',bits:[row(el?'Δίκτυο':'Network',net)]},
+  {title:el?'Broadcast: bits συσκευών = 1':'Broadcast: host bits = 1',bits:[row('Broadcast',bc)]},
+  {title:el?'Διευθύνσεις για συσκευές':'Addresses for hosts',text:ipText(first)+' – '+ipText(last)},
+  {title:p>=31?(el?'Συσκευές':'Hosts'):(el?'Συσκευές: χωρίς δίκτυο και broadcast':'Hosts: without network and broadcast'),text:p>=31?fmt(hosts)+(p===31?(el?' (σύνδεση σημείου προς σημείο)':' (point-to-point link)'):''):'2'+supText(hb)+' − 2 = '+fmt(hosts)},
+  {title:el?'Wildcard: η μάσκα ανάποδα':'Wildcard: the mask inverted',text:ipText(wild)}],result:ipText(net)+'/'+p};
  setToolResult(ipText(net)+'/'+p,fmt(hosts)+' '+t(hosts===1?'netHost':'netHostsWord')+' · '+kind+' · '+(el?'Κλάση ':'Class ')+ipClass(ip),how);
  renderNetDetails([['netMask',ipText(mask)],['netWildcard',ipText(wild)],['netFirst',ipText(first)],['netLast',ipText(last)],['netBroadcast',ipText(bc)],['netHostsLbl',fmt(hosts)]]);
 }

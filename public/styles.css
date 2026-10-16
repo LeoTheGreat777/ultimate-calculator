@@ -159,18 +159,34 @@ html.landscape .tool-grid.kind-grid .tool-field span{white-space:nowrap;overflow
 .empty{color:var(--muted);font-size:14px;padding:18px 2px}
 .modal{position:fixed;inset:0;z-index:110;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.58);backdrop-filter:blur(7px)}
 .modal.hidden{display:none}
-.modal-card{width:min(460px,calc(calc(100vw / var(--z,1)) - 32px));max-height:min(calc(70dvh / var(--z,1)),560px);overflow:auto;background:var(--card);border:1px solid var(--border);border-radius:22px;padding:17px;box-shadow:0 24px 80px rgba(0,0,0,.45)}
+.modal-card{width:min(460px,calc(calc(100vw / var(--z,1)) - 32px));max-height:calc(calc(100dvh / var(--z,1)) - 40px);overflow:auto;background:var(--card);border:1px solid var(--border);border-radius:22px;padding:17px;box-shadow:0 24px 80px rgba(0,0,0,.45)}
 .modal-close{width:34px;height:34px;border:0;border-radius:50%;background:var(--card2);color:var(--muted);font-size:24px;line-height:1;cursor:pointer}
 .how-content{display:flex;flex-direction:column;gap:8px;margin-top:14px}
 .how-step{background:var(--card2);border-radius:14px;padding:14px}
 .how-formula{font-size:17px;font-weight:650;margin-bottom:12px;overflow-wrap:anywhere}
-.how-line{display:flex;gap:10px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--border);font-size:14px;line-height:1.5}
-.how-line span{flex:0 0 26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:var(--on-accent);font-size:12px;font-weight:800}
+.how-line{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--border);font-size:14px;line-height:1.5}
+.how-line>span{flex:0 0 26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:var(--on-accent);font-size:12px;font-weight:800}
 .how-line strong{display:block;font-size:12px;color:var(--muted);margin-bottom:3px}
 .how-line div div{overflow-wrap:anywhere}
+.how-label{font-size:11px;font-weight:750;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);line-height:1}
+.how-step .how-formula{margin:6px 0 4px}
+.how-rule{font-size:12.5px;line-height:1.45;color:var(--muted);margin-bottom:6px}
+.how-now{margin-top:5px;color:var(--muted);overflow-wrap:anywhere}
+.how-hl{color:var(--on-accent);background:var(--accent);border-radius:6px;padding:0 5px;font-weight:700}
+.how-line{flex-wrap:wrap}
+.how-line-body{flex:1 1 0;min-width:0}
+.how-legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--muted);margin-bottom:4px}
+.how-legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.how-legend i.nb{background:var(--accent2)}.how-legend i.hb{background:var(--muted)}
+.how-bits{flex:1 0 100%;display:flex;flex-direction:column;gap:6px;margin-top:2px}
+.how-bits-head{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:var(--muted)}
+.how-bits-head b{color:var(--text);font-weight:650;font-size:13px}
+.how-bits code{display:block;margin-top:2px;font:500 12.5px/1.4 ui-monospace,"SF Mono",Menlo,Consolas,"DejaVu Sans Mono",monospace;letter-spacing:0;white-space:nowrap}
+.how-bits .nb{color:var(--accent2)}.how-bits .hb{color:var(--muted)}
 .how-result{display:flex;flex-direction:column;align-items:flex-start;gap:5px;margin-top:6px;padding:16px 2px 2px;border-top:1px solid var(--border);color:var(--accent2);overflow-wrap:anywhere}
 .how-result span{font-size:11px;font-weight:750;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);line-height:1}
 .how-result strong{font-size:34px;line-height:1.05;font-weight:800;letter-spacing:-.04em}
+.how-result strong.long{font-size:27px}/* 192.168.10.64/26, 225.282,00 € on one line */
 .hidden{display:none!important}
 @media(max-width:480px){
   .app-shell{padding:8px 8px 10px}
@@ -221,6 +237,8 @@ html.landscape .tool-grid.kind-grid .tool-field span{white-space:nowrap;overflow
 .unit-display-toolbar{display:flex;align-items:center;gap:8px;margin:0 4px 8px}
 .unit-display-toolbar .conversion-category{min-height:38px;padding:7px 10px;border-radius:12px;font-size:13px}
 .unit-display-toolbar .conversion-swap{width:38px;height:38px;flex:0 0 38px;border-radius:12px;font-size:18px}
+.unit-display-toolbar .unit-how{font-size:16px;font-weight:750}
+.unit-display-toolbar .unit-how:disabled{opacity:.35;cursor:default}
 .unit-rows{display:flex;flex-direction:column;gap:8px;min-height:0}
 .unit-row{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:0;height:95px;min-height:95px;padding:0 7px;border:0;border-radius:12px;position:relative}
 .unit-row+.unit-row{border-top:1px solid var(--border);border-radius:0}

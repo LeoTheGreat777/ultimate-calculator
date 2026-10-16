@@ -334,11 +334,11 @@ function bindTools(){
  const loan=()=>{
   const v=loanNumbers(),el=lang==='el',pc=num(6);
   if(!v){setToolResult('','',null);return}
-  const rateStep={title:el?'Μηνιαίο επιτόκιο':'Monthly rate',text:fmt(v.R)+'% ÷ 12 = '+pc(v.R/12)+'%'};
+  const rateStep={title:el?'Μηνιαίο επιτόκιο (i)':'Monthly rate (i)',text:fmt(v.R)+'% ÷ 12 = '+pc(v.R/12)+'% →\uFE0E i = '+num(8)(v.i)};
   if(v.kind==='payoff'){
    if(v.never){setToolResult('—',t('payTooLow')+(v.i?' ('+money(v.P*v.i)+')':''),null);return}
    const how={formula:money(v.P)+(el?' με ':' at ')+fmt(v.R)+'%, '+money(v.M)+(el?' τον μήνα':' a month'),steps:[rateStep,
-    {title:el?'Μήνες':'Months',text:(v.i?'−ln(1 − '+money(v.P)+' × i ÷ '+money(v.M)+') ÷ ln(1 + i)':money(v.P)+' ÷ '+money(v.M))+' = '+pc(v.exact)+' → '+v.months},
+    {title:el?'Μήνες':'Months',text:(v.i?'−ln(1 − '+money(v.P)+' × i ÷ '+money(v.M)+') ÷ ln(1 + i)':money(v.P)+' ÷ '+money(v.M))+' = '+pc(v.exact)+' →\uFE0E '+v.months},
     {title:el?'Η τελευταία δόση':'The last payment',text:money(v.last)},
     {title:el?'Σύνολο που πληρώνεις':'Total you pay',text:money(v.M)+' × '+(v.months-1)+' + '+money(v.last)+' = '+money(v.total)},
     {title:el?'Τόκοι':'Interest',text:money(v.total)+' − '+money(v.P)+' = '+money(v.interest)}],result:monthsText(v.months)};
@@ -347,14 +347,14 @@ function bindTools(){
   const monthsStep={title:el?'Μήνες':'Months',text:fmt(v.Y)+' × 12 = '+v.months};
   if(v.kind==='loan'){
    const how={formula:money(v.P)+(el?' με ':' at ')+fmt(v.R)+'% '+(el?'για ':'for ')+fmt(v.Y)+(el?' χρόνια':' years'),steps:[rateStep,monthsStep,
-    {title:el?'Μηνιαία δόση':'Monthly payment',text:money(v.P)+' × i ÷ (1 − (1 + i)^−'+v.months+') = '+money(v.pay)},
+    {title:el?'Μηνιαία δόση':'Monthly payment',text:money(v.P)+' × i ÷ (1 − (1 + i)'+supText('-'+v.months)+') = '+money(v.pay)},
     {title:el?'Σύνολο που πληρώνεις':'Total you pay',text:money(v.pay)+' × '+v.months+' = '+money(v.total)},
     {title:el?'Τόκοι':'Interest',text:money(v.total)+' − '+money(v.P)+' = '+money(v.interest)}],result:money(v.pay)};
    setToolResult(money(v.pay),t('perMonth')+' · '+t('interestTotal')+': '+money(v.interest),how);return;
   }
   const how={formula:money(v.S)+' + '+money(v.D)+(el?' τον μήνα, ':' a month, ')+fmt(v.R)+'%, '+fmt(v.Y)+(el?' χρόνια':' years'),steps:[rateStep,monthsStep,
-   {title:el?'Το αρχικό ποσό με τους τόκους':'The starting amount with interest',text:money(v.S)+' × (1 + i)^'+v.months+' = '+money(v.fromStart)},
-   {title:el?'Οι μηνιαίες καταθέσεις με τους τόκους':'The monthly deposits with interest',text:money(v.D)+' × ((1 + i)^'+v.months+' − 1) ÷ i = '+money(v.fromDeposits)},
+   {title:el?'Το αρχικό ποσό με τους τόκους':'The starting amount with interest',text:money(v.S)+' × (1 + i)'+supText(v.months)+' = '+money(v.fromStart)},
+   {title:el?'Οι μηνιαίες καταθέσεις με τους τόκους':'The monthly deposits with interest',text:money(v.D)+' × ((1 + i)'+supText(v.months)+' − 1) ÷ i = '+money(v.fromDeposits)},
    {title:el?'Σύνολο':'Total',text:money(v.fromStart)+' + '+money(v.fromDeposits)+' = '+money(v.final)},
    {title:el?'Από αυτά, τόκοι':'Of which interest',text:money(v.final)+' − '+money(v.deposited)+' = '+money(v.interest)}],result:money(v.final)};
   setToolResult(money(v.final),t('ofWhichInterest')+': '+money(v.interest),how);// deposits: in ? and the chart (one line on a phone)

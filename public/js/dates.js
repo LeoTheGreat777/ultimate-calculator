@@ -73,8 +73,8 @@ function datesCalculate(){
   let a=dateField('dateFrom'),b=dateField('dateTo');if(a===null||b===null)return none();
   if(b<a)[a,b]=[b,a];
   const days=b-a,w=workingDays(a,b),span=ymd(a,b);
-  const how={formula:dateText(a)+' → '+dateText(b),steps:[
-   {title:el?'Ημέρες ανάμεσα':'Days in between',text:weekday(a)+' '+dateText(a)+' → '+weekday(b)+' '+dateText(b)+' = '+dText('day',days)},
+  const how={formula:dateText(a)+' →\uFE0E '+dateText(b),steps:[
+   {title:el?'Ημέρες ανάμεσα':'Days in between',text:weekday(a)+' '+dateText(a)+' →\uFE0E '+weekday(b)+' '+dateText(b)+' = '+dText('day',days)},
    {title:el?'Σε χρόνια, μήνες και ημέρες':'In years, months and days',text:ymdText(span)},
    {title:el?'Εργάσιμες (Δευτέρα με Παρασκευή, μαζί με τις δύο ημερομηνίες)':'Working days (Monday to Friday, both dates counted)',
     text:fmt(w.weekdays)+(w.off.length?' − '+fmt(w.off.length)+(el?' αργίες':' public holidays')+' = '+fmt(w.days)+' · '+holidayList(w.off,12):'')}],
@@ -89,9 +89,14 @@ function datesCalculate(){
  if(a===null||!/^-?\d+$/.test(raw))return none();
  const n=Number(raw);if(!Number.isSafeInteger(n)||(work&&Math.abs(n)>50000))return none();
  const b=work?addWorkingDays(a,n):a+n;if(b===null||b<DATE_MIN||b>DATE_MAX)return none();
+ // working days: which days were skipped on the way (weekends, and public holidays by name)
+ const lo=Math.min(a,b)+(n<0?0:1),hi=Math.max(a,b)-(n<0?1:0),w=work&&n&&hi>=lo?workingDays(lo,hi):null;
+ const skipped=w?[w.weekend&&fmt(w.weekend)+' '+(el?(w.weekend===1?'ημέρα Σαββατοκύριακου':'ημέρες Σαββατοκύριακου'):(w.weekend===1?'weekend day':'weekend days')),
+  w.off.length&&fmt(w.off.length)+' '+(el?(w.off.length===1?'αργία':'αργίες'):(w.off.length===1?'public holiday':'public holidays'))+' ('+holidayList(w.off,6,false)+')'].filter(Boolean).join(el?' και ':' and '):'';
  const how={formula:dateText(a)+(n<0?' − ':' + ')+dText(work?'work':'day',Math.abs(n)),steps:[
   {title:el?'Από':'From',text:weekday(a)+' '+dateText(a)},
   {title:n<0?(el?'Πήγαινε πίσω':'Go back'):(el?'Πρόσθεσε':'Add'),text:dText(work?'work':'day',Math.abs(n))+(work?(el?' (χωρίς Σαββατοκύριακα και αργίες)':' (skipping weekends and public holidays)'):'')},
+  ...(skipped?[{title:el?'Παραλείφθηκαν':'Skipped on the way',text:skipped}]:[]),
   {title:el?'Αποτέλεσμα':'Result',text:weekday(b)+' '+dateText(b)+(work?' · '+dText('day',Math.abs(b-a))+' '+t('inAll'):'')}],result:dateText(b)};
  setToolResult(dateText(b),weekday(b)+(work?' · '+dText('day',Math.abs(b-a))+' '+t('inAll'):''),how);
 }

@@ -41,7 +41,7 @@ function historyClick(e){
   return;
  }
  if(del){store.set('uc-history',JSON.stringify(historyItems().filter(x=>String(x.id)!==del.dataset.delete)));renderHistory();return}
- if(item){const x=historyItems().find(x=>String(x.id)===item.dataset.history);if(!x)return;closeHistory();setMode('calc');carry=null;resultNegated=false;lastExpression=x.expression;lastShown=(x.shown||formatInputDisplay(x.expression));lastResult=ratFromString(String(x.result));justCalculated=true;expression='';current='';currentIsPercent=false;howData=explanationForExpression(x.expression,lastResult)||x.how||null;if(howData&&lastShown)howData.formula=lastShown;calcHowData=howData;lastOperation=parseLastOperation(x.expression);render();syncModeTabs()}
+ if(item){const x=historyItems().find(x=>String(x.id)===item.dataset.history);if(!x)return;closeHistory();setMode('calc');carry=null;resultNegated=false;lastExpression=x.expression;lastShown=(x.shown||formatInputDisplay(x.expression));lastResult=ratFromString(String(x.result));justCalculated=true;expression='';current='';currentIsPercent=false;howData=explanationForExpression(x.expression,lastResult)||x.how||null;if(howData&&lastShown&&!howData.spaced)howData.formula=lastShown;calcHowData=howData;lastOperation=parseLastOperation(x.expression);render();syncModeTabs()}
 }
 // History sheet gestures: drag the handle to resize or close it; wheel and keys scroll it from anywhere.
 function setupHistoryGestures() {
