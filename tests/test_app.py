@@ -1636,6 +1636,34 @@ async def press_feedback(browser, url):
             await hold('[data-action="clear"]')
             st = await p.evaluate("[...document.querySelectorAll('#toolPanel input[data-tool-input]')].map(i=>i.value).join('')")
             check(L + 'tools: holding C clears every field, like AC', st == '', st)
+            # holding AC clears while still held (like C; on a phone a long press may never end in a click), the
+            # defaults come back
+            def fill(fid, v):
+                return p.evaluate(f"(()=>{{const e=document.getElementById('{fid}');e.value='{v}';e.dispatchEvent(new Event('input',{{bubbles:true}}))}})()")
+            await p.evaluate("switchMode('vat')")
+            await fill('amount', '100')
+            await fill('vatRate', '13')
+            b = await p.locator('#keypad [data-action="clear-all"]').bounding_box()
+            await p.mouse.move(b['x'] + b['width'] / 2, b['y'] + b['height'] / 2)
+            await p.mouse.down()
+            await p.wait_for_timeout(700)
+            st = await p.evaluate("[amount.value,vatRate.value]")
+            await p.mouse.up()
+            check(L + 'VAT: holding AC clears while still held, the rate goes back to 24', st == ['', '24'], st)
+            await p.evaluate("switchMode('pct')")
+            await fill('pctPrice', '80')
+            await p.evaluate("""document.querySelector('#keypad [data-action="clear-all"]').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerType:'touch',clientX:1,clientY:1}))""")
+            await p.wait_for_timeout(700)
+            st = await p.evaluate("pctPrice.value")
+            await p.evaluate("""document.querySelector('#keypad [data-action="clear-all"]').dispatchEvent(new PointerEvent('pointercancel',{bubbles:true,pointerType:'touch'}))""")
+            check(L + 'a finger held on AC clears even when the press ends without a click', st == '', st)
+            await p.evaluate("switchMode('graph');graph.fns=['x^2','2x+1'];graph.active=1;graphChanged()")
+            await p.click('#keypad [data-g="clear"]')
+            st = await p.evaluate("JSON.stringify(graph.fns)")
+            check(L + 'Graph: a tap on AC clears the function typed in', st == '["x^2",""]', st)
+            await hold('[data-g="clear"]')
+            st = await p.evaluate("[JSON.stringify(graph.fns),graph.active]")
+            check(L + 'Graph: holding AC clears every function', st == ['[""]', 0], st)
             await ctx.close()
             continue
         await p.evaluate("clearAll()")
@@ -1677,6 +1705,39 @@ async def press_feedback(browser, url):
         await ctx.close()
 
 
+async def big_screen_dialogs(browser, url):
+    """On a big screen the ? and Tips dialogs show everything without scrolling: Tips put the shortcuts beside the tips,
+    and a long list of tips goes into two columns. Phones keep one column."""
+    scrolls = "(()=>{const c=document.querySelector('#howModal .modal-card');return c.scrollHeight>c.clientHeight+1})()"
+    for lang in ['en', 'el']:
+        L = f'[big screen dialogs {lang}] '
+        p = await new_page(browser, url, lang, 'dark', size=(1920, 1080))
+        bad = []
+        for m in ['calc', 'units', 'currency', 'graph', 'vat', 'pct', 'loan', 'dates', 'fuel', 'energy', 'net']:
+            await p.evaluate(f"closeHow();switchMode('{m}');showHelp()")
+            if await p.evaluate(scrolls):
+                bad.append(m)
+        check(L + 'Tips fit without scrolling in every mode', not bad, bad)
+        st = await p.evaluate("(()=>{const s=[...document.querySelectorAll('.help-section')].map(e=>e.getBoundingClientRect());return [s.length,s[1].left>s[0].right,Math.abs(s[1].top-s[0].top)<40]})()")
+        check(L + 'the keyboard shortcuts sit beside the tips', st == [2, True, True], st)
+        await p.evaluate("closeHow();switchMode('vat');showHelp()")
+        wide = await p.evaluate("[document.querySelector('#howModal').classList.contains('help-wide'),getComputedStyle(document.querySelector('.help-tips')).columnCount]")
+        await p.evaluate("closeHow()")
+        await p.set_viewport_size({'width': 1280, 'height': 860})
+        await p.evaluate("switchMode('calc');showHelp()")
+        wide2 = await p.evaluate("[document.querySelector('#howModal').classList.contains('help-wide'),getComputedStyle(document.querySelector('.help-tips')).columnCount]")
+        check(L + "VAT's few tips: one column; the Calculator's long list at 1280×860: two", wide == [False, 'auto'] and wide2 == [True, '2'], [wide, wide2])
+        await p.evaluate("closeHow();switchMode('net')")
+        await p.evaluate("(()=>{for(const [f,v] of [['netIp','192.168.10.77'],['netPrefix','26']]){const e=document.getElementById(f);e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}))}})();showHow()")
+        check(L + "Subnet's ? fits without scrolling at 1280×860", not await p.evaluate(scrolls))
+        await p.context.close()
+    p = await new_page(browser, url, 'en', 'dark', phone=True)
+    await p.evaluate("showHelp()")
+    st = await p.evaluate("[document.querySelectorAll('.help-section').length,getComputedStyle(document.querySelector('.help-tips')).columnCount,getComputedStyle(document.querySelector('.help')).display]")
+    check('[big screen dialogs phone] Tips stay one column, no shortcuts', st == [1, 'auto', 'flex'], st)
+    await p.context.close()
+
+
 async def main():
     url = serve()
     async with async_playwright() as pw:
@@ -1707,6 +1768,7 @@ async def main():
         await offline_status_and_turning(browser, url)
         await sideways_and_chips(browser, url)
         await press_feedback(browser, url)
+        await big_screen_dialogs(browser, url)
         await offline(browser)
         await preview_site(browser)
         await currency_offline(browser, url)

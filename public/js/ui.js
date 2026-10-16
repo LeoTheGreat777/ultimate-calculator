@@ -1,7 +1,7 @@
 // The app around the modes: language, switching modes (tabs), the explanation dialog, copying, holding keys,
 // and installing on a phone. Themes are in theme.js.
 function showHow(){if(!howData)return;$('#howTitle').textContent=t('how');$('#howContent').innerHTML=`<div class="how-step"><div class="how-expression-label">${lang==='el'?'Πράξη':'Expression'}</div><div class="how-formula">${esc(howData.formula)}</div><div class="how-steps">${howData.steps.map((s,i)=>`<div class="how-line"><span>${i+1}</span><div class="how-line-body"><strong>${esc(s.title||'')}</strong><div>${esc(s.text||s)}</div></div></div>`).join('')}</div><div class="how-result"><span>${lang==='el'?'Αποτέλεσμα':'Result'}</span><strong>${esc(howData.result)}</strong></div></div>`;$('#howModal').classList.remove('hidden')}
-function closeHow(){$('#howModal').classList.add('hidden');$('#howModal').classList.remove('help-open')}
+function closeHow(){$('#howModal').classList.add('hidden');$('#howModal').classList.remove('help-open','help-wide')}
 function modeIcon(m){return ICONS[m]||''}
 function renderTool(){
  const calc=mode==='calc';
@@ -258,12 +258,14 @@ function applyLanguage(){
  syncModeTabs();
  renderToggles();
 }
-// Holding ⌫ clears everything, the same as AC, in every mode.
-function clearEverything(){if(mode==='calc')clearAll();else if(mode==='units')toolKeyInput('clear');else if(mode==='graph')graphKey('clear');else clearToolFields()}
-// Holding a key for half a second: ⌫ and C clear everything (C turns into AC while still held, like the iPhone's
+// Holding ⌫, C or AC clears everything in every mode, as AC does (the defaults – VAT rate, /24, today – come back); in Graph
+// every function, not only the one typed in. It happens while the key is still held, so it works on a phone too, where a
+// long press may never end in a click.
+function clearEverything(){if(mode==='calc')clearAll();else if(mode==='units')toolKeyInput('clear');else if(mode==='graph'){recordModeHistory();graph.fns=[''];graph.active=0;graphChanged()}else clearToolFields()}
+// Holding a key for half a second: ⌫, C and AC clear everything (C turns into AC while still held, like the iPhone's
 // calculator), − changes the sign (±). A plain tap does the usual.
 const HOLD_KEYS=[
- {sel:'[data-action="backspace"],[data-g="back"],[data-action="clear"]',run:()=>clearEverything()},
+ {sel:'[data-action="backspace"],[data-g="back"],[data-action="clear"],[data-action="clear-all"],[data-g="clear"]',run:()=>clearEverything()},
  {sel:'.key[data-value="-"]',when:()=>mode==='calc'||mode==='units',run:()=>{if(mode==='calc')negate();else toolKeyInput('negate')}}
 ];
 // Pressing a key: it lights up the moment it's touched, grows a little if held a moment (styles.css) and fades as it's

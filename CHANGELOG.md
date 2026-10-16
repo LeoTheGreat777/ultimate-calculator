@@ -6,6 +6,14 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.18.1 – 2026-10-16
+
+### Changed
+- On a computer screen, ? and Tips show everything without scrolling: Tips put the keyboard shortcuts beside the tips,
+  and a long list goes into two columns.
+- Holding AC clears everything as soon as it's held, like holding C or ⌫ (the VAT rate goes back to 24%). In Graph,
+  holding AC clears every function.
+
 ## 0.18.0 – 2026-10-14
 
 ### Added

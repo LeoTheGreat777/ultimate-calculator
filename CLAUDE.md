@@ -275,15 +275,17 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   click goes on to the keypad as the key press (the switch's own click is stopped). Apple doesn't document it; if it
   stops, nothing breaks. No sounds (the owner said no). `selectstart` is blocked outside fields: a fast double tap on iOS
   otherwise starts selecting a key's label and shows the magnifier bubble.
-- **± and holding keys:** holding ⌫ or C clears everything (C turns into AC while still held and big, like the iPhone's
-  calculator; in the tools C stays C, AC is its own key), holding − flips the sign (`negate`, Units: `unitKeyInput('negate')`);
+- **± and holding keys:** holding ⌫, C or AC clears everything while still held (`HOLD_KEYS`, `clearEverything`; C turns into AC
+  while still held and big, like the iPhone's calculator; in the tools C stays C, AC is its own key; in Graph every function), holding − flips the sign (`negate`, Units: `unitKeyInput('negate')`);
   F9 does ± on a keyboard. A tap on − is always minus. A minus made with ± is stored as `−` (U+2212), one typed with
   the − key as `-`; the maths reads both the same (`tokenize`, `normalizeUnitExpression`). Display (`formatInputDisplay`):
   after an operator any negative number is in brackets, `5×(−25)`; at the start only a ± one is, `(−5)`, a typed one
   stays `-5`. A result turned negative with ± carries on as `(−84)+2` (`resultNegated`). Finished results stay plain.
   Units has the same keypad as the calculator, including ( ).
 - **Tips:** a sheet per mode (`HELP`, `showHelp`), opened from the footer "Tips" link or the ? key; its keyboard
-  shortcuts section only shows on devices with a keyboard. When behaviour changes, update the tips in both languages.
+  shortcuts section only shows on devices with a keyboard. On big screens (≥ 900×600) the
+  dialog uses the whole height, so ? and Tips don't scroll; Tips put the shortcuts beside the tips, and when that still doesn't
+  fit the tips go into two columns in a wider sheet (`fitHelp`, `help-wide`). When behaviour changes, update the tips in both languages.
 - **Tool charts** (the bars button, `showToolChart`/`drawToolChart` in charts.js) answer a question rather than redraw
   the result, mostly as HTML so numbers stay sharp: Fuel a 3×3 grid of the cost at ±0,10 €/L and ±0,5 L/100 km (the
   middle is the result) plus return trip and per 100 km; VAT the same amount at 24, 13 and 6% (and the rate typed);

@@ -517,6 +517,19 @@ html.theme-fade *,html.theme-fade *::before,html.theme-fade *::after{transition:
 .app-footer{opacity:1}
 .app-footer{color:color-mix(in srgb,var(--muted) 72%,transparent)}
 .modal.help-open .modal-card{max-height:min(calc(86dvh / var(--z,1)),780px)}
+/* Big screens: the dialogs use the whole height, so ? and charts show everything without scrolling; Tips put the
+   keyboard shortcuts beside the tips, and a long list of tips goes into two columns (help-wide, fitHelp in help.js) */
+@media (min-width:900px) and (min-height:600px){
+  .modal-card{max-height:calc(calc(100dvh / var(--z,1)) - 48px)}
+  .modal.help-open .modal-card{width:min(880px,calc(calc(100vw / var(--z,1)) - 48px));max-height:calc(calc(100dvh / var(--z,1)) - 48px)}
+  .modal.help-open.help-wide .modal-card{width:min(1120px,calc(calc(100vw / var(--z,1)) - 48px))}
+  .help{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:0 32px;align-items:start}
+  .help-wide .help{grid-template-columns:minmax(0,2.1fr) minmax(0,1fr)}
+  .help-section:only-child{grid-column:1/-1}
+  .help-wide .help-tips,.help-section:only-child .help-tips{columns:2;column-gap:32px}
+  .help-tips li{break-inside:avoid;border-top:0;border-bottom:1px solid var(--border)}
+  .help-tips li:last-child{border-bottom:0}
+}
 /* ---------- Mode tabs (one tap per mode; the strip scrolls sideways when they don't all fit) ---------- */
 .calculator-toolbar{gap:7px;align-items:center}
 .history-top{width:40px;padding:0;justify-content:center;flex:0 0 auto;color:var(--muted)}

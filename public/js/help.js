@@ -37,7 +37,8 @@ const HELP={
   ['Σύρε το γράφημα για να το μετακινήσεις. Ζουμ με τη ροδέλα του ποντικιού, τα − + ή με δύο δάχτυλα.','Drag the graph to move it. Zoom with the mouse wheel, the − + buttons or two fingers.'],
   ['Οι τελείες δείχνουν ρίζες, ελάχιστα, μέγιστα και τομές. Πάτα μία για τις τιμές της ή το ? για λίστα.','The dots mark roots, minima, maxima and intersections. Tap one for its values, or ? for a list.'],
   ['Το ⤢ προσαρμόζει το ύψος στην καμπύλη, το ⌂ γυρίζει στην αρχή και το ⤓ το αποθηκεύει ως εικόνα.','⤢ fits the height to the curve, ⌂ goes back to the start and ⤓ saves it as an image.'],
-  ['Το 2x σημαίνει 2 × x και το sin x σημαίνει sin(x). Οι γωνίες είναι σε ακτίνια.','2x means 2 × x and sin x means sin(x). Angles are in radians.']],
+  ['Το 2x σημαίνει 2 × x και το sin x σημαίνει sin(x). Οι γωνίες είναι σε ακτίνια.','2x means 2 × x and sin x means sin(x). Angles are in radians.'],
+  ['Το AC σβήνει τη συνάρτηση που γράφεις. Κράτα το πατημένο για να σβήσουν όλες.','AC clears the function you are typing. Hold it to clear them all.']],
   keys:[[['x'],'Η μεταβλητή x','The variable x'],[['^'],'Δύναμη, π.χ. x^3','Power, e.g. x^3'],[['sin','sqrt','ln'],'Συναρτήσεις: γράψε το όνομα','Functions: type the name'],[['Enter'],'Επόμενη συνάρτηση','Next function'],[['↑','↓'],'Αλλαγή συνάρτησης','Switch function'],[['←','→'],'Μετακίνηση γραφήματος','Move the graph'],[['Backspace'],'Σβήνει την επιλογή ή το ψηφίο πριν τον κέρσορα','Delete the selection, or the digit before the cursor'],[['−'],'Αλλάζει το πρόσημο','Change the sign'],[['Esc'],'Καθαρίζει τη συνάρτηση','Clear the function'],[['Alt','1–9'],'Αλλαγή λειτουργίας','Switch mode'],[['?'],'Αυτές οι συμβουλές','These tips']]},
  vat:{tips:[
   ['«Πρόσθεσε ΦΠΑ»: από την καθαρή τιμή βρίσκεις την τελική. «Αφαίρεσε ΦΠΑ»: από την τελική βρίσκεις την καθαρή και τον ΦΠΑ που είχε.','“Add VAT”: from the net price you get the final price. “Remove VAT”: from the final price you get the net price and the VAT in it.'],
@@ -89,5 +90,13 @@ function showHelp(){
  $('#howContent').innerHTML='<div class="help"><section class="help-section"><ul class="help-tips">'+tips.map(x=>'<li>'+esc(x[i])+'</li>').join('')+'</ul></section>'+
   (hasKeyboard()?'<section class="help-section"><h3 class="help-heading">'+esc(t('keyboard'))+'</h3><ul class="help-keys">'+keys.map(([k,el,en])=>'<li><span class="help-caps">'+k.map(x=>'<kbd>'+esc(x)+'</kbd>').join('')+'</span><span>'+esc(i?en:el)+'</span></li>').join('')+'</ul></section>':'')+'</div>';
  $('#howModal').classList.add('help-open');$('#howModal').classList.remove('hidden');
+ fitHelp();
  $('#howContent').scrollTop=0;
 }
+// Big screens (styles.css): when the tips don't fit beside the shortcuts, they go into two columns in a wider sheet.
+function fitHelp(){
+ const m=$('#howModal'),c=m.querySelector('.modal-card');if(!m.classList.contains('help-open')||m.classList.contains('hidden'))return;
+ m.classList.remove('help-wide');
+ if(matchMedia('(min-width:900px) and (min-height:600px)').matches&&c.scrollHeight>c.clientHeight+1)m.classList.add('help-wide');
+}
+addEventListener('resize',()=>fitHelp());
