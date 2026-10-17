@@ -3,8 +3,9 @@
 
     pip install playwright && python3 -m playwright install chromium   # once
     python3 tests/test_app.py
+    python3 tests/test_app.py --site build   # the deployed version instead: after `node tools/build.mjs` (GitHub does this)
 
-Serves public/ on a free port, checks the app in Chromium at desktop and phone sizes, in both languages and
+Serves public/ (or the --site folder) on a free port, checks the app in Chromium at desktop and phone sizes, in both languages and
 themes, and exits with an error if anything fails. Add a check here when you add or fix a feature.
 """
 import asyncio
@@ -24,6 +25,10 @@ from playwright.async_api import async_playwright
 ROOT = Path(__file__).resolve().parent.parent
 PUBLIC = ROOT / 'public'
 VERSION = re.search(r"const VERSION='([^']+)'", (PUBLIC / 'js/core.js').read_text()).group(1)
+# What is tested: public/ as it is, or with --site DIR the site tools/build.mjs made (its scripts joined into js/app.js).
+SITE = (ROOT / sys.argv[sys.argv.index('--site') + 1]).resolve() if '--site' in sys.argv else PUBLIC
+SCRIPTS = re.findall(r'<script src="(js/[^"?]+)\?v=', (SITE / 'index.html').read_text())
+LAST_SCRIPT = SCRIPTS[-1]  # js/main.js, or js/app.js in a built site
 results = []
 
 
@@ -36,7 +41,7 @@ def check(name, ok, detail=''):
         print('::error title=' + name.replace(':', ' ').replace(',', ' ')[:200] + '::' + str(detail).replace('\n', ' ')[:900])
 
 
-def serve(directory=PUBLIC):
+def serve(directory=SITE):
     class Quiet(http.server.SimpleHTTPRequestHandler):
         def log_message(self, *args):
             pass
@@ -722,8 +727,8 @@ async def preview_site(browser):
     Preview, and the app at / and the one at /preview/ keep separate offline copies that don't delete each other's files."""
     L = '[preview] '
     folder = Path(tempfile.mkdtemp())
-    shutil.copytree(PUBLIC, folder, dirs_exist_ok=True)
-    shutil.copytree(PUBLIC, folder / 'preview', dirs_exist_ok=True)
+    shutil.copytree(SITE, folder, dirs_exist_ok=True)
+    shutil.copytree(SITE, folder / 'preview', dirs_exist_ok=True)
     url = serve(folder)
     ctx = await browser.new_context(viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True)
     await ctx.add_init_script(SEED % ('en', 'dark'))
@@ -743,12 +748,12 @@ async def preview_site(browser):
     await p.wait_for_timeout(600)
     check(L + 'the mark follows the language', await p.evaluate("document.querySelector('.preview-badge').textContent") == 'Δοκιμαστική')
     keys = lambda name: f"caches.open('{name}').then(c=>c.keys()).then(k=>k.map(r=>new URL(r.url).pathname))"
-    await p.wait_for_function(f"{keys('uc-app/preview/')}.then(k=>k.some(u=>u.endsWith('/preview/js/main.js')))", timeout=5000)
+    await p.wait_for_function(f"{keys('uc-app/preview/')}.then(k=>k.some(u=>u.endsWith('/preview/{LAST_SCRIPT}')))", timeout=5000)
     await p.goto(url)
     await p.wait_for_timeout(800)
     got = await p.evaluate(f"Promise.all([{keys('uc-app')},{keys('uc-app/preview/')}])")
     check(L + 'separate offline copies: / has no /preview/ files, and /preview/ keeps its own',
-          any(u == '/js/main.js' for u in got[0]) and not any(u.startswith('/preview/') for u in got[0]) and any(u.endswith('/preview/js/main.js') for u in got[1]), got)
+          any(u == '/' + LAST_SCRIPT for u in got[0]) and not any(u.startswith('/preview/') for u in got[0]) and any(u.endswith('/preview/' + LAST_SCRIPT) for u in got[1]), got)
     check(L + 'no JavaScript errors', not errors, errors)
     await ctx.close()
 
@@ -756,7 +761,7 @@ async def preview_site(browser):
 async def offline(browser):
     """The app opens without internet (sw.js), and still updates: a new version replaces the saved copy."""
     folder = Path(tempfile.mkdtemp())
-    shutil.copytree(PUBLIC, folder, dirs_exist_ok=True)
+    shutil.copytree(SITE, folder, dirs_exist_ok=True)
     url = serve(folder)
     ctx = await browser.new_context(viewport={'width': 1280, 'height': 860})
     await ctx.add_init_script(SEED % ('en', 'dark'))
@@ -767,7 +772,7 @@ async def offline(browser):
     await p.evaluate("navigator.serviceWorker.ready")
     await p.wait_for_function("navigator.serviceWorker.controller!==null", timeout=5000)
     saved = "caches.open('uc-app').then(c=>c.keys()).then(k=>k.map(r=>r.url.replace(location.origin,'')))"
-    await p.wait_for_function(f"{saved}.then(k=>k.some(u=>u.includes('main.js')))", timeout=5000)
+    await p.wait_for_function(f"{saved}.then(k=>k.some(u=>u.includes('{LAST_SCRIPT}')))", timeout=5000)
 
     async def works(want_version):
         await p.wait_for_timeout(300)
@@ -783,7 +788,8 @@ async def offline(browser):
     # A new version on the server: the next load (online) shows it, and the old version's files are deleted.
     html = (folder / 'index.html').read_text().replace(f'?v={VERSION}"', '?v=9.9.9"').replace(f'>v{VERSION}<', '>v9.9.9<')
     (folder / 'index.html').write_text(html)
-    (folder / 'js/core.js').write_text((folder / 'js/core.js').read_text().replace(f"VERSION='{VERSION}'", "VERSION='9.9.9'"))
+    for js in SCRIPTS:  # VERSION is in core.js, or in app.js (written VERSION="...") in a built site
+        (folder / js).write_text(re.sub(r'VERSION=([\'"])' + re.escape(VERSION) + r'\1', 'VERSION="9.9.9"', (folder / js).read_text()))
     # an app left open (a phone in the background) updates when it comes back to the screen
     await p.evaluate("document.dispatchEvent(new Event('visibilitychange'))")
     await p.wait_for_function("document.querySelector('#footerVersion').textContent==='v9.9.9'", timeout=5000)
@@ -2208,7 +2214,31 @@ async def big_screen_dialogs(browser, url):
     await p.context.close()
 
 
+def built_site():
+    """With --site: the folder tools/build.mjs made is public/ with the scripts joined into one js/app.js and the CSS
+    minified, and nothing else changed or missing."""
+    L = '[build] '
+    src, html = re.findall(r'<script src="(js/[^"?]+)\?v=', (PUBLIC / 'index.html').read_text()), (SITE / 'index.html').read_text()
+    check(L + 'the page loads one script, js/app.js, of this version', re.findall(r'<script src="([^"]+)"', html) == [f'js/app.js?v={VERSION}'],
+          re.findall(r'<script src="([^"]+)"', html))
+    plain = lambda h: re.sub(r'<!--[^>]*Plain scripts[^>]*-->\n|<script src="js/[^"]+"></script>\n', '', h)
+    check(L + 'the page is otherwise the same as public/index.html', plain(html) == plain((PUBLIC / 'index.html').read_text()))
+    files = lambda d: {f.relative_to(d).as_posix() for f in d.rglob('*') if f.is_file()}
+    want = (files(PUBLIC) - set(src)) | {'js/app.js'}
+    check(L + 'every other file is there, none of the joined scripts', files(SITE) == want, files(SITE) ^ want)
+    same = [f for f in want - {'index.html', 'styles.css', 'js/app.js'} if (SITE / f).read_bytes() != (PUBLIC / f).read_bytes()]
+    check(L + 'other files are copied unchanged', not same, same)
+    size = lambda *fs: sum(f.stat().st_size for f in fs)
+    check(L + 'the joined scripts and the styles are smaller', size(SITE / 'js/app.js') < size(*(PUBLIC / f for f in src)) and
+          size(SITE / 'styles.css') < size(PUBLIC / 'styles.css'))
+    js = (SITE / 'js/app.js').read_text()
+    check(L + 'every script is in it: all their top-level functions, with their names',
+          all(re.search(r'\bfunction ' + name + r'\(', js) for f in src for name in re.findall(r'^function (\w+)\(', (PUBLIC / f).read_text(), re.M)))
+
+
 async def main():
+    if SITE != PUBLIC:
+        built_site()
     url = serve()
     async with async_playwright() as pw:
         browser = await pw.chromium.launch()

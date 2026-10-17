@@ -49,11 +49,26 @@ jobs:
           pip install playwright==1.56.0
           python -m playwright install --with-deps chromium
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
       - name: Version is the same everywhere
         run: python3 tools/bump-version.py --check
 
+      # What gets deployed is the built site (tools/build.mjs: the scripts joined and minified), so that is what is
+      # tested. A branch from before the build existed is tested as it is.
+      - name: Build the site
+        run: |
+          if [ -f tools/build.mjs ]; then
+            npm ci --no-audit --no-fund
+            node tools/build.mjs
+          fi
+
       - name: Browser tests
-        run: python3 tests/test_app.py
+        run: |
+          if [ -f tools/build.mjs ]; then python3 tests/test_app.py --site build; else python3 tests/test_app.py; fi
 
   # Only main may publish to GitHub Pages (the github-pages environment's rule), so a tested preview asks main to do it:
   # main's run puts the site together from main and the latest preview.
@@ -102,20 +117,31 @@ jobs:
           ref: preview
           path: preview
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # Each branch is built with its own tools/build.mjs (the scripts joined and minified), the same way it was tested.
       - name: Put the site together
         run: |
-          mkdir site
-          cp -r main/public/. site/
+          (cd main && npm ci --no-audit --no-fund)
+          node main/tools/build.mjs main/public site
           if [ "${{ steps.preview.outcome }}" = "success" ] && [ -d preview/public ]; then
-            mkdir site/preview
-            cp -r preview/public/. site/preview/
+            if [ -f preview/tools/build.mjs ]; then
+              (cd preview && npm ci --no-audit --no-fund)
+              node preview/tools/build.mjs preview/public site/preview
+            else
+              mkdir site/preview
+              cp -r preview/public/. site/preview/
+            fi
             echo "preview published at /preview/"
           fi
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      # The site is main's public/ folder (the same files the Docker image serves), plus /preview/.
+      # The site is main's built public/ folder (the same files the Docker image serves), plus /preview/.
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
         with:
@@ -150,17 +176,21 @@ jobs:
           check() { if [ "$2" = "$3" ]; then echo "ok   $1"; else echo "FAIL $1: expected $3, got $2"; fail=1; fi; }
           version=$(grep -o "VERSION='[^']*'" public/js/core.js | cut -d"'" -f2)
           check "/ is served" "$(code /)" 200
-          for f in $(cd public && find . -type f | sed 's|^\.||'); do
+          files=$(docker exec uc find /usr/share/nginx/html -type f | sed 's|^/usr/share/nginx/html||')
+          check "the scripts are joined into js/app.js" "$(echo "$files" | grep -c '^/js/')" 1
+          for f in $files; do
             check "$f is served" "$(code "$f")" 200
           done
-          for f in /Dockerfile /nginx.conf /README.md /CLAUDE.md /tests/test_app.py /.git/config /missing; do
+          for f in /Dockerfile /nginx.conf /README.md /CLAUDE.md /tests/test_app.py /.git/config /package.json /js/core.js /missing; do
             check "$f is not served" "$(code "$f")" 404
           done
           check "page shows v$version" "$(curl -s http://localhost:8080/ | grep -c "v$version")" 1
           check "health check" "$(curl -s http://localhost:8080/api/health)" '{"ok":true}'
           check "manifest type" "$(curl -sI http://localhost:8080/manifest.webmanifest | grep -i '^content-type' | tr -d '\r' | cut -d' ' -f2)" "application/manifest+json"
           check "page not cached" "$(curl -sI http://localhost:8080/ | grep -ci '^cache-control: no-store')" 1
-          check "scripts revalidated" "$(curl -sI http://localhost:8080/js/main.js | grep -ci '^cache-control: no-cache')" 1
+          check "scripts revalidated" "$(curl -sI "http://localhost:8080/js/app.js?v=$version" | grep -ci '^cache-control: no-cache')" 1
+          check "scripts compressed" "$(curl -sI -H 'Accept-Encoding: gzip' "http://localhost:8080/js/app.js?v=$version" | grep -ci '^content-encoding: gzip')" 1
+          check "styles compressed" "$(curl -sI -H 'Accept-Encoding: gzip' "http://localhost:8080/styles.css?v=$version" | grep -ci '^content-encoding: gzip')" 1
           docker logs uc
           docker rm -f uc >/dev/null
           exit $fail

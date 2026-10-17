@@ -70,7 +70,7 @@ Leonidas Kampaxis (Λεωνίδας Κάμπαξης)
 
 ## Technology
 
-Ultimate Calculator is intentionally lightweight: plain HTML, CSS and vanilla JavaScript, with no framework, no build step and no backend. Calculations happen in the browser, and history and settings are stored in the browser (localStorage). There are no accounts and nothing is sent to a server.
+Ultimate Calculator is intentionally lightweight: plain HTML, CSS and vanilla JavaScript, with no framework and no backend. There is nothing to build while editing: `public/` runs as it is; the deploy joins and minifies the scripts (`tools/build.mjs`) so the first visit loads faster. Calculations happen in the browser, and history and settings are stored in the browser (localStorage). There are no accounts and nothing is sent to a server.
 
 ```
 public/              the website, exactly as it is served
@@ -80,7 +80,8 @@ public/              the website, exactly as it is served
   manifest.webmanifest, icons
 tests/test_app.py    browser tests (Playwright)
 tools/bump-version.py  sets the version everywhere it appears
-Dockerfile, nginx.conf the Docker image: nginx serving public/
+tools/build.mjs      the deploy build: public/ with the scripts joined and minified (esbuild, package.json)
+Dockerfile, nginx.conf the Docker image: nginx serving the built public/
 docker-compose.yml   for running the image yourself
 ```
 
@@ -108,13 +109,15 @@ Then open `http://localhost:8080`.
 ```bash
 pip install playwright && python3 -m playwright install chromium   # once
 python3 tests/test_app.py
+# the deployed version instead (GitHub tests this one):
+npm ci && node tools/build.mjs && python3 tests/test_app.py --site build
 ```
 
 The tests open the app in Chromium at desktop and phone sizes, in both languages and themes, and check the calculator, brackets, Units, the tools, History, the mode tabs, the language switch and that nothing is cut off on phones.
 
 ## Deployment
 
-Every push to `main` runs one GitHub Actions workflow (`.github/workflows/deploy.yml`): the tests first, and only if they pass,
+Every push to `main` runs one GitHub Actions workflow (`.github/workflows/deploy.yml`): it builds the site (`node tools/build.mjs`: the ~25 scripts become one minified `js/app.js`, styles.css is minified), tests that build, and only if the tests pass publishes it to
 
 - **GitHub Pages** – the site at https://uc.kampaxis.com
 - **Docker image** – `ghcr.io/leothegreat777/ultimate-calculator:latest`, tested before it is published. To update a self-hosted copy: `docker compose pull && docker compose up -d`.

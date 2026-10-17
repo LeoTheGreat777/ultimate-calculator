@@ -5,7 +5,8 @@
 // so each version has its own addresses and a saved file never goes stale: they come from the saved copy first.
 // Every fresh page saves the files it uses and deletes those of older versions. Other files (icons, manifest) come from
 // the saved copy and are refreshed in the background.
-// Registered by main.js. No build step: there is nothing here to update when the version changes.
+// Registered by main.js. Nothing here to update when the version changes. It works the same on the deployed site, where
+// tools/build.mjs has joined the scripts into one js/app.js: it saves whatever files the page links to.
 const SCOPE = new URL(self.registration.scope);
 // One saved copy per address: the app at / and the test version at /preview/ (the preview branch) keep their own.
 const CACHE = 'uc-app' + (SCOPE.pathname === '/' ? '' : SCOPE.pathname);

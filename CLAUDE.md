@@ -1,7 +1,8 @@
 # Ultimate Calculator – notes for Claude
 
 An all-in-one calculator web app: calculator (scientific, complex numbers, memory), graph, unit converter, currency converter, VAT, percent/discount/tip, interest (loan/savings), dates, fuel, energy, subnet (IPv4), numbers (GCD/LCM, prime factors) and equations tools.
-Plain HTML/CSS/vanilla JS, no framework, no build step, no backend. English and Greek; new users start
+Plain HTML/CSS/vanilla JS, no framework, no backend, and nothing to build while editing: `public/` runs as it is
+(the deploy minifies it, see Git and deploying). English and Greek; new users start
 in English and dark theme (people who used the app before keep Greek / their theme, see the script in the
 `<head>` of `public/index.html`). Numbers always use Greek formatting: `1.234,56`.
 
@@ -9,9 +10,10 @@ Two people work on this repo, each with their own Claude sessions, and both push
 
 ## Git and deploying
 
-- Every push to `main` runs `.github/workflows/deploy.yml`: the browser tests first, and only if they pass,
-  GitHub Pages (https://uc.kampaxis.com) and the Docker image `ghcr.io/leothegreat777/ultimate-calculator:latest`.
-  If the tests fail nothing is deployed. Still: only push working, tested code.
+- Every push to `main` runs `.github/workflows/deploy.yml`: it builds the site (`tools/build.mjs`: every script
+  `index.html` loads is joined into one minified `js/app.js`, styles.css minified, the rest copied), runs the browser
+  tests on that build, and only if they pass deploys it to GitHub Pages (https://uc.kampaxis.com) and the Docker image
+  `ghcr.io/leothegreat777/ultimate-calculator:latest` (its Dockerfile runs the same build). If the tests fail nothing is deployed. Still: only push working, tested code.
 - Before pushing: `git fetch origin main` and rebase onto it if it moved. If the other person changed
   the same code, resolve it carefully, re-test, and say what you merged.
 - Never force push, never rewrite `main`'s history.
@@ -70,10 +72,11 @@ Everything the app serves is in `public/` (the web root for both GitHub Pages an
 
   Top-level code runs in that order, so a script may only *call* things from earlier scripts while loading;
   inside functions anything can be used. A new script goes into `public/js/`, gets a `<script>` line with `?v=`
-  in `index.html`, and is deployed automatically (Pages and Docker take the whole `public/` folder).
+  in `index.html`, and is deployed automatically (the build joins every script `index.html` loads, in that order; it
+  fails if a file in `public/js/` isn't loaded).
 
-Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`, `Dockerfile` + `nginx.conf`
-(the Docker image), `docker-compose.yml` (for self-hosting), `.github/workflows/deploy.yml`.
+Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`, `tools/build.mjs` + `package.json`
+(the deploy build, esbuild), `Dockerfile` + `nginx.conf` (the Docker image), `docker-compose.yml` (for self-hosting), `.github/workflows/deploy.yml`.
 
 ## Notes by topic: read the one you need before changing that part
 
@@ -125,7 +128,8 @@ When you change how something works, update its topic file (not this one, unless
 Claude Code cloud sessions get it from `.claude/hooks/session-start.sh`: playwright 1.56.0, matching their Chromium).
 It serves `public/` itself and checks the calculator basics, brackets, C/AC, Units, the tools, History, tabs,
 the language switch, and that nothing is cut off at phone sizes, in both languages and themes. Add a check there
-for what you add or fix. GitHub runs the same tests before every deploy.
+for what you add or fix. GitHub runs the same tests on the built site before every deploy; to do that yourself
+(after changing the build, or if something only breaks once deployed): `npm ci && node tools/build.mjs && python3 tests/test_app.py --site build`.
 
 For a change you can see, also look at it yourself in a browser (`python3 -m http.server 8099 -d public`,
 Playwright screenshots are fine) at desktop (1280×860) and phone (390×844, touch) sizes, both languages and themes.

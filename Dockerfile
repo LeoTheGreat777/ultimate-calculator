@@ -1,8 +1,16 @@
-FROM nginx:alpine
+# 1. The site is built from public/ by tools/build.mjs (the scripts joined and minified), as for GitHub Pages.
+FROM node:22-alpine AS build
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY tools/build.mjs tools/
+COPY public/ public/
+RUN node tools/build.mjs
 
-# The web root is exactly public/, so nothing else in the repo is ever served.
+# 2. nginx serves only the built site, so nothing else in the repo is ever served.
+FROM nginx:alpine
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY public/ /usr/share/nginx/html/
+COPY --from=build /app/build/ /usr/share/nginx/html/
 
 EXPOSE 80
 

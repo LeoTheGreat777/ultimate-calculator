@@ -2,3 +2,6 @@
 *
 !nginx.conf
 !public/
+!package.json
+!package-lock.json
+!tools/build.mjs
