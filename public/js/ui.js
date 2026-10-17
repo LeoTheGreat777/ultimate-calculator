@@ -237,10 +237,8 @@ function applyLanguage(){
  refreshSide(true);
  {const b=$('#unitHow');if(b){b.setAttribute('aria-label',t('how'));b.title=t('how')}}
  $('#historyPanel').setAttribute('aria-label',t('history'));
- $('#historyConfirmYes').textContent=t('confirmYes');
  $('#historyTitle').textContent=t('history');
- $('#clearHistory').textContent=t('clear');
- $('#historyConfirmText').textContent=t('confirm');
+ $('#clearHistory').textContent=t(historyClearConfirm?'confirmShort':'clear');
  $('#closeHow').setAttribute('aria-label',t('close'));
  $('#closeHistory').setAttribute('aria-label',t('close'));
  $('#historyChartButton')?.setAttribute('aria-label',t('chart'));

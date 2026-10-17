@@ -31,7 +31,7 @@ $('#helpButton')?.addEventListener('click',showHelp);
 setupHoldKeys();setupPressFeedback();setupSide();setupFunctions();
 // a click anywhere else closes the theme menu and the History "clear all?" question
  document.addEventListener('click',e=>{if(themeMenuOpen()&&!eventInside(e,'#themeMenu,#themeButton'))closeThemeMenu();if(historyClearConfirm&&!eventInside(e,'#historyClearWrap'))clearHistoryConfirm()});
-$('#clearHistory').addEventListener('click',clearHistoryConfirm);$('#historyConfirmYes').addEventListener('click',deleteAllHistory);
+$('#clearHistory').addEventListener('click',clearHistoryPress);
 window.addEventListener('keydown',e=>{
  if(themeEditorKeydown(e)||themeMenuKeydown(e)||modesKeydown(e))return;
  if(e.target.closest?.('.fn-search')&&e.key!=='Escape')return;// typing in the functions sheet's search

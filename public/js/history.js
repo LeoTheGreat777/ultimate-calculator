@@ -45,12 +45,17 @@ function setupHistorySheet(){
  [p,handle].forEach(el=>{el.addEventListener('touchstart',start,{passive:true});el.addEventListener('touchend',end,{passive:true})});
  let timer;list.addEventListener('scroll',()=>{list.classList.add('is-scrolling');clearTimeout(timer);timer=setTimeout(()=>list.classList.remove('is-scrolling'),650)},{passive:true})
 }
+// Clear all asks first without moving anything: the button itself turns into a red "Delete all?" (the same height, right
+// aligned); a second press deletes, a press elsewhere or 4 seconds put it back. Screen readers hear the full question.
+let clearArmTimer=0;
 function clearHistoryConfirm(){
- historyClearConfirm=!historyClearConfirm;const wrap=$('#historyClearWrap'),btn=$('#clearHistory'),confirm=$('#historyConfirm');
- if(historyClearConfirm){btn.classList.add('hidden');confirm.classList.remove('hidden');$('#historyConfirmText').textContent=t('confirm')}else{btn.classList.remove('hidden');confirm.classList.add('hidden')}
- wrap.classList.toggle('confirming',historyClearConfirm)
+ historyClearConfirm=!historyClearConfirm;clearTimeout(clearArmTimer);
+ const btn=$('#clearHistory');btn.classList.toggle('armed',historyClearConfirm);btn.textContent=t(historyClearConfirm?'confirmShort':'clear');
+ $('#historyClearWrap').classList.toggle('confirming',historyClearConfirm);
+ if(historyClearConfirm){srSay(t('confirm'));clearArmTimer=setTimeout(()=>{if(historyClearConfirm)clearHistoryConfirm()},4000)}
 }
-function deleteAllHistory(){if(currentTab()==='calc')store.del('uc-history');else setModeHistory(currentTab(),[]);historyClearConfirm=false;$('#clearHistory').classList.remove('hidden');$('#historyConfirm').classList.add('hidden');$('#historyClearWrap').classList.remove('confirming');renderHistory()}
+function clearHistoryPress(){if(historyClearConfirm)deleteAllHistory();else if(!$('#clearHistory').disabled)clearHistoryConfirm()}
+function deleteAllHistory(){if(historyClearConfirm)clearHistoryConfirm();if(currentTab()==='calc')store.del('uc-history');else setModeHistory(currentTab(),[]);renderHistory()}
 function historyClick(e){
  const del=e.target.closest('[data-delete]'),item=e.target.closest('[data-history]');
  if(currentTab()!=='calc'){// another mode's own history

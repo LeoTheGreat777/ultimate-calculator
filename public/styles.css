@@ -149,8 +149,9 @@ html.landscape .tool-grid.kind-grid .tool-field span{white-space:nowrap;overflow
 .history-clear-wrap{display:flex;align-items:center;justify-content:flex-end;min-height:32px}
 .text-button{background:none;border:0;color:var(--muted);cursor:pointer;padding:7px 4px}
 .text-button:disabled,.history-chart-toggle:disabled{opacity:.35;cursor:default}
-.history-confirm{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text)}
-.danger-inline{border:0;border-radius:9px;background:var(--danger);color:#fff;font-weight:750;padding:7px 10px;cursor:pointer}
+#clearHistory{border-radius:9px;transition:background-color .18s,color .18s,padding .18s}
+#clearHistory.armed{background:var(--danger);color:#fff;font-weight:750;padding:7px 10px}
+.history-clear-wrap.confirming .history-chart-toggle{display:none}
 .history-list{display:flex;flex-direction:column;flex:1 1 auto;margin-top:9px;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .history-list::-webkit-scrollbar{display:none}
 .history-panel.expanded .history-list{overflow:auto}
@@ -410,7 +411,6 @@ body.graph-on .bottom-actions{display:none}
 /* History chart */
 .history-chart-toggle{flex:0 0 32px;width:32px;height:32px;display:grid;place-items:center;padding:0;color:var(--muted)}
 .history-chart-toggle.active{color:var(--accent2);background:var(--key)}
-.history-clear-wrap.confirming .history-chart-toggle{display:none}
 .history-chart{flex:0 0 auto;margin-top:8px;padding:8px 6px 6px;border:1px solid var(--border);border-radius:16px;background:var(--card2)}
 #historyChart{display:block;width:100%;height:150px;touch-action:none;cursor:crosshair}
 .history-chart.too-few #historyChart{height:0}
@@ -852,7 +852,6 @@ html.side-panels .side-panel{display:flex;flex-direction:column;position:fixed;t
 .side-head .side-title{margin-bottom:0}
 .side-head .history-clear-wrap{margin-left:auto;min-height:30px}
 .side-head .history-close{display:none}
-.side-head .history-confirm{flex-wrap:wrap;justify-content:flex-end}
 .side-panel .history-chart{margin:4px 0 6px}
 html.side-panels #historyButton,html.side-panels #howButton,html.side-panels #unitHow,html.side-panels #chartButton{display:none!important}
 .side-panel .side-list{margin-top:4px;min-height:0;overflow-y:auto;scrollbar-width:thin}

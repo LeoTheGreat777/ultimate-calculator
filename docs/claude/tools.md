@@ -47,7 +47,10 @@ Part of the notes in CLAUDE.md (read that first). Covers tools.js, units.js, cur
   functions. Tools have no =, so `recordModeHistory` saves what is finished when you leave the mode, press AC/Esc, change
   kind, copy the result, or the app goes to the background (also = in Units, AC in Graph); the same one twice is kept
   once. The sheet shows the mode on screen (`History · VAT`); tapping an entry brings its numbers back
-  (`restoreModeEntry`), Delete all empties that mode only. A new mode: make `modeSnapshot`/`restoreModeEntry` know it.
+  (`restoreModeEntry`), Delete all empties that mode only. Clear all asks first without moving anything (the owner chose this): the button
+  itself turns into a red "Delete all?" (`confirmShort`, `.armed`; the chart button hides meanwhile, so the header never gets
+  wider); a second press deletes, a press elsewhere or 4 s put it back (`clearHistoryConfirm`, `clearHistoryPress`); screen
+  readers hear the full `confirm` question. It is dimmed when there is nothing to clear (`syncHistoryButtons`). A new mode: make `modeSnapshot`/`restoreModeEntry` know it.
 - **Number fields** (every tool field but dates and IP/mask, `groupedField`) show thousands as they are typed: 10000 ->
   10.000 (`groupDigits` in the `input` handler, the cursor kept in place). In them a dot is always a thousands dot and the
   comma the decimal, so read a field with `fieldValue(id)` (the text without dots), never `.value`; `liveToolNumber` and
