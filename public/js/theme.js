@@ -240,7 +240,7 @@ function themeStartColours(g){
  probe.remove();return out;
 }
 function openThemeEditor(g){
- closeThemeMenu();
+ closeThemeMenu();$('#themeButton').classList.add('open');// lit while its window is open
  themeDraft={group:g,...themeStartColours(g)};
  rememberThemeColours(g,themeDraft);// where you started is always in Recent, to go back to
  let ed=$('#themeEditor');
@@ -312,7 +312,7 @@ function closeThemeEditor(){
  if(!themeDraft)return;
  keepThemeDraft();rememberThemeColours(themeDraft.group,themeDraft);
  const hadFocus=!!document.activeElement?.closest?.('#themeEditor');
- themeDraft=null;$('#themeEditor').classList.add('hidden');
+ themeDraft=null;$('#themeEditor').classList.add('hidden');$('#themeButton').classList.remove('open');
  writeCustomCss();applyTheme();
  if(hadFocus&&hasKeyboard())$('#themeButton').focus({preventScroll:true});
 }

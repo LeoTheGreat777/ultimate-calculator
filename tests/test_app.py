@@ -2028,6 +2028,19 @@ async def side_panels(browser, url):
     check('[side panels phone] none on a phone', not await p.evaluate("document.documentElement.classList.contains('side-panels')"))
     st = await p.evaluate("(()=>{installButton.classList.remove('hidden');fitBrand();const n=document.querySelector('.brand-name'),r=s=>document.querySelector(s).getBoundingClientRect();return [n.scrollWidth<=n.clientWidth+1,r('#modesButton').top<r('#calculatorCard').top,r('#modesButton').right<=r('#langButton').left]})()")
     check('[side panels phone] All modes at the top before EN; with Install too the name shrinks instead of being cut', st == [True, True, True], st)
+    bg = "getComputedStyle(document.getElementById('themeButton')).backgroundColor"
+    plain = await p.evaluate(bg)
+    await p.tap('#themeButton')
+    await p.wait_for_timeout(300)
+    lit = await p.evaluate(bg)
+    await p.evaluate("closeThemeMenu()")
+    await p.wait_for_timeout(300)
+    check('[side panels phone] the theme button is lit while its menu is open, and not after', lit != plain and await p.evaluate(bg) == plain, [plain, lit])
+    await p.dispatch_event('#langButton', 'pointerdown')
+    check('[side panels phone] a top button shows it is pressed', await p.evaluate("langButton.classList.contains('pressed')"))
+    await p.dispatch_event('#langButton', 'pointerup')
+    await p.wait_for_timeout(250)
+    check('[side panels phone] and lets go', not await p.evaluate("langButton.classList.contains('pressed')"))
     await p.context.close()
 
 

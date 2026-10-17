@@ -31,6 +31,9 @@ Part of the notes in CLAUDE.md (read that first). Covers layout.js, side.js, mod
   'resize': a ResizeObserver on the page fires 'resize' again when the width really changes (layout.js), and one on the
   tabs re-measures their bar (ui.js). The app is not
   locked to portrait (iPhones can't be), so both must work.
+- **The buttons at the top** (Install, All modes, language, theme): hover and a pressed look (`.pressed` from `setupTopPress`,
+  ui.js, held at least 110 ms so a quick tap shows), and lit with the accent while their menu or window is open
+  (`aria-expanded`, `#themeButton.open` while the own theme editor is open); styles at the end of styles.css.
 - **All modes** (modes.js): the ⊞ button at the top beside the language button (`#modesButton`, `.icon-button` like EN and the theme button; moved there at the owner's request so the tab row starts with History and the tabs; the title shrinks to fit beside it, `fitBrand`) opens a sheet (`#modesModal`, `openModes`) with
   every mode in groups (`MODE_GROUPS`) and a search (`modeMatches`: names in both languages plus `MODE_WORDS`, word
   starts, accents and capitals ignored; Enter opens the first; Ctrl+K / ⌘K opens it, Esc closes, a press outside closes).

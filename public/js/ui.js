@@ -302,6 +302,14 @@ function nameKeys(pad=$('#keypad')){
   else if(b.dataset.autoName){b.removeAttribute('aria-label');delete b.dataset.autoName}
  }
 }
+// The buttons at the top (All modes, language, theme, install) light up while pressed, also for a quick tap, and on
+// touch screens too (:active alone isn't reliable on iPhone); their menus' buttons stay lit while open (styles.css)
+function setupTopPress(){
+ const bar=$('.top-actions');if(!bar)return;let on=null,since=0;
+ const up=()=>{if(!on)return;const b=on;on=null;setTimeout(()=>b.classList.remove('pressed'),Math.max(0,110-(performance.now()-since)))};
+ bar.addEventListener('pointerdown',e=>{const b=e.target.closest('button');if(!b)return;up();on=b;since=performance.now();b.classList.add('pressed')});
+ ['pointerup','pointercancel','pointerleave'].forEach(t=>bar.addEventListener(t,up));
+}
 function setupPressFeedback(){
  const pad=$('#keypad');
  nameKeys(pad);new MutationObserver(()=>nameKeys(pad)).observe(pad,{childList:true,subtree:true,characterData:true});

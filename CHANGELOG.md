@@ -6,6 +6,14 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.26.6 – 2026-10-17
+
+### Changed
+- The All modes button (⊞) moved to the top, beside the language button, so a quick tap at the start of the tab row
+  no longer opens it by mistake. On phones the app's name shrinks a little to fit beside it.
+- The buttons at the top now show when they are pressed, and the theme and All modes buttons stay lit while their
+  menu or window is open.
+
 ## 0.26.5 – 2026-10-17
 
 ### Fixed
