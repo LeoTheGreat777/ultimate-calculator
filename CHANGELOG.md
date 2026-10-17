@@ -6,6 +6,13 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.26.1 – 2026-10-17
+
+### Fixed
+- Small buttons are easier to hit on phones: Tips, the ? and chart buttons, Graph's buttons and the unit names in Units
+  and Currency react to a press around them too. They look the same.
+- On small phones, Units and Currency showed their numbers very small since 0.25.1; they are a readable size again.
+
 ## 0.26.0 – 2026-10-17
 
 ### Added

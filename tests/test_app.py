@@ -1211,6 +1211,7 @@ async def upright_small_phones(browser, url):
                   document.querySelectorAll('#toolPanel .tool-field span, .seg-toggle button').forEach(e=>{if(e.offsetParent&&labelCut(e))out.push('label cut: '+e.textContent)});
                   const d=document.getElementById('calculatorDisplay').getBoundingClientRect();
                   for(const id of ['expression','result']){const r=document.getElementById(id)?.getBoundingClientRect();if(r&&r.height&&(r.top<d.top-1||r.bottom>d.bottom+1))out.push(id+' outside the display')}
+                  document.querySelectorAll('.unit-value').forEach(e=>{if(e.offsetParent&&parseFloat(getComputedStyle(e).fontSize)<20)out.push('unit value '+getComputedStyle(e).fontSize)});
                   const k=[...document.querySelectorAll('#keypad button')].filter(b=>b.offsetParent).map(b=>b.getBoundingClientRect().height);
                   if(k.length&&Math.min(...k)<31)out.push('keys '+Math.round(Math.min(...k))+'px');
                   return [...new Set(out)]})()""")
@@ -1219,6 +1220,27 @@ async def upright_small_phones(browser, url):
             await p.evaluate("if(sciMode)toggleSci()")
             check(L + 'every tab fits: no scrolling, nothing off screen, no cut label, keys big enough', not bad, bad)
             await ctx.close()
+
+
+async def touch_areas(browser, url):
+    """On phones every button, field and menu in every tab can be hit by a finger: at least 30×30 px, counting the
+    invisible hit area (::after) small buttons get. Units' values count as their whole row (a tap there picks them)."""
+    for w, h in [(390, 844), (320, 568)]:
+        ctx = await browser.new_context(viewport={'width': w, 'height': h}, is_mobile=True, has_touch=True)
+        await ctx.add_init_script(SEED % ('en', 'dark'))
+        p = await ctx.new_page()
+        await p.goto(url)
+        await p.wait_for_timeout(300)
+        small = await p.evaluate("""async()=>{const r=[];
+          for(const m of MODE_LABELS){switchMode(m);await new Promise(x=>setTimeout(x,120));
+            if(m==='vat'){const e=document.getElementById('amount');e.value='100';e.dispatchEvent(new Event('input',{bubbles:true}));await new Promise(x=>setTimeout(x,100))}
+            document.querySelectorAll('button,[role=button],input,select').forEach(e=>{if(!e.offsetParent||e.closest('.unit-row')&&e.tagName==='INPUT')return;
+              const b=e.getBoundingClientRect(),a=getComputedStyle(e,'::after'),i=v=>parseFloat(v)||0;let W=b.width,H=b.height;
+              if(a.content!=='none'&&a.position==='absolute'){W-=i(a.left)+i(a.right);H-=i(a.top)+i(a.bottom)}
+              if(W<29.5||H<29.5)r.push(m+': '+(e.id||String(e.className).slice(0,24)||e.textContent.trim().slice(0,12))+' '+Math.round(W)+'×'+Math.round(H))})}
+          switchMode('calc');return [...new Set(r)]}""")
+        check(f'[touch {w}x{h}] every button and field is at least 30×30 px to a finger', not small, small)
+        await ctx.close()
 
 async def sideways_every_tab(browser, url):
     """Every tab held sideways, from a small phone in Safari (iPhone SE, 667×330) to a big one: nothing scrolls, nothing
@@ -2423,6 +2445,7 @@ async def main():
         await screen_reader(browser, url)
         await sideways_every_tab(browser, url)
         await upright_small_phones(browser, url)
+        await touch_areas(browser, url)
         await all_modes(browser, url)
         await esc_everywhere(browser, url)
         await history_per_mode(browser, url)

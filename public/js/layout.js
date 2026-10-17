@@ -54,8 +54,8 @@ const FIT={
  mobileTool:{k:[56,36],d:[108,98],comfy:44,copy:true},
  graphMin:520,
  // small phones (320×568, 360×640): when even the sizes above don't fit, tighter limits before the page scrolls
- tight:{calc:{k:[68,36],d:[205,110],comfy:48},units:{k:[68,32],d:[205,130],comfy:48},sci:{k:[62,28],d:[180,84],comfy:42},
-  tool:{k:[56,32],d:[108,76],comfy:44}}
+ tight:{calc:{k:[68,36],d:[205,110],comfy:48},units:{k:[68,32],d:[205,160],comfy:48},sci:{k:[62,28],d:[180,84],comfy:42},
+  tool:{k:[56,31],d:[108,76],comfy:44}}
 };
 // On phones the browser bars slide in and out while scrolling, changing the height; fitting to the smallest
 // height seen (per width, i.e. per orientation) keeps the layout from jumping back and forth.

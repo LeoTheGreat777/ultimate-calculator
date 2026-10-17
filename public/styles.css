@@ -111,7 +111,8 @@ html.landscape .date-rows dd{font-size:14px}
 html.landscape .calculator-card.mobile-tool .tool-field input[type=date]{min-height:0}
 /* sideways on a very short screen (fitLandscape, after hiding the copy button): a little less padding in the tools */
 .calculator-card.fit-tight .tool-panel{padding-top:5px;padding-bottom:5px}
-.calculator-card.fit-tight .seg-toggle button{min-height:24px}
+html.landscape .calculator-card.fit-tight .seg-toggle button{min-height:24px}
+html:not(.landscape) .calculator-card.fit-tight .seg-toggle button{min-height:30px}
 .calculator-card.fit-tight .tool-field input{padding-top:4px;padding-bottom:4px}
 .calculator-card.fit-tight .date-rows div{padding:4px}
 .calculator-card.fit-tight .expression-row{height:28px}
@@ -924,3 +925,12 @@ body.fit .calculator-card .tool-keypad.stat-keypad button.stat-add,.calculator-c
 html.landscape .calculator-card.fit-tight .tool-grid.prog-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.5fr) minmax(0,.9fr)}/* a very short screen sideways: the four fields in one row */
 html.landscape .calculator-card.fit-tight .prog-grid .tool-field{grid-column:auto}
 html.landscape .calculator-card.fit-tight .prog-grid .tool-field span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* ---------- Bigger touch areas ----------
+   Small buttons get an invisible hit area around them (::after), so a finger finds them easily; they look the same.
+   A static ? button becomes relative (same place) so its hit area sits around it. */
+.help-link,.graph-fn-btn,.graph-tool{position:relative}
+.calculator-card.mobile-tool .how-button,.calculator-card.compact-display .how-button{position:relative}
+.help-link::after,.graph-fn-btn::after,.graph-tool::after,.how-button::after{content:'';position:absolute;inset:-6px}
+.help-link::after{inset:-10px -4px}
+/* the unit names under Units' values: a taller box (transparent) with the text where it was */
+.unit-unit{height:36px!important;padding-top:9px!important;padding-bottom:7px!important;margin-top:-7px!important;margin-bottom:-7px!important}

@@ -11,10 +11,14 @@ Part of the notes in CLAUDE.md (read that first). Covers layout.js, side.js, mod
   mode, and switches the tools to their compact layout when needed; only if nothing fits does the page scroll
   (`html.page-scroll`). Small phones upright (320×568, 360×640, an iPhone SE in Safari 375×553): when the normal limits
   don't fit, `fitLayout` tries tighter ones (`FIT.tight`): tools get less padding and a smaller result (`fit-tight`), the footer
-  goes on one line (`html.fit-small`), display and keys get smaller (keys down to 32px), then a kind's fields share one row
+  goes on one line (`html.fit-small`), display and keys get smaller (tool keys down to 31px; Units' values stay readable, `--urow`), then a kind's fields share one row
   with short labels (`fit-row`), then Equations' form line and Subnet's and Statistics' details go (`fit-no-form`, `fit-no-details`; ? shows
   them). If even that doesn't fit (Scientific at 320×568) it goes back to the normal sizes and the page scrolls.
-  `upright_small_phones` in the tests checks every tab there. Field labels count as cut by exact width (`labelCut`). Don't add fixed pixel heights per screen size or device; let `fitLayout` handle it,
+  `upright_small_phones` in the tests checks every tab there.
+- **Touch areas:** every button and field is at least 30×30 px to a finger (`touch_areas` in the tests). Small buttons (Tips,
+  ?, Graph's buttons) look the same but get an invisible hit area (`::after`, "Bigger touch areas" at the end of styles.css;
+  a static button becomes `position:relative` for it); Units' unit names are taller transparent boxes with negative margins.
+  A kind switch is at least 30px tall upright, even when tightened (sideways 24px). Field labels count as cut by exact width (`labelCut`). Don't add fixed pixel heights per screen size or device; let `fitLayout` handle it,
   and call it after anything that changes the layout's height. Phones held sideways (any window wider than tall and
   at most 500px high, or a foldable's wide inner screen: Foldables below) get the landscape layout: keypad on the right, the rest on the left (`fitLandscape`,
   `html.landscape` in styles.css). Sideways the keys are the biggest that fit (a halving search, tools up to 84px), so every
