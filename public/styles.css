@@ -818,7 +818,7 @@ html.landscape .calculator-card.mobile-tool .net-details strong{flex:1 1 auto;mi
 @media (prefers-reduced-motion:reduce){.rate-info.loading .rate-date{animation:none}}
 .conversion-category.hidden{display:none}
 /* ---------- All modes: the ⊞ button and its sheet (modes.js) ---------- */
-.modes-button{width:40px;padding:0;justify-content:center;flex:0 0 auto;color:var(--accent2)}
+.modes-button{display:grid;place-items:center;padding:0;flex:0 0 auto;color:var(--text)}
 .modes-button[aria-expanded="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .mode-tab.unpinned{border-style:dashed}
 .modes-card{width:min(560px,calc(calc(100vw / var(--z,1)) - 32px));display:flex;flex-direction:column;gap:10px}

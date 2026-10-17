@@ -355,6 +355,7 @@ function syncInstallButton(){
  const installed=store.get('uc-installed')==='1'&&!installPrompt;
  b.classList.toggle('hidden',isStandalone()||!isMobileDevice()||installed);
  b.setAttribute('aria-label',t('install'));b.title=t('install');
+ if(typeof fitBrand==='function')fitBrand();
 }
 const SHARE_ICON='<svg class="share-icon" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 10H6.5A1.5 1.5 0 0 0 5 11.5v8A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5v-8A1.5 1.5 0 0 0 17.5 10H16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
 function showInstallGuide(){

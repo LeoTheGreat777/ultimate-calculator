@@ -2026,6 +2026,8 @@ async def side_panels(browser, url):
     p = await new_page(browser, url, 'en', 'dark', phone=True)
     await p.wait_for_timeout(100)
     check('[side panels phone] none on a phone', not await p.evaluate("document.documentElement.classList.contains('side-panels')"))
+    st = await p.evaluate("(()=>{installButton.classList.remove('hidden');fitBrand();const n=document.querySelector('.brand-name'),r=s=>document.querySelector(s).getBoundingClientRect();return [n.scrollWidth<=n.clientWidth+1,r('#modesButton').top<r('#calculatorCard').top,r('#modesButton').right<=r('#langButton').left]})()")
+    check('[side panels phone] All modes at the top before EN; with Install too the name shrinks instead of being cut', st == [True, True, True], st)
     await p.context.close()
 
 

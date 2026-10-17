@@ -121,7 +121,10 @@ function fitLandscape(card,root,avail,need,tool,setToolLayout){
 }
 let fitRaf=0;
 function fitLayoutSoon(){if(!fitRaf)fitRaf=requestAnimationFrame(()=>{fitRaf=0;fitLayout()})}
-function fitLayout(){refreshSide();
+// The app's name beside the buttons at the top: smaller rather than cut (on a phone with Install, All modes, EN and theme)
+function fitBrand(){const n=$('.brand-name'),h=n&&n.parentElement;if(!h)return;h.style.fontSize='';
+ let s=parseFloat(getComputedStyle(h).fontSize);while(n.scrollWidth>n.clientWidth+.5&&s>14){s-=.5;h.style.fontSize=s+'px'}}
+function fitLayout(){refreshSide();fitBrand();
  const card=$('#calculatorCard'),shell=$('.app-shell'),footer=$('.app-footer'),root=document.documentElement;if(!card||!shell||!footer)return;
  document.body.classList.add('fit');
  if(applyUiZoom())requestAnimationFrame(redrawCharts);
