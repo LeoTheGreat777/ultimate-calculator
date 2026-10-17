@@ -16,7 +16,9 @@ const calcErrorKind=e=>ERROR_TEXT[e?.message]?e.message:'MATH';
 // how long the calculation being typed is (a carried result counts as one character), for MAX_INPUT
 function inputLength(){const s=expression+current;return s.length-(carry&&carry.raw&&s.includes(carry.raw)?carry.raw.length-1:0)}
 
-function carryText(r,digits){const abs=r.n<0n?{n:-r.n,d:r.d}:r,places=digits+Math.max(0,r.d.toString().length-abs.n.toString().length),raw=ratToDecimal(r,places);/* tiny values keep their digits too */carry={text:ratToDecimal(abs,places),value:abs,raw,shown:fmt(r)};carry.plain=/×/.test(carry.shown)?'':ratToRoundedDecimal(r,6);/* what ⌫ edits; one shown as × 10ⁿ is deleted whole */return raw}
+// the result as the screen shows it: with up to 10 decimals when the display had room for them, else as fmt
+function shownResult(r){const el=$('#result'),f=fmt(r);return el&&el.dataset.short===f&&el.textContent===el.dataset.long?el.dataset.long:f}
+function carryText(r,digits){const abs=r.n<0n?{n:-r.n,d:r.d}:r,places=digits+Math.max(0,r.d.toString().length-abs.n.toString().length),raw=ratToDecimal(r,places);/* tiny values keep their digits too */carry={text:ratToDecimal(abs,places),value:abs,raw,shown:shownResult(r)};carry.plain=/×/.test(carry.shown)?'':ratToRoundedDecimal(r,(carry.shown.split(',')[1]||'').length||6);/* what ⌫ edits; one shown as × 10ⁿ is deleted whole */return raw}
 // explanationForExpression (the working under ?) is in explain.js
 function resetHow(){memFresh=false;calcError='';howData=null;calcHowData=null;$('#howButton')?.classList.add('hidden')}
 function render(){refreshSide();
@@ -31,6 +33,10 @@ function render(){refreshSide();
  const exprEl=$('#expression');
  $('#result').textContent=display;
  $('#result').classList.remove('long-value','near-limit');
+ // a result with more decimals than shown: up to 10 when the display has room (fitDisplayText picks)
+ const longer=justCalculated&&!calcError&&!isCx(lastResult)&&lastResult?.n!==undefined?formatRat(lastResult,10):'';
+ if(longer&&longer!==display&&!longer.includes('×')){$('#result').dataset.long=longer;$('#result').dataset.short=display}
+ else{delete $('#result').dataset.long;delete $('#result').dataset.short}
  const hasEntry=Boolean(raw);
  $('#clearButton').textContent=current&&!justCalculated&&!calcError?'C':'AC';// C clears the number being typed; with none, the key clears everything
  $('#howButton').classList.toggle('hidden',!howData?.steps?.length);// nothing to explain: no ?
@@ -244,7 +250,7 @@ function renderSciBar(){
 function toggleSci(){sciMode=!sciMode;sciSecond=false;store.set('uc-sci',sciMode?'1':'0');renderCalcKeypad();render();fitLayout()}
 function continueFromResult(){
  if(isCx(lastResult)){carryCx=lastResult;carry=null;expression='⟪⟫'}// complex: carried whole (complex.js)
- else{expression=carryText(lastResult,18);if(resultNegated&&lastResult.n<0n)carry.shown='(−'+fmt(carry.value)+')'}// turned negative with ±: (−84)+…
+ else{expression=carryText(lastResult,18);if(resultNegated&&lastResult.n<0n)carry.shown='(−'+carry.shown.replace(/^-/,'')+')'}// turned negative with ±: (−84)+…
  resultNegated=false;current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null;
 }
 // where the last complete value at the end of the expression starts (-1 if it ends with an operator or "(")

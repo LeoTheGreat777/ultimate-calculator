@@ -91,7 +91,7 @@ async def desktop(browser, url, lang, theme):
     check(L + 'footer shows v' + VERSION, ('v' + VERSION) in await p.inner_text('.app-footer'))
 
     # calculator basics
-    for keys, want in [('0.1+0.2', '0,3'), ('1/3', '0,333333'), ('50+10%', '55'), ('50*10%', '5'), ('2*-3', '-6'),
+    for keys, want in [('0.1+0.2', '0,3'), ('1/3', '0,3333333333'), ('50+10%', '55'), ('50*10%', '5'), ('2*-3', '-6'),
                        ('(2+3)*4', '20'), ('1234.5*2', '2.469'), ('200-15%', '170')]:
         got = await calc(p, keys)
         check(L + f'{keys} = {want}', got == want, got)
@@ -535,7 +535,8 @@ async def scientific(browser, url, lang, theme):
         check(L + ' '.join(seq) + f' -> {want[0]} = {want[1]}', got == want, got)
     # a result continues: 1÷3 = then x² is (1/3)², exactly 1/9
     await keys('1', '/', '3', '=', 'sci:sq', '=')
-    check(L + 'result then x²: 0,333333² = 0,111111', [await p.evaluate(X), await p.evaluate(R)] == ['0,333333²', '0,111111'],
+    await p.wait_for_timeout(100)
+    check(L + 'result then x²: 0,333333² = 0,111111 (10 decimals each when they fit)', [await p.evaluate(X), await p.evaluate(R)] in (['0,333333²', '0,111111'], ['0,3333333333²', '0,1111111111']),
           [await p.evaluate(X), await p.evaluate(R)])
     # 2nd: inverse functions; Deg/Rad
     await p.click('[data-sci="2nd"]')
@@ -1243,6 +1244,38 @@ async def touch_areas(browser, url):
               if(W<29.5||H<29.5)r.push(m+': '+(e.id||String(e.className).slice(0,24)||e.textContent.trim().slice(0,12))+' '+Math.round(W)+'×'+Math.round(H))})}
           switchMode('calc');return [...new Set(r)]}""")
         check(f'[touch {w}x{h}] every button and field is at least 30×30 px to a finger', not small, small)
+        await ctx.close()
+
+
+async def more_decimals(browser, url):
+    """A result shows up to 10 decimals when the display has room (at 70% of its size or more), else its usual 6;
+    copying copies what is shown."""
+    for w, h, touch in [(390, 844, True), (1280, 860, False)]:
+        ctx = await browser.new_context(viewport={'width': w, 'height': h}, is_mobile=touch, has_touch=touch)
+        await ctx.add_init_script(SEED % ('en', 'dark'))
+        await ctx.grant_permissions(['clipboard-read', 'clipboard-write'])
+        p = await ctx.new_page()
+        await p.goto(url)
+        await p.wait_for_timeout(300)
+        got = []
+        for ks in ['1/7', '123456789/7', '2/4']:
+            await p.keyboard.press('Escape')
+            await p.keyboard.type(ks)
+            await p.keyboard.press('Enter')
+            await p.wait_for_timeout(250)
+            got.append(await p.inner_text('#result'))
+        await p.evaluate("copyResult()")
+        await p.wait_for_timeout(100)
+        await p.keyboard.press('Escape')
+        await p.keyboard.type('1/7')
+        await p.keyboard.press('Enter')
+        await p.wait_for_timeout(250)
+        await p.evaluate("copyResult()")
+        await p.wait_for_timeout(150)
+        clip = await p.evaluate("navigator.clipboard.readText()")
+        mid = '17.636.684,142857' if touch else '17.636.684,14285714'
+        check(f'[decimals {w}x{h}] up to 10 decimals when they fit, else fewer', got == ['0,1428571429', mid, '0,5'], got)
+        check(f'[decimals {w}x{h}] copying the result copies what is shown', clip == '0,1428571429', clip)
         await ctx.close()
 
 async def sideways_every_tab(browser, url):
@@ -2050,7 +2083,7 @@ async def more_functions(browser, url):
     await p.keyboard.type('1')
     await p.click('[data-sci="sinh"]')
     await p.keyboard.press('Enter')
-    check(L + '1 sinh = 1,175201', await p.evaluate(R) == '1,175201', await p.evaluate(R))
+    check(L + '1 sinh = 1,175201 (or 1,1752011936 when it fits)', await p.evaluate(R) in ('1,175201', '1,1752011936'), await p.evaluate(R))
     await p.click('[data-sci="hyp"]')
     await p.keyboard.press('Escape')
     for k in ['5']:
@@ -2085,7 +2118,7 @@ async def more_functions(browser, url):
     await p.keyboard.press('Escape')
     await p.evaluate("sciKey('phi')")
     await p.keyboard.press('Enter')
-    check(L + 'φ = 1,618034', await p.evaluate(R) == '1,618034')
+    check(L + 'φ = 1,618034 (or 1,6180339887 when it fits)', await p.evaluate(R) in ('1,618034', '1,6180339887'), await p.evaluate(R))
     check(L + 'no JavaScript errors', not p.errors, p.errors)
     await p.context.close()
 
@@ -2449,6 +2482,7 @@ async def main():
         await sideways_every_tab(browser, url)
         await upright_small_phones(browser, url)
         await touch_areas(browser, url)
+        await more_decimals(browser, url)
         await all_modes(browser, url)
         await esc_everywhere(browser, url)
         await history_per_mode(browser, url)

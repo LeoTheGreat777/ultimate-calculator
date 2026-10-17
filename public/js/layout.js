@@ -15,10 +15,15 @@ function fitDisplayText(el,minSize,showEnd=false){
  el.style.removeProperty('font-size');
  el.style.removeProperty('letter-spacing');
  el.dataset.fit='1';
+ // A result with a longer form (more decimals, data-long) shows it when it fits at 70% of the normal size or more,
+ // else its usual form (data-short); only while the text is still one of the two (a new text clears it)
+ const twoForms=el.dataset.short!=null&&el.dataset.long!=null&&(el.textContent===el.dataset.short||el.textContent===el.dataset.long);
+ if(twoForms)el.textContent=el.dataset.long;
  requestAnimationFrame(()=>{
    if(!el.isConnected)return;
-   const width=el.clientWidth,contentWidth=el.scrollWidth;
+   const width=el.clientWidth;let contentWidth=el.scrollWidth;
    const cs=getComputedStyle(el);el.dataset.fitW=Math.round(width-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight));fitWatch?.observe(el);// the same width the watcher sees
+   if(twoForms&&width&&contentWidth>width+2&&width/contentWidth*0.97<0.7){el.textContent=el.dataset.short;contentWidth=el.scrollWidth}
    if(width&&contentWidth>width+2){
      const base=parseFloat(getComputedStyle(el).fontSize);
      el.style.setProperty('font-size',Math.max(minSize,base*(width/contentWidth)*0.97)+'px','important');// beats the !important sizes of .unit-value

@@ -6,6 +6,12 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.26.3 – 2026-10-17
+
+### Changed
+- Calculator results show up to 10 decimals when the screen has room, like the iPhone's calculator: 1 ÷ 7 = 0,1428571429.
+  On a narrow screen a long number keeps 6. Copying the result copies what you see.
+
 ## 0.26.2 – 2026-10-17
 
 ### Fixed

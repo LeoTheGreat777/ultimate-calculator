@@ -6,6 +6,10 @@ Part of the notes in CLAUDE.md (read that first). Covers numbers.js, calculator.
   `evalExpr` parses with operator precedence; `50+10%` = 55, `50×10%` = 5. Results show rounded to
   6 decimals and at most 16 significant digits (`formatRat`); from 10¹⁶ up, and for values that would round to 0,
   `1,234567 × 10²⁰` (`ratScientific`, superscript exponent). The same in Units, tools (`money`) and charts (`chNum`).
+  The Calculator's finished result shows up to 10 decimals when they fit at 70% of the display's font size or more
+  (`#result` data-long / data-short, picked by `fitDisplayText`, again when the width changes), like the iPhone: 1 ÷ 7 =
+  0,1428571429; copying copies what is shown, and carrying on shows it the same way (`shownResult`, `carry.plain` for ⌫).
+  History and the working keep 6. Tests read the result after its frame, or accept either form.
 - **Limits** (numbers.js, as on Windows' calculator): typed numbers have at most 15 digits (`MAX_DIGITS`, `digitCount`)
   in every mode, a calculation at most 150 characters (`MAX_INPUT`; Graph functions 120), and every step of a
   calculation must stay below 10¹⁰⁰⁰⁰ and (unless 0) above 10⁻¹⁰⁰⁰⁰ (`ratLimit`), else "Too large"/"Too small".
