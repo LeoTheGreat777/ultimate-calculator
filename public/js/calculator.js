@@ -33,7 +33,7 @@ function render(){refreshSide();
  $('#result').classList.remove('long-value','near-limit');
  const hasEntry=Boolean(raw);
  $('#clearButton').textContent=current&&!justCalculated&&!calcError?'C':'AC';// C clears the number being typed; with none, the key clears everything
- $('#howButton').classList.toggle('hidden',!howData);
+ $('#howButton').classList.toggle('hidden',!howData?.steps?.length);// 25 − 25i alone: nothing to explain
  $('#chartButton')?.classList.add('hidden');
  requestAnimationFrame(()=>{
    // too long to fit: the text gets smaller, then shows its end (what was typed last); the start fades out
@@ -198,7 +198,7 @@ function sciAria(k){
  return (lang==='el'?el:en)[k]||sciLabel(k);
 }
 function sciKeysHtml(){
- return '<div class="sci-pad">'+SCI_KEYS.map(([k,k2])=>{let key=sciSecond&&k2?k2:k;if(sciHyp&&/^a?(sin|cos|tan)$/.test(key))key+='h';
+ return '<div class="sci-pad">'+memKeysHtml()+SCI_KEYS.map(([k,k2])=>{let key=sciSecond&&k2?k2:k;if(sciHyp&&/^a?(sin|cos|tan)$/.test(key))key+='h';
   const on=k==='2nd'&&sciSecond||k==='hyp'&&sciHyp,toggle=k==='2nd'||k==='hyp';
   return '<button class="key sci-key'+(on?' on':'')+'" data-sci="'+key+'" type="button" aria-label="'+esc(sciAria(key))+'"'+(toggle?' aria-pressed="'+on+'"':'')+'>'+esc(sciLabel(key))+'</button>'}).join('')+'</div>';
 }

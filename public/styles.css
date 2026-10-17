@@ -23,9 +23,10 @@ html[data-theme="paper"],[data-theme-preview="paper"]{color-scheme:light;--bg:#f
 /* Forest: deep green-teal, mint accent */
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;width:100%;height:100%;min-height:100%;background:var(--bg);color:var(--text);overscroll-behavior:none;overflow:hidden}
-body{min-height:calc(100dvh / var(--z,1));touch-action:none;-webkit-user-select:none;user-select:none}
+body{min-height:calc(100dvh / var(--z,1));touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 button,input,select{font:inherit}
 input,select{-webkit-user-select:text;user-select:text}
+input[type=checkbox],input[type=radio],input[type=color],input[readonly],.key-tick,.key-tick *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .app-shell{width:min(680px,100%);min-height:calc(100dvh / var(--z,1));margin:0 auto;padding:10px 14px 12px;overflow:hidden;display:flex;flex-direction:column}
 .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:9px;flex:0 0 auto}
 .topbar h1{font-size:23px;line-height:1.15;margin:4px 0;font-weight:700}
@@ -730,10 +731,13 @@ html.landscape .theme-group{padding-top:3px;padding-bottom:1px}
 .keypad.sci .basic-pad{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .key.sci-key{background:var(--card2);box-shadow:inset 0 0 0 1px var(--border);color:var(--text);font-size:16px;font-weight:500;letter-spacing:0}
 .key.sci-key.on{background:var(--accent);box-shadow:none;color:var(--on-accent)}
-html.landscape .calculator-card.sci-on{grid-template-columns:minmax(0,.85fr) minmax(0,1.6fr)}
+html.landscape .calculator-card.sci-on{grid-template-columns:minmax(0,.7fr) minmax(0,1.75fr)}
 html.landscape .keypad.sci{flex-direction:row}
-html.landscape .keypad.sci .sci-pad{flex:3;grid-template-columns:none;grid-template-rows:repeat(5,auto);grid-auto-flow:column;grid-auto-columns:minmax(0,1fr)}
+html.landscape .keypad.sci .sci-pad{flex:4;grid-template-columns:none;grid-template-rows:repeat(5,auto);grid-auto-flow:column;grid-auto-columns:minmax(0,1fr)}
 html.landscape .keypad.sci .basic-pad{flex:4}
+/* sideways five columns of scientific keys beside the basic ones: the labels follow the key size and never get cut */
+html.landscape .key.sci-key{padding:0;font-size:min(18px,calc(var(--k,48px) * .36))}
+html.landscape .key.sci-key.mem-key{font-size:min(15px,calc(var(--k,48px) * .3))}
 html.landscape .calculator-card.sci-on .bottom-actions{display:none}
 .bottom-actions .secondary-button{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
@@ -847,18 +851,10 @@ html.side-panels .side-panel{display:flex;flex-direction:column;position:fixed;t
 .side-chart{margin-top:12px;padding-top:4px;border-top:1px solid var(--border)}
 .side-chart.hidden{display:none}
 .side-chart .what-if{font-size:11.5px}
-/* ---------- Memory (memory.js): a slim row above the keys in the Calculator; M and its value beside f(x) ---------- */
-.mem-row{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin:0 0 6px}
-.mem-row.hidden{display:none}
-.mem-key{height:30px;border:0;border-radius:10px;background:transparent;color:var(--accent2);font:inherit;font-size:13px;font-weight:700;letter-spacing:.03em;cursor:pointer;position:relative;overflow:hidden}
-.mem-key.empty{color:var(--muted);opacity:.55}
-@media (hover:hover) and (pointer:fine){.mem-key:hover{background:var(--key)}}
-.mem-key.pressed{background:var(--key)}
+/* ---------- Memory (memory.js): MC MR M+ M− MS, the first row of the scientific keys; M and its value beside f(x) ---------- */
+.key.sci-key.mem-key{color:var(--accent2);font-size:15px;font-weight:650;letter-spacing:.02em}
+.key.sci-key.mem-key.empty{color:var(--muted)}
 .mem-chip{min-width:0;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--accent2)}
-/* sideways it takes the copy button's place (a tap on the result copies it) */
-html.landscape #memRow{grid-column:1;grid-row:4;margin:6px 0 0}
-html.landscape .calculator-card.has-mem .bottom-actions{display:none}
-html.landscape .mem-key{height:28px}
 /* ---------- Functions and constants (funcs.js, ⋯ on the scientific keys): the ? dialog with .fn-open ---------- */
 .modal.fn-open .modal-card{width:min(620px,calc(calc(100vw / var(--z,1)) - 32px))}
 .fn-search{margin-bottom:10px}

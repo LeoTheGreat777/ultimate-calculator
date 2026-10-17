@@ -492,7 +492,7 @@ async def scientific(browser, url, lang, theme):
     L = f'[scientific {lang} {theme}] '
     check(L + 'starts in Basic, no scientific keys', await p.locator('.sci-key').count() == 0)
     await p.click('[data-bar="sci"]')
-    check(L + 'f(x) shows 20 scientific keys, the Deg key, and no second chip on the display', await p.locator('.sci-key').count() == 20
+    check(L + 'f(x) shows 25 scientific keys (memory included), the Deg key, and no second chip on the display', await p.locator('.sci-key').count() == 25
           and await p.inner_text('[data-sci="angle"]') == 'Deg' and await p.locator('#sciBar button').count() == 1)
 
     async def keys(*seq):
@@ -567,7 +567,7 @@ async def scientific(browser, url, lang, theme):
     # the choice is remembered; Units keeps its own keypad
     await p.reload()
     await p.wait_for_timeout(300)
-    check(L + 'Scientific kept after reload', await p.locator('.sci-key').count() == 20)
+    check(L + 'Scientific kept after reload', await p.locator('.sci-key').count() == 25)
     await p.evaluate("switchMode('units')")
     await p.wait_for_timeout(150)
     check(L + 'Units has no scientific keys', await p.locator('.sci-key').count() == 0)
@@ -1827,9 +1827,12 @@ async def side_panels(browser, url):
 
 
 async def memory_keys(browser, url):
-    """Memory: MS, M+, M−, MR, MC in the Calculator, kept across visits, shown beside f(x), Ctrl shortcuts."""
+    """Memory: MS, M+, M−, MR, MC, the first row of the scientific keys, kept across visits, shown beside f(x), Ctrl shortcuts."""
     L = '[memory] '
     p = await new_page(browser, url, 'en', 'dark')
+    check(L + 'the basic calculator has no memory keys', await p.evaluate("document.querySelectorAll('#keypad [data-mem]').length") == 0)
+    await p.evaluate("toggleSci()")
+    check(L + 'f(x): MC MR M+ M− MS are the first row of the scientific keys', await p.evaluate("[...document.querySelectorAll('#keypad .sci-key')].slice(0,5).map(b=>b.textContent)") == ['MC', 'MR', 'M+', 'M−', 'MS'])
     mem = "[localStorage.getItem('uc-memory'),document.querySelector('.mem-chip')?.textContent||'',document.querySelector('.mem-key[data-mem=\"mr\"]').classList.contains('empty')]"
     check(L + 'nothing in memory: MR and MC look empty, no chip', await p.evaluate(mem) == [None, '', True])
     await p.keyboard.type('450+380')
@@ -1867,8 +1870,32 @@ async def memory_keys(browser, url):
     await p.click('.mem-key[data-mem="mc"]')
     await p.click('.mem-key[data-mem="mr"]')
     check(L + 'MR with nothing in memory does nothing', await p.evaluate(R) == '0')
-    await p.evaluate("switchMode('units')")
-    check(L + 'only the Calculator has the memory row', await p.evaluate("document.querySelector('#memRow').classList.contains('hidden')"))
+    await p.keyboard.type('9')
+    await p.keyboard.press('Control+m')
+    await p.evaluate("toggleSci()")
+    check(L + 'scientific off: no memory keys, the chip still shows what is kept', await p.evaluate("[document.querySelectorAll('#keypad [data-mem]').length,document.querySelector('.mem-chip')?.textContent]") == [0, 'M 9'])
+    await p.evaluate("memKey('mc');switchMode('units')")
+    check(L + 'other modes have no memory keys', await p.evaluate("document.querySelectorAll('[data-mem]').length") == 0)
+    check(L + 'no JavaScript errors', not p.errors, p.errors)
+    await p.context.close()
+
+
+async def no_magnifier(browser, url):
+    """iPhone: a long press or a fast double tap on a key never starts a text selection (the magnifier bubble). Each key
+    holds a hidden switch for the tap tick; it, read-only tool fields (phones) and everything else can't be selected."""
+    L = '[no magnifier] '
+    p = await new_page(browser, url, 'en', 'dark', phone=True)
+    st = await p.evaluate("""(()=>{const key=document.querySelector('#keypad [data-value="7"]');
+      const l=document.createElement('label'),i=document.createElement('input');l.className='key-tick';i.type='checkbox';i.setAttribute('switch','');l.appendChild(i);key.appendChild(l);
+      const sel=e=>{const ev=new Event('selectstart',{bubbles:true,cancelable:true});e.dispatchEvent(ev);return ev.defaultPrevented};
+      const css=e=>getComputedStyle(e).webkitUserSelect||getComputedStyle(e).userSelect;
+      const r=[sel(i),css(i),sel(key)];switchMode('vat');const f=document.querySelector('#amount');
+      return [...r,sel(f),css(f),f.readOnly]})()""")
+    check(L + 'a key, its hidden switch and a read-only field never start a selection', st == [True, 'none', True, True, 'none', True], st)
+    await p.evaluate("switchMode('calc');openModes()")
+    st = await p.evaluate("(()=>{const s=document.querySelector('#modesSearch'),ev=new Event('selectstart',{bubbles:true,cancelable:true});s.dispatchEvent(ev);return ev.defaultPrevented})()")
+    check(L + 'a field you type in (the modes search) still can be selected', st is False, st)
+    await p.evaluate("closeModes?.()")
     check(L + 'no JavaScript errors', not p.errors, p.errors)
     await p.context.close()
 
@@ -1885,7 +1912,7 @@ async def more_functions(browser, url):
     check(L + 'outside their domain they say why', errs == ['MATH', 'MATH', 'DIV0', 'MATH', 'MATH', 'MATH', 'MATH'], errs)
     await p.evaluate("toggleSci()")
     await p.click('[data-sci="hyp"]')
-    check(L + 'hyp turns sin cos tan into sinh cosh tanh', await p.evaluate("[...document.querySelectorAll('.sci-key')].slice(2,5).map(b=>b.textContent)") == ['sinh', 'cosh', 'tanh'])
+    check(L + 'hyp turns sin cos tan into sinh cosh tanh', await p.evaluate("[...document.querySelectorAll('#keypad [data-sci]')].slice(2,5).map(b=>b.textContent)") == ['sinh', 'cosh', 'tanh'])
     await p.click('[data-sci="2nd"]')
     check(L + 'and 2nd into their inverses', await p.evaluate("document.querySelector('[data-sci=\"asinh\"]').textContent") == 'sinh⁻¹')
     await p.click('[data-sci="2nd"]')
@@ -1941,6 +1968,12 @@ async def complex_numbers(browser, url):
     want = ['5 − i', '-1', '2i', '2i', '-i', '-1 + 2i', '-1', '3,141593i', '1,732051 + i', '2i', '5', '32i', '0,20788', '0,707107 + 0,707107i',
             '0', '0,017454i', 'MATH', 'MATH']
     check(L + 'arithmetic exact, functions, √ and ln of negatives, polar entry', vals == want, list(zip(vals, want)))
+    await p.evaluate("toggleSci()")
+    await p.keyboard.type('25-25i')
+    await p.keyboard.press('Enter')
+    check(L + '25 − 25i alone is already the answer: no ? with nothing to explain', await p.evaluate("[document.querySelector('#result').textContent,document.querySelector('#howButton').classList.contains('hidden')]") == ['25 − 25i', True])
+    await p.keyboard.press('Escape')
+    await p.evaluate("toggleSci()")
     check(L + 'real calculations are unchanged (√2, ln 2, (−8)^(1/3))', await p.evaluate("['√(2)','ln(2)','(-8)^(1÷3)'].map(e=>fmt(evalExpr(e)))") == ['1,414214', '0,693147', '-2'])
     await p.evaluate("toggleSci()")
     for k in ['(', '3', '+', '2']:
@@ -2162,6 +2195,7 @@ async def main():
         await side_panels(browser, url)
         await foldables(browser, url)
         await memory_keys(browser, url)
+        await no_magnifier(browser, url)
         await more_functions(browser, url)
         await complex_numbers(browser, url)
         await numbers_equations(browser, url)

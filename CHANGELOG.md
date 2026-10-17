@@ -6,6 +6,17 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.24.1 – 2026-10-17
+
+### Changed
+- The memory keys moved into Scientific (f(x)), as their own row of keys above sin, cos and tan (sideways, the first
+  column), like on the iPhone. The basic calculator stays clean; the M chip and the Ctrl shortcuts work in both.
+- Sideways, the scientific keys' labels now fit on small phones.
+
+### Fixed
+- iPhone: a long press or a quick double tap on a key no longer shows the magnifying glass, in any mode.
+- ? no longer shows when there is nothing to work out, like a complex number typed on its own (25 − 25i).
+
 ## 0.24.0 – 2026-10-16
 
 ### Added

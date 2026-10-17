@@ -49,7 +49,7 @@ function refuseKey(el=$('#result')){
 const FIT={
  calc:{k:[68,40],d:[205,128],roomy:172,comfy:48,copy:true},
  units:{k:[68,40],d:[205,165],comfy:48,copy:false},
- sci:{k:[62,34],d:[180,96],roomy:150,comfy:42,copy:true},// Scientific: 8 rows of keys
+ sci:{k:[62,31],d:[180,96],roomy:150,comfy:42,copy:true},// Scientific: 10 rows of keys (memory, 4 scientific, 5 basic)
  tool:{k:[56,36],d:[205,128],roomy:172,comfy:44,copy:true},
  mobileTool:{k:[56,36],d:[108,98],comfy:44,copy:true},
  graphMin:520

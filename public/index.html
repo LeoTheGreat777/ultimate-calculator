@@ -83,7 +83,7 @@ if (navigator.standalone) document.documentElement.classList.add('ios-app');
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 
-<link rel="stylesheet" href="styles.css?v=0.24.0">
+<link rel="stylesheet" href="styles.css?v=0.24.1">
 <title>Ultimate Calculator</title>
 </head>
 <body>
@@ -93,11 +93,10 @@ if (navigator.standalone) document.documentElement.classList.add('ios-app');
 <div class="calculator-toolbar"><button id="historyButton" class="toolbar-button history-top" type="button" aria-label="History" title="History"><svg class="history-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4.2 12.2a7.8 7.8 0 1 0 2.3-5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M4 3.8v4.4h4.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 8v4.4l2.9 1.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="historyButtonText" class="sr-only">History</span></button><button id="modesButton" class="toolbar-button modes-button" type="button" aria-label="All modes" title="All modes" aria-haspopup="dialog" aria-expanded="false"><svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.8" fill="none" stroke="currentColor" stroke-width="2"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.8" fill="none" stroke="currentColor" stroke-width="2"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.8" fill="none" stroke="currentColor" stroke-width="2"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.8" fill="none" stroke="currentColor" stroke-width="2"/></svg></button><nav id="modeTabs" class="mode-tabs" aria-label="Modes"><div class="mode-tabs-track" role="tablist"></div><button class="tabs-arrow tabs-prev" type="button" tabindex="-1" aria-hidden="true">‹</button><button class="tabs-arrow tabs-next" type="button" tabindex="-1" aria-hidden="true">›</button><div class="tabs-scrollbar" aria-hidden="true"><span></span></div></nav></div>
 <div id="calculatorDisplay" class="display-wrap"><div class="expression-row"><div id="expression" class="expression" aria-live="polite"></div><button id="chartButton" class="how-button chart-button hidden" type="button" aria-label="Chart"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M5 20V11M12 20V5M19 20v-6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button><button id="howButton" class="how-button hidden" type="button" aria-label="How was this calculated?">?</button></div><div id="result" class="result" aria-live="polite">0</div></div>
 <div id="toolPanel" class="tool-panel hidden"></div>
-<div id="memRow" class="mem-row hidden" role="group" aria-label="Memory"></div>
 <div id="keypad" class="keypad"><button class="key utility" data-action="backspace" type="button" aria-label="Delete">⌫</button><button id="clearButton" class="key utility" data-action="clear" type="button">AC</button><button class="key utility" data-value="%" type="button">%</button><button class="key operator" data-value="/" type="button">÷</button><button class="key" data-value="7" type="button">7</button><button class="key" data-value="8" type="button">8</button><button class="key" data-value="9" type="button">9</button><button class="key operator" data-value="*" type="button">×</button><button class="key" data-value="4" type="button">4</button><button class="key" data-value="5" type="button">5</button><button class="key" data-value="6" type="button">6</button><button class="key operator" data-value="-" type="button">−</button><button class="key" data-value="1" type="button">1</button><button class="key" data-value="2" type="button">2</button><button class="key" data-value="3" type="button">3</button><button class="key operator" data-value="+" type="button">+</button><button class="key utility" data-action="paren" type="button" aria-label="Parentheses">( )</button><button class="key" data-value="0" type="button">0</button><button class="key" data-value="," type="button">,</button><button class="key equals" data-action="equals" type="button">=</button></div>
 <div class="bottom-actions"><button id="copyButton" class="secondary-button" type="button">Copy result</button></div>
 </section>
-<footer class="app-footer"><div class="footer-line">Ultimate Calculator <span id="footerVersion">v0.24.0</span><span class="footer-dot" aria-hidden="true">·</span><button id="helpButton" class="help-link" type="button"><svg class="help-link-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.6a4.6 4.6 0 0 0-2.7 8.3c.4.3.7.8.7 1.3v.6h4v-.6c0-.5.3-1 .7-1.3A4.6 4.6 0 0 0 8 1.6z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M6.3 14.2h3.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span id="helpLabel">Tips</span></button></div><span id="createdBy">Created by <span class="author">Leonidas Kampaxis</span></span></footer>
+<footer class="app-footer"><div class="footer-line">Ultimate Calculator <span id="footerVersion">v0.24.1</span><span class="footer-dot" aria-hidden="true">·</span><button id="helpButton" class="help-link" type="button"><svg class="help-link-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.6a4.6 4.6 0 0 0-2.7 8.3c.4.3.7.8.7 1.3v.6h4v-.6c0-.5.3-1 .7-1.3A4.6 4.6 0 0 0 8 1.6z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M6.3 14.2h3.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span id="helpLabel">Tips</span></button></div><span id="createdBy">Created by <span class="author">Leonidas Kampaxis</span></span></footer>
 </main>
 <aside id="sideHistory" class="side-panel side-left" aria-labelledby="sideHistoryTitle"><h2 id="sideHistoryTitle" class="side-title">History</h2><div id="sideHistoryList" class="side-list history-list"></div></aside>
 <aside id="sideWork" class="side-panel side-right" aria-labelledby="sideWorkTitle" aria-live="polite"><h2 id="sideWorkTitle" class="side-title">How it was worked out</h2><div class="side-scroll"><div id="sideWorkBody" class="how-content side-work"></div><div id="sideChart" class="side-chart hidden"></div></div></aside>
@@ -106,29 +105,29 @@ if (navigator.standalone) document.documentElement.classList.add('ios-app');
 <div id="modesModal" class="modal modes-modal hidden" role="dialog" aria-modal="true" aria-labelledby="modesTitle"><div class="modal-card modes-card"><div class="section-heading"><h2 id="modesTitle">All modes</h2><button id="closeModes" class="modal-close" type="button" aria-label="Close">×</button></div><input id="modesSearch" class="modes-search" type="search" autocomplete="off" spellcheck="false" placeholder="Search" aria-label="Search"><div id="modesList" class="modes-list"></div><p id="modesHint" class="modes-hint"></p></div></div>
 <div id="howModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="howTitle"><div class="modal-card how-modal-card"><div class="section-heading"><h2 id="howTitle">How was this calculated?</h2><button id="closeHow" class="modal-close" type="button" aria-label="Close">×</button></div><div id="howContent" class="how-content"></div></div></div>
 <!-- Plain scripts sharing globals, in this order (main.js last); the ?v= makes browsers load new versions. -->
-<script src="js/core.js?v=0.24.0"></script>
-<script src="js/i18n.js?v=0.24.0"></script>
-<script src="js/side.js?v=0.24.0"></script>
-<script src="js/numbers.js?v=0.24.0"></script>
-<script src="js/complex.js?v=0.24.0"></script>
-<script src="js/charts.js?v=0.24.0"></script>
-<script src="js/graph.js?v=0.24.0"></script>
-<script src="js/calculator.js?v=0.24.0"></script>
-<script src="js/explain.js?v=0.24.0"></script>
-<script src="js/memory.js?v=0.24.0"></script>
-<script src="js/funcs.js?v=0.24.0"></script>
-<script src="js/history.js?v=0.24.0"></script>
-<script src="js/units.js?v=0.24.0"></script>
-<script src="js/tools.js?v=0.24.0"></script>
-<script src="js/currency.js?v=0.24.0"></script>
-<script src="js/dates.js?v=0.24.0"></script>
-<script src="js/net.js?v=0.24.0"></script>
-<script src="js/numtools.js?v=0.24.0"></script>
-<script src="js/layout.js?v=0.24.0"></script>
-<script src="js/theme.js?v=0.24.0"></script>
-<script src="js/ui.js?v=0.24.0"></script>
-<script src="js/modes.js?v=0.24.0"></script>
-<script src="js/help.js?v=0.24.0"></script>
-<script src="js/main.js?v=0.24.0"></script>
+<script src="js/core.js?v=0.24.1"></script>
+<script src="js/i18n.js?v=0.24.1"></script>
+<script src="js/side.js?v=0.24.1"></script>
+<script src="js/numbers.js?v=0.24.1"></script>
+<script src="js/complex.js?v=0.24.1"></script>
+<script src="js/charts.js?v=0.24.1"></script>
+<script src="js/graph.js?v=0.24.1"></script>
+<script src="js/calculator.js?v=0.24.1"></script>
+<script src="js/explain.js?v=0.24.1"></script>
+<script src="js/memory.js?v=0.24.1"></script>
+<script src="js/funcs.js?v=0.24.1"></script>
+<script src="js/history.js?v=0.24.1"></script>
+<script src="js/units.js?v=0.24.1"></script>
+<script src="js/tools.js?v=0.24.1"></script>
+<script src="js/currency.js?v=0.24.1"></script>
+<script src="js/dates.js?v=0.24.1"></script>
+<script src="js/net.js?v=0.24.1"></script>
+<script src="js/numtools.js?v=0.24.1"></script>
+<script src="js/layout.js?v=0.24.1"></script>
+<script src="js/theme.js?v=0.24.1"></script>
+<script src="js/ui.js?v=0.24.1"></script>
+<script src="js/modes.js?v=0.24.1"></script>
+<script src="js/help.js?v=0.24.1"></script>
+<script src="js/main.js?v=0.24.1"></script>
 </body>
 </html>

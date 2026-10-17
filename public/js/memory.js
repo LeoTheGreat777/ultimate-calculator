@@ -9,21 +9,10 @@ const MEM_KEYS=[['mc','MC'],['mr','MR'],['m+','M+'],['m-','M−'],['ms','MS']];
 const memText=k=>({el:{mc:'Καθαρισμός μνήμης',mr:'Ανάκληση μνήμης',ms:'Αποθήκευση στη μνήμη','m+':'Πρόσθεση στη μνήμη','m-':'Αφαίρεση από τη μνήμη',
   row:'Μνήμη',now:'Μνήμη: {v}',cleared:'Η μνήμη καθάρισε'},
  en:{mc:'Memory clear',mr:'Memory recall',ms:'Memory store','m+':'Memory add','m-':'Memory subtract',row:'Memory',now:'Memory: {v}',cleared:'Memory cleared'}}[lang==='el'?'el':'en'][k]);
-// The row (#memRow, between the display and the keys; sideways under the display, so the keys stay as big as in the
-// other tabs). Shown only in the Calculator (renderTool).
-function renderMemRow(){
- const row=$('#memRow');if(!row)return;
- row.classList.toggle('hidden',mode!=='calc');$('#calculatorCard')?.classList.toggle('has-mem',mode==='calc');if(mode!=='calc')return;
- row.setAttribute('aria-label',memText('row'));
- row.innerHTML=MEM_KEYS.map(([k,l])=>'<button class="mem-key'+((k==='mc'||k==='mr')&&!memory?' empty':'')+'" data-mem="'+k+'" type="button" aria-label="'+esc(memText(k))+'" title="'+esc(memText(k))+'">'+l+'</button>').join('');
-}
-function setupMemory(){
- const row=$('#memRow');if(!row)return;
- row.addEventListener('click',e=>{const b=e.target.closest('[data-mem]');if(b)memKey(b.dataset.mem)});
- // lights up while pressed, like the keys
- row.addEventListener('pointerdown',e=>{const b=e.target.closest('button');if(!b)return;b.classList.add('pressed');if(e.pointerType!=='mouse'&&!IS_IOS){try{navigator.vibrate?.(8)}catch{}}});
- ['pointerup','pointercancel','pointerleave'].forEach(t=>row.addEventListener(t,e=>{const b=e.target.closest?.('button');if(b)setTimeout(()=>b.classList.remove('pressed'),90)},true));
- renderMemRow();
+// The keys: the first row of the scientific keys (f(x)), as on the iPhone's calculator; the basic keypad stays as it was.
+// MC and MR look dimmed while memory is empty. The keyboard shortcuts work in the Calculator either way.
+function memKeysHtml(){
+ return MEM_KEYS.map(([k,l])=>'<button class="key sci-key mem-key'+((k==='mc'||k==='mr')&&!memory?' empty':'')+'" data-mem="'+k+'" type="button" aria-label="'+esc(memText(k))+'" title="'+esc(memText(k))+'">'+l+'</button>').join('');
 }
 function saveMemory(){if(memory)store.set('uc-memory',vToStore(memory));else store.del('uc-memory')}
 // the number on screen: the result, the number being typed, or what has been typed so far (an operator at the end left out)
@@ -69,7 +58,7 @@ function memKey(k){
 }
 // MC and MR look empty with nothing in memory; the chip beside f(x) shows what is in it
 function renderMemory(){
- $$('#memRow .mem-key[data-mem="mc"],#memRow .mem-key[data-mem="mr"]').forEach(b=>b.classList.toggle('empty',!memory));
+ $$('#keypad .mem-key[data-mem="mc"],#keypad .mem-key[data-mem="mr"]').forEach(b=>b.classList.toggle('empty',!memory));
 }
 function memChipHtml(){
  return memory?'<button class="sci-chip mem-chip" data-bar="mr" type="button" aria-label="'+esc(memText('now').replace('{v}',fmt(memory)))+'" title="'+esc(memText('mr'))+'">M '+esc(fmt(memory))+'</button>':'';

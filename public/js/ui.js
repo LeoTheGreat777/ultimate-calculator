@@ -5,7 +5,6 @@ function closeHow(){if($('#howModal').contains(document.activeElement))document.
 function modeIcon(m){return ICONS[m]||''}
 function renderTool(){
  const calc=mode==='calc';
- renderMemRow();// MC MR M+ M− MS: the Calculator only
  renderDateBar();// the Working days chip shows only in Dates: every tab change hides or shows it
  const card=$('#calculatorCard');
  card.classList.toggle('mobile-tool',!calc&&isMobileDevice()&&mode!=='units'&&mode!=='graph');
@@ -234,7 +233,7 @@ function applyLanguage(){
  {const b=$('#modesButton');if(b){b.setAttribute('aria-label',mText('title'));b.title=mText('title')}if(modesOpen())openModes()}
  $('#howTitle').textContent=t('how');
  $('#howButton')?.setAttribute('aria-label',t('how'));
- refreshSide(true);renderMemRow();
+ refreshSide(true);
  {const b=$('#unitHow');if(b){b.setAttribute('aria-label',t('how'));b.title=t('how')}}
  $('#historyPanel').setAttribute('aria-label',t('history'));
  $('#historyConfirmYes').textContent=t('confirmYes');
@@ -316,9 +315,10 @@ function setupPressFeedback(){
  // keys are re-drawn often (modes, 2nd, C/AC): every new or re-labelled key gets its switch back
  if(IS_IOS){addKeyTicks(pad);new MutationObserver(()=>addKeyTicks(pad)).observe(pad,{childList:true,subtree:true})}
 }
-// iOS: a fast double tap starts selecting the key's label and shows the magnifier bubble. Nothing outside the fields is
-// meant to be selected (body is user-select:none), so selection never starts there.
-document.addEventListener('selectstart',e=>{const el=e.target.nodeType===1?e.target:e.target.parentElement;if(!el?.closest?.('input,textarea,select'))e.preventDefault()});
+// iOS: a fast double tap or a long press starts selecting text and shows the magnifier bubble. Only a field you can type
+// in may be selected: not a key's hidden switch (key-tick), not a read-only tool field (phones), nothing else.
+const SELECTABLE='textarea,select,input:not([readonly]):not([type=checkbox]):not([type=radio]):not([type=color]):not([type=range])';
+document.addEventListener('selectstart',e=>{const el=e.target.nodeType===1?e.target:e.target.parentElement;if(!el?.closest?.(SELECTABLE)||el.closest('.key-tick'))e.preventDefault()});
 function setupHoldKeys(){
  const pad=$('#keypad');let timer=0,fired=false,key=null;
  const holdKey=t=>{for(const h of HOLD_KEYS){const b=t?.closest?.(h.sel);if(b&&pad.contains(b)&&(!h.when||h.when()))return{b,h}}return null};

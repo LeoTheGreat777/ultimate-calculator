@@ -17,6 +17,7 @@ $('#keypad').addEventListener('click',e=>{
    return;
  }
  if(b.dataset.sci){sciKey(b.dataset.sci);return}
+ if(b.dataset.mem){memKey(b.dataset.mem);return}
  if(a==='clear')clearButtonAction();else if(a==='backspace')backspace();else if(a==='equals')equals();else if(a==='paren')smartParen();else if(v==='%')percent();else if(/[+\-*/]/.test(v||''))operator(v==='*'?'×':v==='/'?'÷':v);else if(v)digit(v)
 });
 $('#howButton').addEventListener('click',showHow);$('#closeHow').addEventListener('click',closeHow);$('#howModal').addEventListener('click',e=>{if(e.target.id==='howModal')closeHow()});
@@ -27,7 +28,7 @@ $('#langButton').addEventListener('click',e=>{e.preventDefault();e.stopPropagati
 $('#themeButton').addEventListener('click',toggleThemeMenu);
 $('#installButton')?.addEventListener('click',installApp);
 $('#helpButton')?.addEventListener('click',showHelp);
-setupHoldKeys();setupPressFeedback();setupSide();setupMemory();setupFunctions();
+setupHoldKeys();setupPressFeedback();setupSide();setupFunctions();
 // a click anywhere else closes the theme menu and the History "clear all?" question
  document.addEventListener('click',e=>{if(themeMenuOpen()&&!eventInside(e,'#themeMenu,#themeButton'))closeThemeMenu();if(historyClearConfirm&&!eventInside(e,'#historyClearWrap'))clearHistoryConfirm()});
 $('#clearHistory').addEventListener('click',clearHistoryConfirm);$('#historyConfirmYes').addEventListener('click',deleteAllHistory);

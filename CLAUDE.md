@@ -204,8 +204,8 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   locked to portrait (iPhones can't be), so both must work.
 - **Scientific:** a view of the Calculator, not a mode: the f(x) switch on the display (`sciMode`, `uc-sci`; the only chip
   there, the angle unit is the keypad's Deg/Rad key; at the display's top-left in line with History, styled like ?, and
-  Dates' Working days chip sits in the same place) adds 20
-  keys above the basic ones (beside them in landscape; `sciKeysHtml`, `.keypad.sci`). Functions apply to the value
+  Dates' Working days chip sits in the same place) adds 25
+  keys above the basic ones (beside them in landscape, five columns whose labels size with the keys; `sciKeysHtml`, `.keypad.sci`). Functions apply to the value
   just typed / the result / the bracket just closed (`sciKey`, `lastValueStart`), else open `sin(`. x², xʸ, ʸ√x and x! take the whole value, so a negative one or a power gets brackets: (−3)², (9²)². 2nd swaps keys
   for inverses; Deg/Rad is `angleUnit` (`uc-angle`). The engine (numbers.js: `evalExpr`, `ratPow`, `sciFunction`)
   stays exact where the answer is exact and rounds floats to 15 digits otherwise. Shown with superscripts and sin⁻¹
@@ -307,8 +307,9 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   invisible `<label class="key-tick">` over its face with a hidden switch inside (`addKeyTicks`, kept on re-drawn and
   re-labelled keys by a MutationObserver): the tap lands on the label, which toggles its switch (the tick), and the same
   click goes on to the keypad as the key press (the switch's own click is stopped). Apple doesn't document it; if it
-  stops, nothing breaks. No sounds (the owner said no). `selectstart` is blocked outside fields: a fast double tap on iOS
-  otherwise starts selecting a key's label and shows the magnifier bubble.
+  stops, nothing breaks. No sounds (the owner said no). `selectstart` is blocked outside fields you can type in (`SELECTABLE`): a fast double tap or a long press on iOS
+  otherwise starts a selection and shows the magnifier bubble. The key-tick switches and read-only fields (phones) are
+  inputs too, so they are excluded in both the handler and the CSS (`user-select:none`); `no_magnifier` tests it.
 - **± and holding keys:** holding ⌫, C or AC clears everything while still held (`HOLD_KEYS`, `clearEverything`; C turns into AC
   while still held and big, like the iPhone's calculator; in the tools C stays C, AC is its own key; in Graph every function), holding − flips the sign (`negate`, Units: `unitKeyInput('negate')`);
   F9 does ± on a keyboard. A tap on − is always minus. A minus made with ± is stored as `−` (U+2212), one typed with
@@ -334,7 +335,7 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   (aria-live), as `refuseLimit` does. The Tips link's icon is a drawn lightbulb (the owner didn't want a ?).
 - **The working (?)** (explain.js): a tool's `how` is `{formula, steps:[{title, text, line?, bits?}], result, legend?, rule?}`, drawn by
   `howHtml`. The Calculator's comes from `explanationForExpression`, which recomputes every step with the same exact maths and
-  returns null (no ?) rather than working that doesn't end in the result on screen; a rounded number in it ends in …
+  returns null (no ?) rather than working that doesn't end in the result on screen, and with no steps (25 − 25i alone) ? is hidden; a rounded number in it ends in …
   (`ratShown`). Worked-out numbers keep the plain - like results; powers are superscripts (`supText`); trig steps say
   degrees or radians. Units/Currency compute theirs when ? is pressed (`unitsHow`, the `#unitHow` button in their toolbar).
   Arrows shown in text get U+FE0E (→\uFE0E), or iOS may draw them as emoji. On phones the dialog may use the whole height.
@@ -349,9 +350,10 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
 - **Memory** (memory.js; the owner asked for it after first declining): one exact number (`memory`, saved in `uc-memory`). The number
   on screen (`memScreenValue`) is the result, else the number being typed, else what is typed so far. MR types the memory as a
   number of up to 15 significant digits (very large/small ones as `(1.2×10^20)`); after any memory key the next digit starts
-  a new number (`memFresh`). The row is `#memRow`, outside `#keypad` so the keys keep the same size in every tab: upright
-  between the display and the keys, sideways under the display in the copy button's place (`has-mem`). The M chip sits in
-  `#sciBar` beside f(x). Keyboard: Ctrl+M MS, Ctrl+P M+, Ctrl+Q M−, Ctrl+R MR, Ctrl+L MC (`memKeydown`).
+  a new number (`memFresh`). The keys are the first row of the scientific keys (`memKeysHtml`, `.mem-key`, `data-mem`;
+  Scientific only, like the iPhone): the basic keypad has none, sideways they are the first column. The M chip
+  sits in `#sciBar` beside f(x) whenever something is kept, and the keyboard works either way: Ctrl+M MS, Ctrl+P M+,
+  Ctrl+Q M−, Ctrl+R MR, Ctrl+L MC (`memKeydown`).
 - **Copying:** tapping a finished result copies it (calculator and tools), so the copy button can be hidden
   on short screens.
 - **Offline:** `public/sw.js` (registered at the end of main.js) keeps a copy of the app in the cache `uc-app`. The page
