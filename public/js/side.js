@@ -28,7 +28,7 @@ function renderSide(){
  // left: History
  const hTitle=t('history')+(tab==='calc'?'':' · '+modeText(tab)),hList=historyRowsHtml(tab);
  if(sideLast.hTitle!==hTitle){$('#sideHistoryTitle').textContent=hTitle;sideLast.hTitle=hTitle}
- if(sideLast.hList!==hList){$('#sideHistoryList').innerHTML=hList;sideLast.hList=hList}
+ if(sideLast.hList!==hList){$('#sideHistoryList').innerHTML=hList;sideLast.hList=hList;syncHistoryButtons(tab)}
  // right: the working, or Graph's key points; a tool's chart under it
  let title=t('how'),html;
  if(mode==='graph'){title=gText('pointsTitle');html=graphPointsHtml()}

@@ -148,6 +148,7 @@ html.landscape .tool-grid.kind-grid .tool-field span{white-space:nowrap;overflow
 .section-heading h2{font-size:17px;margin:0}
 .history-clear-wrap{display:flex;align-items:center;justify-content:flex-end;min-height:32px}
 .text-button{background:none;border:0;color:var(--muted);cursor:pointer;padding:7px 4px}
+.text-button:disabled,.history-chart-toggle:disabled{opacity:.35;cursor:default}
 .history-confirm{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text)}
 .danger-inline{border:0;border-radius:9px;background:var(--danger);color:#fff;font-weight:750;padding:7px 10px;cursor:pointer}
 .history-list{display:flex;flex-direction:column;flex:1 1 auto;margin-top:9px;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none}

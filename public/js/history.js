@@ -4,7 +4,7 @@ function saveHistory(item){const list=historyItems();const stored={...item,shown
 function renderHistory(){
  const tab=currentTab(),calc=tab==='calc';
  $('#historyTitle').textContent=t('history')+(calc?'':' · '+modeText(tab));
- syncHistoryChart(tab);
+ syncHistoryChart(tab);syncHistoryButtons(tab);
  $('#historyList').innerHTML=historyRowsHtml(tab);
  if(calc)historyChartRefresh();
  refreshSide();
@@ -13,6 +13,14 @@ function renderHistory(){
 function syncHistoryChart(tab=currentTab()){
  const calc=tab==='calc',b=$('#historyChartButton');b?.classList.toggle('hidden',!calc);
  if(!calc){$('#historyChartWrap')?.classList.add('hidden');b?.classList.remove('active');b?.setAttribute('aria-pressed','false')}
+}
+// Nothing to clear: Clear all is dimmed (and a pending "Delete all?" goes); fewer than 2 calculations: the chart button too
+function syncHistoryButtons(tab=currentTab()){
+ const calc=tab==='calc',n=calc?historyItems().length:modeHistory(tab).length,clear=$('#clearHistory'),chart=$('#historyChartButton');
+ if(clear)clear.disabled=!n;
+ if(!n&&historyClearConfirm)clearHistoryConfirm();
+ if(chart){const few=calc&&historyChartData().length<2;chart.disabled=few;
+  if(few&&!$('#historyChartWrap')?.classList.contains('hidden'))toggleHistoryChart()}
 }
 // The History list as HTML, for the sheet and for the panel beside the app on big screens (side.js)
 function historyRowsHtml(tab=currentTab()){

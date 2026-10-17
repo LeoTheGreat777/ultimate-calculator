@@ -1375,6 +1375,8 @@ async def history_per_mode(browser, url):
     await p.wait_for_timeout(150)
     got = await p.evaluate("[!!document.querySelector('#historyList .empty'),historyItems().length,modeHistory('fuel').length]")
     check(L + 'Delete all in VAT empties only VAT', got == [True, 1, 1], got)
+    st = await p.evaluate("[clearHistory.disabled,(closeHistory(),switchMode('calc'),openHistory(),clearHistory.disabled),historyChartButton.disabled]")
+    check(L + 'nothing to clear: Clear all is dimmed; one calculation: no chart', st == [True, False, True], st)
     check(L + 'no JavaScript errors', not p.errors, p.errors)
     await p.context.close()
 
@@ -1802,6 +1804,11 @@ async def side_panels(browser, url):
     check(L + 'the working and the History update by themselves', st == [['Multiply first', 'Add'], '33'], st)
     st = await p.evaluate("(()=>{const v=s=>{const e=document.querySelector(s);return !!e&&getComputedStyle(e).display!=='none'&&e.getBoundingClientRect().width>0};return [v('#historyButton'),v('#howButton'),v('#sideHistoryHead #clearHistory'),v('#sideHistoryHead #historyChartButton')]})()")
     check(L + 'no History or ? button beside the panels; Clear all and the chart are in the History panel', st == [False, False, True, True], st)
+    check(L + 'one calculation: the History chart button is dimmed', await p.evaluate("historyChartButton.disabled"))
+    for k in ['4', '0', '-', '7']:
+        await p.keyboard.type(k)
+    await p.keyboard.press('Enter')
+    await p.wait_for_timeout(100)
     await p.click('#historyChartButton')
     await p.wait_for_timeout(200)
     st = await p.evaluate("[!!document.querySelector('#sideHistory #historyChartWrap:not(.hidden)'),document.querySelector('#historyChart').getBoundingClientRect().width>100]")
@@ -1830,6 +1837,7 @@ async def side_panels(browser, url):
     await p.wait_for_timeout(100)
     await p.click('#historyConfirmYes')
     await p.wait_for_timeout(150)
+    check(L + 'nothing left: Clear all and the chart button are dimmed', await p.evaluate("[clearHistory.disabled,historyChartButton.disabled]") == [True, True])
     check(L + 'Delete all in the History panel', await p.evaluate("[document.querySelectorAll('#sideHistoryList .history-item').length,store.get('uc-history')]") == [0, None], await p.evaluate("[document.querySelectorAll('#sideHistoryList .history-item').length,store.get('uc-history')]"))
     for k in ['2', '+', '2']:
         await p.keyboard.type(k)
