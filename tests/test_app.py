@@ -1815,7 +1815,7 @@ async def side_panels(browser, url):
     await p.wait_for_timeout(900)
     await p.evaluate("switchMode('calc')")
     await p.wait_for_timeout(100)
-    check(L + 'a language switch reaches the panels', await p.evaluate("[sideHistoryTitle.textContent,sideWorkTitle.textContent]") == ['Ιστορικό', 'Πώς βγήκε'], await p.evaluate("[sideHistoryTitle.textContent,sideWorkTitle.textContent]"))
+    check(L + 'a language switch reaches the panels', await p.evaluate("[sideHistoryTitle.textContent,sideWorkTitle.textContent]") == ['Ιστορικό', 'Πώς υπολογίστηκε;'], await p.evaluate("[sideHistoryTitle.textContent,sideWorkTitle.textContent]"))
     await p.set_viewport_size({'width': 1100, 'height': 800})
     await p.wait_for_timeout(250)
     check(L + 'no room, no panels', await p.evaluate("[document.documentElement.classList.contains('side-panels'),getComputedStyle(sideWork).display]") == [False, 'none'])

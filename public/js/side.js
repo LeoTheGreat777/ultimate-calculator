@@ -3,9 +3,9 @@
 // in Graph its key points, and in VAT, Fuel, Energy and Interest the chart under it. They show when there is room for
 // a 260–300px panel on each side of the card (html.side-panels), and sit level with it (--side-*). Phones never get them.
 const SIDE_W=300,SIDE_MIN_W=260,SIDE_GAP=20,SIDE_MIN_H=600;
-const sText=k=>({el:{work:'Πώς βγήκε',calc:'Πάτα = και η λύση φαίνεται εδώ, βήμα βήμα.',tool:'Συμπλήρωσε τα πεδία και η λύση φαίνεται εδώ.',
+const sText=k=>({el:{calc:'Πάτα = και η λύση φαίνεται εδώ, βήμα βήμα.',tool:'Συμπλήρωσε τα πεδία και η λύση φαίνεται εδώ.',
   units:'Γράψε μια τιμή και η μετατροπή φαίνεται εδώ.'},
- en:{work:'How it was worked out',calc:'Press = and the working shows here, step by step.',tool:'Fill in the fields and the working shows here.',
+ en:{calc:'Press = and the working shows here, step by step.',tool:'Fill in the fields and the working shows here.',
   units:'Type a value and how it converts shows here.'}}[lang==='el'?'el':'en'][k]);
 let sideRaf=0,sideLast={};
 // called whenever something on screen changes; draws once per frame at most. force: draw again even if unchanged (theme)
@@ -29,7 +29,7 @@ function renderSide(){
  if(sideLast.hTitle!==hTitle){$('#sideHistoryTitle').textContent=hTitle;sideLast.hTitle=hTitle}
  if(sideLast.hList!==hList){$('#sideHistoryList').innerHTML=hList;sideLast.hList=hList}
  // right: the working, or Graph's key points; a tool's chart under it
- let title=sText('work'),html;
+ let title=t('how'),html;
  if(mode==='graph'){title=gText('pointsTitle');html=graphPointsHtml()}
  else{const d=mode==='units'?unitsHow():howData;html=d?howHtml(d):'<p class="side-empty">'+esc(sText(mode==='calc'?'calc':mode==='units'?'units':'tool'))+'</p>'}
  if(sideLast.wTitle!==title){$('#sideWorkTitle').textContent=title;sideLast.wTitle=title}

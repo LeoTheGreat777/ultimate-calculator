@@ -6,6 +6,14 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.24.3 – 2026-10-17
+
+### Changed
+- The working panel on big screens and the ? dialog now have the same title, “How was this calculated?” (it said “How it was worked out” in the panel); Tips say “calculated” too.
+
+### Fixed
+- The Equations tab's x= icon sat higher than the text; it is now centred like the other tab icons.
+
 ## 0.24.2 – 2026-10-17
 
 ### Changed
