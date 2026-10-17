@@ -291,7 +291,7 @@ async def desktop(browser, url, lang, theme):
         await p.keyboard.press('Tab')
     st = [await p.evaluate(R), await p.evaluate(X)]
     check(L + 'Interest: 100 a month at 3% for 10 years', st == ['13.974,14 €', t('Of which interest: 1.974,14 €', 'Από αυτά τόκοι: 1.974,14 €', lang)], st)
-    await p.click('#chartButton')
+    await p.evaluate('chartButton.click()')  # hidden beside the side panels; the phone tests press it
     await p.wait_for_timeout(200)
     check(L + 'Interest: the chart opens', await p.evaluate("!howModal.classList.contains('hidden')&&toolChart.width>0"))
     await p.keyboard.press('Escape')
@@ -1301,7 +1301,7 @@ async def history_per_mode(browser, url):
     """History per mode: each tool, Units, Currency and Graph keep their own results (saved on leaving, AC/Esc, copy, kind
     change, =), shown in their language; tapping one brings its numbers back; the Calculator's History is unchanged."""
     L = '[history per mode] '
-    p = await new_page(browser, url, 'en', 'dark')
+    p = await new_page(browser, url, 'en', 'dark', size=(1100, 860))  # the sheet: no side panels at this width
     fill = lambda fid, v: p.evaluate(f"(()=>{{const e=document.getElementById('{fid}');e.value='{v}';e.dispatchEvent(new Event('input',{{bubbles:true}}))}})()")
     rows = "[...document.querySelectorAll('#historyList .history-item')].map(r=>r.querySelector('.history-expression').textContent+' | '+r.querySelector('.history-result').textContent)"
     await calc(p, '6*7')
@@ -1749,7 +1749,8 @@ async def explanations(browser, url):
     await p.evaluate("for(const [id,v] of [['unitFrom','°F'],['unitTo','K']]){const s=document.getElementById(id);s.value=v;s.dispatchEvent(new Event('change',{bubbles:true}))}")
     for k in '212':
         await p.click(f'#keypad [data-value="{k}"]')
-    await p.click('#unitHow')
+    await p.wait_for_timeout(150)
+    await p.evaluate('unitHow.click()')  # hidden beside the side panels
     st = await p.evaluate("[document.querySelector('#howModal').classList.contains('hidden'),[...document.querySelectorAll('#howContent .how-line-body div')].map(d=>d.textContent),document.querySelector('.how-result strong').textContent]")
     check(L + 'Units: °F → K through °C', not st[0] and st[1] == ['(212 − 32) ÷ 1,8 = 100 °C', '100 + 273,15 = 373,15 K'] and st[2] == '373,15 K', st)
     await p.evaluate("closeHow();switchMode('currency')")
@@ -1799,6 +1800,13 @@ async def side_panels(browser, url):
     await p.wait_for_timeout(100)
     st = await p.evaluate("[[...document.querySelectorAll('#sideWorkBody .how-line strong')].map(s=>s.textContent),document.querySelector('#sideHistoryList .history-result').textContent]")
     check(L + 'the working and the History update by themselves', st == [['Multiply first', 'Add'], '33'], st)
+    st = await p.evaluate("(()=>{const v=s=>{const e=document.querySelector(s);return !!e&&getComputedStyle(e).display!=='none'&&e.getBoundingClientRect().width>0};return [v('#historyButton'),v('#howButton'),v('#sideHistoryHead #clearHistory'),v('#sideHistoryHead #historyChartButton')]})()")
+    check(L + 'no History or ? button beside the panels; Clear all and the chart are in the History panel', st == [False, False, True, True], st)
+    await p.click('#historyChartButton')
+    await p.wait_for_timeout(200)
+    st = await p.evaluate("[!!document.querySelector('#sideHistory #historyChartWrap:not(.hidden)'),document.querySelector('#historyChart').getBoundingClientRect().width>100]")
+    check(L + 'the History chart opens in the panel', st == [True, True], st)
+    await p.click('#historyChartButton')
     await p.keyboard.press('Escape')
     await p.wait_for_timeout(100)
     await p.click('#sideHistoryList .history-main')
@@ -1808,6 +1816,8 @@ async def side_panels(browser, url):
     await p.wait_for_timeout(150)
     st = await p.evaluate("[sideHistoryTitle.textContent,document.querySelectorAll('#sideWorkBody .how-line').length,[...document.querySelectorAll('#sideChart .crow .cl')].map(x=>x.textContent)]")
     check(L + 'VAT: its own History, the working and the chart under it', st == ['History · VAT', 2, ['24%', '13%', '6%']], st)
+    st = await p.evaluate("['#chartButton','#historyChartButton','#howButton'].map(s=>{const e=document.querySelector(s);return !!e&&getComputedStyle(e).display!=='none'})")
+    check(L + 'VAT: no chart or ? button beside the panels, no History chart button', st == [False, False, False], st)
     await p.evaluate("switchMode('graph')")
     await p.wait_for_timeout(250)
     check(L + 'Graph: its key points', await p.evaluate("sideWorkTitle.textContent") == 'Key points' and await p.evaluate("document.querySelectorAll('#sideWorkBody .graph-point-line').length") >= 3)
@@ -1816,8 +1826,18 @@ async def side_panels(browser, url):
     await p.evaluate("switchMode('calc')")
     await p.wait_for_timeout(100)
     check(L + 'a language switch reaches the panels', await p.evaluate("[sideHistoryTitle.textContent,sideWorkTitle.textContent]") == ['Ιστορικό', 'Πώς υπολογίστηκε;'], await p.evaluate("[sideHistoryTitle.textContent,sideWorkTitle.textContent]"))
+    await p.click('#clearHistory')
+    await p.wait_for_timeout(100)
+    await p.click('#historyConfirmYes')
+    await p.wait_for_timeout(150)
+    check(L + 'Delete all in the History panel', await p.evaluate("[document.querySelectorAll('#sideHistoryList .history-item').length,store.get('uc-history')]") == [0, None], await p.evaluate("[document.querySelectorAll('#sideHistoryList .history-item').length,store.get('uc-history')]"))
+    for k in ['2', '+', '2']:
+        await p.keyboard.type(k)
+    await p.keyboard.press('Enter')
     await p.set_viewport_size({'width': 1100, 'height': 800})
     await p.wait_for_timeout(250)
+    st = await p.evaluate("[getComputedStyle(historyButton).display!=='none',getComputedStyle(howButton).display!=='none',!!document.querySelector('#historyPanel #historyClearWrap'),!!document.querySelector('#historyPanel #historyChartWrap')]")
+    check(L + 'no panels: the History and ? buttons are back, and the sheet has Clear all and the chart again', st == [True, True, True, True], st)
     check(L + 'no room, no panels', await p.evaluate("[document.documentElement.classList.contains('side-panels'),getComputedStyle(sideWork).display]") == [False, 'none'])
     await p.context.close()
     p = await new_page(browser, url, 'en', 'dark', phone=True)

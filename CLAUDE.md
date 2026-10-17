@@ -255,6 +255,10 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   `drawToolChart(box)`: the dialog's chart parts keep their ids, the panel's have classes only). They are `position:fixed`
   level with the card (`--side-l/r/top/h/w`). Anything that changes the screen calls `refreshSide()` (once per frame; the
   calculator's `render`, `renderToolDisplay`, `updateUnitsDisplay`, Graph's points, History, `fitLayout`, language, theme).
+  With the panels showing (the owner chose this), the History, ? and chart buttons are hidden (`html.side-panels #historyButton…`
+  in styles.css) and the History sheet's `#historyClearWrap` (chart button, Clear all) and `#historyChartWrap` move into the
+  History panel's header (`sideTools`, the same elements, back to the sheet when the panels go); `syncHistoryChart` hides the
+  chart outside the Calculator.
   In tests, scope selectors to the dialog or sheet (`#howContent …`, `#historyList …`): the panels have the same classes.
 - **Foldables:** `LANDSCAPE` (layout.js) also matches a touch screen at least 6:5 wide and at most 720px high (a foldable's inner
   screen held sideways, e.g. iPhone Duo ~924×693, Galaxy Fold, Pixel Fold); there the sideways keys may grow to 96px

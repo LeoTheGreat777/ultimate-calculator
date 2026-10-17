@@ -6,6 +6,13 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.24.4 – 2026-10-17
+
+### Changed
+- On big screens, where History and the working are shown beside the app, the History, ? and chart buttons are gone:
+  they only opened the same things again. History's chart and Clear all are now at the top of the History panel.
+  Phones and smaller windows keep the buttons.
+
 ## 0.24.3 – 2026-10-17
 
 ### Changed

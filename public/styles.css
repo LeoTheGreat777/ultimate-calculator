@@ -847,6 +847,13 @@ html.landscape .mode-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1f
 html.side-panels .side-panel{display:flex;flex-direction:column;position:fixed;top:var(--side-top);width:var(--side-w,300px);max-height:var(--side-h);background:var(--card);border:1px solid var(--border);border-radius:22px;padding:14px 14px 8px;z-index:4;box-shadow:0 18px 50px rgba(0,0,0,.18)}
 .side-left{left:var(--side-l)}.side-right{left:var(--side-r)}
 .side-title{margin:0 2px 4px;font-size:15px;font-weight:700}
+.side-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px 8px;margin-bottom:4px}
+.side-head .side-title{margin-bottom:0}
+.side-head .history-clear-wrap{margin-left:auto;min-height:30px}
+.side-head .history-close{display:none}
+.side-head .history-confirm{flex-wrap:wrap;justify-content:flex-end}
+.side-panel .history-chart{margin:4px 0 6px}
+html.side-panels #historyButton,html.side-panels #howButton,html.side-panels #unitHow,html.side-panels #chartButton{display:none!important}
 .side-panel .side-list{margin-top:4px;min-height:0;overflow-y:auto;scrollbar-width:thin}
 .side-panel .history-result{font-size:17px}
 .side-scroll{min-height:0;overflow-y:auto;scrollbar-width:thin;margin:0 -6px;padding:0 6px}

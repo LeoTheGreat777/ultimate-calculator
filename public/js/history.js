@@ -4,10 +4,15 @@ function saveHistory(item){const list=historyItems();const stored={...item,shown
 function renderHistory(){
  const tab=currentTab(),calc=tab==='calc';
  $('#historyTitle').textContent=t('history')+(calc?'':' · '+modeText(tab));
- $('#historyChartButton')?.classList.toggle('hidden',!calc);if(!calc)$('#historyChartWrap')?.classList.add('hidden');// the chart is the Calculator's
+ syncHistoryChart(tab);
  $('#historyList').innerHTML=historyRowsHtml(tab);
  if(calc)historyChartRefresh();
  refreshSide();
+}
+// The chart is the Calculator's: another mode hides its button and closes it (the sheet, and the panel on big screens)
+function syncHistoryChart(tab=currentTab()){
+ const calc=tab==='calc',b=$('#historyChartButton');b?.classList.toggle('hidden',!calc);
+ if(!calc){$('#historyChartWrap')?.classList.add('hidden');b?.classList.remove('active');b?.setAttribute('aria-pressed','false')}
 }
 // The History list as HTML, for the sheet and for the panel beside the app on big screens (side.js)
 function historyRowsHtml(tab=currentTab()){

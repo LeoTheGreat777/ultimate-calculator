@@ -20,10 +20,11 @@ function sideRoom(){
 }
 function renderSide(){
  const root=document.documentElement,room=sideRoom();
- root.classList.toggle('side-panels',!!room);if(!room){sideLast={};return}
+ root.classList.toggle('side-panels',!!room);sideTools(!!room);if(!room){sideLast={};return}
  root.style.setProperty('--side-l',room.left+'px');root.style.setProperty('--side-r',room.right+'px');
  root.style.setProperty('--side-top',room.top+'px');root.style.setProperty('--side-w',room.w+'px');root.style.setProperty('--side-h',room.h+'px');
  const tab=currentTab();
+ if(sideLast.tab!==tab){syncHistoryChart(tab);sideLast.tab=tab}
  // left: History
  const hTitle=t('history')+(tab==='calc'?'':' · '+modeText(tab)),hList=historyRowsHtml(tab);
  if(sideLast.hTitle!==hTitle){$('#sideHistoryTitle').textContent=hTitle;sideLast.hTitle=hTitle}
@@ -37,6 +38,20 @@ function renderSide(){
  const chart=TOOL_MODES.includes(mode)&&toolChartAvailable(),box=$('#sideChart');
  box.classList.toggle('hidden',!chart);
  if(chart){if(!box.querySelector('.tc-canvas'))box.innerHTML=toolChartHtml(false);drawToolChart(box)}else if(box.innerHTML)box.innerHTML='';
+}
+// With the panels showing, the History and ? buttons are hidden (styles.css): the panels show the same. The History sheet's
+// chart and Delete all move into the History panel's header, and go back to the sheet when the panels go (same elements,
+// so their ids and handlers stay). The sheet or the ? dialog left open when the panels appear is closed.
+let sideToolsIn=false;
+function sideTools(on){
+ if(on===sideToolsIn)return;sideToolsIn=on;
+ const wrap=$('#historyClearWrap'),chart=$('#historyChartWrap');if(!wrap||!chart)return;
+ if(on){
+  $('#sideHistoryHead').appendChild(wrap);$('#sideHistoryHead').after(chart);
+  if(!$('#historyPanel').classList.contains('hidden'))closeHistory();
+  const how=$('#howModal');if(!how.classList.contains('hidden')&&!how.classList.contains('help-open')&&!how.classList.contains('fn-open'))closeHow();
+ }else{$('#historyPanel .section-heading').appendChild(wrap);$('#historyPanel .section-heading').after(chart)}
+ historyChartRefresh();
 }
 function setupSide(){
  $('#sideHistoryList').addEventListener('click',historyClick);// the same as the sheet: bring one back, ×
