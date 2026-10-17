@@ -237,7 +237,7 @@ function howHtml(d){
   (d.rule?'<div class="how-rule">'+esc(d.rule)+'</div>':'')+
   (d.legend?'<div class="how-legend"><span><i class="nb"></i>'+esc(d.legend[0])+'</span><span><i class="hb"></i>'+esc(d.legend[1])+'</span></div>':'')+
   '<div class="how-steps">'+d.steps.map((s,i)=>{const text=typeof s==='string'?s:s.text;
-   return '<div class="how-line"><span>'+(i+1)+'</span><div class="how-line-body"><strong>'+esc(s.title||'')+'</strong>'+(text?'<div>'+esc(text)+'</div>':'')+
+   return '<div class="how-line"><span>'+(i+1)+'</span><div class="how-line-body"><strong>'+esc(s.title||'')+'</strong>'+(text?'<div'+(text.includes('\n')?' class="how-rows"':'')+'>'+esc(text)+'</div>':'')+
     (s.line?'<div class="how-now">'+mark(s.line)+'</div>':'')+'</div>'+(s.bits?bitsHtml(s.bits):'')+'</div>'}).join('')+'</div>'+
   '<div class="how-result"><span>'+(el?'Αποτέλεσμα':'Result')+'</span><strong'+(String(d.result).length>13?' class="long"':'')+'>'+esc(d.result)+'</strong></div></div>';
 }

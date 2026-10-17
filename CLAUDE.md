@@ -1,6 +1,6 @@
 # Ultimate Calculator – notes for Claude
 
-An all-in-one calculator web app: calculator (scientific, complex numbers, memory), graph, unit converter, currency converter, VAT, percent/discount/tip, interest (loan/savings), dates, fuel, energy, subnet (IPv4), numbers (GCD/LCM, prime factors), equations and statistics tools.
+An all-in-one calculator web app: calculator (scientific, complex numbers, memory), graph, unit converter, currency converter, VAT, percent/discount/tip, interest (loan/savings), dates, fuel, energy, subnet (IPv4), numbers (GCD/LCM, prime factors), equations, statistics and programmer (hex/binary) tools.
 Plain HTML/CSS/vanilla JS, no framework, no backend, and nothing to build while editing: `public/` runs as it is
 (the deploy minifies it, see Git and deploying). English and Greek; new users start
 in English and dark theme (people who used the app before keep Greek / their theme, see the script in the
@@ -62,6 +62,7 @@ Everything the app serves is in `public/` (the web root for both GitHub Pages an
 | `dates.js` | Dates: day numbers, date pickers, Orthodox Easter and Greek public holidays, working days, the details list, the Working days chip |
 | `numtools.js` | Numbers (GCD and LCM, prime factors with Miller–Rabin and Pollard's rho, divisors) and Equations (ax² + bx + c = 0, real or complex roots, exact √Δ; a 2×2 system by Cramer's rule): `numbersCalculate`, `equationCalculate` |
 | `stats.js` | Statistics: the list of numbers (`statList` in the tool's inputs, chips in one box with the field: `statAdd`, `statRemove`, `statTakeBack`, pasting several), `statsCalculate` (exact average, median, s and σ) |
+| `prog.js` | Programmer: one number in four fields (`PROG_BASES`: decimal, hex, binary, octal; `progInput` checks and groups a field, `progCalculate` fills the others), its A–F keypad, `progDimKeys` |
 | `net.js` | Subnet: IPv4 parsing (`parseIp`, `parsePrefix` takes /24 or a mask), `dottedKey`, the details grid, the Subnet calculations |
 | `layout.js` | `fitLayout` (fits every mode to the screen), long text (`fitDisplayText`, `refuseKey`), zoom on big screens |
 | `theme.js` | themes: the ready-made ones, own themes (`deriveTheme`), Match device (`themePair`), the theme menu and the own theme editor |

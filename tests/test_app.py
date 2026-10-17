@@ -675,13 +675,14 @@ async def phone(browser, url, lang, theme, size):
         await p.tap(f'.key[data-value="{key}"]')
     await p.tap('.key[data-action="equals"]')
     check(L + 'keypad works', await p.evaluate(R) == '8')
-    for m in ['calc', 'sci', 'units', 'currency', 'graph', 'vat', 'pct', 'tip', 'loan', 'savings', 'dates', 'fuel', 'energy', 'net', 'numbers', 'factors', 'equation', 'sys2', 'stats']:
+    for m in ['calc', 'sci', 'units', 'currency', 'graph', 'vat', 'pct', 'tip', 'loan', 'savings', 'dates', 'fuel', 'energy', 'net', 'prog', 'numbers', 'factors', 'equation', 'sys2', 'stats']:
         # 'sci' is the Calculator with the scientific keys on
         # 'tip' is Percent's tip, the kind with the most fields
         await p.evaluate("switchMode('calc');if(!sciMode)toggleSci()" if m == 'sci' else "switchMode('pct');setToolKind('pct','tip')" if m == 'tip'
                          else "switchMode('loan');setToolKind('loan','savings')" if m == 'savings'
                          else "switchMode('numbers');setToolKind('numbers','factors')" if m == 'factors'
                          else "switchMode('equation');setToolKind('equation','sys2')" if m == 'sys2'
+                         else "switchMode('prog');progHex.value='DEADBEEFCAFE';progHex.dispatchEvent(new Event('input',{bubbles:true}))" if m == 'prog'
                          else "switchMode('stats');for(const v of ['12','1234,75','-3','15,5','9']){statX.value=v;statX.dispatchEvent(new Event('input',{bubbles:true}));statAdd()}" if m == 'stats'
                          else "switchMode('net');setToolKind('net','subnet');for(const[k,v] of [['netIp','10.0.0.5'],['netPrefix','16']]){const i=document.getElementById(k);i.value=v;i.dispatchEvent(new Event('input',{bubbles:true}))}" if m == 'net' else f"switchMode('{m}')")
         await p.wait_for_timeout(200)
@@ -1178,6 +1179,7 @@ async def upright_small_phones(browser, url):
             'energy': [['energyP', '2000'], ['energyH', '3'], ['energyD', '30'], ['energyR', '0,15']], 'loan': [['loanAmount', '250000'], ['loanRate', '4'], ['loanYears', '30']],
             'net': [['netIp', '192.168.100.100'], ['netPrefix', '26']], 'dates': [['dateTo', '2027-03-15']],
             'numbers': [['numA', '123456789012'], ['numB', '987654321'], ['numC', '360'], ['numN', '600851475143']],
+            'prog': [['progHex', 'DEADBEEFCAFE']],
             'equation': [['eqA', '1'], ['eqB', '2'], ['eqC', '5'], ['sxA1', '2'], ['sxB1', '1'], ['sxC1', '5'], ['sxA2', '1'], ['sxB2', '-1'], ['sxC2', '1']]}
     for w, h in [(320, 568), (360, 640)]:
         for lang in ['en', 'el']:
@@ -1190,7 +1192,7 @@ async def upright_small_phones(browser, url):
             bad = []
             tabs = [('calc', None), ('units', None), ('currency', None), ('vat', None), ('pct', 'discount'), ('pct', 'tip'), ('loan', 'loan'),
                     ('loan', 'payoff'), ('loan', 'savings'), ('dates', 'between'), ('dates', 'add'), ('fuel', None), ('energy', None), ('net', 'subnet'),
-                    ('net', 'hosts'), ('numbers', 'gcd'), ('numbers', 'factors'), ('equation', 'quad'), ('equation', 'sys2'), ('stats', None)]
+                    ('net', 'hosts'), ('numbers', 'gcd'), ('numbers', 'factors'), ('equation', 'quad'), ('equation', 'sys2'), ('stats', None), ('prog', None)]
             if w >= 360:
                 tabs.append(('sci', None))
             for m, kind in tabs:
@@ -1225,6 +1227,7 @@ async def sideways_every_tab(browser, url):
             'energy': [['energyP', '2000'], ['energyH', '3'], ['energyD', '30'], ['energyR', '0,15']], 'loan': [['loanAmount', '250000'], ['loanRate', '4'], ['loanYears', '30']],
             'net': [['netIp', '192.168.100.100'], ['netPrefix', '26']], 'dates': [['dateTo', '2027-03-15']],
             'numbers': [['numA', '123456789012'], ['numB', '987654321'], ['numC', '360'], ['numN', '600851475143']],
+            'prog': [['progHex', 'DEADBEEFCAFE']],
             'equation': [['eqA', '1'], ['eqB', '2'], ['eqC', '5'], ['sxA1', '2'], ['sxB1', '1'], ['sxC1', '5'], ['sxA2', '1'], ['sxB2', '-1'], ['sxC2', '1']]}
     for w, h in [(667, 330), (814, 409)]:
         for lang in ['en', 'el']:
@@ -1239,7 +1242,7 @@ async def sideways_every_tab(browser, url):
             bad, keys = [], {}
             for m, kind in [('calc', None), ('units', None), ('currency', None), ('vat', None), ('pct', 'discount'), ('pct', 'tip'), ('loan', 'loan'),
                             ('loan', 'payoff'), ('loan', 'savings'), ('dates', 'between'), ('dates', 'add'), ('fuel', None), ('energy', None), ('net', 'subnet'),
-                            ('numbers', 'gcd'), ('numbers', 'factors'), ('equation', 'quad'), ('equation', 'sys2'), ('stats', None)]:
+                            ('numbers', 'gcd'), ('numbers', 'factors'), ('equation', 'quad'), ('equation', 'sys2'), ('stats', None), ('prog', None)]:
                 await p.evaluate(f"switchMode('{m}')")
                 if kind:
                     await p.evaluate(f"setToolKind('{m}','{kind}')")
@@ -1255,7 +1258,7 @@ async def sideways_every_tab(browser, url):
                   return {out:[...new Set(out)],k:k.length?Math.min(...k):null}})()""")
                 if st['out']:
                     bad.append([m + (':' + kind if kind else ''), st['out']])
-                if st['k']:
+                if st['k'] and m != 'prog':  # Programmer's keypad has 4 rows (A–F beside the digits), so its keys are taller
                     keys[m + (':' + kind if kind else '')] = st['k']
             check(L + 'every tab fits: no scrolling, nothing off screen, no cut label', not bad, bad)
             check(L + 'keys are the same size in every tab', len(set(keys.values())) == 1, keys)
@@ -1273,7 +1276,7 @@ async def all_modes(browser, url):
     await p.click('#modesButton')
     await p.wait_for_timeout(100)
     got = await p.evaluate("[!modesModal.classList.contains('hidden'),document.querySelectorAll('#modesList .mode-group').length,[...document.querySelectorAll('#modesList .mode-pick')].map(b=>b.dataset.mode),document.activeElement.id]")
-    check(L + 'the sheet has every mode in 3 groups, the search has the focus', got[0] and got[1] == 3 and sorted(got[2]) == sorted(['calc', 'units', 'currency', 'graph', 'vat', 'pct', 'loan', 'dates', 'fuel', 'energy', 'net', 'numbers', 'equation', 'stats']) and got[3] == 'modesSearch', got)
+    check(L + 'the sheet has every mode in 3 groups, the search has the focus', got[0] and got[1] == 3 and sorted(got[2]) == sorted(['calc', 'units', 'currency', 'graph', 'vat', 'pct', 'loan', 'dates', 'fuel', 'energy', 'net', 'prog', 'numbers', 'equation', 'stats']) and got[3] == 'modesSearch', got)
     for q, want in [('tip', ['pct']), ('loan', ['loan']), ('ip', ['net']), ('καυσ', ['fuel']), ('ΦΠΑ', ['vat']), ('zzz', [])]:
         await p.fill('#modesSearch', q)
         got = await p.evaluate("[...document.querySelectorAll('#modesList .mode-pick')].map(b=>b.dataset.mode)")
@@ -2248,11 +2251,62 @@ async def statistics(browser, url):
     await p.context.close()
 
 
+async def programmer(browser, url):
+    """Programmer: one number in decimal, hex, binary and octal; typed in any field (keypad, keyboard, paste), the others
+    follow; keys a base hasn't got are refused; up to 64 bits; the working, Greek, History, AC."""
+    L = '[programmer] '
+    p = await new_page(browser, url, 'en', 'dark')
+    put = """([id,v])=>{switchMode('prog');const e=document.getElementById(id);e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}));
+      return [progDec.value,progHex.value,progBin.value,progOct.value,document.querySelector('#result').textContent,document.querySelector('#expression').textContent]}"""
+    got = await p.evaluate(put, ['progDec', '255'])
+    check(L + '255 in every base', got == ['255', 'FF', '1111 1111', '377', 'FF', 'Hexadecimal · 8 bits'], got)
+    st = await p.evaluate("howData.steps.map(s=>s.text).join(' | ')")
+    check(L + 'the working divides by the base', '255 ÷ 2 = 127, remainder 1' in st and '→ 1111 1111₂' in st, st)
+    got = await p.evaluate(put, ['progBin', '1010'])
+    check(L + 'typed in binary', got == ['10', 'A', '1010', '12', '10', 'Decimal · 4 bits'], got)
+    st = await p.evaluate("howData.steps[0].text")
+    check(L + 'the working: each digit times its place', st == '1 × 2³ + 0 × 2² + 1 × 2¹ + 0 × 2⁰', st)
+    got = await p.evaluate(put, ['progHex', '0x1f'])
+    check(L + 'a pasted 0x1f', got[:2] == ['31', '1F'], got)
+    await p.click('.tool-key[data-action="clear-all"]')
+    check(L + 'AC empties every field', await p.evaluate("[progDec.value,progHex.value,progBin.value,progOct.value,document.querySelector('#result').textContent]") == ['', '', '', '', '0'])
+    await p.click('#progHex')
+    for k in ['A', 'B', '1']:
+        await p.click(f'#keypad [data-value="{k}"]')
+    check(L + 'hex on the keypad', await p.evaluate("[progHex.value,progDec.value]") == ['AB1', '2.737'], await p.evaluate("[progHex.value,progDec.value]"))
+    await p.click('#progBin')
+    st = await p.evaluate("[...document.querySelectorAll('#keypad .key-off')].map(b=>b.dataset.value).join('')")
+    check(L + 'binary: only 0 and 1 are lit', st == '23456789ABCDEF' or sorted(st) == sorted('23456789ABCDEF'), st)
+    before = await p.evaluate("progBin.value")
+    await p.click('#keypad [data-value="7"]')
+    await p.click('#keypad [data-action="backspace"]')
+    check(L + 'a digit binary hasn\'t got is refused; ⌫ removes the last bit', await p.evaluate("[progBin.value,progDec.value]") == ['101 0101 1000', '1.368'], [before, await p.evaluate("[progBin.value,progDec.value]")])
+    await p.evaluate(put, ['progHex', 'FFFFFFFFFFFFFFFF'])
+    await p.click('#progHex')
+    await p.click('#keypad [data-value="F"]')
+    st = await p.evaluate("[progHex.value,progDec.value]")
+    check(L + '64 bits at most', st == ['FFFF FFFF FFFF FFFF', '18.446.744.073.709.551.615'], st)
+    await p.click('.tool-key[data-action="clear-all"]')
+    await p.focus('#progHex')
+    await p.keyboard.type('c0fg')
+    check(L + 'typed on a keyboard: a-f become A-F, g is refused', await p.evaluate("[progHex.value,progDec.value]") == ['C0F', '3.087'], await p.evaluate("[progHex.value,progDec.value]"))
+    await p.evaluate("setLanguage('el')")
+    await p.wait_for_timeout(300)
+    st = await p.evaluate("[document.querySelector('#expression').textContent,document.querySelector('#progBin').closest('.tool-field').querySelector('span').textContent,progHex.value]")
+    check(L + 'Greek after a live switch', st == ['Δεκαδικό · 12 bit', 'Δυαδικό', 'C0F'], st)
+    await p.evaluate("setLanguage('en');switchMode('calc')")
+    await p.evaluate("restoreModeEntry((JSON.parse(localStorage.getItem('uc-history-modes')).prog)[0])")
+    st = await p.evaluate("[mode,progHex.value,progDec.value,document.querySelector('#result').textContent]")
+    check(L + 'History brings it back', st == ['prog', 'C0F', '3.087', '3.087'], st)
+    check(L + 'no JavaScript errors', not p.errors, p.errors)
+    await p.context.close()
+
+
 async def foldables(browser, url):
     """Foldables: an inner screen held sideways (iPhone Duo, Galaxy Fold: wide, not phone-short) gets the sideways layout
     with big keys and nothing scrolls; half open like a book (two screen segments), the fold falls between the display
     and the keypad."""
-    tabs = ['calc', 'units', 'currency', 'graph', 'vat', 'pct', 'loan', 'dates', 'fuel', 'energy', 'net', 'numbers', 'equation', 'stats']
+    tabs = ['calc', 'units', 'currency', 'graph', 'vat', 'pct', 'loan', 'dates', 'fuel', 'energy', 'net', 'prog', 'numbers', 'equation', 'stats']
     for size in [(924, 693), (832, 620)]:
         L = f'[foldables {size[0]}x{size[1]}] '
         p = await new_page(browser, url, 'el', 'dark', phone=True, size=size)
@@ -2297,7 +2351,7 @@ async def big_screen_dialogs(browser, url):
         L = f'[big screen dialogs {lang}] '
         p = await new_page(browser, url, lang, 'dark', size=(1920, 1080))
         bad = []
-        for m in ['calc', 'units', 'currency', 'graph', 'vat', 'pct', 'loan', 'dates', 'fuel', 'energy', 'net', 'numbers', 'equation', 'stats']:
+        for m in ['calc', 'units', 'currency', 'graph', 'vat', 'pct', 'loan', 'dates', 'fuel', 'energy', 'net', 'prog', 'numbers', 'equation', 'stats']:
             await p.evaluate(f"closeHow();switchMode('{m}');showHelp()")
             if await p.evaluate(scrolls):
                 bad.append(m)
@@ -2387,6 +2441,7 @@ async def main():
         await complex_numbers(browser, url)
         await numbers_equations(browser, url)
         await statistics(browser, url)
+        await programmer(browser, url)
         await offline(browser)
         await preview_site(browser)
         await currency_offline(browser, url)

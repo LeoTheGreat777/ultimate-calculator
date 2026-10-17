@@ -1,6 +1,6 @@
 # Tools, Units and Currency
 
-Part of the notes in CLAUDE.md (read that first). Covers tools.js, units.js, currency.js, dates.js, numtools.js, stats.js, net.js, history.js, the tool charts in charts.js.
+Part of the notes in CLAUDE.md (read that first). Covers tools.js, units.js, currency.js, dates.js, numtools.js, stats.js, prog.js, net.js, history.js, the tool charts in charts.js.
 
 - **Tool modes** are `TOOL_MODES` (core.js): use it rather than listing them. Defaults (VAT rate 24, Subnet /24, Dates today)
   are `TOOL_DEFAULTS`, filled in on entering the mode and after AC. Percent (discount, change, tip), Interest (`loan`:
@@ -44,6 +44,16 @@ Part of the notes in CLAUDE.md (read that first). Covers tools.js, units.js, cur
   to the roots: average (the result), median, s (÷ n − 1, '–' for one number) and σ (÷ n), min, max, sum in
   `#statDetails` (Subnet's `.net-details` look; `fit-no-details` hides it on a very short sideways screen); the working
   adds variance, range and mode.
+- **Programmer** (prog.js, mode `prog`, Greek name "Δυαδικό": "Προγραμματιστής" didn't fit the tiles and tabs):
+  four fields, `progDec` `progHex` `progBin` `progOct` (FIELD_TYPE 'base'), one whole number 0 … 2⁶⁴ − 1. Typing in one
+  (keypad, keyboard, paste; `progInput` runs from the input handler: digits of its base only, a pasted 0x/0b/0o dropped,
+  grouped again with the cursor kept: decimal 1.234, hex/binary in fours, octal in threes) makes it `progSource` and
+  `progCalculate` fills the others. Past 64 bits is refused with "Up to 64 bits". The display shows hex while decimal is
+  typed, decimal otherwise, and the bits. Its keypad (`progKeypadHtml`, `.prog-keypad`, 5 × 4): A–F on the left, the
+  digits on the right, ⌫ AC under the letters, no C (it would read as the hex digit); keys a base hasn't got are dimmed
+  (`progDimKeys`). Having 4 rows, its keys are taller sideways than other tabs' (the sideways test leaves it out, like Graph);
+  on a very short sideways screen (`fit-tight`) the four fields share one row with their short labels DEC HEX BIN OCT. The working: place values to decimal; repeated division for the other bases (rows joined with \n:
+  explain.js gives such text `.how-rows`, white-space: pre-line).
 - **Switches** (VAT add/remove, the kinds of Percent, Interest and Dates) are one generic segmented control: `TOGGLES`, `toggleHtml`,
   `renderToggles`, `setupToggleSlide` (tap, drag, swipe, ← →), `.seg-toggle` in styles.css (`--n` options, `--i` chosen).
 - **Changing mode clears the mode you leave** (`resetModeInput`, called by `switchMode`): numbers typed and results

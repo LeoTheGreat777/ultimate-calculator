@@ -36,7 +36,7 @@ Part of the notes in CLAUDE.md (read that first). Covers layout.js, side.js, mod
   a group in `MODE_GROUPS` and words in `MODE_WORDS`. On phones the search isn't focused (no keyboard popping up); long
   names shrink a little (`fitModeNames`), never "…".
 - **Modes are tabs:** a strip of tabs at the top of the card (`MODE_LABELS`, `renderModeTabs`, `switchMode`), one tap
-  each, scrolling sideways when they don't fit; Alt+1…9 on a keyboard (Energy, Subnet, Numbers, Equations and Statistics, the last five, have none). When they don't all fit, a slim bar under them
+  each, scrolling sideways when they don't fit; Alt+1…9 on a keyboard (Energy, Subnet, Programmer, Numbers, Equations and Statistics, the last six, have none). When they don't all fit, a slim bar under them
   (`.tabs-scrollbar`, `syncTabEdges`, `flashTabsBar`) shows while they move and briefly on start; it can be dragged
   or pressed (`setupTabsBar`), spans the whole strip; with a mouse it shows while the mouse is over the tabs or its strip and
   fades out shortly after (the tabs can be mouse-dragged too). Phones keep their overscroll bounce; past an end (negative/over-max `scrollLeft`, or `tabsPull` measured from

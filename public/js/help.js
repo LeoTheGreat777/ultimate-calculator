@@ -88,6 +88,10 @@ const HELP={
   ['Δείχνει τον μέσο όρο, τη διάμεσο, την τυπική απόκλιση, το ελάχιστο, το μέγιστο και το άθροισμα. Το ? δείχνει και τη διακύμανση, το εύρος και την επικρατούσα τιμή.','It shows the average, median, standard deviation, smallest, largest and sum. ? also shows the variance, range and mode.'],
   ['Απόκλιση σ: όταν οι αριθμοί είναι όλος ο πληθυσμός (όπως στο σχολείο, διαίρεση με ν). Απόκλιση s: όταν είναι δείγμα (διαίρεση με ν − 1, όπως το STDEV του Excel).','Std dev σ: when the numbers are the whole population (divided by n). Std dev s: when they are a sample (divided by n − 1, like Excel’s STDEV).'],
   ['Σε υπολογιστή μπορείς να επικολλήσεις πολλούς αριθμούς μαζί, π.χ. μια στήλη από λογιστικό φύλλο.','On a computer you can paste many numbers at once, e.g. a column from a spreadsheet.']]},
+ prog:{tips:[
+  ['Ένας ακέραιος σε δεκαδικό, δεκαεξαδικό, δυαδικό και οκταδικό μαζί. Γράψε σε όποιο πεδίο θες· τα άλλα αλλάζουν μόνα τους.','A whole number in decimal, hexadecimal, binary and octal at once. Type in any field; the others follow.'],
+  ['Η οθόνη δείχνει τον αριθμό σε δεκαεξαδικό όταν γράφεις δεκαδικό, αλλιώς σε δεκαδικό, και πόσα bit χρειάζεται. Τα πλήκτρα που δεν έχει η βάση του πεδίου είναι αχνά.','The display shows the number in hexadecimal while you type decimal, otherwise in decimal, and how many bits it needs. Keys the field’s base hasn’t got are dimmed.'],
+  ['Από 0 έως 64 bit (18.446.744.073.709.551.615). Το ? δείχνει τη μετατροπή βήμα βήμα: διαιρέσεις με τη βάση, ή κάθε ψηφίο επί τη θέση του.','From 0 up to 64 bits (18.446.744.073.709.551.615). ? shows the conversion step by step: dividing by the base, or each digit times its place.']]},
  energy:{tips:[
   ['Την ισχύ σε W τη γράφει το ταμπελάκι ή το κουτί της συσκευής. Η τιμή ανά kWh είναι στον λογαριασμό του ρεύματος.','The power in W is on the device’s label or box. The price per kWh is on your electricity bill.'],
   ['Βάλε 30 ημέρες για το κόστος ενός μήνα ή 365 για έναν χρόνο.','Use 30 days for a month’s cost, or 365 for a year.'],
@@ -96,6 +100,7 @@ const HELP={
 };
 HELP.currency.keys=HELP.units.keys;
 const HELP_TOOL_KEYS=[[['Ctrl','K'],'Όλες οι λειτουργίες','All modes'],[['Tab'],'Επόμενο πεδίο','Next field'],[['Shift','Tab'],'Προηγούμενο πεδίο','Previous field'],[['0–9'],'Αριθμοί στο πεδίο','Type in the field'],[[',','.'],'Υποδιαστολή','Decimal point'],[['Backspace'],'Σβήνει την επιλογή ή το ψηφίο πριν τον κέρσορα','Delete the selection, or the digit before the cursor'],[['−'],'Αλλάζει το πρόσημο','Change the sign'],[['Esc'],'Καθαρίζει τα πεδία (AC)','Clear the fields (AC)'],[['Alt','1–9'],'Αλλαγή λειτουργίας','Switch mode'],[['?'],'Αυτές οι συμβουλές','These tips']];
+HELP.prog.keys=[[['A–F'],'Ψηφία του δεκαεξαδικού','Hexadecimal digits'],...HELP_TOOL_KEYS.filter(k=>k[0][0]!==','&&k[0][0]!=='−')];
 HELP.stats.keys=[[['Enter'],'Προσθήκη στη λίστα','Add to the list'],...HELP_TOOL_KEYS];
 const hasKeyboard=()=>matchMedia('(hover:hover) and (pointer:fine)').matches;
 function syncHelpButton(){const l=$('#helpLabel');if(l)l.textContent=t('tips')}

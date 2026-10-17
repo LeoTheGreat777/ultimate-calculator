@@ -911,3 +911,16 @@ html.landscape .eq-form{margin:4px 0 0;font-size:13px}
 .tool-keypad.stat-keypad .stat-add{grid-column:4;grid-row:2 / span 4;background:var(--accent);color:var(--on-accent);font-size:16px;font-weight:750;padding:0 4px;white-space:nowrap;overflow:hidden}
 body.fit .calculator-card .tool-keypad.stat-keypad button.stat-add,.calculator-card.mobile-tool .tool-keypad.stat-keypad button.stat-add{height:auto!important;min-height:0!important;align-self:stretch}
 @media (hover:hover) and (pointer:fine){.tool-keypad.stat-keypad .stat-add:hover{background:var(--accent2)}}
+/* ---------- Programmer (prog.js): four fields (decimal and hex, then binary wider than octal); A–F beside a numeric keypad ---------- */
+.tool-grid.prog-grid{grid-template-columns:repeat(6,minmax(0,1fr))}
+.prog-grid .tool-field{grid-column:span 3}
+.prog-grid .tool-field:nth-child(3){grid-column:span 4}
+.prog-grid .tool-field:nth-child(4){grid-column:span 2}
+.prog-grid input{font-variant-numeric:tabular-nums}
+.tool-keypad.prog-keypad{grid-template-columns:repeat(5,minmax(0,1fr))}
+.tool-keypad.prog-keypad .prog-zero{grid-column:span 3}
+.tool-keypad.prog-keypad [data-value="A"],.tool-keypad.prog-keypad [data-value="B"],.tool-keypad.prog-keypad [data-value="C"],.tool-keypad.prog-keypad [data-value="D"],.tool-keypad.prog-keypad [data-value="E"],.tool-keypad.prog-keypad [data-value="F"]{color:var(--accent2);font-weight:550}
+.how-rows{white-space:pre-line;font-variant-numeric:tabular-nums}
+html.landscape .calculator-card.fit-tight .tool-grid.prog-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.5fr) minmax(0,.9fr)}/* a very short screen sideways: the four fields in one row */
+html.landscape .calculator-card.fit-tight .prog-grid .tool-field{grid-column:auto}
+html.landscape .calculator-card.fit-tight .prog-grid .tool-field span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

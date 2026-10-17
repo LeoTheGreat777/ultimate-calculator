@@ -14,6 +14,7 @@ $('#keypad').addEventListener('click',e=>{
    }
    if(a==='clear'||a==='backspace'||v==='.'||/^\d$/.test(v||'')){toolKeyInput(a==='clear'?'clear':a==='backspace'?'backspace':v);return}
    if(v==='-'){toolKeyInput('-');return}
+   if(mode==='prog'&&/^[A-F]$/.test(v||'')){toolKeyInput(v);return}// hex digits
    if(a==='stat-add'){statAdd();return}
    return;
  }
@@ -79,7 +80,7 @@ window.addEventListener('keydown',e=>{
    if(e.key==='Enter'||e.key==='='){e.preventDefault();window._equalsUnits?.();return}
  }
  // In the tools, typing without clicking a field first goes to the highlighted field (Backspace and the decimal key already do).
- if(TOOL_MODES.includes(mode)&&/^[0-9-]$/.test(e.key)&&!document.activeElement?.matches('input,select,textarea')&&$('#howModal').classList.contains('hidden')&&$('#historyPanel').classList.contains('hidden')){e.preventDefault();toolKeyInput(e.key);return}
+ if(TOOL_MODES.includes(mode)&&(/^[0-9-]$/.test(e.key)||mode==='prog'&&/^[a-fA-F]$/.test(e.key))&&!document.activeElement?.matches('input,select,textarea')&&$('#howModal').classList.contains('hidden')&&$('#historyPanel').classList.contains('hidden')){e.preventDefault();toolKeyInput(e.key);return}
  if(mode!=='calc')return;
  if(/^[0-9]$/.test(e.key))digit(e.key);
  else if(['+','-','*','/'].includes(e.key))operator(e.key==='*'?'×':e.key==='/'?'÷':e.key);

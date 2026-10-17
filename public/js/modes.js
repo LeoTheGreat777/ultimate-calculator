@@ -2,7 +2,7 @@
 // shows only the pinned modes (uc-pins; pin or unpin in the sheet), plus the mode on screen while it isn't pinned.
 // New modes go into MODE_LABELS (ui.js), a group here and MODE_WORDS (what the search finds them by).
 const DEFAULT_PINS=['calc','units','currency','vat'];
-const MODE_GROUPS=[['everyday',['calc','units','currency']],['money',['vat','pct','loan','fuel','energy']],['more',['graph','numbers','equation','stats','dates','net']]];
+const MODE_GROUPS=[['everyday',['calc','units','currency']],['money',['vat','pct','loan','fuel','energy']],['more',['graph','numbers','equation','stats','dates','net','prog']]];
 // Extra words the search finds a mode by (besides its name in both languages), so "tip", "loan" or "ip" lead somewhere.
 const MODE_WORDS={
  calc:'calculator math scientific sin cos αριθμομηχανη πραξεις επιστημονικη',
@@ -16,6 +16,7 @@ const MODE_WORDS={
  numbers:'numbers gcd lcm hcf prime factors factorization divisors αριθμοι μκδ εκπ πρωτοι παραγοντες παραγοντοποιηση διαιρετες',
  equation:'equation equations quadratic solve roots system linear εξισωσεις εξισωση δευτεροβαθμια λυση ριζες συστημα',
  stats:'statistics stats average mean median standard deviation variance sigma list data στατιστικα μεσος ορος διαμεσος τυπικη αποκλιση διακυμανση',
+ prog:'programmer hex hexadecimal binary octal decimal bits bytes base convert προγραμματιστης δεκαεξαδικο δυαδικο οκταδικο δεκαδικο βαση μετατροπη',
  fuel:'fuel petrol gas diesel car trip καυσιμα βενζινη πετρελαιο αυτοκινητο ταξιδι',
  energy:'energy electricity kwh power watt ενεργεια ρευμα καταναλωση ισχυς',
  net:'subnet ip network mask cidr ipv4 υποδικτυο δικτυο μασκα'

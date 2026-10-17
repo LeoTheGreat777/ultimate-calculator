@@ -38,7 +38,7 @@ function renderToolDisplay(){refreshSide();
  fitDisplayText($('#result'),24);
 }
 const FIELD_EXAMPLES={fuelD:'250',fuelC:'7,2',fuelP:'1,85',energyP:'100',energyH:'8',energyD:'30',energyR:'0,20',amount:'100',vatRate:'24%',pctPrice:'80',pctOff:'25%',pctFrom:'80',pctTo:'100',tipBill:'60',tipRate:'10%',tipPeople:'1',loanAmount:'10.000',payAmount:'10.000',payRate:'4%',payMonthly:'300',loanRate:'4%',loanYears:'5',saveStart:'1.000',saveMonthly:'100',saveRate:'3%',saveYears:'10',dateDays:'30',netIp:'192.168.1.10',netPrefix:'24',netHosts:'50',value:'10',
- numA:'48',numB:'18',numC:'',numN:'360',eqA:'1',eqB:'-3',eqC:'2',sxA1:'2',sxB1:'1',sxC1:'5',sxA2:'1',sxB2:'-1',sxC2:'1',statX:'12,5'};
+ numA:'48',numB:'18',numC:'',numN:'360',eqA:'1',eqB:'-3',eqC:'2',sxA1:'2',sxB1:'1',sxC1:'5',sxA2:'1',sxB2:'-1',sxC2:'1',statX:'12,5',progDec:'255',progHex:'FF',progBin:'1111 1111',progOct:'377'};
 let vatAction='add';
 const liveToolNumber=id=>{const raw=normalizeNumericInput(fieldValue(id));if(raw==='')return null;const n=Number(raw);return Number.isFinite(n)?n:null};
 // On phones the fields are filled only from the app's own keypad, so the native keyboard never opens.
@@ -48,6 +48,7 @@ const field=(id,label)=>{const value=toolState[mode]?.inputs?.[id]??'';
 function setActiveToolInput(input){toolActiveInput=input||null;$$('#toolPanel input[data-tool-input]').forEach(i=>i.classList.toggle('tool-active',i===toolActiveInput));
  // the , key is ± for a whole number that may be negative (Dates' days), dimmed for other fields without decimals (People)
  const k=$('#keypad .tool-key[data-value=","]'),type=toolActiveInput&&FIELD_TYPE[toolActiveInput.id];
+ if(mode==='prog')progDimKeys(toolActiveInput);// Programmer: the digits this base hasn't got
  if(k){k.textContent=type==='int'?'±':type==='ip'||type==='mask'?'.':',';k.classList.toggle('key-off',!!type&&type!=='int'&&type!=='ip'&&type!=='mask')}}
 function setToolResult(main,detail='',how=null){toolResult={main,detail,how};if(toolState[mode])toolState[mode].result=toolResult;howData=how;renderToolDisplay();}
 // Tools with kinds on a switch above their fields (Percent, Interest): each kind has its own fields.
@@ -68,10 +69,10 @@ const TOOL_DEFAULTS={net:{netPrefix:'24'},vat:{vatRate:'24'},dates:{dateFrom:()=
 // Fields that aren't plain numbers: 'count' (People: digits only), 'int' (whole, may be negative: Dates' days; the
 // , key becomes ±), 'date' (the device's own date picker, <input type="date">, value YYYY-MM-DD; not typed on the keypad).
 // 'ip' and 'mask' (Subnet: digits and dots, 1.2.3.4; a mask field also takes a prefix like 24; the , key types a dot).
-const FIELD_TYPE={numA:'count',numB:'count',numC:'count',numN:'count',tipPeople:'count',dateDays:'int',dateFrom:'date',dateTo:'date',dateStart:'date',netIp:'ip',netPrefix:'mask',netHosts:'count'};
+const FIELD_TYPE={progDec:'base',progHex:'base',progBin:'base',progOct:'base',numA:'count',numB:'count',numC:'count',numN:'count',tipPeople:'count',dateDays:'int',dateFrom:'date',dateTo:'date',dateStart:'date',netIp:'ip',netPrefix:'mask',netHosts:'count'};
 const dottedField=id=>FIELD_TYPE[id]==='ip'||FIELD_TYPE[id]==='mask';
 // A shorter label for when the long one doesn't fit on its line (sideways, the fields share one row): fitShortLabels.
-const FIELD_SHORT={fuelD:['Απόσταση','Distance'],fuelC:['L/100 km','L/100 km'],fuelP:['Τιμή / L','Price / L'],energyP:['Ισχύς (W)','Power (W)'],
+const FIELD_SHORT={progDec:['DEC','DEC'],progHex:['HEX','HEX'],progBin:['BIN','BIN'],progOct:['OCT','OCT'],fuelD:['Απόσταση','Distance'],fuelC:['L/100 km','L/100 km'],fuelP:['Τιμή / L','Price / L'],energyP:['Ισχύς (W)','Power (W)'],
  energyH:['Ώρες/ημ.','Hours/day'],energyD:['Ημέρες','Days'],energyR:['€/kWh','€/kWh'],payMonthly:['Δόση/μήνα','Per month'],
  pctPrice:['Τιμή','Price'],tipRate:['Φιλοδ. %','Tip %'],saveMonthly:['Τον μήνα','Monthly'],loanAmount:['Δάνειο','Loan'],payAmount:['Δάνειο','Loan']};
 // Each label shows its long text, or its short one if the long one is cut (only one-line labels can be cut: sideways).
@@ -377,6 +378,7 @@ function renderToolKeypad(){
  // Dates "between" has only date pickers: the space of the keypad shows the details instead (dates.js)
  if(mode==='dates'&&toolKind.dates==='between'){$('#keypad').className='date-details';$('#keypad').innerHTML='';window._runDates?.();return}
  $('#keypad').className='tool-keypad';
+ if(mode==='prog'){$('#keypad').classList.add('prog-keypad');$('#keypad').innerHTML=progKeypadHtml();return}// A–F, no C (prog.js)
  $('#keypad').innerHTML=
    '<button class="tool-key tool-utility" data-action="backspace" type="button" aria-label="'+esc(t('deleteKey'))+'">⌫</button><button class="tool-key tool-utility" data-action="clear-all" type="button">AC</button><button class="tool-key tool-utility" data-action="clear" type="button">C</button>'+
    '<button class="tool-key" data-value="7" type="button">7</button><button class="tool-key" data-value="8" type="button">8</button><button class="tool-key" data-value="9" type="button">9</button>'+
@@ -418,6 +420,7 @@ function toolKeyInput(key){
  let value=input.value;
  if(key==='clear')value='';
  else if(key==='backspace'){if(mode==='stats'&&value===''){statTakeBack();return true}value=value.slice(0,-1)}// Statistics: the last number comes back
+ else if(progBase(input.id)){const c=String(key).toUpperCase(),d=PROG_DIGITS.indexOf(c);if(d<0||d>=progBase(input.id)||c.length!==1){refuseKey(input);return false}value=value+c}// Programmer: progInput checks and groups it
  else if(dottedField(input.id)){const v=dottedKey(value,key);if(v===null){refuseKey(input);return false}value=v}// 192.168.1.10 (net.js)
  else if(FIELD_TYPE[input.id]==='int'&&(key==='.'||key===','))value=value.startsWith('-')?value.slice(1):'-'+value;// the ± key
  else if((noDecimalField(input.id)&&(key==='.'||key===','))||(noSignField(input.id)&&key==='-')){refuseKey(input);return false}
@@ -440,6 +443,7 @@ function runActiveTool(){
  if(mode==='numbers'){window._runNumbers?.();return}
  if(mode==='equation'){window._runEquation?.();return}
  if(mode==='stats'){window._runStats?.();return}
+ if(mode==='prog'){window._runProg?.();return}
  if(mode==='units'){window._runUnits?.();return}
 }
 
@@ -459,12 +463,14 @@ $('#toolPanel').addEventListener('beforeinput',e=>{
   i.setRangeText('',d,d+1,'start');i.dispatchEvent(new Event('input',{bubbles:true}));return;
  }
  if(e.inputType?.startsWith('delete'))return;
+ if(e.data&&progBase(e.target.id)){if(!progValid(progRaw(e.data),progBase(e.target.id)))e.preventDefault();return}// Programmer: the digits of the field's base
  if(e.data&&dottedField(e.target.id)){if(!/^[0-9.\/]+$/.test(e.data))e.preventDefault();return}
  if(e.data&&!new RegExp('^[0-9'+(noDecimalField(e.target.id)?'':'.,')+(noSignField(e.target.id)?'':'-')+']+$').test(e.data))e.preventDefault();
 });
 $('#toolPanel').addEventListener('keydown',e=>{
  if(!e.target.matches('input[data-tool-input]'))return;// date pickers keep all their keys
  if(e.ctrlKey||e.metaKey||e.altKey)return;
+ if(progBase(e.target.id)){if(e.key.length===1&&!progValid(e.key.toUpperCase(),progBase(e.target.id))){e.preventDefault();refuseKey(e.target)}return}// Programmer: its base's digits, A–F in hex
  if(dottedField(e.target.id)&&/^[.,]$/.test(e.key)){
   // a dot where the cursor is, if one fits there (the window's handler would type a comma)
   e.preventDefault();e.stopPropagation();const i=e.target,a=i.selectionStart??i.value.length,b=i.selectionEnd??a;
@@ -491,6 +497,7 @@ $('#toolPanel').addEventListener('input',e=>{
  const key=input.id;
  if(!key)return;
  let raw=input.value;
+ if(progBase(key)){progInput(input);return}// Programmer (prog.js)
  if(dottedField(key)){
    // typed or pasted on a keyboard: "192.168.1.10/24" fills both fields; anything that isn't an address is refused
    if(key==='netIp'&&raw.includes('/')){const [a,b]=raw.split('/');raw=a;const n=$('#netPrefix');if(n&&b){n.value=b.replace(/\D/g,'').slice(0,2);toolState[mode].inputs.netPrefix=n.value}}
