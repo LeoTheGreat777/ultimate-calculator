@@ -42,6 +42,11 @@ Part of the notes in CLAUDE.md (read that first). Covers layout.js, side.js, mod
   all fit, the tabs not on screen show only their icon (`.mode-tabs.icons`; names in aria-label/title). A new mode: also
   a group in `MODE_GROUPS` and words in `MODE_WORDS`. On phones the search isn't focused (no keyboard popping up); long
   names shrink a little (`fitModeNames`), never "…".
+  The header has an **All | Default | None** switch (`#modesPins`, `PIN_SETS`, `savePins`; the owner picked it over
+  bottom links or per-group links): it pins every mode, the starting four, or none; the matching choice is lit
+  (`pinSetNow`), none when pinned by hand. When the title and the switch don't fit on one line (Greek on a phone) the
+  switch moves to its own full-width line under the title (`fitModesHead`, `.seg-below`). The mode on screen is marked
+  with a soft accent fill (`.mode-tile.on`), not an outline: the owner found the outline looked like keyboard focus.
 - **Modes are tabs:** a strip of tabs at the top of the card (`MODE_LABELS`, `renderModeTabs`, `switchMode`), one tap
   each, scrolling sideways when they don't fit; Alt+1…9 on a keyboard (Energy, Subnet, Programmer, Numbers, Equations and Statistics, the last six, have none). When they don't all fit, a slim bar under them
   (`.tabs-scrollbar`, `syncTabEdges`, `flashTabsBar`) shows while they move and briefly on start; it can be dragged

@@ -6,6 +6,14 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.27.0 – 2026-10-17
+
+### Added
+- All modes: an All | Default | None switch at the top pins every mode, the starting four, or none in one tap.
+
+### Changed
+- All modes: the mode you're in is marked with a soft fill instead of an outline that looked like keyboard focus.
+
 ## 0.26.7 – 2026-10-17
 
 ### Fixed

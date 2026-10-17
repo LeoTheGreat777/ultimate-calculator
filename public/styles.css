@@ -829,7 +829,18 @@ html.landscape .calculator-card.mobile-tool .net-details strong{flex:1 1 auto;mi
 .mode-group h3{margin:0 0 6px;font-size:12px;font-weight:700;color:var(--muted)}
 .mode-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px}
 .mode-tile{position:relative;display:flex;border:1px solid var(--border);border-radius:12px;background:var(--card2);min-width:0}
-.mode-tile.on{border-color:var(--accent)}
+.mode-tile.on{background:color-mix(in srgb,var(--accent) 16%,var(--card2))}/* the mode on screen: a soft fill (an outline looked like keyboard focus) */
+.modes-card .section-heading h2{white-space:nowrap;margin-right:auto}
+.modes-seg{display:inline-flex;align-items:center;gap:2px;flex:none;background:var(--key);border:1px solid var(--border);border-radius:999px;padding:3px 3px 3px 10px}
+.modes-seg-icon{display:inline-flex;color:var(--accent);margin-right:3px}
+.modes-seg-icon svg{width:13px;height:13px}
+.modes-seg button{border:0;background:none;color:var(--muted);font:inherit;font-size:12.5px;font-weight:650;border-radius:999px;padding:5px 11px;cursor:pointer;white-space:nowrap}
+.modes-seg button[aria-pressed="true"]{background:var(--key-hover);color:var(--text)}
+@media (hover:hover) and (pointer:fine){.modes-seg button:hover{color:var(--text)}}
+.modes-seg button:focus-visible{outline:2px solid var(--accent2);outline-offset:-2px}
+.modes-card.seg-below .section-heading{flex-wrap:wrap;row-gap:8px}
+.modes-card.seg-below .modes-seg{order:3;flex:1 1 100%}
+.modes-card.seg-below .modes-seg button{flex:1}
 .mode-pick{flex:1;min-width:0;display:flex;align-items:center;gap:8px;border:0;background:transparent;color:var(--text);font:inherit;font-size:13px;font-weight:650;padding:11px 2px 11px 10px;gap:7px;text-align:left;cursor:pointer;border-radius:12px}
 .mode-pick-icon{color:var(--accent2);display:inline-flex;flex:none}
 .mode-pick-icon svg{width:16px;height:16px;display:block}
