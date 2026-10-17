@@ -17,13 +17,8 @@ Two people work on this repo, each with their own Claude sessions, and both push
 - Never force push, never rewrite `main`'s history.
 - Keep scratch files (one-off test scripts, screenshots) out of the repo; use a temp/scratch folder.
 - Commit messages: a short summary line, then what changed and why in plain words.
-- **Trying something first: the `preview` branch.** Anything the owner wants to see before it reaches the app goes on the
-  branch `preview` (from main), never on main. A push to `preview` is tested (together with main); then, since only main
-  may publish to Pages, its run starts the workflow on main (`ask-main-to-publish`, `preview_only`), which publishes the site
-  with https://uc.kampaxis.com/preview/; the app at the root and the Docker image are untouched. It is marked "Preview" in
-  the footer (main.js) and has its own offline copy (sw.js: one cache per address). It shares the browser's storage with
-  the app (same site), so settings carry over; new storage keys there must not break the app. When the owner approves,
-  merge `preview` into main (bump the version on main then); if not, reset `preview` to main or delete it.
+- **Trying something first:** the `preview` branch (uc.kampaxis.com/preview/), never main. How it works and how to
+  merge or reset it: `docs/claude/preview.md`.
 
 ## Version and changelog
 
@@ -79,304 +74,54 @@ Everything the app serves is in `public/` (the web root for both GitHub Pages an
 Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`, `Dockerfile` + `nginx.conf`
 (the Docker image), `docker-compose.yml` (for self-hosting), `.github/workflows/deploy.yml`.
 
-## How the code works
+## Notes by topic: read the one you need before changing that part
 
-- **Exact math:** the calculator uses fractions (`rat`, `ratAdd`, ... with BigInt), never floats.
-  `evalExpr` parses with operator precedence; `50+10%` = 55, `50×10%` = 5. Results show rounded to
-  6 decimals and at most 16 significant digits (`formatRat`); from 10¹⁶ up, and for values that would round to 0,
-  `1,234567 × 10²⁰` (`ratScientific`, superscript exponent). The same in Units, tools (`money`) and charts (`chNum`).
-- **Limits** (numbers.js, as on Windows' calculator): typed numbers have at most 15 digits (`MAX_DIGITS`, `digitCount`)
-  in every mode, a calculation at most 150 characters (`MAX_INPUT`; Graph functions 120), and every step of a
-  calculation must stay below 10¹⁰⁰⁰⁰ and (unless 0) above 10⁻¹⁰⁰⁰⁰ (`ratLimit`), else "Too large"/"Too small".
-  That also keeps everything fast: exact powers only up to 40000 bits, beyond that logarithms (`ratPowApprox`).
-  A key that can't do more calls `refuseKey()` (a small shake, a short vibration) and does nothing.
-- **Errors:** `calcError` ('DIV0', 'BIG', 'SMALL', 'MATH'; texts `errDiv0`… via `ERROR_TEXT`) shows the reason in place
-  of the result with the calculation above it, until the next key, which goes on from the calculation (AC clears).
-  Units shows the reason on the other value (`unitError`). Never put "Error" into `current`.
-- **Long text:** `fitDisplayText(el,minSize,showEnd)` shrinks text to minSize, then scrolls it: a result shows its
-  start, a calculation (typed or above a result) its end; the cut-off side fades (`fade-start`/`fade-end`). Used for the result and
-  expression lines, Units values, tool fields and Subnet's details. A fitted element is watched (`fitWatch`, a
-  ResizeObserver): when its own width changes it is fitted again, so turning the phone never leaves a number sized for
-  the old width (iOS reports the new width late, after the resize event).
-- **Carry:** continuing after a result uses its full-precision value (`carryText`, `carry`), but the
-  screen shows it rounded via `formatExpressionDisplay`. Use that function to display expressions.
-- **Brackets:** useless ones are dropped (`tidyParens`, `closeParen`): `((5))` -> `5`, open ones at the end
-  are dropped on =. A number or `(` after `)`, and a number after `%`, adds `×` first. Same in Units.
-- **C / AC:** the key shows C while a number is being typed (C clears just that number), otherwise AC
-  (clears everything). Same in Units (`unitEntry`). Delete = C, Esc = AC on a keyboard.
+How the code works is split into topic files so this file stays short (it is loaded into every session). Before you
+change something, read the topic file for it; read more than one when a change crosses parts. Each holds the decisions
+the owner made there, so don't skip it.
+
+| File | Read it before changing |
+|---|---|
+| `docs/claude/calculator.md` | the Calculator: exact maths, limits, errors, carry, brackets, C/AC, ± and holding keys, Scientific, complex numbers, Memory, the working (?), copying (numbers.js, calculator.js, complex.js, explain.js, memory.js, funcs.js) |
+| `docs/claude/tools.md` | the tools (VAT, Percent, Interest, Dates, Fuel, Energy, Subnet, Numbers, Equations), Units, Currency, tool fields, switches, History per mode, tool charts (tools.js, units.js, currency.js, dates.js, numtools.js, net.js, history.js, charts.js) |
+| `docs/claude/screen.md` | layout and sizes: fitting the screen, long text, sideways phones, foldables, big screens (zoom), side panels, the tabs and All modes, pressing keys, dropdowns, the iPhone home-screen app (layout.js, side.js, modes.js, ui.js, styles.css) |
+| `docs/claude/look.md` | themes and own themes, the logo and icons, colours (theme.js, styles.css theme blocks, tools/make-icons.py) |
+| `docs/claude/app.md` | start-up and offline (sw.js, updates), home-screen shortcuts, the keyboard, Tips, screen readers (main.js, sw.js, help.js) |
+| `docs/claude/preview.md` | the `preview` branch |
+
+When you change how something works, update its topic file (not this one, unless it is a rule for the whole app).
+
+## Rules for every change
+
+- **Colours:** every colour is a token in the theme blocks at the top of styles.css; never write a colour into a rule.
+- **Sizes:** don't add fixed pixel heights per screen or device; `fitLayout()` sizes everything, call it after anything
+  that changes the layout's height. On big screens the app is zoomed (`window.__uiZoom`): divide screen coordinates by it.
+- **Limits:** a key that can't do more calls `refuseKey()`; never put "Error" into `current` (see calculator.md).
 - **Number formatting:** use the existing helpers (`fmt`, `formatRat`, `formatGroupedNumber`,
   `formatExpressionDisplay`, `money`), never `toString()` or `toFixed()` for anything shown.
   Money is always 2 decimals (`money`). VAT is rounded to cents like invoices (`vatNumbers`).
+- **Phones:** the app's own keypad replaces the native keyboard (tool inputs are `readonly` with
+  `inputmode="none"` on touch devices). Don't let the native keyboard open.
+- **Symbols iOS turns into emoji:** don't use characters like ☀ ☾ for icons (iPhone draws ☀ as a colour emoji): draw
+  them (the theme button's `THEME_ICONS`), or add U+FE0E after an arrow or symbol in text. The tab icons are drawn too
+  (`ICONS`, `tabSvg` in i18n.js, 16×16): symbol characters like ↔ ◷ came out tiny and low on iPhone; only € % $ stay text.
+- **A press outside closes it** (theme menu, own theme editor, Dates calendar, History's "Delete all?"): check with
+  `eventInside(e,selector)` (core.js), never `e.target.closest`: a handler may already have re-drawn the pressed element,
+  and a detached target looks like a press outside (the menu closed when its own switch was pressed).
 - **Text:** every visible string needs Greek and English. Most live in `T.el`/`T.en` (use `t(key)`);
   some modes have their own small tables (`gText`, `cText`, `fText`, and `HELP` for Tips & shortcuts).
   Switching language happens in place (`setLanguage` -> `applyLanguage`), no reload: anything that shows text
   must be re-rendered by `applyLanguage`, and a new text must look the same after a live switch as after a fresh load.
-- **Logo and icons:** one drawing (a screen with a graph over the keys + − =), in `tools/make-icons.py`: run it after
-  changing the drawing and it writes `public/icon.svg`, `favicon.svg` (the tab icon: bolder lines, dark on light browsers
-  and light on dark ones), the PNGs (`icon-192/512.png` rounded; `icon-maskable-512.png` and `apple-touch-icon.png` full
-  square; `icon-monochrome-512.png` for Android's themed icons) and the small logo by the title in `index.html`
-  (`<svg class="brand-mark">`, coloured by theme tokens through `.bm-*` classes, so every theme recolours it). The = sign's
-  spacing was chosen by the owner (`EQ_HOME`, `EQ_SMALL`); keep it. No letters in the icon, so it survives a rename.
-  iOS can't switch a web app's home screen icon for dark mode, so there is one, opaque and full square. The tests fail
-  if the files or the logo differ from what the script draws.
 - **Credits:** the owner, Leonidas Kampaxis, is the app's only credited author (his decision): `AUTHORS` in `i18n.js`, in
   Greek and English, the English name also in `index.html` (footer and `<meta name="author">`) and both in the README.
   Don't add other names anywhere (footer, README, changelog). Change them in all places together.
-- **Tool modes** are `TOOL_MODES` (core.js): use it rather than listing them. Defaults (VAT rate 24, Subnet /24, Dates today)
-  are `TOOL_DEFAULTS`, filled in on entering the mode and after AC. Percent (discount, change, tip), Interest (`loan`:
-  loan, payoff, savings) Dates (between, add) and Subnet (`net`: subnet, hosts) have kinds on a switch above their fields: `KIND_FIELDS`, `KIND_LABELS`, `toolKind[mode]`, `setToolKind`,
-  `kindPanelHtml`; switching kinds re-renders only the fields, AC (and changing kind) clears the kind on screen. In
-  landscape a kind's fields share one row (`.kind-grid`, `--f`, one-line labels); the tip always does (`ONE_ROW_KINDS`). `FIELD_TYPE` marks fields that aren't plain numbers:
-  'count' (People: digits only; the , key is dimmed), 'int' (Dates' days: may be negative; the , key becomes ±),
-  'date' (the device's own date picker, `<input type="date">`, value YYYY-MM-DD, not on the keypad), 'ip'/'mask'
-  (`dottedField`: digits and dots, each part ≤ 255, via `dottedKey`, which adds the dot itself after a third digit or
-  before a digit that can't fit, and ignores a dot typed right after one; the , key types a dot;
-  / in the address jumps to the prefix, a pasted 10.0.0.5/16 fills both). The tip has nothing filled in (the owner asked): People left empty means one person, and its
-  grey hint says 1. A tip split between people is rounded
-  up to the cent (`ratCentsUp`) so the shares cover the bill. Interest (`loanNumbers`, floats like Fuel/Energy): yearly
-  rate, interest monthly, months = round(years × 12) up to 1200; a loan's payment is rounded to cents; savings deposits
-  come at the end of each month, an empty starting amount or deposit counts as 0. Payoff (`payoffNumbers`): months to
-  pay a loan with a given payment (the last one smaller), or `never` when the payment doesn't cover a month's interest. Dates (dates.js) count days in UTC
-  (`dayNumber`), years 1000–9999; From and Date start at today (`TOOL_DEFAULTS`). The "Working days" chip on the
-  display (`renderDateBar`, `dateCount`, saved as a choice) counts Monday–Friday without Greek public holidays
-  (`greekHolidays`, `orthodoxEaster`): "between" counts both dates, "add" skips non-working days from the day after.
-  "Between" has no number to type, so `#keypad.date-details` shows a details list instead of keys.
-  With a mouse (`ownCalendar`), a date is a button (`datePickHtml`, its `value` is YYYY-MM-DD) opening the app's
-  calendar (`openCalendar`, `#calPop`: days/months/years views, holidays dotted); touch devices keep `<input type="date">`.
-  Subnet (net.js): /31 = 2 addresses, /32 = 1, else 2^(32−p) − 2. Its details grid (`#netDetails`, `renderNetDetails`)
-  always shows its cells (– until a result) so the layout doesn't jump; a long value (255.255.255.192) gets a smaller font,
-  never "…". Sideways the left side is wider (Subnet's keypad has three columns) and the details are two columns of
-  "label  value" lines, readable on a big iPhone; on shorter screens `fitLandscape` hides them (`fit-no-details`)
-  and the working under ? still has it. "Between" in Dates says "Pick two dates." until both are picked, also sideways.
-  Numbers (numtools.js; kinds `gcd`: a, b, c optional; `factors`: n) works on whole numbers with BigInt ('count' fields, up to
-  15 digits): GCD and LCM through the prime factorisations, the factors by trial division to 100000 and then Pollard's rho
-  with a Miller–Rabin test, the divisors' count and sum. Equations (kinds `quad`: a, b, c, an empty one counts as 0, a = 0
-  is the linear case; `sys2`: a₁ b₁ c₁ / a₂ b₂ c₂) are exact fractions: Δ exact, √Δ simplified in the working (x = −1 ± √2),
-  complex roots as a + bi (complex.js); a system with D = 0 has no or infinitely many solutions. The form line above the
-  fields (`eqForm`) goes on a very short sideways screen (`fit-no-form`); sideways the system's six fields share one row.
-  Their keypad has ± beside 0.
-- **Switches** (VAT add/remove, the kinds of Percent, Interest and Dates) are one generic segmented control: `TOGGLES`, `toggleHtml`,
-  `renderToggles`, `setupToggleSlide` (tap, drag, swipe, ← →), `.seg-toggle` in styles.css (`--n` options, `--i` chosen).
-- **Changing mode clears the mode you leave** (`resetModeInput`, called by `switchMode`): numbers typed and results
-  go, in every mode (Percent, Interest, Dates: also changing kind; Graph goes back to `graphDefault`). Only Calculator -> Units carries
-  the number. Kept: choices (units picked, VAT add/remove, the kinds, Deg/Rad, f(x)), History. Typed values are
-  not saved across visits; `saveTools`/`loadTools` keep only those choices. AC clears a tool.
-- **History per mode** (history.js): the Calculator keeps its calculations in `uc-history` (its chart too); every other mode
-  keeps its own in `uc-history-modes` ({tab: entries}, 50 each): a tool's kind, choices and fields with its line in both
-  languages (`modeSnapshot` runs the tool once per language), Units'/Currency's category, units and values, Graph's
-  functions. Tools have no =, so `recordModeHistory` saves what is finished when you leave the mode, press AC/Esc, change
-  kind, copy the result, or the app goes to the background (also = in Units, AC in Graph); the same one twice is kept
-  once. The sheet shows the mode on screen (`History · VAT`); tapping an entry brings its numbers back
-  (`restoreModeEntry`), Delete all empties that mode only. A new mode: make `modeSnapshot`/`restoreModeEntry` know it.
-- **Home-screen shortcuts:** the manifest's `shortcuts` (long-press the app icon on Android or a computer) open
-  `./?mode=vat` etc.; main.js switches to that mode at start and puts the address back to `./`. The list and the icons
-  (each the mode's tab icon on the dark background) come from `tools/make-shortcut-icons.py`; run it after changing
-  them or a tab icon (the tests compare the manifest with it). iPhones don't offer shortcuts for web apps.
 - **Storage:** all in the browser (`uc-history`, `uc-history-modes`, `uc-tools`, `uc-rates`, `uc-lang`, `uc-pins`, `uc-memory`,
   `uc-theme`, `uc-theme-pair`, `uc-custom-themes`, `uc-theme-recent`). Use `store.get/set` – localStorage can throw.
-- **Number fields** (every tool field but dates and IP/mask, `groupedField`) show thousands as they are typed: 10000 ->
-  10.000 (`groupDigits` in the `input` handler, the cursor kept in place). In them a dot is always a thousands dot and the
-  comma the decimal, so read a field with `fieldValue(id)` (the text without dots), never `.value`; `liveToolNumber` and
-  `ratField` already do. A paste may use dots either way (`pastedNumber`: 12.5 is a decimal, 1.234 and 1.234,5 thousands).
-  Backspace/Delete next to a dot removes the digit beyond it. **Limits:** `FIELD_MAX` gives some fields a top (rates
-  50%, discount and tip 100%, hours 24, years 100, L/100 km 100, days 36500): a key past it is refused and the label
-  says "Up to 50%" for a moment (`refuseLimit`). `POSITIVE_FIELDS` refuse − (prices, rates, distances…; VAT's amount
-  and % change's values may be negative).
-- **Tool fields on a computer** edit like text boxes: a focused field keeps the browser's own Backspace, Delete and
-  cursor (selection respected); the global handler only takes over when no field has the focus (keys go to the
-  highlighted field, at the end). Comma and − are still the app's (one comma; − changes the sign).
-- **Phones:** the app's own keypad replaces the native keyboard (tool inputs are `readonly` with
-  `inputmode="none"` on touch devices). Don't let the native keyboard open.
-- **Fitting the screen:** `fitLayout()` sizes keys (`--k`) and the display (`--disp`) to the screen in every
-  mode, and switches the tools to their compact layout when needed; only if nothing fits does the page scroll
-  (`html.page-scroll`). Don't add fixed pixel heights per screen size or device; let `fitLayout` handle it,
-  and call it after anything that changes the layout's height. Phones held sideways (any window wider than tall and
-  at most 500px high, or a foldable's wide inner screen: Foldables below) get the landscape layout: keypad on the right, the rest on the left (`fitLandscape`,
-  `html.landscape` in styles.css). Sideways the keys are the biggest that fit (a halving search, tools up to 84px), so every
-  tab's keys are the same size even when the left side is the taller one, and once everything fits the card is stretched
-  to the bottom (`html.land-fill`), so there is no empty strip below. On a very short screen (an iPhone SE in Safari, 667×330) `fitLandscape` first hides the copy
-  button, then tightens the tools (`fit-tight`: less padding, a smaller ? row) before letting the page scroll. Fuel and Energy
-  share one row sideways like the kinds (`kind-grid`, `--f:3/4`); a label that doesn't fit its one line switches to its short
-  form (`FIELD_SHORT`, `fitShortLabels`, run by `fitLayout`). `sideways_every_tab` in the tests checks every tab at 667×330
-  and 814×409: no scrolling, nothing off screen, no cut label, the same key size. iOS reports a turned phone's new size late, after
-  'resize': a ResizeObserver on the page fires 'resize' again when the width really changes (layout.js), and one on the
-  tabs re-measures their bar (ui.js). The app is not
-  locked to portrait (iPhones can't be), so both must work.
-- **Scientific:** a view of the Calculator, not a mode: the f(x) switch on the display (`sciMode`, `uc-sci`; the only chip
-  there, the angle unit is the keypad's Deg/Rad key; at the display's top-left in line with History, styled like ?, and
-  Dates' Working days chip sits in the same place) adds 25
-  keys above the basic ones (beside them in landscape, five columns whose labels size with the keys; `sciKeysHtml`, `.keypad.sci`). Functions apply to the value
-  just typed / the result / the bracket just closed (`sciKey`, `lastValueStart`), else open `sin(`. x², xʸ, ʸ√x and x! take the whole value, so a negative one or a power gets brackets: (−3)², (9²)². 2nd swaps keys
-  for inverses; Deg/Rad is `angleUnit` (`uc-angle`). The engine (numbers.js: `evalExpr`, `ratPow`, `sciFunction`)
-  stays exact where the answer is exact and rounds floats to 15 digits otherwise. Shown with superscripts and sin⁻¹
-  (`sciPretty`). Keyboard: ^ and !.
-  A fourth row: **hyp** (`sciHyp`: sin cos tan become sinh cosh tanh, 2nd their inverses), **nCr** (2nd nPr), **mod** (2nd |x|), **i** (2nd ∠)
-  and **⋯** (φ is there, with π and e) (funcs.js: every function, cot sec csc and the hyperbolic ones with inverses, abs, and the constants, with a search).
-  Functions are `FN_NAMES` (numbers.js, longest first; `FN_ALT`, `FN_END`, `FN_OPEN_END` build the regexes, so a new one is added
-  in one place). nCr, nPr and mod are one-letter operators in the calculation: `C`, `P` (above × ÷, like Casio) and `m` (at × ÷;
-  shown " mod "); `OP_END`/`OP_OPEN_END` know them, `VALUE_END` knows φ and constants. Constants (`CONSTS`, CODATA 2018, the
-  exact ones in `CONST_EXACT`) are `⟨id⟩` in the calculation and their symbol on screen (`constPretty`); ⌫ removes one whole.
-- **All modes** (modes.js): the ⊞ button beside History (`#modesButton`) opens a sheet (`#modesModal`, `openModes`) with
-  every mode in groups (`MODE_GROUPS`) and a search (`modeMatches`: names in both languages plus `MODE_WORDS`, word
-  starts, accents and capitals ignored; Enter opens the first; Ctrl+K / ⌘K opens it, Esc closes, a press outside closes).
-  The strip shows only the pinned modes (`pinnedModes`, `uc-pins`, default Calculator, Units, Currency, VAT; the pin on
-  each tile) in `MODE_LABELS` order, plus the mode on screen while it isn't pinned (`.unpinned`, dashed). When they don't
-  all fit, the tabs not on screen show only their icon (`.mode-tabs.icons`; names in aria-label/title). A new mode: also
-  a group in `MODE_GROUPS` and words in `MODE_WORDS`. On phones the search isn't focused (no keyboard popping up); long
-  names shrink a little (`fitModeNames`), never "…".
-- **Modes are tabs:** a strip of tabs at the top of the card (`MODE_LABELS`, `renderModeTabs`, `switchMode`), one tap
-  each, scrolling sideways when they don't fit; Alt+1…9 on a keyboard (Energy, Subnet, Numbers and Equations, the last four, have none). When they don't all fit, a slim bar under them
-  (`.tabs-scrollbar`, `syncTabEdges`, `flashTabsBar`) shows while they move and briefly on start; it can be dragged
-  or pressed (`setupTabsBar`), spans the whole strip; with a mouse it shows while the mouse is over the tabs or its strip and
-  fades out shortly after (the tabs can be mouse-dragged too). Phones keep their overscroll bounce; past an end (negative/over-max `scrollLeft`, or `tabsPull` measured from
-  touch for Android's stretch) the thumb shrinks against that end; and with a mouse
-  ‹ › buttons appear on hover at the edges that have more tabs. Add a new mode to `MODE_LABELS`, `ICONS`
-  and `MODE_TRANSLATIONS`. Units is its own tab after Calculator. Going Calculator -> Units moves the calculator's
-  number into the Units value last typed in (`unitSource`) and resets the calculator; nothing moves back.
-- **Currency** is the Units mode with `unitView==='currency'` (core.js): tab id `currency`, `mode` stays `'units'`;
-  `currentTab()` gives the tab on screen (tabs, Tips use it), `switchMode('currency')` sets the view. The category menu
-  is hidden (Units' own menu leaves `currency` out) and `#rateInfo` shows the pair's rate and the rates' date; tap
-  to update. Rates (currency.js): ECB reference rates per euro from `https://api.frankfurter.dev/v1/latest` (CORS),
-  fetched at most hourly in the background (on start, and with `checkForUpdate` whenever the app comes back to the
-  screen: `backOnScreen` in main.js) and on entering the tab; saved in `uc-rates`; `RATES_SNAPSHOT` before
-  the first fetch (update it now and then). The rate line says "offline" by itself when the last fetch failed or the
-  device has no connection (`ratesOffline`, `online`/`offline` events; back online it fetches again). Strings, converted with fractions (`currencyRate`). Values show as money
-  (`formatMoneyValue`: 2 decimals, more under 1); on phones the closed menus show only the code. Tests stub the URL.
-- **iPhone home-screen app:** iOS draws a soft blur under the status bar over the page, which made the title look
-  blurred. The `<head>` script sets `html.ios-app` when `navigator.standalone` (Apple's own), and held upright the page
-  starts 28px below the safe area (styles.css). Can't be seen in desktop browsers; the tests fake `navigator.standalone`.
-- **Symbols iOS turns into emoji:** don't use characters like ☀ ☾ for icons (iPhone draws ☀ as a colour emoji): draw
-  them (the theme button's `THEME_ICONS`), or add U+FE0E after an arrow or symbol in text. The tab icons are drawn too
-  (`ICONS`, `tabSvg` in i18n.js, 16×16): symbol characters like ↔ ◷ came out tiny and low on iPhone; only € % $ stay text.
-- **Side panels** (side.js, option A chosen by the owner): when there is room for a 260–300px panel on each side of the card
-  (a 1280px-wide window and up; never in the sideways layout or when the page scrolls), `html.side-panels` shows this mode's
-  History on the left (`historyRowsHtml`, the same list and `historyClick` as the sheet) and on the right the working
-  (`howHtml`; Units `unitsHow`; Graph `graphPointsHtml`) with a tool's chart under it (`toolChartHtml(false)`,
-  `drawToolChart(box)`: the dialog's chart parts keep their ids, the panel's have classes only). They are `position:fixed`
-  level with the card (`--side-l/r/top/h/w`). Anything that changes the screen calls `refreshSide()` (once per frame; the
-  calculator's `render`, `renderToolDisplay`, `updateUnitsDisplay`, Graph's points, History, `fitLayout`, language, theme).
-  With the panels showing (the owner chose this), the History, ? and chart buttons are hidden (`html.side-panels #historyButton…`
-  in styles.css) and the History sheet's `#historyClearWrap` (chart button, Clear all) and `#historyChartWrap` move into the
-  History panel's header (`sideTools`, the same elements, back to the sheet when the panels go); `syncHistoryChart` hides the
-  chart outside the Calculator.
-  In tests, scope selectors to the dialog or sheet (`#howContent …`, `#historyList …`): the panels have the same classes.
-- **Foldables:** `LANDSCAPE` (layout.js) also matches a touch screen at least 6:5 wide and at most 720px high (a foldable's inner
-  screen held sideways, e.g. iPhone Duo ~924×693, Galaxy Fold, Pixel Fold); there the sideways keys may grow to 96px
-  (`tall` in `fitLandscape`). Half open like a book, the browser reports two screen segments side by side
-  (`window.viewport.segments`, Chrome on Android; Safari has no such API yet): `html.hinge-v` forces the sideways layout
-  across the whole width with the column gap over the fold (`--hinge-w`). The tests emulate a fold with CDP
-  (`Emulation.setDeviceMetricsOverride` + `displayFeature`; a Playwright screenshot resets it). Not done: half open like a
-  laptop (segments one above the other).
-- **Big screens:** on large desktop screens the whole app is scaled with CSS `zoom` on `<html>` (`applyUiZoom`,
-  `window.__uiZoom`, CSS var `--z`). Viewport units must be written `calc(100dvh / var(--z,1))`, and any code that
-  turns screen coordinates (clientX/Y, getBoundingClientRect, innerHeight) into CSS sizes must divide by
-  `window.__uiZoom` (see `chZoom` in charts.js, `Z` in history.js).
-- **Themes** (theme.js): ready-made ones, light: Light, Paper; dark: Dark, Black (OLED) (`LIGHT_PRESETS`, `DARK_PRESETS`);
-  and an own theme in each group, `custom-light` / `custom-dark`, for everything else. Rose, Sky, Ocean, Violet, Ember
-  and Forest were removed on purpose in 0.14.2 (Graphite and Retro before them): don't add colourful presets back;
-  `REMOVED_THEMES` turns a saved one into the own theme with the same colours. Every colour is a
-  token in the theme blocks at the top of styles.css (`html[data-theme]`); never write a colour into a rule, add a token
-  instead. `theme` is one theme or `'auto'` (**Match device**, a switch at the top of the menu): then the device picks
-  between a light and a dark theme, `themePair` (`uc-theme-pair`), and a tap in the menu sets that group's one (the menu
-  stays open). `resolvedTheme()` is what is on screen; an own theme that isn't made falls back to `light`/`dark`. The
-  `<head>` script in index.html repeats this logic before the first paint, so change both together.
-  **Own themes** are made from a background and an accent only: `deriveTheme(group,bg,accent)` works out every other
-  token and keeps it readable (text ≥ 7:1, muted ≥ 4.5, accent and chart lines ≥ 3 on the card and keys, text on the
-  accent ≥ 4.5; tested for many colours); `clampThemeBg` keeps a background in its group (by luminance). Saved in
-  `uc-custom-themes` with their tokens (`vars`, re-made on every start), which the `<head>` script turns into
-  `<style id="customThemes">` rules (`writeCustomCss` later), so they work like the ready-made ones, swatches included.
-  The editor (`openThemeEditor`, `#themeEditor`) is a panel at the bottom without dimming, so the app shows the colours
-  live (`themeDraft`); swatches plus "any colour" (`<input type="color">`). No Save/Cancel: every change is kept when it
-  closes (×, Esc, Enter, a press outside: `closeThemeEditor`; also saved when the app goes to the background), and
-  Recent (`themeRecent`, `uc-theme-recent`, 8 pairs per group, where you started included) brings back an earlier look.
-  The panel is built once per opening (`renderThemeEditor`) and then only updated in place (`updateThemeEditor`): never
-  replace the colour inputs while it is open, or the device's colour picker closes in the middle of a drag. Keys don't
-  reach the calculator while it is open; ← → move through a row of swatches. A new ready-made theme: a block in styles.css, its name in `LIGHT_PRESETS` or
-  `DARK_PRESETS` and in the `<head>` script, texts in `T` (`themeX`). Sideways phones get shorter menu rows so it fits. Charts and graph lines read the tokens (`chColors`,
-  `--series1..3`). Check a new theme's contrast (text on card and keys, text on the accent) and look at it in every
-  mode. Changing theme: circle reveal from the theme button (View Transitions, `transitionTheme`), fade fallback,
-  instant with reduced motion.
-- **A press outside closes it** (theme menu, own theme editor, Dates calendar, History's "Delete all?"): check with
-  `eventInside(e,selector)` (core.js), never `e.target.closest`: a handler may already have re-drawn the pressed element,
-  and a detached target looks like a press outside (the menu closed when its own switch was pressed).
-- **Dropdowns:** on desktop Chrome/Edge the unit menus use `appearance: base-select`, styled like the app; phones keep
-  native pickers. While a dropdown has focus the global keydown handler leaves keys to it.
-- **Pressing keys** (`setupPressFeedback`, ui.js), the same with a mouse and a finger, like the iPhone's calculator:
-  every key in `#keypad` lights up the moment it's pressed (`.pressed`, a `::after` layer of `--text`, so it suits every
-  key colour and theme), held a moment longer it grows (after .09s, easing out over .3s, to scale 1.12, over its neighbours, `will-change`
-  set as it's pressed so the move starts smoothly; the owner tuned it: a quick tap only lights up), and let go it
-  fades and settles back. No `:active` shrink anywhere on the keypad. On phones a tick: Android `navigator.vibrate(8)` on
-  pointerdown. iPhone has no vibrate for websites; its own switch (`<input type="checkbox" switch>`, iOS 18+) ticks, but
-  since iOS 26.5 only when a finger toggles it (a script's `label.click()` is silent). So on iPhone every key holds an
-  invisible `<label class="key-tick">` over its face with a hidden switch inside (`addKeyTicks`, kept on re-drawn and
-  re-labelled keys by a MutationObserver): the tap lands on the label, which toggles its switch (the tick), and the same
-  click goes on to the keypad as the key press (the switch's own click is stopped). Apple doesn't document it; if it
-  stops, nothing breaks. No sounds (the owner said no). `selectstart` is blocked outside fields you can type in (`SELECTABLE`): a fast double tap or a long press on iOS
-  otherwise starts a selection and shows the magnifier bubble. The key-tick switches and read-only fields (phones) are
-  inputs too, so they are excluded in both the handler and the CSS (`user-select:none`); `no_magnifier` tests it.
-- **± and holding keys:** holding ⌫, C or AC clears everything while still held (`HOLD_KEYS`, `clearEverything`; C turns into AC
-  while still held and big, like the iPhone's calculator; in the tools C stays C, AC is its own key; in Graph every function), holding − flips the sign (`negate`, Units: `unitKeyInput('negate')`);
-  F9 does ± on a keyboard. A tap on − is always minus. A minus made with ± is stored as `−` (U+2212), one typed with
-  the − key as `-`; the maths reads both the same (`tokenize`, `normalizeUnitExpression`). Display (`formatInputDisplay`):
-  after an operator any negative number is in brackets, `5×(−25)`; at the start only a ± one is, `(−5)`, a typed one
-  stays `-5`. A result turned negative with ± carries on as `(−84)+2` (`resultNegated`). Finished results stay plain.
-  Units has the same keypad as the calculator, including ( ).
-- **Tips:** a sheet per mode (`HELP`, `showHelp`), opened from the footer "Tips" link or the ? key; its keyboard
-  shortcuts section only shows on devices with a keyboard. On big screens (≥ 900×600) the
-  dialog uses the whole height, so ? and Tips don't scroll; Tips put the shortcuts beside the tips, and when that still doesn't
-  fit the tips go into two columns in a wider sheet (`fitHelp`, `help-wide`). When behaviour changes, update the tips in both languages.
-- **Tool charts** (the bars button, `showToolChart`/`drawToolChart` in charts.js) answer a question rather than redraw
-  the result, mostly as HTML so numbers stay sharp: Fuel a 3×3 grid of the cost at ±0,10 €/L and ±0,5 L/100 km (the
-  middle is the result) plus return trip and per 100 km; VAT the same amount at 24, 13 and 6% (and the rate typed);
-  Energy cost and kWh per hour, day, month, year (the days typed highlighted); a loan or payoff year by year
-  (`loanYears`: interest per year, rounded so the years add up to the result's interest, and what's left). Bar rows
-  are `chRows` (`.chart-body` grid, `.crow`). Savings keeps its canvas line chart (`chLineChart`).
-- **No fuel log:** the save/saved-entries buttons in Fuel were removed on purpose (0.15.5); don't add them back.
-- **Screen readers:** keys showing only a symbol get a spoken name in the language on screen (`KEY_NAMES`, `nameKeys` in
-  ui.js, re-run by a MutationObserver on `#keypad` and in `applyLanguage`); a key with its own `aria-label` (⌫, scientific
-  keys) keeps it. A new symbol key: add it to `KEY_NAMES`. Icon-only buttons need an `aria-label` in both languages,
-  drawn decoration `aria-hidden` (chart bars), and a message that only shows visually is also put in `#srNote`
-  (aria-live), as `refuseLimit` does. The Tips link's icon is a drawn lightbulb (the owner didn't want a ?).
-- **The working (?)** (explain.js): a tool's `how` is `{formula, steps:[{title, text, line?, bits?}], result, legend?, rule?}`, drawn by
-  `howHtml`. The Calculator's comes from `explanationForExpression`, which recomputes every step with the same exact maths and
-  returns null (no ?) rather than working that doesn't end in the result on screen, and with no steps (25 − 25i alone) ? is hidden; a rounded number in it ends in …
-  (`ratShown`). Worked-out numbers keep the plain - like results; powers are superscripts (`supText`); trig steps say
-  degrees or radians. Units/Currency compute theirs when ? is pressed (`unitsHow`, the `#unitHow` button in their toolbar).
-  Arrows shown in text get U+FE0E (→\uFE0E), or iOS may draw them as emoji. On phones the dialog may use the whole height.
-- **Complex numbers** (complex.js): a value is a fraction when real, `{re, im}` (im ≠ 0) when not; `cx()` turns one with im 0
-  back into a fraction, so real calculations never see the difference. `evalExpr` uses `vAdd`, `vMul`, `vPow`,
-  `sciFunctionV`… (exact + − × ÷ and whole powers; floats rounded to 15 digits for the rest, a part under 1e−13 of the size
-  is 0). √, even roots and ln/log of a negative number are complex (√−4 = 2i); other real domain errors stay errors. `i` is a
-  number in the calculation (`2×i` shows as 2i), `∠` an operator as tight as ^ (r∠θ, θ in the angle unit). A complex result
-  carried on is `⟪⟫` (`carryCx`; History stores it written out, `expandCarry`); History and memory keep `re|im` strings
-  (`vToStore`/`vFromStore`). `fmt` shows complex values as a+bi; the Calculator shows r∠θ under it at the same time, no button (the owner
-  asked; `renderResultAlt`, `#resultAlt`, `.has-alt` makes the result a little smaller): under a complex result, and while a
-  calculation with i, ∠ or a carried complex is typed its value as it stands (`liveValue`; "= 5 − i  ·  5,09902 ∠ …", the
-  a+bi part left out when it is what was typed). Real calculations never get the line; other modes remove it (`renderTool`).
-  The working ends a complex result with its polar form (r = √(a² + b²), θ = atan2(b; a)). Mod, nCr, nPr and ! of a complex number are errors. The working folds 2 × i and 3 + 2i into written numbers.
-- **Memory** (memory.js; the owner asked for it after first declining): one exact number (`memory`, saved in `uc-memory`). The number
-  on screen (`memScreenValue`) is the result, else the number being typed, else what is typed so far. MR types the memory as a
-  number of up to 15 significant digits (very large/small ones as `(1.2×10^20)`); after any memory key the next digit starts
-  a new number (`memFresh`). The keys are the first row of the scientific keys (`memKeysHtml`, `.mem-key`, `data-mem`;
-  Scientific only, like the iPhone): the basic keypad has none, sideways they are the first column. The M chip
-  sits in `#sciBar` beside f(x) whenever something is kept, and the keyboard works either way: Ctrl+M MS, Ctrl+P M+,
-  Ctrl+Q M−, Ctrl+R MR, Ctrl+L MC (`memKeydown`).
-- **Copying:** tapping a finished result copies it (calculator and tools), so the copy button can be hidden
-  on short screens.
-- **Offline:** `public/sw.js` (registered at the end of main.js) keeps a copy of the app in the cache `uc-app`. The page
-  comes from the network first (`no-cache`), the saved copy only offline or after 3 s; `?v=` files from the saved copy
-  first; each fresh page saves the files it links to and deletes other versions' `?v=` files. Nothing to update per
-  version, but every file the app needs must be linked from index.html with `?v=`, and the app must not fetch anything
-  else it needs to start. Coming back to the screen (`visibilitychange`, `focus`, bfcache `pageshow`) runs
-  `checkForUpdate` (main.js, at most once a minute): it fetches the page with `no-store` (sw.js leaves those alone) and
-  reloads if its footer version differs from `VERSION`. Not while the own theme editor is open (the reload would close
-  the colour picker); the editor's colours are also kept on `pagehide`, so a reload never loses them. Test with `offline()` in tests/test_app.py.
-- **Keyboard:** desktop typing is handled in the `window` `keydown` listener in `main.js`.
-  Keys that do nothing in a mode are ignored.
 
 ## Testing before every push
 
-`python3 tests/test_app.py` (needs `pip install playwright` and `python3 -m playwright install chromium` once).
+`python3 tests/test_app.py` (needs `pip install playwright` and `python3 -m playwright install chromium` once;
+Claude Code cloud sessions get it from `.claude/hooks/session-start.sh`: playwright 1.56.0, matching their Chromium).
 It serves `public/` itself and checks the calculator basics, brackets, C/AC, Units, the tools, History, tabs,
 the language switch, and that nothing is cut off at phone sizes, in both languages and themes. Add a check there
 for what you add or fix. GitHub runs the same tests before every deploy.

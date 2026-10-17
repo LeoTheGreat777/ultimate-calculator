@@ -84,7 +84,7 @@ Dockerfile, nginx.conf the Docker image: nginx serving public/
 docker-compose.yml   for running the image yourself
 ```
 
-The scripts in `public/js/` are plain scripts that share globals, loaded in a fixed order by `index.html`. `CLAUDE.md` describes what each one contains and how the code works.
+The scripts in `public/js/` are plain scripts that share globals, loaded in a fixed order by `index.html`. `CLAUDE.md` describes what each one contains; how the code works is in `docs/claude/` (one file per part of the app).
 
 ## Run locally
 
