@@ -936,7 +936,9 @@ html.landscape .calculator-card.fit-tight .prog-grid .tool-field span{white-spac
 .unit-unit{height:36px!important;padding-top:9px!important;padding-bottom:7px!important;margin-top:-7px!important;margin-bottom:-7px!important}
 /* The buttons at the top: hover, pressed (.pressed, ui.js setupTopPress) and lit while their menu or window is open */
 .top-actions .icon-button,.top-actions .language-button{transition:background-color .15s,border-color .15s,color .15s,transform .12s}
-@media (hover:hover){.top-actions .icon-button:hover,.top-actions .language-button:hover{background:var(--key)}}
+@media (hover:hover){.top-actions .icon-button:hover:not([aria-expanded="true"]):not(.open),.top-actions .language-button:hover{background:var(--key)}}
 .top-actions .icon-button.pressed,.top-actions .language-button.pressed{background:var(--key-hover);transform:scale(.93)}
-.top-actions button[aria-expanded="true"],.top-actions #themeButton.open{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.top-actions button[aria-expanded="true"],.top-actions #themeButton.open,.top-actions button[aria-expanded="true"].pressed,.top-actions #themeButton.open.pressed{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 @media (prefers-reduced-motion:reduce){.top-actions .icon-button,.top-actions .language-button{transition:none}.top-actions .pressed{transform:none}}
+/* The Equations icon is the text x= (ICONS.equation): the same font, size and line as the tab's name, so they share a baseline */
+.mode-tab-icon:has(.eq-icon){font-size:inherit;line-height:inherit;height:auto;font-weight:800;letter-spacing:-.02em}

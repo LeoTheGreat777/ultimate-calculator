@@ -17,7 +17,7 @@ const ICONS={
  fuel:tabSvg('<path d="M2.8 14.6V3a1.4 1.4 0 0 1 1.4-1.4h4.2A1.4 1.4 0 0 1 9.8 3v11.6M1.8 14.6h9M9.8 7.2h1.4a1 1 0 0 1 1 1v3.6a1.1 1.1 0 0 0 2.2 0V5.4L12.6 3.4"/><rect x="4.6" y="3.6" width="3.4" height="2.8" rx=".5" fill="currentColor" stroke="none"/>'),
  energy:tabSvg('<path d="M9.4 1.2 3.2 9h4.4l-1 5.8L12.8 7H8.4z" stroke-width="1.2"/>',true),
  numbers:tabSvg('<path d="M6 1.8 4.6 14.2M11.4 1.8 10 14.2M2.2 5.6h12M1.8 10.4h12" stroke-width="1.6"/>'),
- equation:tabSvg('<path d="M1.8 4.6 7 11.4M7 4.6l-5.2 6.8M9.4 6.4h4.8M9.4 9.6h4.8" stroke-width="1.7"/>'),
+ equation:'<span class="eq-icon">x=</span>',// text in the label's own font and size, so it sits on the label's line on every device (a drawn x= looked high on Windows)
  stats:tabSvg('<g fill="currentColor" stroke="none"><rect x="1.2" y="9.6" width="2.9" height="5" rx=".7"/><rect x="4.8" y="5" width="2.9" height="9.6" rx=".7"/><rect x="8.4" y="1.6" width="2.9" height="13" rx=".7"/><rect x="12" y="7.4" width="2.9" height="7.2" rx=".7"/></g>'),// a histogram
  prog:tabSvg('<path d="M4.8 4 1.4 8l3.4 4M11.2 4l3.4 4-3.4 4M9.2 2.4 6.8 13.6"/>'),// </>
  net:'<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 4.5v3M8 7.5 3.5 11M8 7.5l4.5 3.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><rect x="5.5" y="1" width="5" height="3.8" rx="1" fill="currentColor"/><rect x="1" y="11" width="5" height="3.8" rx="1" fill="currentColor"/><rect x="10" y="11" width="5" height="3.8" rx="1" fill="currentColor"/></svg>'

@@ -1016,14 +1016,14 @@ async def icons(browser, url):
     check('[icons] the manifest has any, maskable and monochrome icons', {'any', 'maskable', 'monochrome'} <= set(st['purposes']), st['purposes'])
     shown = await p.evaluate("[...document.querySelectorAll('.brand-mark .bm-curve,.brand-mark .bm-dot')].map(e=>getComputedStyle(e).stroke+'|'+getComputedStyle(e).fill)")
     check('[icons] the logo by the title takes the theme\'s colours', len(shown) == 2 and 'rgb(110, 168, 254)' in shown[0], shown)
-    # tab icons: drawn, not symbol characters (iPhone drew ↔ ◷ tiny and low); € % $ are letters
+    # tab icons: drawn, not symbol characters (iPhone drew ↔ ◷ tiny and low); € % $ and x= are letters
     await p.evaluate("openModes()")
     tabs = await p.evaluate("""[...document.querySelectorAll('#modesList .mode-pick')].map(b=>{const i=b.querySelector('.mode-pick-icon'),r=i.getBoundingClientRect();
       return {m:b.dataset.mode,svg:!!i.querySelector('svg'),text:i.textContent.trim(),w:Math.round(r.width),h:Math.round(r.height)}})""")
     await p.evaluate("closeModes()")
     drawn = [x for x in tabs if x['svg']]
-    check('[icons] tab icons are drawn, except the letters € % $',
-          {x['m'] for x in tabs if not x['svg']} == {'vat', 'pct', 'currency'} and len(drawn) == len(tabs) - 3, tabs)
+    check('[icons] tab icons are drawn, except the letters € % $ and Equations\' x= (written in the name\'s font)',
+          {x['m'] for x in tabs if not x['svg']} == {'vat', 'pct', 'currency', 'equation'} and len(drawn) == len(tabs) - 4, tabs)
     check('[icons] drawn tab icons are all the same size', len({(x['w'], x['h']) for x in drawn}) == 1, drawn)
     check('[icons] no JavaScript errors', not p.errors, p.errors)
     await p.context.close()
@@ -1995,6 +1995,16 @@ async def side_panels(browser, url):
     check(L + 'VAT: its own History, the working and the chart under it', st == ['History · VAT', 2, ['24%', '13%', '6%']], st)
     st = await p.evaluate("['#chartButton','#historyChartButton','#howButton'].map(s=>{const e=document.querySelector(s);return !!e&&getComputedStyle(e).display!=='none'})")
     check(L + 'VAT: no chart or ? button beside the panels, no History chart button', st == [False, False, False], st)
+    st = await p.evaluate("""(()=>{switchMode('equation');const base=el=>{const m=document.createElement('span');m.style.cssText='display:inline-block;width:0;height:0;vertical-align:baseline';el.appendChild(m);const y=m.getBoundingClientRect().top;m.remove();return y};
+      const t=document.querySelector('.mode-tab.active');return Math.abs(base(t.querySelector('.eq-icon'))-base(t.querySelector('.mode-tab-label')))})()""")
+    check(L + 'the Equations icon x= sits on the same line as its name', st < 0.5, st)
+    await p.click('#themeButton')
+    await p.hover('#themeButton')
+    await p.wait_for_timeout(250)
+    st = await p.evaluate("[getComputedStyle(themeButton).backgroundColor,getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()]")
+    acc = await p.evaluate(f"(()=>{{const d=document.createElement('div');d.style.color='{st[1]}';document.body.appendChild(d);const c=getComputedStyle(d).color;d.remove();return c}})()")
+    check(L + 'the theme button stays lit under the mouse while its menu is open', st[0] == acc, [st, acc])
+    await p.evaluate("closeThemeMenu()")
     await p.evaluate("switchMode('graph')")
     await p.wait_for_timeout(250)
     check(L + 'Graph: its key points', await p.evaluate("sideWorkTitle.textContent") == 'Key points' and await p.evaluate("document.querySelectorAll('#sideWorkBody .graph-point-line').length") >= 3)

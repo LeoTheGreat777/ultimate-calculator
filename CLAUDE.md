@@ -110,7 +110,8 @@ When you change how something works, update its topic file (not this one, unless
   `inputmode="none"` on touch devices). Don't let the native keyboard open.
 - **Symbols iOS turns into emoji:** don't use characters like ☀ ☾ for icons (iPhone draws ☀ as a colour emoji): draw
   them (the theme button's `THEME_ICONS`), or add U+FE0E after an arrow or symbol in text. The tab icons are drawn too
-  (`ICONS`, `tabSvg` in i18n.js, 16×16): symbol characters like ↔ ◷ came out tiny and low on iPhone; only € % $ stay text.
+  (`ICONS`, `tabSvg` in i18n.js, 16×16): symbol characters like ↔ ◷ came out tiny and low on iPhone; only € % $ stay text, and Equations' x= (`.eq-icon`, in the tab name's own font and size so it shares
+  its baseline: a drawn x= looked high on Windows).
 - **A press outside closes it** (theme menu, own theme editor, Dates calendar, History's "Delete all?"): check with
   `eventInside(e,selector)` (core.js), never `e.target.closest`: a handler may already have re-drawn the pressed element,
   and a detached target looks like a press outside (the menu closed when its own switch was pressed).
