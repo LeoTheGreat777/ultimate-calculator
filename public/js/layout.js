@@ -173,6 +173,7 @@ function fitLayout(){refreshSide();
   // even that doesn't fit (Scientific on the smallest phones): back to the normal sizes, and the page scrolls
   if(over>0){card.classList.remove('fit-tight','fit-row','fit-no-form','fit-no-details');root.classList.remove('fit-small');if(tool)fitShortLabels();over=attempt(card.classList.contains('mobile-tool')?FIT.mobileTool:spec)}
  }
+ if(tool)fitShortLabels();// the fields' final widths
  if(over>0)root.classList.add('page-scroll');
  root.dataset.fitOver=Math.max(0,over);// how many px did not fit (used by tests)
 }

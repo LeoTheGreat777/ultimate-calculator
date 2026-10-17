@@ -1181,13 +1181,16 @@ async def upright_small_phones(browser, url):
             'numbers': [['numA', '123456789012'], ['numB', '987654321'], ['numC', '360'], ['numN', '600851475143']],
             'prog': [['progHex', 'DEADBEEFCAFE']],
             'equation': [['eqA', '1'], ['eqB', '2'], ['eqC', '5'], ['sxA1', '2'], ['sxB1', '1'], ['sxC1', '5'], ['sxA2', '1'], ['sxB2', '-1'], ['sxC2', '1']]}
-    for w, h in [(320, 568), (360, 640)]:
-        for lang in ['en', 'el']:
-            L = f'[upright {w}x{h} {lang}] '
+    # wide: label text a little wider, like a phone's (or GitHub's) font that measures wider than this one
+    for w, h, lang, wide in [(320, 568, 'en', False), (320, 568, 'el', False), (360, 640, 'en', False), (360, 640, 'el', False), (320, 568, 'el', True)]:
+        if True:
+            L = f'[upright {w}x{h} {lang}{" wider font" if wide else ""}] '
             ctx = await browser.new_context(viewport={'width': w, 'height': h}, is_mobile=True, has_touch=True)
             await ctx.add_init_script(SEED % (lang, 'dark'))
             p = await ctx.new_page()
             await p.goto(url)
+            if wide:
+                await p.add_style_tag(content='#toolPanel .tool-field span,#toolPanel .seg-toggle button{letter-spacing:.04em}')
             await p.wait_for_timeout(300)
             bad = []
             tabs = [('calc', None), ('units', None), ('currency', None), ('vat', None), ('pct', 'discount'), ('pct', 'tip'), ('loan', 'loan'),

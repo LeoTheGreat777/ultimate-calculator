@@ -18,7 +18,7 @@ Part of the notes in CLAUDE.md (read that first). Covers layout.js, side.js, mod
 - **Touch areas:** every button and field is at least 30×30 px to a finger (`touch_areas` in the tests). Small buttons (Tips,
   ?, Graph's buttons) look the same but get an invisible hit area (`::after`, "Bigger touch areas" at the end of styles.css;
   a static button becomes `position:relative` for it); Units' unit names are taller transparent boxes with negative margins.
-  A kind switch is at least 30px tall upright, even when tightened (sideways 24px). Field labels count as cut by exact width (`labelCut`). Don't add fixed pixel heights per screen size or device; let `fitLayout` handle it,
+  A kind switch is at least 30px tall upright, even when tightened (sideways 24px). Field labels and kind switch buttons count as cut by exact width (`labelCut`); a cut one takes its short form, then a smaller font (`fitShortLabels`, run at the end of `fitLayout`). The tests also check 320×568 with a wider font (the GitHub runner's fonts measure wider). Don't add fixed pixel heights per screen size or device; let `fitLayout` handle it,
   and call it after anything that changes the layout's height. Phones held sideways (any window wider than tall and
   at most 500px high, or a foldable's wide inner screen: Foldables below) get the landscape layout: keypad on the right, the rest on the left (`fitLandscape`,
   `html.landscape` in styles.css). Sideways the keys are the biggest that fit (a halving search, tools up to 84px), so every

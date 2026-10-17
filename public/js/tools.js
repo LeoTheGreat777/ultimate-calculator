@@ -77,17 +77,18 @@ const FIELD_SHORT={progDec:['DEC','DEC'],progHex:['HEX','HEX'],progBin:['BIN','B
  pctPrice:['Τιμή','Price'],tipRate:['Φιλοδ. %','Tip %'],saveMonthly:['Τον μήνα','Monthly'],loanAmount:['Δάνειο','Loan'],payAmount:['Δάνειο','Loan']};
 // Each label shows its long text, or its short one if the long one is cut (only one-line labels can be cut: sideways).
 function fitShortLabels(){
- for(const s of document.querySelectorAll('#toolPanel .tool-field span[data-short]')){
-  if(s.dataset.label!=null)continue;// showing "Up to 50%" (refuseLimit)
-  const long=t(s.closest('.tool-field').querySelector('input')?.id);
-  if(s.textContent!==long)s.textContent=long;s.style.fontSize='';
-  if(labelCut(s))s.textContent=s.dataset.short;
-  // still too long (a wider font than expected): a little smaller, never cut
+ for(const s of document.querySelectorAll('#toolPanel .tool-field span,#toolPanel .seg-toggle button')){
+  if(s.dataset.label!=null||s.classList.contains('limit-hint'))continue;// showing "Up to 50%" (refuseLimit)
+  if(s.dataset.short!=null){const long=t(s.closest('.tool-field').querySelector('input')?.id);if(s.textContent!==long)s.textContent=long}
+  s.style.fontSize='';
+  if(!s.offsetParent||!labelCut(s))continue;
+  if(s.dataset.short!=null)s.textContent=s.dataset.short;
+  // still too long (a wider font than expected, a narrow phone): a little smaller, never cut
   for(let px=11.5;px>=9.5&&labelCut(s);px-=.5)s.style.fontSize=px+'px';
  }
 }
-// is the label's text wider than its box? (measured exactly: scrollWidth rounds, so a text cut by under a pixel looked whole)
-function labelCut(s){const r=document.createRange();r.selectNodeContents(s);return r.getBoundingClientRect().width>s.getBoundingClientRect().width+.5}
+// is the label's (or switch button's) text wider than its box? (measured exactly: scrollWidth rounds, so a text cut by under a pixel looked whole)
+function labelCut(s){const r=document.createRange();r.selectNodeContents(s);const cs=getComputedStyle(s),pad=(parseFloat(cs.paddingLeft)+parseFloat(cs.paddingRight))*(window.__uiZoom||1);return r.getBoundingClientRect().width>s.getBoundingClientRect().width-pad+.5}
 // Besides the 15 digits, these fields have a sensible top: a key that would go past it is refused, and for a moment
 // the field's label says how far it goes (refuseLimit). [max, unit]
 const FIELD_MAX={vatRate:[50,'%'],pctOff:[100,'%'],tipRate:[100,'%'],loanRate:[50,'%'],payRate:[50,'%'],saveRate:[50,'%'],
