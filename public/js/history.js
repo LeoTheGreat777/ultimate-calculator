@@ -32,7 +32,9 @@ function historyRowsHtml(tab=currentTab()){
 }
 
 function openHistory(){const p=$('#historyPanel'),b=$('#historyBackdrop');renderHistory();p.classList.remove('hidden');b.classList.remove('hidden');requestAnimationFrame(()=>{p.classList.add('open');b.classList.add('open')});p.classList.remove('expanded');$('#historyList').scrollTop=0}
-function closeHistory(){const p=$('#historyPanel'),b=$('#historyBackdrop');p.classList.remove('open','expanded');b.classList.remove('open');setTimeout(()=>{if(!p.classList.contains('open')){p.classList.add('hidden');b.classList.add('hidden')}},220)}
+// A press outside the sheet while it asks "Delete all?" only takes the question back (as a press inside would); the next one closes it
+function historyBackdropClick(){if(historyClearConfirm)clearHistoryConfirm();else closeHistory()}
+function closeHistory(){if(historyClearConfirm)clearHistoryConfirm();const p=$('#historyPanel'),b=$('#historyBackdrop');p.classList.remove('open','expanded');b.classList.remove('open');setTimeout(()=>{if(!p.classList.contains('open')){p.classList.add('hidden');b.classList.add('hidden')}},220)}
 function setupHistorySheet(){
  const p=$('#historyPanel'),handle=$('.sheet-handle'),list=$('#historyList');let startY=0,tracking=false;
  // Only tracks swipes to expand/collapse. The handle drag itself lives in history-interaction.js;

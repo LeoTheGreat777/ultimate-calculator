@@ -23,7 +23,7 @@ $('#keypad').addEventListener('click',e=>{
  if(a==='clear')clearButtonAction();else if(a==='backspace')backspace();else if(a==='equals')equals();else if(a==='paren')smartParen();else if(v==='%')percent();else if(/[+\-*/]/.test(v||''))operator(v==='*'?'×':v==='/'?'÷':v);else if(v)digit(v)
 });
 $('#howButton').addEventListener('click',showHow);$('#closeHow').addEventListener('click',closeHow);$('#howModal').addEventListener('click',e=>{if(e.target.id==='howModal')closeHow()});
-$('#historyButton').addEventListener('click',openHistory);$('#closeHistory').addEventListener('click',closeHistory);$('#historyBackdrop').addEventListener('click',closeHistory);$('#historyList').addEventListener('click',historyClick);$('#copyButton').addEventListener('click',copyResult);
+$('#historyButton').addEventListener('click',openHistory);$('#closeHistory').addEventListener('click',closeHistory);$('#historyBackdrop').addEventListener('click',historyBackdropClick);$('#historyList').addEventListener('click',historyClick);$('#copyButton').addEventListener('click',copyResult);
 // Tapping a result copies it too (on short screens the copy button is hidden to make room for the keypad).
 $('#calculatorDisplay').addEventListener('click',e=>{if(mode==='units'||mode==='graph'||!e.target.closest('#result'))return;if(mode==='calc'?!justCalculated:!toolResult?.main)return;copyResult();const r=$('#result');r.classList.add('copied');setTimeout(()=>r.classList.remove('copied'),700)});
 $('#langButton').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();setLanguage(lang==='el'?'en':'el')});
@@ -68,6 +68,7 @@ window.addEventListener('keydown',e=>{
  if(e.key==='Delete'&&nothingOpen&&(mode==='calc'||mode==='units')){e.preventDefault();if(mode==='calc')clearButtonAction();else toolKeyInput('clearEntry');return}
  if(e.key==='Escape'){
    if(!$('#howModal').classList.contains('hidden')){e.preventDefault();closeHow();return}
+   if(historyClearConfirm){e.preventDefault();clearHistoryConfirm();return}// "Delete all?" first goes back, like a press elsewhere
    if(!$('#historyPanel').classList.contains('hidden')){e.preventDefault();closeHistory();return}
    if(mode==='calc'){e.preventDefault();clearAll()}
    else if(mode==='units'&&!document.activeElement?.matches('select')){e.preventDefault();toolKeyInput('clear')}

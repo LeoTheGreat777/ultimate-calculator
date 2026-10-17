@@ -68,7 +68,8 @@ Part of the notes in CLAUDE.md (read that first). Covers tools.js, units.js, cur
   once. The sheet shows the mode on screen (`History · VAT`); tapping an entry brings its numbers back
   (`restoreModeEntry`), Delete all empties that mode only. Clear all asks first without moving anything (the owner chose this): the button
   itself turns into a red "Delete all?" (`confirmShort`, `.armed`; the chart button hides meanwhile, so the header never gets
-  wider); a second press deletes, a press elsewhere or 4 s put it back (`clearHistoryConfirm`, `clearHistoryPress`); screen
+  wider); a second press deletes, a press elsewhere or 4 s put it back (`clearHistoryConfirm`, `clearHistoryPress`); a press
+  outside the sheet and Esc also only take it back, History stays open (`historyBackdropClick`); screen
   readers hear the full `confirm` question. It is dimmed when there is nothing to clear (`syncHistoryButtons`). A new mode: make `modeSnapshot`/`restoreModeEntry` know it.
 - **Number fields** (every tool field but dates and IP/mask, `groupedField`) show thousands as they are typed: 10000 ->
   10.000 (`groupDigits` in the `input` handler, the cursor kept in place). In them a dot is always a thousands dot and the

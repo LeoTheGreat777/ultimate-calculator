@@ -6,6 +6,11 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.26.5 – 2026-10-17
+
+### Fixed
+- While History asks “Delete all?”, a press outside History (or Esc) only takes the question back; History stays open.
+
 ## 0.26.4 – 2026-10-17
 
 ### Fixed
