@@ -52,10 +52,10 @@ Everything the app serves is in `public/` (the web root for both GitHub Pages an
 | `numbers.js` | exact fractions (`rat`...), `evalExpr`, number formatting (`fmt`, `formatRat`, `money`...) |
 | `charts.js` | drawing helpers, tool charts, History chart |
 | `graph.js` | Graph mode (parser, pan/zoom, key points, drawing) |
-| `complex.js` | complex numbers: `{re, im}` values, `vAdd`… `vPow`, `sciFunctionV`, `vPolar`, `fmtCx` (a+bi / r∠θ, `cxForm`), `vToStore`/`vFromStore`, `carryCx` |
+| `complex.js` | complex numbers: `{re, im}` values, `vAdd`… `vPow`, `sciFunctionV`, `vPolar`, `fmtCx` (a+bi, or r∠θ with 'polar'), `vToStore`/`vFromStore`, `carryCx` |
 | `calculator.js` | calculator keys (`digit`, `operator`, brackets, `negate`, `equals`, C/AC), display, explanation |
 | `explain.js` | the working under ?: `explanationForExpression` (the calculation read into a tree like `evalExpr`, worked out step by step in school order, each step with its reason and the shorter calculation, `\u0001`/`\u0002` around the new number), `unitsHow` (Units/Currency), `howHtml` (draws any working, Subnet's bits too) |
-| `memory.js` | the memory keys MC MR M+ M− MS (`memKey`, `#memRow`, `uc-memory`), the M chip beside f(x), Ctrl shortcuts |
+| `memory.js` | the memory keys MC MR M+ M− MS (`memKey`, `memKeysHtml`, `uc-memory`; dimmed with `.mem-empty`, not `.empty`, a list style), the M chip beside f(x), Ctrl shortcuts |
 | `funcs.js` | the ⋯ sheet: every function and constant by group, with a search (`openFunctions`, `.fn-open` on the ? dialog) |
 | `history.js` | saved calculations, the History sheet and its gestures; every other mode's own History (`recordModeHistory`) |
 | `units.js` | unit data and names, conversion, the two values, `unitKeyInput` |
@@ -172,7 +172,7 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   `./?mode=vat` etc.; main.js switches to that mode at start and puts the address back to `./`. The list and the icons
   (each the mode's tab icon on the dark background) come from `tools/make-shortcut-icons.py`; run it after changing
   them or a tab icon (the tests compare the manifest with it). iPhones don't offer shortcuts for web apps.
-- **Storage:** all in the browser (`uc-history`, `uc-history-modes`, `uc-tools`, `uc-rates`, `uc-lang`, `uc-pins`, `uc-memory`, `uc-cxform`,
+- **Storage:** all in the browser (`uc-history`, `uc-history-modes`, `uc-tools`, `uc-rates`, `uc-lang`, `uc-pins`, `uc-memory`,
   `uc-theme`, `uc-theme-pair`, `uc-custom-themes`, `uc-theme-recent`). Use `store.get/set` – localStorage can throw.
 - **Number fields** (every tool field but dates and IP/mask, `groupedField`) show thousands as they are typed: 10000 ->
   10.000 (`groupDigits` in the `input` handler, the cursor kept in place). In them a dot is always a thousands dot and the
@@ -345,8 +345,11 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
   is 0). √, even roots and ln/log of a negative number are complex (√−4 = 2i); other real domain errors stay errors. `i` is a
   number in the calculation (`2×i` shows as 2i), `∠` an operator as tight as ^ (r∠θ, θ in the angle unit). A complex result
   carried on is `⟪⟫` (`carryCx`; History stores it written out, `expandCarry`); History and memory keep `re|im` strings
-  (`vToStore`/`vFromStore`). `fmt` shows complex values as a+bi or r∠θ (`cxForm`, `uc-cxform`, the chip in `#sciBar` after a
-  complex result). Mod, nCr, nPr and ! of a complex number are errors. The working folds 2 × i and 3 + 2i into written numbers.
+  (`vToStore`/`vFromStore`). `fmt` shows complex values as a+bi; the Calculator shows r∠θ under it at the same time, no button (the owner
+  asked; `renderResultAlt`, `#resultAlt`, `.has-alt` makes the result a little smaller): under a complex result, and while a
+  calculation with i, ∠ or a carried complex is typed its value as it stands (`liveValue`; "= 5 − i  ·  5,09902 ∠ …", the
+  a+bi part left out when it is what was typed). Real calculations never get the line; other modes remove it (`renderTool`).
+  The working ends a complex result with its polar form (r = √(a² + b²), θ = atan2(b; a)). Mod, nCr, nPr and ! of a complex number are errors. The working folds 2 × i and 3 + 2i into written numbers.
 - **Memory** (memory.js; the owner asked for it after first declining): one exact number (`memory`, saved in `uc-memory`). The number
   on screen (`memScreenValue`) is the result, else the number being typed, else what is typed so far. MR types the memory as a
   number of up to 15 significant digits (very large/small ones as `(1.2×10^20)`); after any memory key the next digit starts

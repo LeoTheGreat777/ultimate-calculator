@@ -3,12 +3,11 @@
 // + − × ÷ and whole powers stay exact; the rest (functions of a complex number, non-whole powers) use floating point,
 // rounded to 15 digits like the scientific functions, and a part smaller than 1e−13 of the size is taken as 0 (so
 // e^(iπ) = −1, not −1 + 1,2 × 10⁻¹⁶i). √ and ln of a negative number give their complex value (√−4 = 2i, ln(−1) = iπ).
-// Shown as 3 + 2i, or as r ∠ θ (cxForm, the a+bi / r∠θ chip beside f(x) after a complex result; saved as uc-cxform).
+// Shown as 3 + 2i (fmt); the Calculator shows r ∠ θ under it at the same time (renderResultAlt), and the working ends with it.
 const isCx=v=>!!v&&typeof v==='object'&&v.im!==undefined;
 const cx=(re,im)=>im.n===0n?re:{re,im};// back to a plain fraction when the imaginary part is 0
 const reOf=v=>isCx(v)?v.re:v,imOf=v=>isCx(v)?v.im:rat(0n);
 const I_UNIT={re:rat(0n),im:rat(1n)};
-let cxForm=store.get('uc-cxform')==='polar'?'polar':'rect';
 let carryCx=null;// a complex result carried on into the next calculation: ⟪⟫ in the calculation (formatExpressionDisplay shows it)
 function vAdd(a,b){return !isCx(a)&&!isCx(b)?ratAdd(a,b):cx(ratAdd(reOf(a),reOf(b)),ratAdd(imOf(a),imOf(b)))}
 function vSub(a,b){return !isCx(a)&&!isCx(b)?ratSub(a,b):cx(ratSub(reOf(a),reOf(b)),ratSub(imOf(a),imOf(b)))}
@@ -93,7 +92,7 @@ function sciFunctionV(name,a){
  return fromF(w);
 }
 // shown: 3 + 2i, 3 − 2i, 2i, −i; or r ∠ θ (with ° in degrees). Each part as the display shows numbers (formatRat).
-function fmtCx(v,form=cxForm){
+function fmtCx(v,form='rect'){
  if(form==='polar'){const r=vAbs(v),t=vArg(v);return formatRat(r)+' ∠ '+formatRat(t)+(angleUnit==='deg'?'°':'')}
  const re=v.re,im=v.im,neg=im.n<0n,abs=neg?rat(-im.n,im.d):im,one=abs.n===abs.d,ims=(one?'':formatRat(abs))+'i';
  if(re.n===0n)return (neg?'-':'')+ims;
@@ -110,4 +109,3 @@ function vExprText(v,digits=24){
 }
 // a complex result carried on: ⟪⟫ in the calculation; History keeps it written out
 const expandCarry=s=>String(s).replace(/⟪⟫/g,()=>carryCx?vExprText(carryCx):'0');
-function setCxForm(f){cxForm=f==='polar'?'polar':'rect';store.set('uc-cxform',cxForm);howData&&refreshCalcHow();render()}

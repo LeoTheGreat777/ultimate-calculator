@@ -187,6 +187,9 @@ function explanationForExpression(input,result){
  // a minus in front of everything (−2² = −4) is the last thing done
  if(lastV&&!ratEq(lastV,tree.v)&&ratEq(vNeg(lastV),tree.v))steps.push({title:L('Το μείον μπροστά','The minus in front'),text:'−('+V(lastV)+') = '+V(tree.v)});
  if(steps.length)delete steps[steps.length-1].line;// the last one is the result
+ // a complex result: its size and angle too (the polar form shown under the result)
+ if(isCx(result)){const a=result.re,b=result.im,sq=x=>(x.n<0n?'('+V(x)+')':V(x))+'²',u=deg?'°':'';
+  steps.push({title:L('Πολική μορφή: μέτρο ∠ γωνία','Polar form: size ∠ angle'),text:'r = √('+sq(a)+' + '+sq(b)+') = '+V(vAbs(result))+' · θ = atan2('+V(b)+'; '+V(a)+') = '+V(vArg(result))+u+(deg?'':' rad')});}
  return{formula,rule,steps,result:fmt(result),spaced:true};
 }
 

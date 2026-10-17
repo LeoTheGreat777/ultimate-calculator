@@ -6,6 +6,17 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.24.2 – 2026-10-17
+
+### Changed
+- Complex numbers show in both forms at once, with nothing to press: the result as a + bi and under it the size and
+  angle (98 + 25i, and 101,138519 ∠ 14,311041°). It already shows while you type: pressing i shows the polar form
+  straight away, and a longer calculation shows its value as it stands (= 5 − i · 5,09902 ∠ −11,31°). The a+bi button
+  is gone. The working under ? ends with how the size and angle are found.
+
+### Fixed
+- MC and MR sat a little lower than the other memory keys while memory was empty.
+
 ## 0.24.1 – 2026-10-17
 
 ### Changed

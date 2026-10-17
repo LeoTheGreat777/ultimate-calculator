@@ -5,6 +5,7 @@ function closeHow(){if($('#howModal').contains(document.activeElement))document.
 function modeIcon(m){return ICONS[m]||''}
 function renderTool(){
  const calc=mode==='calc';
+ if(!calc){$('#resultAlt')?.remove();$('#calculatorDisplay')?.classList.remove('has-alt')}// the polar line is the Calculator's
  renderDateBar();// the Working days chip shows only in Dates: every tab change hides or shows it
  const card=$('#calculatorCard');
  card.classList.toggle('mobile-tool',!calc&&isMobileDevice()&&mode!=='units'&&mode!=='graph');

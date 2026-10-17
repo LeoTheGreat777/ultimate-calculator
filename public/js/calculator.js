@@ -33,14 +33,43 @@ function render(){refreshSide();
  $('#result').classList.remove('long-value','near-limit');
  const hasEntry=Boolean(raw);
  $('#clearButton').textContent=current&&!justCalculated&&!calcError?'C':'AC';// C clears the number being typed; with none, the key clears everything
- $('#howButton').classList.toggle('hidden',!howData?.steps?.length);// 25 − 25i alone: nothing to explain
+ $('#howButton').classList.toggle('hidden',!howData?.steps?.length);// nothing to explain: no ?
  $('#chartButton')?.classList.add('hidden');
+ const alt=renderResultAlt(raw);
  requestAnimationFrame(()=>{
    // too long to fit: the text gets smaller, then shows its end (what was typed last); the start fades out
    if(exprEl)fitDisplayText(exprEl,12,true);
    const r=$('#result');
-   if(r)fitDisplayText(r,32,!justCalculated&&!calcError);
+   if(r)fitDisplayText(r,alt?26:32,!justCalculated&&!calcError);
+   if(alt)fitDisplayText(alt,11,false);
  });
+}
+// Complex numbers show both forms at once, with no button to press: the result (a + bi) and under it r ∠ θ. While a
+// calculation with i or ∠ is typed, the line under it shows its value as it stands (= 5 − i · 5,09902 ∠ −11,309932°),
+// the a + bi part left out when it is just what was typed (98 + 25i shows only 101,138519 ∠ 14,31°). Real calculations
+// never get the line. #resultAlt sits under #result in the Calculator only (renderTool removes it in other modes).
+function complexTyped(raw){return /i|∠|⟪⟫/.test(String(raw).replace(new RegExp(FN_ALT,'g'),'').replace(/⟨\w+⟩/g,''))}
+function liveValue(raw){
+ let s=raw.replace(new RegExp('(?:[+\\-−×÷^(CPm∠]|(?:'+FN_ALT+')\\()+$'),'');if(!s)return null;
+ const open=(s.match(/\(/g)||[]).length-(s.match(/\)/g)||[]).length;if(open>0)s+=')'.repeat(open);
+ try{return evalExpr(tidyParens(s))}catch{return null}
+}
+const plainCx=s=>String(s).replace(/\s/g,'').replace(/−/g,'-');
+function renderResultAlt(raw){
+ const r=$('#result');if(!r)return null;
+ let alt=$('#resultAlt');
+ let text='';
+ if(!calcError){
+  if(justCalculated){if(isCx(lastResult))text=fmtCx(lastResult,'polar')}
+  else if(raw&&complexTyped(raw)){
+   const v=liveValue(raw);
+   if(v!==null){const rect=fmt(v);text=isCx(v)?(plainCx(rect)===plainCx(formatExpressionDisplay(raw))?'':'= '+rect+'  ·  ')+fmtCx(v,'polar'):'= '+rect}
+  }
+ }
+ if(!text){alt?.remove();$('#calculatorDisplay')?.classList.remove('has-alt');return null}
+ if(!alt){alt=document.createElement('div');alt.id='resultAlt';alt.className='result-alt';r.after(alt)}
+ alt.textContent=text;$('#calculatorDisplay')?.classList.add('has-alt');
+ return alt;
 }
 function clearAll(){carry=null;resultNegated=false;expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null;lastOperation=null;resetHow();render()}
 function clearCurrent(){resetHow();if(current){current='';currentIsPercent=false;render();return}clearAll()}
@@ -208,8 +237,8 @@ function renderSciBar(){
  const d=$('#calculatorDisplay');if(!d)return;
  let bar=$('#sciBar');
  if(!bar){bar=document.createElement('div');bar.id='sciBar';bar.className='sci-bar';d.appendChild(bar);
-  bar.addEventListener('click',e=>{if(e.target.closest('[data-bar="sci"]'))toggleSci();else if(e.target.closest('[data-bar="mr"]'))memKey('mr');else if(e.target.closest('[data-bar="cx"]'))setCxForm(cxForm==='rect'?'polar':'rect')})}
- const html='<button class="sci-chip'+(sciMode?' on':'')+'" data-bar="sci" type="button" aria-pressed="'+sciMode+'" aria-label="'+esc(t('scientific'))+'" title="'+esc(t('scientific'))+'">f(x)</button>'+memChipHtml()+(justCalculated&&isCx(lastResult)?'<button class="sci-chip on cx-chip" data-bar="cx" type="button" aria-label="'+esc(cxForm==='rect'?(lang==='el'?'Δείξε ως μέτρο ∠ γωνία':'Show as size ∠ angle'):(lang==='el'?'Δείξε ως a + bi':'Show as a + bi'))+'">'+(cxForm==='rect'?'a+bi':'r∠θ')+'</button>':'');
+  bar.addEventListener('click',e=>{if(e.target.closest('[data-bar="sci"]'))toggleSci();else if(e.target.closest('[data-bar="mr"]'))memKey('mr')})}
+ const html='<button class="sci-chip'+(sciMode?' on':'')+'" data-bar="sci" type="button" aria-pressed="'+sciMode+'" aria-label="'+esc(t('scientific'))+'" title="'+esc(t('scientific'))+'">f(x)</button>'+memChipHtml();
  if(bar.dataset.html!==html){bar.innerHTML=html;bar.dataset.html=html}
 }
 function toggleSci(){sciMode=!sciMode;sciSecond=false;store.set('uc-sci',sciMode?'1':'0');renderCalcKeypad();render();fitLayout()}

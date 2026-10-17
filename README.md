@@ -24,7 +24,7 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 - Degrees or radians; exact answers wherever they are exact (2¹⁰, √(9/4), sin 30°)
 - Functions apply to the number just typed or to the result: 30 then sin gives sin(30)
 - Hyperbolic functions and their inverses, cot, sec, csc, |x|, nCr, nPr and mod; π, e, φ and 41 physical constants (CODATA 2018) with a search
-- Complex numbers: i, polar entry (2∠30), exact arithmetic, every function, results as a + bi or r∠θ
+- Complex numbers: i, polar entry (2∠30), exact arithmetic, every function, results in both forms at once (a + bi with r∠θ under it, live while typing)
 
 ### Unit Converter
 - Length, area (including stremma), mass, volume, speed, time, data, energy, power, pressure, angle and temperature conversions
