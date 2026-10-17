@@ -12,12 +12,14 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 - Change sign (±): hold − on the keypad, or F9 on a keyboard
 - Decimal and negative number support
 - Calculation history
+- Results show up to 10 decimals when the screen has room (6 on a narrow phone); copying copies what you see
 - Copy results
 - Keyboard support
 - Works offline once opened: the app keeps a copy on the device and updates it when online
 - Step-by-step explanations of how a result was worked out
 - Brackets that change nothing are tidied away; C clears the number being typed, AC everything
 - Memory keys: MC, MR, M+, M−, MS (Ctrl+L, R, P, Q, M on a keyboard), kept after the app is closed
+- ⋯ opens every function and constant by group, with a search
 
 ### Scientific
 - The f(x) switch on the calculator's display adds scientific keys: sin, cos, tan and their inverses, ln, log, powers, roots, 1/x, x!, π, e and EE
@@ -62,7 +64,8 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 - English and Greek language support
 - Installable on phones: an install button opens the install dialog on Android, and shows a short Add to Home Screen guide on iPhone
 - Mobile-friendly calculator controls
-- One-tap mode tabs for the pinned modes, and every mode (Calculator, Units, Currency, Graph, VAT, Percent, Interest, Dates, Fuel, Energy, Subnet, Programmer, Numbers, Equations, Statistics) under ⊞ with a search; Alt+1–9 for the first nine on a keyboard
+- One-tap mode tabs for the pinned modes; every mode (Calculator, Units, Currency, Graph, VAT, Percent, Interest, Dates, Fuel, Energy, Subnet, Programmer, Numbers, Equations, Statistics) is in All modes (⊞, at the top), with a search, pins, and an All | Default | None switch to pin every mode, the starting four or none at once; Alt+1–9 for the first nine on a keyboard
+- On big screens History sits on the left and the working on the right, beside the calculator, updating live
 - Calculation explanations presented in a readable step-by-step view
 - Tips for every mode, with keyboard shortcuts on computers, from the footer (or ? on a keyboard)
 
@@ -119,7 +122,7 @@ The tests open the app in Chromium at desktop and phone sizes, in both languages
 
 ## Deployment
 
-Every push to `main` runs one GitHub Actions workflow (`.github/workflows/deploy.yml`): it builds the site (`node tools/build.mjs`: the ~25 scripts become one minified `js/app.js`, styles.css is minified), tests that build, and only if the tests pass publishes it to
+Every push to `main` runs one GitHub Actions workflow (`.github/workflows/deploy.yml`): it builds the site (`node tools/build.mjs`: the ~26 scripts become one minified `js/app.js`, styles.css is minified), tests that build, and only if the tests pass publishes it to
 
 - **GitHub Pages** – the site at https://uc.kampaxis.com
 - **Docker image** – `ghcr.io/leothegreat777/ultimate-calculator:latest`, tested before it is published. To update a self-hosted copy: `docker compose pull && docker compose up -d`.
@@ -140,17 +143,12 @@ The project is actively evolving. The interface, calculation modes and conversio
 
 ## Roadmap
 
-Planned areas include:
+Ideas for later:
 
-- Currency conversion
 - More unit categories and conversions
-- Discounts, markup and margins
-- Date and time calculations
-- Loan and interest calculations
+- Markup and margins
 - Reusable formulas
-- More advanced calculation history
 - More dedicated calculators
-- Improved mobile UX
 - Additional languages
 - Continued accessibility and interaction improvements
 

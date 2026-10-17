@@ -34,6 +34,9 @@ CHANGELOG.md is long and newest-first: read only its top (`head -40 CHANGELOG.md
 Every push of app changes gets its own version and entry. `--check` (run by GitHub before
 deploying) fails if the versions disagree or the changelog has no entry for the current version.
 
+**README:** update `README.md` in the same push only when the change adds, removes or renames something a user
+would notice (a mode, a feature, how to install or run it); not for fixes, tweaks or looks. Edit just the matching line.
+
 ## Files
 
 Everything the app serves is in `public/` (the web root for both GitHub Pages and the Docker image):
