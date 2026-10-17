@@ -1278,6 +1278,36 @@ async def more_decimals(browser, url):
         check(f'[decimals {w}x{h}] copying the result copies what is shown', clip == '0,1428571429', clip)
         await ctx.close()
 
+
+async def how_buttons_in_place(browser, url):
+    """With a result in every tab, the ? and chart buttons sit inside the display, never over the mode tabs (v0.26.1-0.26.3
+    moved them up onto the tabs on phones), from small phones to big screens, upright and sideways."""
+    js = """async()=>{const r=[];const fill={vat:[['amount','874']],pct:[['pctPrice','80'],['pctOff','25']],loan:[['loanAmount','10000'],['loanRate','4'],['loanYears','5']],fuel:[['fuelD','250'],['fuelC','7'],['fuelP','1,8']],energy:[['energyP','100'],['energyH','8'],['energyD','30'],['energyR','0,2']],net:[['netIp','192.168.1.10'],['netPrefix','24']],numbers:[['numA','48'],['numB','18']],equation:[['eqA','1'],['eqB','-3'],['eqC','2']],prog:[['progDec','255']],dates:[['dateTo','2027-03-15']]};
+ const wait=ms=>new Promise(x=>setTimeout(x,ms));
+ for(const m of MODE_LABELS){switchMode(m);await wait(80);
+  if(m==='calc'){for(const k of '1/7')document.dispatchEvent(new KeyboardEvent('keydown',{key:k,bubbles:true}));document.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}))}
+  for(const [f,v] of fill[m]||[]){const e=document.getElementById(f);if(e){e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}))}}
+  if(m==='stats'&&typeof statAdd==='function'){try{document.getElementById('statX').value='3';statAdd();document.getElementById('statX').value='5';statAdd()}catch(e){}}
+  await wait(250);
+  const d=document.getElementById('calculatorDisplay').getBoundingClientRect(),tb=document.querySelector('.calculator-toolbar')?.getBoundingClientRect();
+  document.querySelectorAll('#calculatorDisplay .how-button').forEach(b=>{if(!b.offsetParent||b.classList.contains('hidden'))return;const x=b.getBoundingClientRect();if(!x.width)return;
+   const out=x.top<d.top-1||x.bottom>d.bottom+1||x.left<d.left-1||x.right>d.right+1,hit=tb&&tb.height&&x.top<tb.bottom&&x.bottom>tb.top&&x.left<tb.right&&x.right>tb.left;
+   if(out||hit)r.push(m+':'+(b.id||b.className)+(hit?' over the tabs':' outside the display'))})}
+ switchMode('calc');return r}"""
+    bad = {}
+    for w, h, touch in [(320, 568, True), (360, 640, True), (390, 844, True), (430, 932, True), (667, 330, True), (844, 390, True),
+                        (768, 1024, True), (1024, 768, False), (1280, 860, False), (1920, 1080, False)]:
+        ctx = await browser.new_context(viewport={'width': w, 'height': h}, is_mobile=touch, has_touch=touch)
+        await ctx.add_init_script(SEED % ('en', 'dark'))
+        p = await ctx.new_page()
+        await p.goto(url)
+        await p.wait_for_timeout(300)
+        r = await p.evaluate(js)
+        if r:
+            bad[f'{w}x{h}'] = r
+        await ctx.close()
+    check('? and chart buttons stay inside the display, off the mode tabs, at every size', not bad, bad)
+
 async def sideways_every_tab(browser, url):
     """Every tab held sideways, from a small phone in Safari (iPhone SE, 667×330) to a big one: nothing scrolls, nothing
     sticks out of the screen (Dates' list included), and every tab but Graph and Scientific has the same key size."""
@@ -2483,6 +2513,7 @@ async def main():
         await upright_small_phones(browser, url)
         await touch_areas(browser, url)
         await more_decimals(browser, url)
+        await how_buttons_in_place(browser, url)
         await all_modes(browser, url)
         await esc_everywhere(browser, url)
         await history_per_mode(browser, url)
