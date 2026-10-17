@@ -51,6 +51,7 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 - Interest: a loan's monthly payment and total interest, how long a loan takes with the payment you can afford, and what savings grow to with monthly deposits, with charts
 - Numbers: GCD and LCM of two or three numbers, prime factors and divisors of numbers up to 15 digits
 - Equations: ax² + bx + c = 0 with real or complex roots (exact, x = −1 ± √2), and a system of two equations
+- Statistics: average, median, standard deviation (sample s and population σ), min, max and sum of a list of numbers, typed one at a time or pasted
 - Charts and step-by-step explanations for every tool
 - Each mode keeps its own History; AC clears the values
 
@@ -60,7 +61,7 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 - English and Greek language support
 - Installable on phones: an install button opens the install dialog on Android, and shows a short Add to Home Screen guide on iPhone
 - Mobile-friendly calculator controls
-- One-tap mode tabs for the pinned modes, and every mode (Calculator, Units, Currency, Graph, VAT, Percent, Interest, Dates, Fuel, Energy, Subnet, Numbers, Equations) under ⊞ with a search; Alt+1–9 for the first nine on a keyboard
+- One-tap mode tabs for the pinned modes, and every mode (Calculator, Units, Currency, Graph, VAT, Percent, Interest, Dates, Fuel, Energy, Subnet, Numbers, Equations, Statistics) under ⊞ with a search; Alt+1–9 for the first nine on a keyboard
 - Calculation explanations presented in a readable step-by-step view
 - Tips for every mode, with keyboard shortcuts on computers, from the footer (or ? on a keyboard)
 

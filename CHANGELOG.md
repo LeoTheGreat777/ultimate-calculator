@@ -6,6 +6,13 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.25.0 – 2026-10-17
+
+### Added
+- Statistics mode (under ⊞, More): type numbers one at a time and press Add (or Enter), or paste a whole column.
+  It shows the average, median, standard deviation (s for a sample, σ for a whole population), smallest, largest and
+  sum; ? shows the working, with the variance, range and mode too. Tap a number in the list to take it out.
+
 ## 0.24.7 – 2026-10-17
 
 ### Changed

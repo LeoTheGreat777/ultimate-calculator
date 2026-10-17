@@ -48,6 +48,7 @@ function renderTool(){
  if(mode==='vat')html='<div class="tool-grid">'+field('amount',T[lang].amount)+field('vatRate',T[lang].vatRate)+'</div>'+toggleHtml('vat');
  // Percent, Interest and Dates: the switch goes above the fields, since it decides which fields there are
  if(KIND_FIELDS[mode])html=kindPanelHtml();
+ if(mode==='stats')html=statsPanelHtml();// Statistics (stats.js): one field, the list of numbers, the details
 
  closeCalendar();
  $('#toolPanel').innerHTML=html;
@@ -55,6 +56,7 @@ function renderTool(){
  setActiveToolInput($('#toolPanel input[data-tool-input]'));
  renderToggles();
  if(mode==='net')renderNetDetails(null);// its cells take room: in place before fitting the layout
+ if(mode==='stats'){renderStatList();renderStatDetails(null)}
  renderToolKeypad();setActiveToolInput(toolActiveInput);// again, now that the keypad is there
  fitLayout();
 
@@ -72,7 +74,7 @@ function setMode(next){
 }
 // The modes, one tap each: a strip of tabs at the top of the card (scrolls sideways when they don't all fit). It shows
 // the pinned modes and the one on screen (stripModes, modes.js); every mode is in the ⊞ sheet.
-const MODE_LABELS=['calc','units','currency','graph','vat','pct','loan','dates','fuel','energy','net','numbers','equation'];
+const MODE_LABELS=['calc','units','currency','graph','vat','pct','loan','dates','fuel','energy','net','numbers','equation','stats'];
 function renderModeTabs(){
  const track=$('#modeTabs .mode-tabs-track');if(!track)return;
  const pins=typeof pinnedModes!=='undefined'?pinnedModes:MODE_LABELS;

@@ -675,13 +675,14 @@ async def phone(browser, url, lang, theme, size):
         await p.tap(f'.key[data-value="{key}"]')
     await p.tap('.key[data-action="equals"]')
     check(L + 'keypad works', await p.evaluate(R) == '8')
-    for m in ['calc', 'sci', 'units', 'currency', 'graph', 'vat', 'pct', 'tip', 'loan', 'savings', 'dates', 'fuel', 'energy', 'net', 'numbers', 'factors', 'equation', 'sys2']:
+    for m in ['calc', 'sci', 'units', 'currency', 'graph', 'vat', 'pct', 'tip', 'loan', 'savings', 'dates', 'fuel', 'energy', 'net', 'numbers', 'factors', 'equation', 'sys2', 'stats']:
         # 'sci' is the Calculator with the scientific keys on
         # 'tip' is Percent's tip, the kind with the most fields
         await p.evaluate("switchMode('calc');if(!sciMode)toggleSci()" if m == 'sci' else "switchMode('pct');setToolKind('pct','tip')" if m == 'tip'
                          else "switchMode('loan');setToolKind('loan','savings')" if m == 'savings'
                          else "switchMode('numbers');setToolKind('numbers','factors')" if m == 'factors'
                          else "switchMode('equation');setToolKind('equation','sys2')" if m == 'sys2'
+                         else "switchMode('stats');for(const v of ['12','1234,75','-3','15,5','9']){statX.value=v;statX.dispatchEvent(new Event('input',{bubbles:true}));statAdd()}" if m == 'stats'
                          else "switchMode('net');setToolKind('net','subnet');for(const[k,v] of [['netIp','10.0.0.5'],['netPrefix','16']]){const i=document.getElementById(k);i.value=v;i.dispatchEvent(new Event('input',{bubbles:true}))}" if m == 'net' else f"switchMode('{m}')")
         await p.wait_for_timeout(200)
         # compared with the real screen size: a phone browser widens the page to fit content that is too wide
@@ -695,6 +696,9 @@ async def phone(browser, url, lang, theme, size):
             check(L + f'{m}: landscape layout fits without scrolling', st == [True, '0'], st)
             gap = await p.evaluate("innerHeight-document.querySelector('.app-footer').getBoundingClientRect().bottom")
             check(L + f'{m}: sideways the card reaches the bottom (no empty strip)', gap <= 14, gap)
+        if m == 'stats':
+            cut = await p.evaluate("[...document.querySelectorAll('#statDetails strong,#statDetails span')].filter(s=>s.offsetParent&&s.scrollWidth>s.clientWidth+1).map(s=>s.textContent)")
+            check(L + 'stats: no detail is cut off', not cut, cut)
         if m == 'net':
             cut = await p.evaluate("[...document.querySelectorAll('#netDetails strong')].filter(s=>s.offsetParent&&s.scrollWidth>s.clientWidth+1).map(s=>s.textContent)")
             check(L + 'net: no detail value is cut off', not cut, cut)
@@ -1186,10 +1190,12 @@ async def sideways_every_tab(browser, url):
             bad, keys = [], {}
             for m, kind in [('calc', None), ('units', None), ('currency', None), ('vat', None), ('pct', 'discount'), ('pct', 'tip'), ('loan', 'loan'),
                             ('loan', 'payoff'), ('loan', 'savings'), ('dates', 'between'), ('dates', 'add'), ('fuel', None), ('energy', None), ('net', 'subnet'),
-                            ('numbers', 'gcd'), ('numbers', 'factors'), ('equation', 'quad'), ('equation', 'sys2')]:
+                            ('numbers', 'gcd'), ('numbers', 'factors'), ('equation', 'quad'), ('equation', 'sys2'), ('stats', None)]:
                 await p.evaluate(f"switchMode('{m}')")
                 if kind:
                     await p.evaluate(f"setToolKind('{m}','{kind}')")
+                if m == 'stats':
+                    await p.evaluate("for(const v of ['12','1234,75','-3','15,5','9']){statX.value=v;statX.dispatchEvent(new Event('input',{bubbles:true}));statAdd()}")
                 for fid, v in fill.get(m, []):
                     await p.evaluate(f"(()=>{{const e=document.getElementById('{fid}');if(!e)return;e.value='{v}';e.dispatchEvent(new Event('input',{{bubbles:true}}))}})()")
                 await p.wait_for_timeout(200)
@@ -1218,7 +1224,7 @@ async def all_modes(browser, url):
     await p.click('#modesButton')
     await p.wait_for_timeout(100)
     got = await p.evaluate("[!modesModal.classList.contains('hidden'),document.querySelectorAll('#modesList .mode-group').length,[...document.querySelectorAll('#modesList .mode-pick')].map(b=>b.dataset.mode),document.activeElement.id]")
-    check(L + 'the sheet has every mode in 3 groups, the search has the focus', got[0] and got[1] == 3 and sorted(got[2]) == sorted(['calc', 'units', 'currency', 'graph', 'vat', 'pct', 'loan', 'dates', 'fuel', 'energy', 'net', 'numbers', 'equation']) and got[3] == 'modesSearch', got)
+    check(L + 'the sheet has every mode in 3 groups, the search has the focus', got[0] and got[1] == 3 and sorted(got[2]) == sorted(['calc', 'units', 'currency', 'graph', 'vat', 'pct', 'loan', 'dates', 'fuel', 'energy', 'net', 'numbers', 'equation', 'stats']) and got[3] == 'modesSearch', got)
     for q, want in [('tip', ['pct']), ('loan', ['loan']), ('ip', ['net']), ('καυσ', ['fuel']), ('ΦΠΑ', ['vat']), ('zzz', [])]:
         await p.fill('#modesSearch', q)
         got = await p.evaluate("[...document.querySelectorAll('#modesList .mode-pick')].map(b=>b.dataset.mode)")
@@ -2140,11 +2146,64 @@ async def numbers_equations(browser, url):
     await p.context.close()
 
 
+async def statistics(browser, url):
+    """Statistics: numbers added one at a time (keypad Add, Enter) or pasted, taken out by a tap or brought back with ⌫;
+    average, median, both standard deviations, min, max, sum; the working, History, Greek, AC."""
+    L = '[statistics] '
+    p = await new_page(browser, url, 'en', 'dark')
+    add = """(vs)=>{switchMode('stats');for(const v of vs){statX.value=v;statX.dispatchEvent(new Event('input',{bubbles:true}));statAdd()}
+      return [document.querySelector('#result').textContent,document.querySelector('#expression').textContent,[...document.querySelectorAll('#statDetails strong')].map(s=>s.textContent)]}"""
+    got = await p.evaluate(add, ['2', '4', '4', '4', '5', '5', '7', '9'])
+    check(L + 'average, median, s, σ, min, max, sum', got == ['5', 'Average of 8 numbers', ['4,5', '2,13809', '2', '2', '9', '40']], got)
+    st = await p.evaluate("[howData.steps.length,howData.steps.map(s=>s.title).join(' | '),howData.steps.map(s=>s.text).join(' | ')]")
+    check(L + 'the working: sum, average, median, variance, both deviations, range, mode', st[0] >= 9 and 'Median' in st[1] and 'Mode' in st[1] and '4 (3 times)' in st[2], st)
+    chips = "[...document.querySelectorAll('#statList .stat-chip')].map(c=>c.firstChild.textContent)"
+    await p.click('.tool-key[data-action="clear-all"]')
+    check(L + 'AC empties the list', await p.evaluate(chips) == [] and await p.evaluate("document.querySelector('#result').textContent") == '0')
+    # the keypad: digits, comma, ±, Add; Add with nothing typed does nothing
+    for k in ['1', '2', ',', '5']:
+        await p.click(f'#keypad [data-value="{k}"]')
+    await p.click('#keypad [data-value="-"]')
+    await p.click('#keypad .stat-add')
+    await p.click('#keypad .stat-add')
+    for k in ['1', '0', '0', '0']:
+        await p.click(f'#keypad [data-value="{k}"]')
+    await p.keyboard.press('Enter')
+    await p.keyboard.type('3')
+    await p.keyboard.press('Enter')
+    check(L + 'typed with the keypad (± too) and Enter; Add on an empty field adds nothing', await p.evaluate(chips) == ['-12,5', '1.000', '3'], await p.evaluate(chips))
+    await p.keyboard.press('Backspace')
+    st = await p.evaluate("[statX.value," + chips + "]")
+    check(L + '⌫ on an empty field brings the last number back', st == ['3', ['-12,5', '1.000']], st)
+    await p.click('#statList .stat-chip[data-i="0"]')
+    check(L + 'a tap on a number takes it out', await p.evaluate(chips) == ['1.000'], await p.evaluate(chips))
+    await p.evaluate("""(()=>{const dt=new DataTransfer();dt.setData('text/plain','1,5\\n2\\n2,5\\n');statX.value='';
+      statX.dispatchEvent(new ClipboardEvent('paste',{clipboardData:dt,bubbles:true,cancelable:true}))})()""")
+    check(L + 'a pasted column adds every number', await p.evaluate(chips) == ['1.000', '1,5', '2', '2,5'], await p.evaluate(chips))
+    got = await p.evaluate(add, [])
+    check(L + 'the median of an even count, s needs 2 numbers', got[0] == '251,5' and got[2][0] == '2,25', got)
+    got = await p.evaluate("(()=>{clearToolFields();statX.value='7';statX.dispatchEvent(new Event('input',{bubbles:true}));statAdd();return [...document.querySelectorAll('#statDetails strong')].map(s=>s.textContent)})()")
+    check(L + 'one number: no sample deviation (–), σ = 0', got == ['7', '–', '0', '7', '7', '7'], got)
+    await p.evaluate(add, ['10', '20'])
+    await p.evaluate("setLanguage('el')")
+    await p.wait_for_timeout(300)
+    st = await p.evaluate("[document.querySelector('#expression').textContent,document.querySelector('#keypad .stat-add').textContent,document.querySelector('#statDetails span').textContent," + chips + "]")
+    check(L + 'Greek after a live switch, the list kept', st == ['Μέσος όρος 3 αριθμών', 'Προσθήκη', 'Διάμεσος', ['7', '10', '20']], st)
+    await p.evaluate("setLanguage('en');switchMode('calc')")
+    entry = await p.evaluate("(JSON.parse(localStorage.getItem('uc-history-modes')||'{}').stats||[])[0]")
+    check(L + 'History keeps the list when leaving', bool(entry) and entry['inputs'].get('statList') == '7;10;20', entry)
+    await p.evaluate("restoreModeEntry((JSON.parse(localStorage.getItem('uc-history-modes')).stats)[0])")
+    st = await p.evaluate("[mode," + chips + ",document.querySelector('#result').textContent]")
+    check(L + 'tapping it in History brings the numbers back', st == ['stats', ['7', '10', '20'], '12,333333'], st)
+    check(L + 'no JavaScript errors', not p.errors, p.errors)
+    await p.context.close()
+
+
 async def foldables(browser, url):
     """Foldables: an inner screen held sideways (iPhone Duo, Galaxy Fold: wide, not phone-short) gets the sideways layout
     with big keys and nothing scrolls; half open like a book (two screen segments), the fold falls between the display
     and the keypad."""
-    tabs = ['calc', 'units', 'currency', 'graph', 'vat', 'pct', 'loan', 'dates', 'fuel', 'energy', 'net', 'numbers', 'equation']
+    tabs = ['calc', 'units', 'currency', 'graph', 'vat', 'pct', 'loan', 'dates', 'fuel', 'energy', 'net', 'numbers', 'equation', 'stats']
     for size in [(924, 693), (832, 620)]:
         L = f'[foldables {size[0]}x{size[1]}] '
         p = await new_page(browser, url, 'el', 'dark', phone=True, size=size)
@@ -2189,7 +2248,7 @@ async def big_screen_dialogs(browser, url):
         L = f'[big screen dialogs {lang}] '
         p = await new_page(browser, url, lang, 'dark', size=(1920, 1080))
         bad = []
-        for m in ['calc', 'units', 'currency', 'graph', 'vat', 'pct', 'loan', 'dates', 'fuel', 'energy', 'net', 'numbers', 'equation']:
+        for m in ['calc', 'units', 'currency', 'graph', 'vat', 'pct', 'loan', 'dates', 'fuel', 'energy', 'net', 'numbers', 'equation', 'stats']:
             await p.evaluate(f"closeHow();switchMode('{m}');showHelp()")
             if await p.evaluate(scrolls):
                 bad.append(m)
@@ -2277,6 +2336,7 @@ async def main():
         await more_functions(browser, url)
         await complex_numbers(browser, url)
         await numbers_equations(browser, url)
+        await statistics(browser, url)
         await offline(browser)
         await preview_site(browser)
         await currency_offline(browser, url)

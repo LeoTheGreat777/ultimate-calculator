@@ -1,6 +1,6 @@
 # Tools, Units and Currency
 
-Part of the notes in CLAUDE.md (read that first). Covers tools.js, units.js, currency.js, dates.js, numtools.js, net.js, history.js, the tool charts in charts.js.
+Part of the notes in CLAUDE.md (read that first). Covers tools.js, units.js, currency.js, dates.js, numtools.js, stats.js, net.js, history.js, the tool charts in charts.js.
 
 - **Tool modes** are `TOOL_MODES` (core.js): use it rather than listing them. Defaults (VAT rate 24, Subnet /24, Dates today)
   are `TOOL_DEFAULTS`, filled in on entering the mode and after AC. Percent (discount, change, tip), Interest (`loan`:
@@ -35,6 +35,15 @@ Part of the notes in CLAUDE.md (read that first). Covers tools.js, units.js, cur
   complex roots as a + bi (complex.js); a system with D = 0 has no or infinitely many solutions. The form line above the
   fields (`eqForm`) goes on a very short sideways screen (`fit-no-form`); sideways the system's six fields share one row.
   Their keypad has ± beside 0.
+- **Statistics** (stats.js, mode `stats`, no kinds): one field (`statX`) whose box also holds the list as chips
+  (`#statList`; the chips scroll, the typing part stays in view). The list is text in the tool's inputs, `statList`
+  ("12;15,5;-3": decimal comma, no dots), so History saves and restores it like a field. Add (the keypad's tall key,
+  `data-action="stat-add"`, or Enter) puts the number in; a tap on a chip takes it out; ⌫ on an empty field brings the
+  last one back to edit; several numbers pasted at once (a spreadsheet column, "1 2 3", "1;2,5") all go in; up to 1000.
+  Its keypad has four columns (`.stat-keypad`: ± top right, Add spanning four rows). Results are exact fractions up
+  to the roots: average (the result), median, s (÷ n − 1, '–' for one number) and σ (÷ n), min, max, sum in
+  `#statDetails` (Subnet's `.net-details` look; `fit-no-details` hides it on a very short sideways screen); the working
+  adds variance, range and mode.
 - **Switches** (VAT add/remove, the kinds of Percent, Interest and Dates) are one generic segmented control: `TOGGLES`, `toggleHtml`,
   `renderToggles`, `setupToggleSlide` (tap, drag, swipe, ← →), `.seg-toggle` in styles.css (`--n` options, `--i` chosen).
 - **Changing mode clears the mode you leave** (`resetModeInput`, called by `switchMode`): numbers typed and results

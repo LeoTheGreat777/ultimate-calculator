@@ -14,6 +14,7 @@ $('#keypad').addEventListener('click',e=>{
    }
    if(a==='clear'||a==='backspace'||v==='.'||/^\d$/.test(v||'')){toolKeyInput(a==='clear'?'clear':a==='backspace'?'backspace':v);return}
    if(v==='-'){toolKeyInput('-');return}
+   if(a==='stat-add'){statAdd();return}
    return;
  }
  if(b.dataset.sci){sciKey(b.dataset.sci);return}
@@ -54,6 +55,7 @@ window.addEventListener('keydown',e=>{
  if(mode==='calc'&&nothingOpen&&e.key==='i'){e.preventDefault();sciKey('i');return}// the imaginary unit
  if(mode==='calc'&&e.key.length===1&&!/^[0-9+\-*/%.,()=]$/.test(e.key)){e.preventDefault();e.stopImmediatePropagation();return}
  if(mode==='graph'&&e.key!=='Escape'){if($('#howModal').classList.contains('hidden')&&$('#historyPanel').classList.contains('hidden')&&graphKeydown(e))e.preventDefault();return}
+ if(mode==='stats'&&e.key==='Enter'&&nothingOpen&&!document.activeElement?.matches('button,select')){e.preventDefault();statAdd();return}// Statistics: Enter adds the number
  // In a tool field that has the focus, Backspace is the browser's own: it deletes the selection, or the character before the cursor.
  const toolFieldFocused=document.activeElement?.matches('#toolPanel input[data-tool-input]');
  if((e.key==='Backspace'||e.code==='Backspace')&&toolFieldFocused)return;

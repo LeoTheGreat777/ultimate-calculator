@@ -887,3 +887,22 @@ html.side-panels #historyButton,html.side-panels #howButton,html.side-panels #un
 html.landscape .eq-form{margin:4px 0 0;font-size:13px}
 .calculator-card.fit-tight .eq-form{margin-top:2px;font-size:12px}
 .calculator-card.fit-no-form .eq-form{display:none}
+/* ---------- Statistics (stats.js): one box with the list's chips (a tap takes one out) and the number being typed;
+   a numeric keypad with a tall Add key ---------- */
+.stat-box{display:flex;align-items:center;gap:6px;min-width:0;border:1px solid var(--border);border-radius:11px;background:var(--card);padding:0 0 0 5px}
+.stat-box:has(input.tool-active),.stat-box:has(input:focus){border-color:var(--accent)}
+.tool-field .stat-box input{flex:1 0 76px;min-width:76px;width:auto;border:0;border-radius:0 11px 11px 0;background:transparent;padding-left:5px}
+.stat-list{flex:0 1 auto;display:flex;align-items:center;gap:5px;min-width:0;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;overscroll-behavior-x:contain}
+.stat-list:empty{display:none}
+.stat-list::-webkit-scrollbar{display:none}
+.stat-chip{flex:0 0 auto;display:inline-flex;align-items:center;gap:4px;height:32px;padding:0 7px 0 10px;border:1px solid var(--border);border-radius:999px;background:var(--card2);color:var(--text);font:inherit;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.stat-chip span{color:var(--muted);font-size:15px;line-height:1}
+@media (hover:hover) and (pointer:fine){.stat-chip:hover{border-color:var(--danger)}.stat-chip:hover span{color:var(--danger)}}
+.stat-chip:active{border-color:var(--danger)}
+.calculator-card.mobile-tool .stat-chip{height:28px;font-size:13.5px}
+.stat-details span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tool-keypad.stat-keypad{grid-template-columns:repeat(4,minmax(0,1fr))}
+.tool-keypad.stat-keypad [data-value="-"]{grid-column:4;grid-row:1}
+.tool-keypad.stat-keypad .stat-add{grid-column:4;grid-row:2 / span 4;background:var(--accent);color:var(--on-accent);font-size:16px;font-weight:750;padding:0 4px;white-space:nowrap;overflow:hidden}
+body.fit .calculator-card .tool-keypad.stat-keypad button.stat-add,.calculator-card.mobile-tool .tool-keypad.stat-keypad button.stat-add{height:auto!important;min-height:0!important;align-self:stretch}
+@media (hover:hover) and (pointer:fine){.tool-keypad.stat-keypad .stat-add:hover{background:var(--accent2)}}

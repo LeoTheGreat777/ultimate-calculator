@@ -38,7 +38,7 @@ function renderToolDisplay(){refreshSide();
  fitDisplayText($('#result'),24);
 }
 const FIELD_EXAMPLES={fuelD:'250',fuelC:'7,2',fuelP:'1,85',energyP:'100',energyH:'8',energyD:'30',energyR:'0,20',amount:'100',vatRate:'24%',pctPrice:'80',pctOff:'25%',pctFrom:'80',pctTo:'100',tipBill:'60',tipRate:'10%',tipPeople:'1',loanAmount:'10.000',payAmount:'10.000',payRate:'4%',payMonthly:'300',loanRate:'4%',loanYears:'5',saveStart:'1.000',saveMonthly:'100',saveRate:'3%',saveYears:'10',dateDays:'30',netIp:'192.168.1.10',netPrefix:'24',netHosts:'50',value:'10',
- numA:'48',numB:'18',numC:'',numN:'360',eqA:'1',eqB:'-3',eqC:'2',sxA1:'2',sxB1:'1',sxC1:'5',sxA2:'1',sxB2:'-1',sxC2:'1'};
+ numA:'48',numB:'18',numC:'',numN:'360',eqA:'1',eqB:'-3',eqC:'2',sxA1:'2',sxB1:'1',sxC1:'5',sxA2:'1',sxB2:'-1',sxC2:'1',statX:'12,5'};
 let vatAction='add';
 const liveToolNumber=id=>{const raw=normalizeNumericInput(fieldValue(id));if(raw==='')return null;const n=Number(raw);return Number.isFinite(n)?n:null};
 // On phones the fields are filled only from the app's own keypad, so the native keyboard never opens.
@@ -382,6 +382,9 @@ function renderToolKeypad(){
    '<button class="tool-key" data-value="1" type="button">1</button><button class="tool-key" data-value="2" type="button">2</button><button class="tool-key" data-value="3" type="button">3</button>'+
    // Equations need negative numbers: ± takes half of the 0 key's place
    (mode==='equation'?'<button class="tool-key" data-value="-" type="button" aria-label="'+esc(lang==='el'?'Αλλαγή προσήμου':'Change sign')+'">±</button><button class="tool-key" data-value="0" type="button">0</button>':'<button class="tool-key tool-key-wide" data-value="0" type="button">0</button>')+'<button class="tool-key" data-value="," type="button">,</button>';
+ // Statistics: a fourth column like a numeric keypad, ± at the top and a tall Add key (Enter) beside the digits
+ if(mode==='stats'){$('#keypad').classList.add('stat-keypad');
+  $('#keypad').insertAdjacentHTML('beforeend','<button class="tool-key" data-value="-" type="button" aria-label="'+esc(lang==='el'?'Αλλαγή προσήμου':'Change sign')+'">±</button><button class="tool-key stat-add" data-action="stat-add" type="button">'+esc(t('statAdd'))+'</button>');fitDisplayText($('#keypad .stat-add'),11)}// Προσθήκη on a narrow phone: a little smaller
 }
 function clearToolFields(){
  recordModeHistory();// AC / Esc: what was on screen goes to History first
@@ -402,7 +405,7 @@ function clearToolFields(){
  toolResult=null;
  howData=null;
  saveTools();
- if(TOOL_DEFAULTS[mode])runActiveTool();else renderToolDisplay();
+ if(TOOL_DEFAULTS[mode]||mode==='stats')runActiveTool();else renderToolDisplay();
 }
 function toolKeyInput(key){
  if(mode==='units')return unitKeyInput(key);
@@ -412,7 +415,7 @@ function toolKeyInput(key){
  setActiveToolInput(input);
  let value=input.value;
  if(key==='clear')value='';
- else if(key==='backspace')value=value.slice(0,-1);
+ else if(key==='backspace'){if(mode==='stats'&&value===''){statTakeBack();return true}value=value.slice(0,-1)}// Statistics: the last number comes back
  else if(dottedField(input.id)){const v=dottedKey(value,key);if(v===null){refuseKey(input);return false}value=v}// 192.168.1.10 (net.js)
  else if(FIELD_TYPE[input.id]==='int'&&(key==='.'||key===','))value=value.startsWith('-')?value.slice(1):'-'+value;// the ± key
  else if((noDecimalField(input.id)&&(key==='.'||key===','))||(noSignField(input.id)&&key==='-')){refuseKey(input);return false}
@@ -434,6 +437,7 @@ function runActiveTool(){
  if(mode==='net'){window._runNet?.();return}
  if(mode==='numbers'){window._runNumbers?.();return}
  if(mode==='equation'){window._runEquation?.();return}
+ if(mode==='stats'){window._runStats?.();return}
  if(mode==='units'){window._runUnits?.();return}
 }
 
@@ -470,6 +474,7 @@ $('#toolPanel').addEventListener('keydown',e=>{
   // a digit typed at the end goes through dottedKey, so the dots come by themselves here too
   const i=e.target;if(i.selectionStart===i.value.length&&i.selectionEnd===i.value.length){e.preventDefault();setActiveToolInput(i);toolKeyInput(e.key);return}
  }
+ if(e.target.id==='statX'&&e.key==='Backspace'&&e.target.value===''){e.preventDefault();statTakeBack();return}// Statistics: the last number back to edit
  if(e.key==='/'&&e.target.id==='netIp'){e.preventDefault();const n=$('#netPrefix');if(n){n.focus();n.select();setActiveToolInput(n)}return}// 192.168.1.10/24
  if((noDecimalField(e.target.id)&&/^[.,]$/.test(e.key))||(noSignField(e.target.id)&&e.key==='-')){e.preventDefault();refuseKey(e.target);return}
  // − changes the sign, as on the keypad (typed into the middle it would make the number unreadable)
