@@ -52,7 +52,10 @@ const FIT={
  sci:{k:[62,31],d:[180,96],roomy:150,comfy:42,copy:true},// Scientific: 10 rows of keys (memory, 4 scientific, 5 basic)
  tool:{k:[56,36],d:[205,128],roomy:172,comfy:44,copy:true},
  mobileTool:{k:[56,36],d:[108,98],comfy:44,copy:true},
- graphMin:520
+ graphMin:520,
+ // small phones (320×568, 360×640): when even the sizes above don't fit, tighter limits before the page scrolls
+ tight:{calc:{k:[68,36],d:[205,110],comfy:48},units:{k:[68,32],d:[205,130],comfy:48},sci:{k:[62,28],d:[180,84],comfy:42},
+  tool:{k:[56,32],d:[108,76],comfy:44}}
 };
 // On phones the browser bars slide in and out while scrolling, changing the height; fitting to the smallest
 // height seen (per width, i.e. per orientation) keeps the layout from jumping back and forth.
@@ -121,7 +124,7 @@ function fitLayout(){refreshSide();
  // everything below is in CSS pixels (screen pixels / zoom)
  const avail=fitAvailHeight()/Z;
  const need=()=>Math.ceil((footer.getBoundingClientRect().bottom+window.scrollY)/Z+(parseFloat(getComputedStyle(shell).paddingBottom)||0));
- root.classList.remove('page-scroll');shell.style.height='';card.classList.remove('compact-display','fit-no-copy','fit-no-details','fit-tight','fit-no-form');
+ root.classList.remove('page-scroll','fit-small');shell.style.height='';card.classList.remove('compact-display','fit-no-copy','fit-no-details','fit-tight','fit-no-form','fit-row');
  const tool=TOOL_MODES.includes(mode),touchTool=tool&&isMobileDevice();
  const setToolLayout=compact=>{card.classList.toggle('mobile-tool',compact);document.body.classList.toggle('mobile-tool-on',compact)};
  if(tool)setToolLayout(touchTool);
@@ -157,6 +160,19 @@ function fitLayout(){refreshSide();
  if(over>0&&tool&&!touchTool){setToolLayout(true);over=attempt(FIT.mobileTool)}
  const spec=mode==='calc'?(sciMode?FIT.sci:FIT.calc):mode==='units'?FIT.units:FIT.tool;
  if(over>0&&spec.copy){card.classList.add('fit-no-copy');over=need()-avail}
+ // still too tall (a small phone): the tools get less padding (fit-tight) and the display and keys may get smaller, then
+ // a kind's fields share one row (fit-row, short labels), last Equations' form line and the details (Subnet, Statistics) go (? shows them)
+ if(over>0){
+  const tight=FIT.tight[mode==='calc'?(sciMode?'sci':'calc'):mode==='units'?'units':'tool'];
+  if(tool)card.classList.add('fit-tight');
+  root.classList.add('fit-small');// the footer on one line, as sideways
+  over=attempt(tight);
+  if(over>0&&tool&&$('#toolPanel .kind-grid')){card.classList.add('fit-row');fitShortLabels();over=attempt(tight)}// the fields in one row, as sideways
+  if(over>0&&tool&&$('#eqForm')){card.classList.add('fit-no-form');over=attempt(tight)}
+  if(over>0&&tool&&$('#netDetails,#statDetails')){card.classList.add('fit-no-details');over=attempt(tight)}
+  // even that doesn't fit (Scientific on the smallest phones): back to the normal sizes, and the page scrolls
+  if(over>0){card.classList.remove('fit-tight','fit-row','fit-no-form','fit-no-details');root.classList.remove('fit-small');if(tool)fitShortLabels();over=attempt(card.classList.contains('mobile-tool')?FIT.mobileTool:spec)}
+ }
  if(over>0)root.classList.add('page-scroll');
  root.dataset.fitOver=Math.max(0,over);// how many px did not fit (used by tests)
 }

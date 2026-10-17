@@ -110,17 +110,22 @@ html.landscape .date-rows dd{font-size:14px}
 .date-rows dd{white-space:normal;overflow-wrap:anywhere;line-height:1.3}/* a long line (the holidays) wraps instead of being cut */
 html.landscape .calculator-card.mobile-tool .tool-field input[type=date]{min-height:0}
 /* sideways on a very short screen (fitLandscape, after hiding the copy button): a little less padding in the tools */
-html.landscape .calculator-card.fit-tight .tool-panel{padding-top:5px;padding-bottom:5px}
-html.landscape .calculator-card.fit-tight .seg-toggle button{min-height:24px}
-html.landscape .calculator-card.fit-tight .tool-field input{padding-top:4px;padding-bottom:4px}
-html.landscape .calculator-card.fit-tight .date-rows div{padding:4px}
-html.landscape .calculator-card.fit-tight .expression-row{height:28px}
-html.landscape .calculator-card.fit-tight .how-button{flex-basis:28px;width:28px;height:28px}
+.calculator-card.fit-tight .tool-panel{padding-top:5px;padding-bottom:5px}
+.calculator-card.fit-tight .seg-toggle button{min-height:24px}
+.calculator-card.fit-tight .tool-field input{padding-top:4px;padding-bottom:4px}
+.calculator-card.fit-tight .date-rows div{padding:4px}
+.calculator-card.fit-tight .expression-row{height:28px}
+.calculator-card.fit-tight .how-button{flex-basis:28px;width:28px;height:28px}
+.calculator-card.mobile-tool.fit-tight .display-wrap.tool-display .result{font-size:clamp(28px,9vw,40px)}
+.calculator-card.mobile-tool.fit-tight .display-wrap.tool-display .expression{font-size:12px;line-height:1.25;max-height:30px;margin-bottom:1px}
 html.landscape .date-rows ~ .date-note{display:none}/* the working days note; "Pick two dates." still shows */
 .date-details > .date-note:only-child{margin:auto;text-align:center;font-size:14px}
 html.landscape .tool-grid.kind-grid{grid-template-columns:repeat(var(--f,2),minmax(0,1fr))}
 /* one line per label there, so a long one can't make the row taller */
 html.landscape .tool-grid.kind-grid .tool-field span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* a small phone upright does the same when nothing else fits (fit-row, fitLayout) */
+.calculator-card.fit-row .tool-grid.kind-grid{grid-template-columns:repeat(var(--f,2),minmax(0,1fr))}
+.calculator-card.fit-row .tool-grid.kind-grid .tool-field span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tool-field{display:flex;flex-direction:column;gap:6px}
 .tool-field span{font-size:12px;color:var(--muted)}
 .tool-field span.limit-hint{color:var(--danger);font-weight:700}
@@ -236,7 +241,7 @@ html.landscape .tool-grid.kind-grid .tool-field span{white-space:nowrap;overflow
   .key,.tool-keypad button,.secondary-button{-webkit-tap-highlight-color:transparent}
 }
 .seg-toggle{display:grid;grid-template-columns:repeat(var(--n,2),minmax(0,1fr));gap:5px;margin-top:10px;padding:4px;background:var(--card);border:1px solid var(--border);border-radius:13px}
-.seg-toggle button{min-width:0;min-height:38px;border:0;border-radius:9px;background:transparent;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer}
+.seg-toggle button{min-width:0;min-height:38px;border:0;border-radius:9px;background:transparent;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;padding-left:2px;padding-right:2px}
 .seg-toggle button.active{color:var(--text)}
 .conversion-category{flex:1;min-height:42px;border:1px solid var(--border);border-radius:13px;background:var(--card);color:var(--text);padding:9px 12px;outline:none;font-weight:650}
 .conversion-swap{width:42px;height:42px;flex:0 0 42px;border:1px solid var(--border);border-radius:13px;background:var(--card);color:var(--accent2);font-size:20px;cursor:pointer}
@@ -639,7 +644,7 @@ html.landscape .topbar h1{font-size:18px;margin:0}
 html.landscape .brand-mark{width:24px;height:24px}
 html.landscape .top-actions .icon-button,html.landscape .top-actions .language-button{height:34px}
 html.landscape .top-actions .icon-button{width:34px}
-html.landscape .app-footer{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;column-gap:10px;margin-top:5px;line-height:1.4}
+html.landscape .app-footer,html.fit-small .app-footer{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;column-gap:10px;margin-top:5px;line-height:1.4}
 html.landscape .calculator-card,html.landscape .calculator-card.graph-mode,html.landscape .calculator-card.mobile-tool{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto auto;column-gap:12px;align-items:stretch;padding:8px}
 /* a fold down the middle (html.hinge-v, layout.js): the whole width, and the gap between the two sides over the fold */
 html.hinge-v .app-shell{width:100%}
@@ -791,7 +796,7 @@ html.landscape .calculator-card.sci-on .bottom-actions{display:none}
    screen is too short, fitLandscape hides them (fit-no-details) and ? still shows them */
 html.landscape .calculator-card.mobile-tool .seg-toggle button{min-height:28px}
 html.landscape .calculator-card.mobile-tool:has(.net-details) .display-wrap.tool-display .result{font-size:clamp(24px,7vh,36px)}
-html.landscape .calculator-card.fit-no-details .net-details{display:none}
+.calculator-card.fit-no-details .net-details{display:none}
 html.landscape.land-fill body.fit .calculator-card:not(.graph-mode){flex:1 1 auto!important}/* sideways: the card reaches the bottom once everything fits (fitLandscape) */
 html.landscape .calculator-card.mobile-tool .net-details{margin-top:5px;gap:3px 6px}
 /* Subnet sideways: its keypad has only three columns, so the left side is wider, and the details are two columns of

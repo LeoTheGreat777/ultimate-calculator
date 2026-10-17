@@ -6,6 +6,14 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.25.1 – 2026-10-17
+
+### Fixed
+- Small phones held upright (like an iPhone SE, or a 360×640 Android) no longer need scrolling in the tools, Units and
+  Currency: the tools get tighter, their fields can share one row, and the bottom line fits on one row. On the smallest
+  screens the details of Subnet and Statistics and the Equations form line move under ?.
+- Kind switch labels (like Greek “Αποταμίευση”) and field labels are no longer cut off on narrow phones.
+
 ## 0.25.0 – 2026-10-17
 
 ### Added

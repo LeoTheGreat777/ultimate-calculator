@@ -1169,6 +1169,55 @@ async def screen_reader(browser, url):
     await p.context.close()
 
 
+
+async def upright_small_phones(browser, url):
+    """Small phones held upright (old iPhone SE 320×568, small Android 360×640), filled in: every tab fits without the
+    page scrolling (Scientific only from 360×640: its ten rows of keys don't fit 320×568), nothing sticks out, no label
+    is cut (kind switches included), and keys stay at least 31px tall."""
+    fill = {'vat': [['amount', '1234567,89']], 'pct': [['pctPrice', '1250'], ['pctOff', '25']], 'fuel': [['fuelD', '1250'], ['fuelC', '6,5'], ['fuelP', '1,85']],
+            'energy': [['energyP', '2000'], ['energyH', '3'], ['energyD', '30'], ['energyR', '0,15']], 'loan': [['loanAmount', '250000'], ['loanRate', '4'], ['loanYears', '30']],
+            'net': [['netIp', '192.168.100.100'], ['netPrefix', '26']], 'dates': [['dateTo', '2027-03-15']],
+            'numbers': [['numA', '123456789012'], ['numB', '987654321'], ['numC', '360'], ['numN', '600851475143']],
+            'equation': [['eqA', '1'], ['eqB', '2'], ['eqC', '5'], ['sxA1', '2'], ['sxB1', '1'], ['sxC1', '5'], ['sxA2', '1'], ['sxB2', '-1'], ['sxC2', '1']]}
+    for w, h in [(320, 568), (360, 640)]:
+        for lang in ['en', 'el']:
+            L = f'[upright {w}x{h} {lang}] '
+            ctx = await browser.new_context(viewport={'width': w, 'height': h}, is_mobile=True, has_touch=True)
+            await ctx.add_init_script(SEED % (lang, 'dark'))
+            p = await ctx.new_page()
+            await p.goto(url)
+            await p.wait_for_timeout(300)
+            bad = []
+            tabs = [('calc', None), ('units', None), ('currency', None), ('vat', None), ('pct', 'discount'), ('pct', 'tip'), ('loan', 'loan'),
+                    ('loan', 'payoff'), ('loan', 'savings'), ('dates', 'between'), ('dates', 'add'), ('fuel', None), ('energy', None), ('net', 'subnet'),
+                    ('net', 'hosts'), ('numbers', 'gcd'), ('numbers', 'factors'), ('equation', 'quad'), ('equation', 'sys2'), ('stats', None)]
+            if w >= 360:
+                tabs.append(('sci', None))
+            for m, kind in tabs:
+                await p.evaluate("switchMode('calc');if(sciMode)toggleSci()")
+                if m == 'sci':
+                    await p.evaluate("toggleSci()")
+                else:
+                    await p.evaluate(f"switchMode('{m}')")
+                if kind:
+                    await p.evaluate(f"setToolKind('{m}','{kind}')")
+                for fid, v in fill.get(m, []):
+                    await p.evaluate(f"(()=>{{const e=document.getElementById('{fid}');if(!e)return;e.value='{v}';e.dispatchEvent(new Event('input',{{bubbles:true}}))}})()")
+                await p.wait_for_timeout(200)
+                st = await p.evaluate("""(()=>{const W=innerWidth,out=[];if(document.documentElement.classList.contains('page-scroll'))out.push('scrolls');
+                  document.querySelectorAll('#calculatorCard *').forEach(e=>{const r=e.getBoundingClientRect();if(r.width&&r.right>W+1&&!e.closest('.mode-tabs,.hidden'))out.push('off: '+e.tagName+'.'+String(e.className).slice(0,20))});
+                  document.querySelectorAll('#toolPanel .tool-field span, .seg-toggle button').forEach(e=>{if(e.offsetParent&&labelCut(e))out.push('label cut: '+e.textContent)});
+                  const d=document.getElementById('calculatorDisplay').getBoundingClientRect();
+                  for(const id of ['expression','result']){const r=document.getElementById(id)?.getBoundingClientRect();if(r&&r.height&&(r.top<d.top-1||r.bottom>d.bottom+1))out.push(id+' outside the display')}
+                  const k=[...document.querySelectorAll('#keypad button')].filter(b=>b.offsetParent).map(b=>b.getBoundingClientRect().height);
+                  if(k.length&&Math.min(...k)<31)out.push('keys '+Math.round(Math.min(...k))+'px');
+                  return [...new Set(out)]})()""")
+                if st:
+                    bad.append([m + (':' + kind if kind else ''), st])
+            await p.evaluate("if(sciMode)toggleSci()")
+            check(L + 'every tab fits: no scrolling, nothing off screen, no cut label, keys big enough', not bad, bad)
+            await ctx.close()
+
 async def sideways_every_tab(browser, url):
     """Every tab held sideways, from a small phone in Safari (iPhone SE, 667×330) to a big one: nothing scrolls, nothing
     sticks out of the screen (Dates' list included), and every tab but Graph and Scientific has the same key size."""
@@ -2319,6 +2368,7 @@ async def main():
         await field_limits(browser, url, True)
         await screen_reader(browser, url)
         await sideways_every_tab(browser, url)
+        await upright_small_phones(browser, url)
         await all_modes(browser, url)
         await esc_everywhere(browser, url)
         await history_per_mode(browser, url)

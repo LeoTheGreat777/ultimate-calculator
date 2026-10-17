@@ -73,18 +73,20 @@ const dottedField=id=>FIELD_TYPE[id]==='ip'||FIELD_TYPE[id]==='mask';
 // A shorter label for when the long one doesn't fit on its line (sideways, the fields share one row): fitShortLabels.
 const FIELD_SHORT={fuelD:['Απόσταση','Distance'],fuelC:['L/100 km','L/100 km'],fuelP:['Τιμή / L','Price / L'],energyP:['Ισχύς (W)','Power (W)'],
  energyH:['Ώρες/ημ.','Hours/day'],energyD:['Ημέρες','Days'],energyR:['€/kWh','€/kWh'],payMonthly:['Δόση/μήνα','Per month'],
- pctPrice:['Τιμή','Price'],saveMonthly:['Τον μήνα','Monthly'],loanAmount:['Δάνειο','Loan'],payAmount:['Δάνειο','Loan']};
+ pctPrice:['Τιμή','Price'],tipRate:['Φιλοδ. %','Tip %'],saveMonthly:['Τον μήνα','Monthly'],loanAmount:['Δάνειο','Loan'],payAmount:['Δάνειο','Loan']};
 // Each label shows its long text, or its short one if the long one is cut (only one-line labels can be cut: sideways).
 function fitShortLabels(){
  for(const s of document.querySelectorAll('#toolPanel .tool-field span[data-short]')){
   if(s.dataset.label!=null)continue;// showing "Up to 50%" (refuseLimit)
   const long=t(s.closest('.tool-field').querySelector('input')?.id);
   if(s.textContent!==long)s.textContent=long;s.style.fontSize='';
-  if(s.scrollWidth>s.clientWidth+1)s.textContent=s.dataset.short;
+  if(labelCut(s))s.textContent=s.dataset.short;
   // still too long (a wider font than expected): a little smaller, never cut
-  for(let px=11.5;px>=9.5&&s.scrollWidth>s.clientWidth+1;px-=.5)s.style.fontSize=px+'px';
+  for(let px=11.5;px>=9.5&&labelCut(s);px-=.5)s.style.fontSize=px+'px';
  }
 }
+// is the label's text wider than its box? (measured exactly: scrollWidth rounds, so a text cut by under a pixel looked whole)
+function labelCut(s){const r=document.createRange();r.selectNodeContents(s);return r.getBoundingClientRect().width>s.getBoundingClientRect().width+.5}
 // Besides the 15 digits, these fields have a sensible top: a key that would go past it is refused, and for a moment
 // the field's label says how far it goes (refuseLimit). [max, unit]
 const FIELD_MAX={vatRate:[50,'%'],pctOff:[100,'%'],tipRate:[100,'%'],loanRate:[50,'%'],payRate:[50,'%'],saveRate:[50,'%'],
