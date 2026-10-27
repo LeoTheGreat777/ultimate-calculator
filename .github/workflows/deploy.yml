@@ -29,7 +29,7 @@ jobs:
   # The branch that was pushed is tested; a push to preview also tests main, since the site is published with both.
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 25  # installing Chromium with its system packages alone took 9 minutes (2026-10-27)
     strategy:
       matrix:
         branch: ${{ fromJSON(github.ref_name == 'preview' && '["main","preview"]' || '["main"]') }}
