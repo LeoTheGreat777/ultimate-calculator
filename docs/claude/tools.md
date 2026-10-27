@@ -3,7 +3,7 @@
 Part of the notes in CLAUDE.md (read that first). Covers tools.js, units.js, currency.js, dates.js, numtools.js, stats.js, prog.js, net.js, history.js, the tool charts in charts.js.
 
 - **Tool modes** are `TOOL_MODES` (core.js): use it rather than listing them. Defaults (VAT rate 24, Subnet /24, Dates today)
-  are `TOOL_DEFAULTS`, filled in on entering the mode and after AC. Percent (discount, change, tip), Interest (`loan`:
+  are `TOOL_DEFAULTS`, filled in on entering the mode and after AC. Percent (`of`: % of a number, the first kind since 0.29.0, a plain exact number with X ± % under it and "X is % of what?" in the working; discount, change, tip), Interest (`loan`:
   loan, payoff, savings) Dates (between, add), Subnet (`net`: subnet, hosts) and Energy (`device`: W × hours × days × price; `kwh`: kWh already known × price, exact with `ratField`, no chart; both share the `energyR` id, still cleared on a kind change) have kinds on a switch above their fields: `KIND_FIELDS`, `KIND_LABELS`, `toolKind[mode]`, `setToolKind`,
   `kindPanelHtml`; switching kinds re-renders only the fields, AC (and changing kind) clears the kind on screen. In
   landscape a kind's fields share one row (`.kind-grid`, `--f`, one-line labels); the tip always does (`ONE_ROW_KINDS`). `FIELD_TYPE` marks fields that aren't plain numbers:
@@ -54,7 +54,8 @@ Part of the notes in CLAUDE.md (read that first). Covers tools.js, units.js, cur
   (`progDimKeys`). Having 4 rows, its keys are taller sideways than other tabs' (the sideways test leaves it out, like Graph);
   on a very short sideways screen (`fit-tight`) the four fields share one row with their short labels DEC HEX BIN OCT. The working: place values to decimal; repeated division for the other bases (rows joined with \n:
   explain.js gives such text `.how-rows`, white-space: pre-line).
-- **Switches** (VAT add/remove, the kinds of Percent, Interest and Dates) are one generic segmented control: `TOGGLES`, `toggleHtml`,
+- **Switches** (VAT add/remove, the kinds of Percent, Interest and Dates) are one generic segmented control: `TOGGLES`, `toggleHtml`
+  (a button that doesn't fit even at 9,5px uses its `SWITCH_SHORT` text: Greek «Φιλοδ.» on a 320px phone),
   `renderToggles`, `setupToggleSlide` (tap, drag, swipe, ← →), `.seg-toggle` in styles.css (`--n` options, `--i` chosen).
 - **Changing mode clears the mode you leave** (`resetModeInput`, called by `switchMode`): numbers typed and results
   go, in every mode (Percent, Interest, Dates: also changing kind; Graph goes back to `graphDefault`). Only Calculator -> Units carries

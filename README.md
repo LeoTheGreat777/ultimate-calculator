@@ -46,7 +46,7 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 - Fuel cost calculator
 - Electricity/energy cost calculator: from a device's power and hours, or from kWh you already know (a bill or meter)
 - VAT add/remove calculator (VAT rounded to cents, as on invoices)
-- Percent: price after a discount, % change between two values, and a tip calculator that splits the bill between people
+- Percent: a percentage of a number (12% of 540), price after a discount, % change between two values, and a tip calculator that splits the bill between people
 - Dates: days between two dates and a date plus or minus days, picked with the device's own calendar; all days or working days only (Greek public holidays)
 - Currency: the European Central Bank's daily rates for about 30 currencies, with calculations inside the values; works offline with the last rates
 - Subnet (IPv4): network, broadcast, host range, mask and wildcard from an address and a prefix or mask, and the smallest subnet for a number of hosts

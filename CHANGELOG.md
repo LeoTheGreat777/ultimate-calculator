@@ -6,6 +6,11 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.29.0 – 2026-10-27
+
+### Added
+- Percent has a new first kind, “% of”: type 12 and 540 to see that 12% of 540 is 64,8. Below it are 540 plus and minus 12%, and ? also shows what 540 is 12% of (4.500).
+
 ## 0.28.0 – 2026-10-27
 
 ### Added

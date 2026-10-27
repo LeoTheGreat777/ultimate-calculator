@@ -37,7 +37,7 @@ function renderToolDisplay(){refreshSide();
  d.classList.toggle('tool-empty',!toolResult);
  fitDisplayText($('#result'),24);
 }
-const FIELD_EXAMPLES={fuelD:'250',fuelC:'7,2',fuelP:'1,85',energyP:'100',energyH:'8',energyD:'30',energyR:'0,20',energyK:'250',amount:'100',vatRate:'24%',pctPrice:'80',pctOff:'25%',pctFrom:'80',pctTo:'100',tipBill:'60',tipRate:'10%',tipPeople:'1',loanAmount:'10.000',payAmount:'10.000',payRate:'4%',payMonthly:'300',loanRate:'4%',loanYears:'5',saveStart:'1.000',saveMonthly:'100',saveRate:'3%',saveYears:'10',dateDays:'30',netIp:'192.168.1.10',netPrefix:'24',netHosts:'50',value:'10',
+const FIELD_EXAMPLES={fuelD:'250',fuelC:'7,2',fuelP:'1,85',energyP:'100',energyH:'8',energyD:'30',energyR:'0,20',energyK:'250',amount:'100',vatRate:'24%',pctOfRate:'12%',pctOfNum:'540',pctPrice:'80',pctOff:'25%',pctFrom:'80',pctTo:'100',tipBill:'60',tipRate:'10%',tipPeople:'1',loanAmount:'10.000',payAmount:'10.000',payRate:'4%',payMonthly:'300',loanRate:'4%',loanYears:'5',saveStart:'1.000',saveMonthly:'100',saveRate:'3%',saveYears:'10',dateDays:'30',netIp:'192.168.1.10',netPrefix:'24',netHosts:'50',value:'10',
  numA:'48',numB:'18',numC:'',numN:'360',eqA:'1',eqB:'-3',eqC:'2',sxA1:'2',sxB1:'1',sxC1:'5',sxA2:'1',sxB2:'-1',sxC2:'1',statX:'12,5',progDec:'255',progHex:'FF',progBin:'1111 1111',progOct:'377'};
 let vatAction='add';
 const liveToolNumber=id=>{const raw=normalizeNumericInput(fieldValue(id));if(raw==='')return null;const n=Number(raw);return Number.isFinite(n)?n:null};
@@ -53,17 +53,17 @@ function setActiveToolInput(input){toolActiveInput=input||null;$$('#toolPanel in
 function setToolResult(main,detail='',how=null){toolResult={main,detail,how};if(toolState[mode])toolState[mode].result=toolResult;howData=how;renderToolDisplay();}
 // Tools with kinds on a switch above their fields (Percent, Interest): each kind has its own fields.
 // Tip has defaults like the VAT rate. People is a whole number. The tip's three short fields share one row.
-const KIND_FIELDS={pct:{discount:['pctPrice','pctOff'],change:['pctFrom','pctTo'],tip:['tipBill','tipRate','tipPeople']},
+const KIND_FIELDS={pct:{of:['pctOfRate','pctOfNum'],discount:['pctPrice','pctOff'],change:['pctFrom','pctTo'],tip:['tipBill','tipRate','tipPeople']},
  loan:{loan:['loanAmount','loanRate','loanYears'],payoff:['payAmount','payRate','payMonthly'],savings:['saveStart','saveMonthly','saveRate','saveYears']},
  dates:{between:['dateFrom','dateTo'],add:['dateStart','dateDays']},
  net:{subnet:['netIp','netPrefix'],hosts:['netHosts']},
  numbers:{gcd:['numA','numB','numC'],factors:['numN']},
  equation:{quad:['eqA','eqB','eqC'],sys2:['sxA1','sxB1','sxC1','sxA2','sxB2','sxC2']},
  energy:{device:['energyP','energyH','energyD','energyR'],kwh:['energyK','energyR']}};// Energy: a device's use, or kWh you already know (from the bill or a meter)
-const KIND_LABELS={pct:['pctDiscount','pctChange','pctTip'],loan:['loanLoan','loanPayoff','loanSavings'],dates:['dateBetween','dateAdd'],net:['netKindSubnet','netKindHosts'],numbers:['numKindGcd','numKindFactors'],equation:['eqKindQuad','eqKindSys'],energy:['energyKindDevice','energyKindKwh']};
+const KIND_LABELS={pct:['pctOf','pctDiscount','pctChange','pctTip'],loan:['loanLoan','loanPayoff','loanSavings'],dates:['dateBetween','dateAdd'],net:['netKindSubnet','netKindHosts'],numbers:['numKindGcd','numKindFactors'],equation:['eqKindQuad','eqKindSys'],energy:['energyKindDevice','energyKindKwh']};
 const ONE_ROW_KINDS=new Set(['tip','gcd','quad','sys2']);// three fields to a row (sys2: two rows of a₁ b₁ c₁ / a₂ b₂ c₂)
 const KIND_COLS={};// fields to a row sideways, when not all of them (sys2 has all six in one row)
-let toolKind={pct:'discount',loan:'loan',dates:'between',net:'subnet',numbers:'gcd',equation:'quad',energy:'device'};
+let toolKind={pct:'of',loan:'loan',dates:'between',net:'subnet',numbers:'gcd',equation:'quad',energy:'device'};
 let dateCount='all';// Dates: count all days, or working days only
 const kindFields=(m=mode)=>KIND_FIELDS[m]?.[toolKind[m]]||[];
 const TOOL_DEFAULTS={net:{netPrefix:'24'},vat:{vatRate:'24'},dates:{dateFrom:()=>isoDate(todayNumber()),dateStart:()=>isoDate(todayNumber())}};
@@ -80,12 +80,13 @@ const FIELD_SHORT={progDec:['DEC','DEC'],progHex:['HEX','HEX'],progBin:['BIN','B
 function fitShortLabels(){
  for(const s of document.querySelectorAll('#toolPanel .tool-field span,#toolPanel .seg-toggle button')){
   if(s.dataset.label!=null||s.classList.contains('limit-hint'))continue;// showing "Up to 50%" (refuseLimit)
-  if(s.dataset.short!=null){const long=t(s.closest('.tool-field').querySelector('input')?.id);if(s.textContent!==long)s.textContent=long}
+  if(s.dataset.short!=null){const long=s.dataset.long??t(s.closest('.tool-field').querySelector('input')?.id);if(s.textContent!==long)s.textContent=long}
   s.style.fontSize='';
   if(!s.offsetParent||!labelCut(s))continue;
-  if(s.dataset.short!=null)s.textContent=s.dataset.short;
+  if(s.dataset.short!=null&&!s.matches('button'))s.textContent=s.dataset.short;
   // still too long (a wider font than expected, a narrow phone): a little smaller, never cut
   for(let px=11.5;px>=9.5&&labelCut(s);px-=.5)s.style.fontSize=px+'px';
+  if(s.matches('button')&&s.dataset.short!=null&&labelCut(s)){s.textContent=s.dataset.short;s.style.fontSize='';for(let px=11.5;px>=9.5&&labelCut(s);px-=.5)s.style.fontSize=px+'px'}// a switch: smaller first, the short text only if that isn't enough
  }
 }
 // is the label's (or switch button's) text wider than its box? (measured exactly: scrollWidth rounds, so a text cut by under a pixel looked whole)
@@ -120,9 +121,11 @@ function fillToolDefaults(m){const d=TOOL_DEFAULTS[m];if(d&&toolState[m])Object.
 // Segmented switches (VAT add/remove, Percent discount/change/tip) work like iOS: tap a side, drag the thumb, or swipe.
 const TOGGLES={vat:{options:['add','remove'],labels:['addVat','removeVat'],get:()=>vatAction,set:v=>setVatAction(v)}};
 Object.keys(KIND_FIELDS).forEach(m=>{TOGGLES[m]={options:Object.keys(KIND_FIELDS[m]),labels:KIND_LABELS[m],get:()=>toolKind[m],set:v=>setToolKind(m,v)}});
+// A switch button's shorter text, for when the long one doesn't fit even at 9,5px (Percent's four kinds on a 320px phone in Greek)
+const SWITCH_SHORT={pctTip:['Φιλοδ.','Tip']};
 function toggleHtml(name,top){
  const c=TOGGLES[name];
- return '<div class="seg-toggle'+(top?' seg-top':'')+'" role="radiogroup" data-toggle="'+name+'" style="--n:'+c.options.length+'"><span class="seg-thumb" aria-hidden="true"></span>'+c.options.map((v,i)=>'<button type="button" role="radio" data-choice="'+v+'">'+esc(t(c.labels[i]))+'</button>').join('')+'</div>';
+ return '<div class="seg-toggle'+(top?' seg-top':'')+'" role="radiogroup" data-toggle="'+name+'" style="--n:'+c.options.length+'"><span class="seg-thumb" aria-hidden="true"></span>'+c.options.map((v,i)=>{const k=c.labels[i],sh=SWITCH_SHORT[k]?.[lang==='el'?0:1],long=esc(t(k));return '<button type="button" role="radio" data-choice="'+v+'"'+(sh?' data-short="'+esc(sh)+'" data-long="'+long+'" aria-label="'+long+'"':'')+'>'+long+'</button>'}).join('')+'</div>';
 }
 function renderToggles(){
  $$('#toolPanel .seg-toggle').forEach(tg=>{
@@ -316,10 +319,21 @@ function bindTools(){
   setToolResult(money(add?total:net),t('vatAmount')+': '+money(Math.abs(tax)),how)
  };
  window._runVat=vat;
- // Percent: discount, % change and tip, in exact fractions; money is rounded to cents as in VAT.
+ // Percent: % of a number, discount, % change and tip, in exact fractions; money is rounded to cents as in VAT.
  const pct2=num(2),signed=(s,v)=>(v>0?'+':'')+s;
  const pct=()=>{
   const H=rat(100n),n=ratToNumber,el=lang==='el';
+  if(toolKind.pct==='of'){// 12% of 540 = 64,8, a plain number (not money); also 540 ± 12% and "540 is 12% of what?"
+   const R=ratField('pctOfRate'),X=ratField('pctOfNum');
+   if(!R||!X){setToolResult('','',null);return}
+   const part=ratDiv(ratMul(X,R),H),up=ratAdd(X,part),down=ratSub(X,part),r=fmt(R)+'%';
+   const steps=[
+    {title:el?'Το '+r+' του '+fmt(X):r+' of '+fmt(X),text:fmt(X)+' × '+fmt(R)+' ÷ 100 = '+fmt(part)},
+    {title:el?'Συν '+r:'Plus '+r,text:fmt(X)+' + '+fmt(part)+' = '+fmt(up)},
+    {title:el?'Μείον '+r:'Minus '+r,text:fmt(X)+' − '+fmt(part)+' = '+fmt(down)}];
+   if(R.n!==0n)steps.push({title:el?'Το '+fmt(X)+' είναι το '+r+' ποιου αριθμού;':fmt(X)+' is '+r+' of what?',text:fmt(X)+' ÷ '+fmt(R)+' × 100 = '+fmt(ratDiv(ratMul(X,H),R))});
+   setToolResult(fmt(part),'+'+r+' = '+fmt(up)+' · −'+r+' = '+fmt(down),{formula:r+' × '+fmt(X),steps,result:fmt(part)});return;
+  }
   if(toolKind.pct==='discount'){
    const P=ratField('pctPrice'),D=ratField('pctOff');
    if(!P||!D){setToolResult('','',null);return}

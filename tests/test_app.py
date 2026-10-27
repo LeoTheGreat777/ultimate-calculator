@@ -226,8 +226,17 @@ async def desktop(browser, url, lang, theme):
     await p.click('[data-choice="remove"]')
     check(L + 'VAT switch: remove', await p.evaluate('vatAction') == 'remove' and await p.evaluate(R) == '995,61 €', await p.evaluate(R))
     await p.click('[data-choice="add"]')
-    # Percent: discount, % change, tip
-    await p.evaluate("switchMode('pct');setToolKind('pct','discount')")
+    # Percent: % of a number (the first kind), discount, % change, tip
+    await p.evaluate("switchMode('pct');setToolKind('pct','of')")
+    await p.click('.tool-key[data-action="clear-all"]')
+    await p.click('#pctOfRate')
+    await p.keyboard.type('12')
+    await p.keyboard.press('Tab')
+    await p.keyboard.type('540')
+    got = await p.evaluate("[toolResult.main,toolResult.detail,toolResult.how.steps.map(s=>s.text.split(' = ').pop()).join('|')]")
+    check(L + 'Percent: 12% of 540 is 64,8 (plus/minus 12%, and 540 is 12% of 4.500)',
+          got == ['64,8', '+12% = 604,8 · −12% = 475,2', '64,8|604,8|475,2|4.500'], got)
+    await p.evaluate("setToolKind('pct','discount')")
     await p.click('.tool-key[data-action="clear-all"]')
     await p.keyboard.type('80')
     await p.keyboard.press('Tab')
@@ -1191,7 +1200,7 @@ async def upright_small_phones(browser, url):
     """Small phones held upright (old iPhone SE 320×568, small Android 360×640), filled in: every tab fits without the
     page scrolling (Scientific only from 360×640: its ten rows of keys don't fit 320×568), nothing sticks out, no label
     is cut (kind switches included), and keys stay at least 31px tall."""
-    fill = {'vat': [['amount', '1234567,89']], 'pct': [['pctPrice', '1250'], ['pctOff', '25']], 'fuel': [['fuelD', '1250'], ['fuelC', '6,5'], ['fuelP', '1,85']],
+    fill = {'vat': [['amount', '1234567,89']], 'pct': [['pctOfRate', '12,5'], ['pctOfNum', '1234567,89'], ['pctPrice', '1250'], ['pctOff', '25']], 'fuel': [['fuelD', '1250'], ['fuelC', '6,5'], ['fuelP', '1,85']],
             'energy': [['energyP', '2000'], ['energyH', '3'], ['energyD', '30'], ['energyR', '0,15'], ['energyK', '1234567,89']], 'loan': [['loanAmount', '250000'], ['loanRate', '4'], ['loanYears', '30']],
             'net': [['netIp', '192.168.100.100'], ['netPrefix', '26']], 'dates': [['dateTo', '2027-03-15']],
             'numbers': [['numA', '123456789012'], ['numB', '987654321'], ['numC', '360'], ['numN', '600851475143']],
@@ -1209,7 +1218,7 @@ async def upright_small_phones(browser, url):
                 await p.add_style_tag(content='#toolPanel .tool-field span,#toolPanel .seg-toggle button{letter-spacing:.04em}')
             await p.wait_for_timeout(300)
             bad = []
-            tabs = [('calc', None), ('units', None), ('currency', None), ('vat', None), ('pct', 'discount'), ('pct', 'tip'), ('loan', 'loan'),
+            tabs = [('calc', None), ('units', None), ('currency', None), ('vat', None), ('pct', 'of'), ('pct', 'discount'), ('pct', 'tip'), ('loan', 'loan'),
                     ('loan', 'payoff'), ('loan', 'savings'), ('dates', 'between'), ('dates', 'add'), ('fuel', None), ('energy', 'device'), ('energy', 'kwh'), ('net', 'subnet'),
                     ('net', 'hosts'), ('numbers', 'gcd'), ('numbers', 'factors'), ('equation', 'quad'), ('equation', 'sys2'), ('stats', None), ('prog', None)]
             if w >= 360:
@@ -1297,7 +1306,7 @@ async def more_decimals(browser, url):
 async def how_buttons_in_place(browser, url):
     """With a result in every tab, the ? and chart buttons sit inside the display, never over the mode tabs (v0.26.1-0.26.3
     moved them up onto the tabs on phones), from small phones to big screens, upright and sideways."""
-    js = """async()=>{const r=[];const fill={vat:[['amount','874']],pct:[['pctPrice','80'],['pctOff','25']],loan:[['loanAmount','10000'],['loanRate','4'],['loanYears','5']],fuel:[['fuelD','250'],['fuelC','7'],['fuelP','1,8']],energy:[['energyP','100'],['energyH','8'],['energyD','30'],['energyR','0,2']],net:[['netIp','192.168.1.10'],['netPrefix','24']],numbers:[['numA','48'],['numB','18']],equation:[['eqA','1'],['eqB','-3'],['eqC','2']],prog:[['progDec','255']],dates:[['dateTo','2027-03-15']]};
+    js = """async()=>{const r=[];const fill={vat:[['amount','874']],pct:[['pctOfRate','12'],['pctOfNum','540']],loan:[['loanAmount','10000'],['loanRate','4'],['loanYears','5']],fuel:[['fuelD','250'],['fuelC','7'],['fuelP','1,8']],energy:[['energyP','100'],['energyH','8'],['energyD','30'],['energyR','0,2']],net:[['netIp','192.168.1.10'],['netPrefix','24']],numbers:[['numA','48'],['numB','18']],equation:[['eqA','1'],['eqB','-3'],['eqC','2']],prog:[['progDec','255']],dates:[['dateTo','2027-03-15']]};
  const wait=ms=>new Promise(x=>setTimeout(x,ms));
  for(const m of MODE_LABELS){switchMode(m);await wait(80);
   if(m==='calc'){for(const k of '1/7')document.dispatchEvent(new KeyboardEvent('keydown',{key:k,bubbles:true}));document.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}))}
@@ -1326,7 +1335,7 @@ async def how_buttons_in_place(browser, url):
 async def sideways_every_tab(browser, url):
     """Every tab held sideways, from a small phone in Safari (iPhone SE, 667×330) to a big one: nothing scrolls, nothing
     sticks out of the screen (Dates' list included), and every tab but Graph and Scientific has the same key size."""
-    fill = {'vat': [['amount', '1234567,89']], 'pct': [['pctPrice', '1250'], ['pctOff', '25']], 'fuel': [['fuelD', '1250'], ['fuelC', '6,5'], ['fuelP', '1,85']],
+    fill = {'vat': [['amount', '1234567,89']], 'pct': [['pctOfRate', '12,5'], ['pctOfNum', '1234567,89'], ['pctPrice', '1250'], ['pctOff', '25']], 'fuel': [['fuelD', '1250'], ['fuelC', '6,5'], ['fuelP', '1,85']],
             'energy': [['energyP', '2000'], ['energyH', '3'], ['energyD', '30'], ['energyR', '0,15'], ['energyK', '1234567,89']], 'loan': [['loanAmount', '250000'], ['loanRate', '4'], ['loanYears', '30']],
             'net': [['netIp', '192.168.100.100'], ['netPrefix', '26']], 'dates': [['dateTo', '2027-03-15']],
             'numbers': [['numA', '123456789012'], ['numB', '987654321'], ['numC', '360'], ['numN', '600851475143']],
@@ -1343,7 +1352,7 @@ async def sideways_every_tab(browser, url):
             await p.goto(url)
             await p.wait_for_timeout(300)
             bad, keys = [], {}
-            for m, kind in [('calc', None), ('units', None), ('currency', None), ('vat', None), ('pct', 'discount'), ('pct', 'tip'), ('loan', 'loan'),
+            for m, kind in [('calc', None), ('units', None), ('currency', None), ('vat', None), ('pct', 'of'), ('pct', 'discount'), ('pct', 'tip'), ('loan', 'loan'),
                             ('loan', 'payoff'), ('loan', 'savings'), ('dates', 'between'), ('dates', 'add'), ('fuel', None), ('energy', 'device'), ('energy', 'kwh'), ('net', 'subnet'),
                             ('numbers', 'gcd'), ('numbers', 'factors'), ('equation', 'quad'), ('equation', 'sys2'), ('stats', None), ('prog', None)]:
                 await p.evaluate(f"switchMode('{m}')")
@@ -1458,7 +1467,7 @@ async def esc_everywhere(browser, url):
     L = '[esc] '
     p = await new_page(browser, url, 'en', 'dark')
     bad = []
-    for m, fid, v in [('vat', 'amount', '100'), ('pct', 'pctPrice', '80'), ('loan', 'loanAmount', '1000'), ('fuel', 'fuelD', '250'), ('energy', 'energyP', '100'), ('net', 'netIp', '10.0.0.1'), ('dates', 'dateDays', '5')]:
+    for m, fid, v in [('vat', 'amount', '100'), ('pct', 'pctOfNum', '540'), ('loan', 'loanAmount', '1000'), ('fuel', 'fuelD', '250'), ('energy', 'energyP', '100'), ('net', 'netIp', '10.0.0.1'), ('dates', 'dateDays', '5')]:
         await p.evaluate(f"switchMode('{m}')")
         if m == 'dates':
             await p.evaluate("setToolKind('dates','add')")
@@ -1862,10 +1871,10 @@ async def press_feedback(browser, url):
             await p.mouse.up()
             check(L + 'VAT: holding AC clears while still held, the rate goes back to 24', st == ['', '24'], st)
             await p.evaluate("switchMode('pct')")
-            await fill('pctPrice', '80')
+            await fill('pctOfNum', '540')
             await p.evaluate("""document.querySelector('#keypad [data-action="clear-all"]').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerType:'touch',clientX:1,clientY:1}))""")
             await p.wait_for_timeout(700)
-            st = await p.evaluate("pctPrice.value")
+            st = await p.evaluate("pctOfNum.value")
             await p.evaluate("""document.querySelector('#keypad [data-action="clear-all"]').dispatchEvent(new PointerEvent('pointercancel',{bubbles:true,pointerType:'touch'}))""")
             check(L + 'a finger held on AC clears even when the press ends without a click', st == '', st)
             await p.evaluate("switchMode('graph');graph.fns=['x^2','2x+1'];graph.active=1;graphChanged()")

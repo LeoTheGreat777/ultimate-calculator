@@ -10,7 +10,7 @@ const MODE_WORDS={
  currency:'currency money exchange rate euro dollar usd νομισμα ισοτιμια ευρω δολαριο',
  graph:'graph plot function chart γραφημα συναρτηση',
  vat:'vat tax invoice φπα φορος τιμολογιο',
- pct:'percent discount tip change sale ποσοστα εκπτωση φιλοδωρημα μεταβολη',
+ pct:'percent of discount tip change sale ποσοστα ποσοστο εκπτωση φιλοδωρημα μεταβολη',
  loan:'interest loan savings mortgage payment τοκοι δανειο αποταμιευση στεγαστικο δοση',
  dates:'dates days calendar age holidays working ημερομηνιες ημερες ημερολογιο ηλικια αργιες εργασιμες',
  numbers:'numbers gcd lcm hcf prime factors factorization divisors αριθμοι μκδ εκπ πρωτοι παραγοντες παραγοντοποιηση διαιρετες',
