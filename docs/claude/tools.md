@@ -55,7 +55,7 @@ Part of the notes in CLAUDE.md (read that first). Covers tools.js, units.js, cur
   on a very short sideways screen (`fit-tight`) the four fields share one row with their short labels DEC HEX BIN OCT. The working: place values to decimal; repeated division for the other bases (rows joined with \n:
   explain.js gives such text `.how-rows`, white-space: pre-line).
 - **Switches** (VAT add/remove, the kinds of Percent, Interest and Dates) are one generic segmented control: `TOGGLES`, `toggleHtml`
-  (a button that doesn't fit even at 9,5px uses its `SWITCH_SHORT` text: Greek «Φιλοδ.» on a 320px phone),
+  (a button that doesn't fit even at 9,5px uses its `SWITCH_SHORT` text: Greek «Φιλοδ.», «Μεταβ.», «Έκπτ.» on a 320px phone; GitHub's wider font needs both),
   `renderToggles`, `setupToggleSlide` (tap, drag, swipe, ← →), `.seg-toggle` in styles.css (`--n` options, `--i` chosen).
 - **Changing mode clears the mode you leave** (`resetModeInput`, called by `switchMode`): numbers typed and results
   go, in every mode (Percent, Interest, Dates: also changing kind; Graph goes back to `graphDefault`). Only Calculator -> Units carries

@@ -122,7 +122,7 @@ function fillToolDefaults(m){const d=TOOL_DEFAULTS[m];if(d&&toolState[m])Object.
 const TOGGLES={vat:{options:['add','remove'],labels:['addVat','removeVat'],get:()=>vatAction,set:v=>setVatAction(v)}};
 Object.keys(KIND_FIELDS).forEach(m=>{TOGGLES[m]={options:Object.keys(KIND_FIELDS[m]),labels:KIND_LABELS[m],get:()=>toolKind[m],set:v=>setToolKind(m,v)}});
 // A switch button's shorter text, for when the long one doesn't fit even at 9,5px (Percent's four kinds on a 320px phone in Greek)
-const SWITCH_SHORT={pctTip:['Φιλοδ.','Tip']};
+const SWITCH_SHORT={pctTip:['Φιλοδ.','Tip'],pctChange:['Μεταβ.','Change'],pctDiscount:['Έκπτ.','Discount']};
 function toggleHtml(name,top){
  const c=TOGGLES[name];
  return '<div class="seg-toggle'+(top?' seg-top':'')+'" role="radiogroup" data-toggle="'+name+'" style="--n:'+c.options.length+'"><span class="seg-thumb" aria-hidden="true"></span>'+c.options.map((v,i)=>{const k=c.labels[i],sh=SWITCH_SHORT[k]?.[lang==='el'?0:1],long=esc(t(k));return '<button type="button" role="radio" data-choice="'+v+'"'+(sh?' data-short="'+esc(sh)+'" data-long="'+long+'" aria-label="'+long+'"':'')+'>'+long+'</button>'}).join('')+'</div>';
