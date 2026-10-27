@@ -131,7 +131,7 @@ When you change how something works, update its topic file (not this one, unless
 ## Testing before every push
 
 `python3 tests/test_app.py` (needs `pip install playwright` and `python3 -m playwright install chromium` once;
-Claude Code cloud sessions get it from `.claude/hooks/session-start.sh`: playwright 1.56.0, matching their Chromium).
+Claude Code cloud sessions get it from `.claude/hooks/session-start.sh`: the playwright version matching their Chromium).
 It serves `public/` itself and checks the calculator basics, brackets, C/AC, Units, the tools, History, tabs,
 the language switch, and that nothing is cut off at phone sizes, in both languages and themes. Add a check there
 for what you add or fix. GitHub runs the same tests on the built site before every deploy; to do that yourself

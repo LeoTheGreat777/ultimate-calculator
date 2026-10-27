@@ -44,9 +44,8 @@ function renderTool(){
  }
  let html='';
  if(mode==='fuel')html='<div class="tool-grid kind-grid" style="--f:3">'+field('fuelD',T[lang].fuelD)+field('fuelC',T[lang].fuelC)+field('fuelP',T[lang].fuelP)+'</div>';
- if(mode==='energy')html='<div class="tool-grid kind-grid" style="--f:4">'+field('energyP',T[lang].energyP)+field('energyH',T[lang].energyH)+field('energyD',T[lang].energyD)+field('energyR',T[lang].energyR)+'</div>';
  if(mode==='vat')html='<div class="tool-grid">'+field('amount',T[lang].amount)+field('vatRate',T[lang].vatRate)+'</div>'+toggleHtml('vat');
- // Percent, Interest and Dates: the switch goes above the fields, since it decides which fields there are
+ // Percent, Interest, Dates, Energy…: the switch goes above the fields, since it decides which fields there are
  if(KIND_FIELDS[mode])html=kindPanelHtml();
  if(mode==='stats')html=statsPanelHtml();
  if(mode==='prog')html=progPanelHtml();// Programmer (prog.js): the number in four bases// Statistics (stats.js): one field, the list of numbers, the details

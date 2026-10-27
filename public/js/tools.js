@@ -37,7 +37,7 @@ function renderToolDisplay(){refreshSide();
  d.classList.toggle('tool-empty',!toolResult);
  fitDisplayText($('#result'),24);
 }
-const FIELD_EXAMPLES={fuelD:'250',fuelC:'7,2',fuelP:'1,85',energyP:'100',energyH:'8',energyD:'30',energyR:'0,20',amount:'100',vatRate:'24%',pctPrice:'80',pctOff:'25%',pctFrom:'80',pctTo:'100',tipBill:'60',tipRate:'10%',tipPeople:'1',loanAmount:'10.000',payAmount:'10.000',payRate:'4%',payMonthly:'300',loanRate:'4%',loanYears:'5',saveStart:'1.000',saveMonthly:'100',saveRate:'3%',saveYears:'10',dateDays:'30',netIp:'192.168.1.10',netPrefix:'24',netHosts:'50',value:'10',
+const FIELD_EXAMPLES={fuelD:'250',fuelC:'7,2',fuelP:'1,85',energyP:'100',energyH:'8',energyD:'30',energyR:'0,20',energyK:'250',amount:'100',vatRate:'24%',pctPrice:'80',pctOff:'25%',pctFrom:'80',pctTo:'100',tipBill:'60',tipRate:'10%',tipPeople:'1',loanAmount:'10.000',payAmount:'10.000',payRate:'4%',payMonthly:'300',loanRate:'4%',loanYears:'5',saveStart:'1.000',saveMonthly:'100',saveRate:'3%',saveYears:'10',dateDays:'30',netIp:'192.168.1.10',netPrefix:'24',netHosts:'50',value:'10',
  numA:'48',numB:'18',numC:'',numN:'360',eqA:'1',eqB:'-3',eqC:'2',sxA1:'2',sxB1:'1',sxC1:'5',sxA2:'1',sxB2:'-1',sxC2:'1',statX:'12,5',progDec:'255',progHex:'FF',progBin:'1111 1111',progOct:'377'};
 let vatAction='add';
 const liveToolNumber=id=>{const raw=normalizeNumericInput(fieldValue(id));if(raw==='')return null;const n=Number(raw);return Number.isFinite(n)?n:null};
@@ -58,11 +58,12 @@ const KIND_FIELDS={pct:{discount:['pctPrice','pctOff'],change:['pctFrom','pctTo'
  dates:{between:['dateFrom','dateTo'],add:['dateStart','dateDays']},
  net:{subnet:['netIp','netPrefix'],hosts:['netHosts']},
  numbers:{gcd:['numA','numB','numC'],factors:['numN']},
- equation:{quad:['eqA','eqB','eqC'],sys2:['sxA1','sxB1','sxC1','sxA2','sxB2','sxC2']}};
-const KIND_LABELS={pct:['pctDiscount','pctChange','pctTip'],loan:['loanLoan','loanPayoff','loanSavings'],dates:['dateBetween','dateAdd'],net:['netKindSubnet','netKindHosts'],numbers:['numKindGcd','numKindFactors'],equation:['eqKindQuad','eqKindSys']};
+ equation:{quad:['eqA','eqB','eqC'],sys2:['sxA1','sxB1','sxC1','sxA2','sxB2','sxC2']},
+ energy:{device:['energyP','energyH','energyD','energyR'],kwh:['energyK','energyR']}};// Energy: a device's use, or kWh you already know (from the bill or a meter)
+const KIND_LABELS={pct:['pctDiscount','pctChange','pctTip'],loan:['loanLoan','loanPayoff','loanSavings'],dates:['dateBetween','dateAdd'],net:['netKindSubnet','netKindHosts'],numbers:['numKindGcd','numKindFactors'],equation:['eqKindQuad','eqKindSys'],energy:['energyKindDevice','energyKindKwh']};
 const ONE_ROW_KINDS=new Set(['tip','gcd','quad','sys2']);// three fields to a row (sys2: two rows of a₁ b₁ c₁ / a₂ b₂ c₂)
 const KIND_COLS={};// fields to a row sideways, when not all of them (sys2 has all six in one row)
-let toolKind={pct:'discount',loan:'loan',dates:'between',net:'subnet',numbers:'gcd',equation:'quad'};
+let toolKind={pct:'discount',loan:'loan',dates:'between',net:'subnet',numbers:'gcd',equation:'quad',energy:'device'};
 let dateCount='all';// Dates: count all days, or working days only
 const kindFields=(m=mode)=>KIND_FIELDS[m]?.[toolKind[m]]||[];
 const TOOL_DEFAULTS={net:{netPrefix:'24'},vat:{vatRate:'24'},dates:{dateFrom:()=>isoDate(todayNumber()),dateStart:()=>isoDate(todayNumber())}};
@@ -73,7 +74,7 @@ const FIELD_TYPE={progDec:'base',progHex:'base',progBin:'base',progOct:'base',nu
 const dottedField=id=>FIELD_TYPE[id]==='ip'||FIELD_TYPE[id]==='mask';
 // A shorter label for when the long one doesn't fit on its line (sideways, the fields share one row): fitShortLabels.
 const FIELD_SHORT={progDec:['DEC','DEC'],progHex:['HEX','HEX'],progBin:['BIN','BIN'],progOct:['OCT','OCT'],fuelD:['Απόσταση','Distance'],fuelC:['L/100 km','L/100 km'],fuelP:['Τιμή / L','Price / L'],energyP:['Ισχύς (W)','Power (W)'],
- energyH:['Ώρες/ημ.','Hours/day'],energyD:['Ημέρες','Days'],energyR:['€/kWh','€/kWh'],payMonthly:['Δόση/μήνα','Per month'],
+ energyH:['Ώρες/ημ.','Hours/day'],energyD:['Ημέρες','Days'],energyR:['€/kWh','€/kWh'],energyK:['kWh','kWh'],payMonthly:['Δόση/μήνα','Per month'],
  pctPrice:['Τιμή','Price'],tipRate:['Φιλοδ. %','Tip %'],saveMonthly:['Τον μήνα','Monthly'],loanAmount:['Δάνειο','Loan'],payAmount:['Δάνειο','Loan']};
 // Each label shows its long text, or its short one if the long one is cut (only one-line labels can be cut: sideways).
 function fitShortLabels(){
@@ -94,7 +95,7 @@ function labelCut(s){const r=document.createRange();r.selectNodeContents(s);cons
 const FIELD_MAX={vatRate:[50,'%'],pctOff:[100,'%'],tipRate:[100,'%'],loanRate:[50,'%'],payRate:[50,'%'],saveRate:[50,'%'],
  loanYears:[100,''],saveYears:[100,''],energyH:[24,''],energyD:[36500,''],fuelC:[100,'']};
 // Fields where a negative number makes no sense: − is refused there (VAT's amount and % change's values may be negative).
-const POSITIVE_FIELDS=new Set(['fuelD','fuelC','fuelP','energyP','energyH','energyD','energyR','vatRate','pctPrice','pctOff','tipBill','tipRate',
+const POSITIVE_FIELDS=new Set(['fuelD','fuelC','fuelP','energyP','energyH','energyD','energyR','energyK','vatRate','pctPrice','pctOff','tipBill','tipRate',
  'loanAmount','loanRate','loanYears','payAmount','payRate','payMonthly','saveStart','saveMonthly','saveRate','saveYears']);
 const noDecimalField=id=>!!FIELD_TYPE[id]&&!dottedField(id),noSignField=id=>(!!FIELD_TYPE[id]&&FIELD_TYPE[id]!=='int')||POSITIVE_FIELDS.has(id);
 // Number fields show thousands as they are typed, like the rest of the app: 10000 -> 10.000. In them a dot is always a
@@ -284,6 +285,14 @@ function bindTools(){
  };
  window._runFuel=fuelCalculate;
  const energyCalculate=()=>{
+  if(toolKind.energy==='kwh'){
+   // kWh you already know × the price, exact like Percent; money in cents
+   const K=ratField('energyK'),R=ratField('energyR');
+   if(!K||!R){setToolResult('','',null);return}
+   const cost=ratToNumber(ratMul(K,R)),line=fmt(K)+' kWh × '+fmt(R)+' €/kWh';
+   const how={formula:line,steps:[{title:lang==='el'?'Υπολόγισε το κόστος':'Calculate cost',text:line+' = '+money(cost)}],result:money(cost)};
+   setToolResult(money(cost),line,how);return;
+  }
   const p=liveToolNumber('energyP'),hh=liveToolNumber('energyH'),d=liveToolNumber('energyD'),r=liveToolNumber('energyR');
   if([p,hh,d,r].some(x=>x===null)){setToolResult('','',null);return}
   const kwh=p/1000*hh*d,cost=kwh*r;

@@ -532,7 +532,9 @@ async def scientific(browser, url, lang, theme):
     ]
     for seq, want in cases:
         got = await keys(*seq)
-        check(L + ' '.join(seq) + f' -> {want[0]} = {want[1]}', got == want, got)
+        # 2×π shows 10 decimals when the font leaves room for them (as the 1÷3 check below allows)
+        ok = got == want or (want == ['2×π', '6,283185'] and got == ['2×π', '6,2831853072'])
+        check(L + ' '.join(seq) + f' -> {want[0]} = {want[1]}', ok, got)
     # a result continues: 1÷3 = then x² is (1/3)², exactly 1/9
     await keys('1', '/', '3', '=', 'sci:sq', '=')
     await p.wait_for_timeout(100)
@@ -676,12 +678,13 @@ async def phone(browser, url, lang, theme, size):
         await p.tap(f'.key[data-value="{key}"]')
     await p.tap('.key[data-action="equals"]')
     check(L + 'keypad works', await p.evaluate(R) == '8')
-    for m in ['calc', 'sci', 'units', 'currency', 'graph', 'vat', 'pct', 'tip', 'loan', 'savings', 'dates', 'fuel', 'energy', 'net', 'prog', 'numbers', 'factors', 'equation', 'sys2', 'stats']:
+    for m in ['calc', 'sci', 'units', 'currency', 'graph', 'vat', 'pct', 'tip', 'loan', 'savings', 'dates', 'fuel', 'energy', 'kwh', 'net', 'prog', 'numbers', 'factors', 'equation', 'sys2', 'stats']:
         # 'sci' is the Calculator with the scientific keys on
         # 'tip' is Percent's tip, the kind with the most fields
         await p.evaluate("switchMode('calc');if(!sciMode)toggleSci()" if m == 'sci' else "switchMode('pct');setToolKind('pct','tip')" if m == 'tip'
                          else "switchMode('loan');setToolKind('loan','savings')" if m == 'savings'
                          else "switchMode('numbers');setToolKind('numbers','factors')" if m == 'factors'
+                         else "switchMode('energy');setToolKind('energy','kwh')" if m == 'kwh'
                          else "switchMode('equation');setToolKind('equation','sys2')" if m == 'sys2'
                          else "switchMode('prog');progHex.value='DEADBEEFCAFE';progHex.dispatchEvent(new Event('input',{bubbles:true}))" if m == 'prog'
                          else "switchMode('stats');for(const v of ['12','1234,75','-3','15,5','9']){statX.value=v;statX.dispatchEvent(new Event('input',{bubbles:true}));statAdd()}" if m == 'stats'
@@ -1077,6 +1080,18 @@ async def tool_charts(browser, url, phone):
     check(L + 'energy: hour, day, month (the days typed) and year with kWh',
           got == ['Hour=0,30 €2 kWh', 'Day=0,90 €6 kWh', 'Month=27,00 €180 kWh*', 'Year=328,50 €2.190 kWh'], got)
     await p.evaluate("closeHow()")
+    # Energy from kWh: kWh × price, exact, in cents; no chart (nothing over time); History keeps the kind
+    await p.evaluate("setToolKind('energy','kwh')")
+    got = await p.evaluate("[...document.querySelectorAll('#toolPanel input[data-tool-input]')].map(i=>i.id+'='+i.value)")
+    check(L + 'energy from kWh: two empty fields, kWh and price', got == ['energyK=', 'energyR='], got)
+    for fid, v in [['energyK', '123,456'], ['energyR', '0,1234']]:
+        await p.evaluate(f"(()=>{{const e=document.getElementById('{fid}');e.value='{v}';e.dispatchEvent(new Event('input',{{bubbles:true}}))}})()")
+    got = await p.evaluate("[document.querySelector('#result').textContent,toolResult.detail,toolChartAvailable(),toolResult.how.steps.length]")
+    check(L + 'energy from kWh: 123,456 kWh × 0,1234 €/kWh = 15,23 €, no chart', got == ['15,23 €', '123,456 kWh × 0,1234 €/kWh', False, 1], got)
+    await p.evaluate("recordModeHistory();setToolKind('energy','device');restoreModeEntry(modeHistory('energy')[0])")
+    got = await p.evaluate("[toolKind.energy,document.getElementById('energyK')?.value,document.querySelector('#result').textContent]")
+    check(L + 'energy from kWh: History brings back the kind and its numbers', got == ['kwh', '123,456', '15,23 €'], got)
+    await p.evaluate("setToolKind('energy','device')")
     for kind, fields, total in [('loan', [['loanAmount', '20000'], ['loanRate', '5'], ['loanYears', '5']], 2645.20),
                                 ('payoff', [['payAmount', '10000'], ['payRate', '5'], ['payMonthly', '300']], 788.72)]:
         await fill('loan', fields, kind)
@@ -1177,7 +1192,7 @@ async def upright_small_phones(browser, url):
     page scrolling (Scientific only from 360×640: its ten rows of keys don't fit 320×568), nothing sticks out, no label
     is cut (kind switches included), and keys stay at least 31px tall."""
     fill = {'vat': [['amount', '1234567,89']], 'pct': [['pctPrice', '1250'], ['pctOff', '25']], 'fuel': [['fuelD', '1250'], ['fuelC', '6,5'], ['fuelP', '1,85']],
-            'energy': [['energyP', '2000'], ['energyH', '3'], ['energyD', '30'], ['energyR', '0,15']], 'loan': [['loanAmount', '250000'], ['loanRate', '4'], ['loanYears', '30']],
+            'energy': [['energyP', '2000'], ['energyH', '3'], ['energyD', '30'], ['energyR', '0,15'], ['energyK', '1234567,89']], 'loan': [['loanAmount', '250000'], ['loanRate', '4'], ['loanYears', '30']],
             'net': [['netIp', '192.168.100.100'], ['netPrefix', '26']], 'dates': [['dateTo', '2027-03-15']],
             'numbers': [['numA', '123456789012'], ['numB', '987654321'], ['numC', '360'], ['numN', '600851475143']],
             'prog': [['progHex', 'DEADBEEFCAFE']],
@@ -1195,7 +1210,7 @@ async def upright_small_phones(browser, url):
             await p.wait_for_timeout(300)
             bad = []
             tabs = [('calc', None), ('units', None), ('currency', None), ('vat', None), ('pct', 'discount'), ('pct', 'tip'), ('loan', 'loan'),
-                    ('loan', 'payoff'), ('loan', 'savings'), ('dates', 'between'), ('dates', 'add'), ('fuel', None), ('energy', None), ('net', 'subnet'),
+                    ('loan', 'payoff'), ('loan', 'savings'), ('dates', 'between'), ('dates', 'add'), ('fuel', None), ('energy', 'device'), ('energy', 'kwh'), ('net', 'subnet'),
                     ('net', 'hosts'), ('numbers', 'gcd'), ('numbers', 'factors'), ('equation', 'quad'), ('equation', 'sys2'), ('stats', None), ('prog', None)]
             if w >= 360:
                 tabs.append(('sci', None))
@@ -1312,7 +1327,7 @@ async def sideways_every_tab(browser, url):
     """Every tab held sideways, from a small phone in Safari (iPhone SE, 667×330) to a big one: nothing scrolls, nothing
     sticks out of the screen (Dates' list included), and every tab but Graph and Scientific has the same key size."""
     fill = {'vat': [['amount', '1234567,89']], 'pct': [['pctPrice', '1250'], ['pctOff', '25']], 'fuel': [['fuelD', '1250'], ['fuelC', '6,5'], ['fuelP', '1,85']],
-            'energy': [['energyP', '2000'], ['energyH', '3'], ['energyD', '30'], ['energyR', '0,15']], 'loan': [['loanAmount', '250000'], ['loanRate', '4'], ['loanYears', '30']],
+            'energy': [['energyP', '2000'], ['energyH', '3'], ['energyD', '30'], ['energyR', '0,15'], ['energyK', '1234567,89']], 'loan': [['loanAmount', '250000'], ['loanRate', '4'], ['loanYears', '30']],
             'net': [['netIp', '192.168.100.100'], ['netPrefix', '26']], 'dates': [['dateTo', '2027-03-15']],
             'numbers': [['numA', '123456789012'], ['numB', '987654321'], ['numC', '360'], ['numN', '600851475143']],
             'prog': [['progHex', 'DEADBEEFCAFE']],
@@ -1329,7 +1344,7 @@ async def sideways_every_tab(browser, url):
             await p.wait_for_timeout(300)
             bad, keys = [], {}
             for m, kind in [('calc', None), ('units', None), ('currency', None), ('vat', None), ('pct', 'discount'), ('pct', 'tip'), ('loan', 'loan'),
-                            ('loan', 'payoff'), ('loan', 'savings'), ('dates', 'between'), ('dates', 'add'), ('fuel', None), ('energy', None), ('net', 'subnet'),
+                            ('loan', 'payoff'), ('loan', 'savings'), ('dates', 'between'), ('dates', 'add'), ('fuel', None), ('energy', 'device'), ('energy', 'kwh'), ('net', 'subnet'),
                             ('numbers', 'gcd'), ('numbers', 'factors'), ('equation', 'quad'), ('equation', 'sys2'), ('stats', None), ('prog', None)]:
                 await p.evaluate(f"switchMode('{m}')")
                 if kind:

@@ -95,6 +95,7 @@ const HELP={
  energy:{tips:[
   ['Την ισχύ σε W τη γράφει το ταμπελάκι ή το κουτί της συσκευής. Η τιμή ανά kWh είναι στον λογαριασμό του ρεύματος.','The power in W is on the device’s label or box. The price per kWh is on your electricity bill.'],
   ['Βάλε 30 ημέρες για το κόστος ενός μήνα ή 365 για έναν χρόνο.','Use 30 days for a month’s cost, or 365 for a year.'],
+  ['Ξέρεις ήδη τις kWh, π.χ. από τον λογαριασμό ή τον μετρητή; Διάλεξε «Από kWh» και βάλε τις kWh και την τιμή ανά kWh.','Already know the kWh, e.g. from your bill or meter? Pick “From kWh” and enter the kWh and the price per kWh.'],
   ['Για συσκευές που ανάβουν και σβήνουν μόνες τους, όπως το ψυγείο, οι ώρες είναι κατά προσέγγιση.','For devices that switch on and off by themselves, like a fridge, the hours are an estimate.'],
   ['Το κουμπί με τις στήλες δείχνει το κόστος και τις kWh ανά ώρα, ημέρα, μήνα και χρόνο. Πάτα το αποτέλεσμα για να το αντιγράψεις.','The bars button shows the cost and kWh per hour, day, month and year. Tap the result to copy it.']]}
 };

@@ -44,7 +44,7 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 
 ### Dedicated Calculators
 - Fuel cost calculator
-- Electricity/energy cost calculator
+- Electricity/energy cost calculator: from a device's power and hours, or from kWh you already know (a bill or meter)
 - VAT add/remove calculator (VAT rounded to cents, as on invoices)
 - Percent: price after a discount, % change between two values, and a tip calculator that splits the bill between people
 - Dates: days between two dates and a date plus or minus days, picked with the device's own calendar; all days or working days only (Greek public holidays)

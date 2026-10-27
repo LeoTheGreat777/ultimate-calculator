@@ -95,7 +95,7 @@ function cText(k){
   historyEmpty:'At least 2 calculations are needed for the chart.',historyHint:'The last {n} calculations. Tap a point to see it.'};
  return (lang==='el'?el:en)[k];
 }
-function toolChartAvailable(){return ['fuel','energy','vat','loan'].includes(mode)&&!!toolResult?.how}
+function toolChartAvailable(){return ['fuel','energy','vat','loan'].includes(mode)&&!(mode==='energy'&&toolKind.energy==='kwh')&&!!toolResult?.how}// Energy from kWh: no time to spread over
 function showToolChart(){
  if(!toolChartAvailable())return;
  $('#howTitle').textContent=cText('chart')+' · '+modeText(mode);

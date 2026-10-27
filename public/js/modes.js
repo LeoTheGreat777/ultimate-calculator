@@ -18,7 +18,7 @@ const MODE_WORDS={
  stats:'statistics stats average mean median standard deviation variance sigma list data στατιστικα μεσος ορος διαμεσος τυπικη αποκλιση διακυμανση',
  prog:'programmer hex hexadecimal binary octal decimal bits bytes base convert προγραμματιστης δεκαεξαδικο δυαδικο οκταδικο δεκαδικο βαση μετατροπη',
  fuel:'fuel petrol gas diesel car trip καυσιμα βενζινη πετρελαιο αυτοκινητο ταξιδι',
- energy:'energy electricity kwh power watt ενεργεια ρευμα καταναλωση ισχυς',
+ energy:'energy electricity kwh power watt cost bill ενεργεια ρευμα καταναλωση ισχυς κοστος λογαριασμος',
  net:'subnet ip network mask cidr ipv4 υποδικτυο δικτυο μασκα'
 };
 function mText(k){

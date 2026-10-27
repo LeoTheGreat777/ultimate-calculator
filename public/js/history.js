@@ -328,6 +328,7 @@ function restoreModeEntry(x){
  if(x.text){
   const m=mode;
   if(x.kind&&KIND_FIELDS[m]?.[x.kind])toolKind[m]=x.kind;
+  else if(!x.kind&&KIND_FIELDS[m])toolKind[m]=Object.keys(KIND_FIELDS[m])[0];// saved before the mode had kinds (Energy): its first kind
   if(m==='vat'&&TOGGLES.vat.options.includes(x.choices?.vat))vatAction=x.choices.vat;
   if(m==='dates'&&['all','work'].includes(x.choices?.dates))dateCount=x.choices.dates;
   toolState[m]={inputs:{...x.inputs},result:null};

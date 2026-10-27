@@ -4,7 +4,7 @@ Part of the notes in CLAUDE.md (read that first). Covers tools.js, units.js, cur
 
 - **Tool modes** are `TOOL_MODES` (core.js): use it rather than listing them. Defaults (VAT rate 24, Subnet /24, Dates today)
   are `TOOL_DEFAULTS`, filled in on entering the mode and after AC. Percent (discount, change, tip), Interest (`loan`:
-  loan, payoff, savings) Dates (between, add) and Subnet (`net`: subnet, hosts) have kinds on a switch above their fields: `KIND_FIELDS`, `KIND_LABELS`, `toolKind[mode]`, `setToolKind`,
+  loan, payoff, savings) Dates (between, add), Subnet (`net`: subnet, hosts) and Energy (`device`: W × hours × days × price; `kwh`: kWh already known × price, exact with `ratField`, no chart; both share the `energyR` id, still cleared on a kind change) have kinds on a switch above their fields: `KIND_FIELDS`, `KIND_LABELS`, `toolKind[mode]`, `setToolKind`,
   `kindPanelHtml`; switching kinds re-renders only the fields, AC (and changing kind) clears the kind on screen. In
   landscape a kind's fields share one row (`.kind-grid`, `--f`, one-line labels); the tip always does (`ONE_ROW_KINDS`). `FIELD_TYPE` marks fields that aren't plain numbers:
   'count' (People: digits only; the , key is dimmed), 'int' (Dates' days: may be negative; the , key becomes ±),
