@@ -101,15 +101,24 @@ setupHistoryGestures();
 document.addEventListener('keydown',e=>{if(/^F(?:[1-8]|1[0-2])$/.test(e.key))e.stopImmediatePropagation()},true);
 // Works offline: sw.js keeps a copy of the app on the device (the page still comes from the network first).
 if('serviceWorker' in navigator&&location.protocol!=='file:')addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
-// A phone keeps the app open in the background for days, so a new version would only show after closing it completely.
-// Whenever the app comes back to the screen (at most once a minute), ask the server which version is current and
-// reload if it differs. Offline, or if the check fails, nothing happens. no-store: past every cache, sw.js included.
+// A phone keeps the app open in the background for days, so a new version would only show after closing it completely,
+// and when the network is slow sw.js opens the saved copy (an older version). So when the app opens, and whenever it
+// comes back to the screen (at most once a minute), ask the server which version is current and reload if it differs.
+// Offline, or if the check fails, nothing happens (the next return tries again). no-store: past every cache, sw.js included.
 let lastVersionCheck=0;
 function checkForUpdate(){
  // not while the own theme editor is open: the reload would close the colour picker; the next return checks again
  if(location.protocol==='file:'||Date.now()-lastVersionCheck<60000||themeEditorOpen())return;
  lastVersionCheck=Date.now();
- fetch('./',{cache:'no-store'}).then(r=>r.ok?r.text():'').then(html=>{const v=html.match(/id="footerVersion">v(\d+\.\d+\.\d+)</)?.[1];if(v&&v!==VERSION)location.reload()}).catch(()=>{});
+ fetch('./',{cache:'no-store'}).then(r=>r.ok?r.text():'').then(html=>{
+  const v=html.match(/id="footerVersion">v(\d+\.\d+\.\d+)</)?.[1];
+  if(!v||v===VERSION)return;
+  // At most one update reload per half minute: if the reload still opened the old copy, don't reload over and over.
+  let last=0;try{last=+sessionStorage.getItem('uc-update-reload')||0}catch{}
+  if(Date.now()-last<30000)return;
+  try{sessionStorage.setItem('uc-update-reload',String(Date.now()))}catch{}
+  location.reload();
+ }).catch(()=>{lastVersionCheck=0});
 }
 // The same moments refresh the currency rates in the background, on any tab (at most hourly: refreshRates),
 // so the rates saved for offline use are as fresh as the last time the app was open.
@@ -117,4 +126,4 @@ const backOnScreen=()=>{checkForUpdate();refreshRates()};
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')backOnScreen()});
 addEventListener('pageshow',e=>{if(e.persisted)backOnScreen()});
 addEventListener('focus',backOnScreen);
-addEventListener('load',()=>setTimeout(()=>refreshRates(),1500));// and once after the app opens
+addEventListener('load',()=>{checkForUpdate();setTimeout(()=>refreshRates(),1500)});// and once after the app opens

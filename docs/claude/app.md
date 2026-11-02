@@ -19,9 +19,10 @@ Part of the notes in CLAUDE.md (read that first). Covers main.js, sw.js, help.js
   comes from the network first (`no-cache`), the saved copy only offline or after 3 s; `?v=` files from the saved copy
   first; each fresh page saves the files it links to and deletes other versions' `?v=` files. Nothing to update per
   version, but every file the app needs must be linked from index.html with `?v=`, and the app must not fetch anything
-  else it needs to start (the deployed site is the same, with one js/app.js instead of the scripts). Coming back to the screen (`visibilitychange`, `focus`, bfcache `pageshow`) runs
+  else it needs to start (the deployed site is the same, with one js/app.js instead of the scripts). Opening the app (`load`) and coming back to the screen (`visibilitychange`, `focus`, bfcache `pageshow`) run
   `checkForUpdate` (main.js, at most once a minute): it fetches the page with `no-store` (sw.js leaves those alone) and
-  reloads if its footer version differs from `VERSION`. Not while the own theme editor is open (the reload would close
+  reloads if its footer version differs from `VERSION` (the start-up check catches a saved copy opened on a slow network;
+  at most one such reload per 30 s, `uc-update-reload` in sessionStorage, so a reload that still gets the old copy can't loop; a failed check resets the minute). Not while the own theme editor is open (the reload would close
   the colour picker); the editor's colours are also kept on `pagehide`, so a reload never loses them. Test with `offline()` in tests/test_app.py.
 - **Keyboard:** desktop typing is handled in the `window` `keydown` listener in `main.js`.
   Keys that do nothing in a mode are ignored.

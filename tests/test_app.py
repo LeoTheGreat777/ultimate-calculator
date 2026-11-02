@@ -1617,6 +1617,27 @@ async def shortcuts(browser, url):
 
 async def update_keeps_themes(browser, url):
     """An update reloads the page: own themes, the chosen theme and the language stay; colours being edited are kept."""
+    # An old copy opened (a slow network makes sw.js open the saved one): the app asks at start and reloads, but only
+    # once, even if the reload still shows the old version.
+    ctx = await browser.new_context(viewport={'width': 1280, 'height': 860}, service_workers='block')
+    await ctx.add_init_script(SEED % ('en', 'dark'))
+    p = await ctx.new_page()
+    pages = []
+
+    async def root(route):
+        pages.append(route.request.resource_type)
+        r = await route.fetch()
+        body = await r.text()
+        if len(pages) > 1:
+            body = body.replace(f'>v{VERSION}<', '>v9.9.9<')
+        await route.fulfill(response=r, body=body)
+    await p.route(url, root)
+    await p.goto(url)
+    await p.wait_for_timeout(2500)
+    navs = pages.count('document')
+    check('[update] an old copy updates as soon as the app opens, with one reload only', navs == 2 and len(pages) == 4, pages)
+    await ctx.close()
+
     L = '[update] '
     p = await new_page(browser, url, 'el', 'dark')
     await p.evaluate("customThemes.dark={bg:'#101820',accent:'#ff8800'};saveCustomThemes();writeCustomCss();setTheme('custom-dark')")
