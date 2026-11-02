@@ -163,8 +163,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # The image carries the app's version (also as its own tag, e.g. :0.29.1) and where it comes from, so TrueNAS
+      # and `docker inspect` can show which version is running. :latest is still what self-hosted copies pull.
       - name: Build image
-        run: docker build -t ghcr.io/leothegreat777/ultimate-calculator:latest .
+        run: |
+          version=$(grep -o "VERSION='[^']*'" public/js/core.js | cut -d"'" -f2)
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          docker build -t ghcr.io/leothegreat777/ultimate-calculator:latest -t "ghcr.io/leothegreat777/ultimate-calculator:$version" \
+            --label org.opencontainers.image.title="Ultimate Calculator" \
+            --label org.opencontainers.image.description="All-in-one calculator web app" \
+            --label org.opencontainers.image.version="$version" \
+            --label org.opencontainers.image.revision="${{ github.sha }}" \
+            --label org.opencontainers.image.created="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --label org.opencontainers.image.source="https://github.com/${{ github.repository }}" \
+            --label org.opencontainers.image.url="https://uc.kampaxis.com" \
+            .
 
       # Start the image and check it before publishing: if anything fails, the current image stays live.
       - name: Test image
@@ -186,6 +199,7 @@ jobs:
           done
           check "page shows v$version" "$(curl -s http://localhost:8080/ | grep -c "v$version")" 1
           check "health check" "$(curl -s http://localhost:8080/api/health)" '{"ok":true}'
+          check "image labelled v$version" "$(docker inspect -f '{{ index .Config.Labels "org.opencontainers.image.version" }}' uc)" "$version"
           check "manifest type" "$(curl -sI http://localhost:8080/manifest.webmanifest | grep -i '^content-type' | tr -d '\r' | cut -d' ' -f2)" "application/manifest+json"
           check "page not cached" "$(curl -sI http://localhost:8080/ | grep -ci '^cache-control: no-store')" 1
           check "scripts revalidated" "$(curl -sI "http://localhost:8080/js/app.js?v=$version" | grep -ci '^cache-control: no-cache')" 1
@@ -203,4 +217,6 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish image
-        run: docker push ghcr.io/leothegreat777/ultimate-calculator:latest
+        run: |
+          docker push "ghcr.io/leothegreat777/ultimate-calculator:$VERSION"
+          docker push ghcr.io/leothegreat777/ultimate-calculator:latest

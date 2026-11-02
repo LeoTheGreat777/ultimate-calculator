@@ -13,7 +13,7 @@ Two people work on this repo, each with their own Claude sessions, and both push
 - Every push to `main` runs `.github/workflows/deploy.yml`: it builds the site (`tools/build.mjs`: every script
   `index.html` loads is joined into one minified `js/app.js`, styles.css minified, the rest copied), runs the browser
   tests on that build, and only if they pass deploys it to GitHub Pages (https://uc.kampaxis.com) and the Docker image
-  `ghcr.io/leothegreat777/ultimate-calculator:latest` (its Dockerfile runs the same build). If the tests fail nothing is deployed. Still: only push working, tested code.
+  `ghcr.io/leothegreat777/ultimate-calculator:latest`, also tagged with its version (`:X.Y.Z`) and labelled with it (`org.opencontainers.image.version`, which TrueNAS shows as App Version) (its Dockerfile runs the same build). If the tests fail nothing is deployed. Still: only push working, tested code.
 - Before pushing: `git fetch origin main` and rebase onto it if it moved. If the other person changed
   the same code, resolve it carefully, re-test, and say what you merged.
 - Never force push, never rewrite `main`'s history.
