@@ -9,7 +9,9 @@ Part of the notes in CLAUDE.md (read that first). Covers numbers.js, calculator.
   The Calculator's finished result shows up to 10 decimals when they fit at 70% of the display's font size or more
   (`#result` data-long / data-short, picked by `fitDisplayText`, again when the width changes), like the iPhone: 1 ÷ 7 =
   0,1428571429; copying copies what is shown, and carrying on shows it the same way (`shownResult`, `carry.plain` for ⌫).
-  History and the working keep 6. Tests read the result after its frame, or accept either form.
+  History keeps 6. The working (?) shows real numbers with up to 10 decimals (`HOW_DECIMALS`, `ratShown`, `howResult`;
+  Leonidas asked for e + 5 = 7,7182818285 there too), complex parts keep 6 like the display; Units' working shows
+  numbers like the converted value (`formatUnitResult`). A Result over 18 characters gets `.longer` (smaller) to fit a phone. Tests read the result after its frame, or accept either form.
 - **Limits** (numbers.js, as on Windows' calculator): typed numbers have at most 15 digits (`MAX_DIGITS`, `digitCount`)
   in every mode, a calculation at most 150 characters (`MAX_INPUT`; Graph functions 120), and every step of a
   calculation must stay below 10¹⁰⁰⁰⁰ and (unless 0) above 10⁻¹⁰⁰⁰⁰ (`ratLimit`), else "Too large"/"Too small".

@@ -206,6 +206,7 @@ html.landscape .tool-grid.kind-grid .tool-field span{white-space:nowrap;overflow
 .how-result span{font-size:11px;font-weight:750;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);line-height:1}
 .how-result strong{font-size:34px;line-height:1.05;font-weight:800;letter-spacing:-.04em}
 .how-result strong.long{font-size:27px}/* 192.168.10.64/26, 225.282,00 € on one line */
+.how-result strong.longer{font-size:22px}/* 123.456.789,1234567891: 10 decimals on a phone */
 .hidden{display:none!important}
 @media(max-width:480px){
   .app-shell{padding:8px 8px 10px}
@@ -880,7 +881,7 @@ html.side-panels #historyButton,html.side-panels #howButton,html.side-panels #un
 .side-scroll{min-height:0;overflow-y:auto;scrollbar-width:thin;margin:0 -6px;padding:0 6px}
 .side-work{margin-top:8px}
 .side-work .how-step{padding:12px}
-.side-work .how-result strong{font-size:28px}.side-work .how-result strong.long{font-size:22px}
+.side-work .how-result strong{font-size:28px}.side-work .how-result strong.long{font-size:22px}.side-work .how-result strong.longer{font-size:18px}
 .side-empty{margin:4px 2px 8px;color:var(--muted);font-size:13px;line-height:1.5}
 .side-chart{margin-top:12px;padding-top:4px;border-top:1px solid var(--border)}
 .side-chart.hidden{display:none}

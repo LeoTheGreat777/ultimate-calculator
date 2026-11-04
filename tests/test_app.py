@@ -1966,7 +1966,7 @@ async def explanations(browser, url):
     h = await how('-2^2')
     check(L + 'a minus in front comes last', h['t'] == ['Power', 'The minus in front'] and h['r'] == '-4', h)
     h = await how('1÷3×3')
-    check(L + 'a rounded number gets …', h['x'] == ['1 ÷ 3 = 0,333333…', '0,333333… × 3 = 1'], h)
+    check(L + 'a rounded number gets …', h['x'] == ['1 ÷ 3 = 0,3333333333…', '0,3333333333… × 3 = 1'], h)
     h = await how('√(9)+5!')
     check(L + 'roots checked by hand, factorial written out', h['t'][0] == 'Square root: 3 × 3 = 9' and h['x'][1] == '5! = 5 × 4 × 3 × 2 × 1 = 120', h)
     bad = await p.evaluate("""(()=>{const out=[];for(const e of ['2+3×4−5÷2','(1+2)×(3+4)','2^10−1','((2+3)×4)^2','100−10%','50×10%','ln(e)+log(100)','−(2+3)×−4',
@@ -1977,6 +1977,15 @@ async def explanations(browser, url):
     h = await how('sin(0)')
     check(L + 'radians say so', h['t'] == ['Sine (radians)'] and h['x'] == ['sin(0) = 0'], h)
     await p.evaluate("angleUnit='deg'")
+    # the working shows the full number, like the display: e + 5 = 7,7182818285, not 7,718282
+    h = await p.evaluate("(()=>{const d=explanationForExpression('e+5',evalExpr('e+5'));return [d.result,d.steps.map(s=>s.text)]})()")
+    check(L + 'working shows up to 10 decimals', h == ['7,7182818285', ['e + 5 = 7,7182818285…']], h)
+    # Units' working: small factors in full (1 in = 0,0000254 km, was 0,000025)
+    await p.evaluate("switchMode('units');const c=document.getElementById('unitCategory');c.value='length';c.dispatchEvent(new Event('change',{bubbles:true}));for(const [id,v] of [['unitFrom','in'],['unitTo','km']]){const s=document.getElementById(id);s.value=v;s.dispatchEvent(new Event('change',{bubbles:true}))}")
+    await p.click('#keypad [data-value="1"]')
+    h = await p.evaluate("unitsHow()?.steps.map(s=>s.title)")
+    check(L + 'Units working: small factor in full', h == ['1 in = 0,0000254 km'], h)
+    await p.evaluate("switchMode('calc')")
     # Units and Currency have their own ? now
     await p.evaluate("switchMode('units');const c=document.getElementById('unitCategory');c.value='temperature';c.dispatchEvent(new Event('change',{bubbles:true}))")
     await p.evaluate("for(const [id,v] of [['unitFrom','°F'],['unitTo','K']]){const s=document.getElementById(id);s.value=v;s.dispatchEvent(new Event('change',{bubbles:true}))}")

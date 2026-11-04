@@ -24,13 +24,18 @@ const OP_TITLE={'*':[['Πολλαπλασιασμός','ο πολλαπλασι�
 const OP_SIGN={'+':'+','-':'−','*':'×','/':'÷',C:'C',P:'P',m:'mod'};
 // a number as shown, with … when it is rounded (1 ÷ 3 = 0,333333…), so 0,333333 × 3 = 1 doesn't look wrong
 // (worked-out numbers keep the plain -, as results do on the display)
-function ratShown(v){
- if(isCx(v)){const neg=v.im.n<0n,abs=neg?rat(-v.im.n,v.im.d):v.im,ims=(abs.n===abs.d?'':ratShown(abs))+'i';// 0,707107… + 0,707107…i
-  return v.re.n===0n?(neg?'-':'')+ims:ratShown(v.re)+(neg?' − ':' + ')+ims}
- const s=formatRat(v);if(/×/.test(s))return s;
+// Real numbers get up to 10 decimals, like the Calculator's finished result (e + 5 = 7,7182818285…); complex parts keep 6,
+// like the display shows them.
+const HOW_DECIMALS=10;
+function ratShown(v,max=HOW_DECIMALS){
+ if(isCx(v)){const neg=v.im.n<0n,abs=neg?rat(-v.im.n,v.im.d):v.im,ims=(abs.n===abs.d?'':ratShown(abs,6))+'i';// 0,707107… + 0,707107…i
+  return v.re.n===0n?(neg?'-':'')+ims:ratShown(v.re,6)+(neg?' − ':' + ')+ims}
+ const s=formatRat(v,max);if(/×/.test(s))return s;
  let exact=false;try{exact=ratEq(ratFromString(s.replace(/\./g,'').replace(',','.')),v)}catch{}
  return s+(exact?'':'…')}
 const ratEq=(a,b)=>vEq(a,b);
+// the Result line of the working: a real result with up to 10 decimals (no …), a complex one as the display shows it
+const howResult=v=>isCx(v)?fmt(v):v&&typeof v==='object'&&'n'in v?formatRat(v,HOW_DECIMALS):fmt(v);
 // order classes: 1 powers, functions, nCr nPr; 2 × ÷ mod; 3 + −
 const binClass=op=>op==='*'||op==='/'||op==='m'?2:op==='C'||op==='P'?1:3;
 const TRIG=['sin','cos','tan','cot','sec','csc'],isTrig=n=>TRIG.includes(n),isArc=n=>n[0]==='a'&&TRIG.includes(n.slice(1));
@@ -188,9 +193,9 @@ function explanationForExpression(input,result){
  if(lastV&&!ratEq(lastV,tree.v)&&ratEq(vNeg(lastV),tree.v))steps.push({title:L('Το μείον μπροστά','The minus in front'),text:'−('+V(lastV)+') = '+V(tree.v)});
  if(steps.length)delete steps[steps.length-1].line;// the last one is the result
  // a complex result: its size and angle too (the polar form shown under the result)
- if(isCx(result)){const a=result.re,b=result.im,sq=x=>(x.n<0n?'('+V(x)+')':V(x))+'²',u=deg?'°':'';
+ if(isCx(result)){const V=x=>ratShown(x,6),a=result.re,b=result.im,sq=x=>(x.n<0n?'('+V(x)+')':V(x))+'²',u=deg?'°':'';// 6 decimals, like the polar line on the display
   steps.push({title:L('Πολική μορφή: μέτρο ∠ γωνία','Polar form: size ∠ angle'),text:'r = √('+sq(a)+' + '+sq(b)+') = '+V(vAbs(result))+' · θ = atan2('+V(b)+'; '+V(a)+') = '+V(vArg(result))+u+(deg?'':' rad')});}
- return{formula,rule,steps,result:fmt(result),spaced:true};
+ return{formula,rule,steps,result:howResult(result),spaced:true};
 }
 
 // Units and Currency: the factor (or the formula, for temperatures) and the working, from the value typed in.
@@ -200,10 +205,10 @@ function unitsHow(){
  const su=src==='from'?$('#unitFrom')?.value:$('#unitTo')?.value,du=src==='from'?$('#unitTo')?.value:$('#unitFrom')?.value;
  const expr=String(unitExpressions[src]??'').trim();if(!cc||!su||!du||!expr||expr==='0')return null;
  const kept=unitError,value=unitEvaluate(expr);unitError=kept;if(value===null)return null;// only reading: the error on screen stays
- const cur=cc==='currency',V=v=>cur?formatMoneyValue(v):formatRat(v).replace(/^-/,'−'),R=formatRateValue,u=x=>' '+x;
+ const cur=cc==='currency',N=v=>cur?formatRat(v,HOW_DECIMALS):formatUnitResult(ratToDecimal(v,30)),V=v=>cur?formatMoneyValue(v):N(v).replace(/^-/,'−'),R=formatRateValue,u=x=>' '+x;
  const out=unitConvertValue(cc,value,su,du),steps=[];
  const typed=formatUnitDisplayValue(expr);
- if(/[+\-×÷*/(%]/.test(expr.replace(/^[-−]/,'')))steps.push({title:L('Η πράξη','The calculation'),text:typed+' = '+formatRat(value)});
+ if(/[+\-×÷*/(%]/.test(expr.replace(/^[-−]/,'')))steps.push({title:L('Η πράξη','The calculation'),text:typed+' = '+N(value)});
  if(su===du)return null;
  if(cc==='temperature'){
   const c=su==='°C'?value:su==='°F'?ratDiv(ratSub(value,ratFromString('32')),ratFromString('1.8')):ratSub(value,ratFromString('273.15'));
@@ -220,7 +225,7 @@ function unitsHow(){
    steps.push({title:'1 EUR = '+R(rd)+' '+du,text:V(eur)+' EUR × '+R(rd)+' = '+V(out)+' '+du})}
  }else{
   const f=ratDiv(unitFactor(units[cc][su]),unitFactor(units[cc][du]));
-  steps.push({title:'1'+u(su)+' = '+formatRat(f)+u(du),text:V(value)+' × '+formatRat(f)+' = '+V(out)+u(du)});
+  steps.push({title:'1'+u(su)+' = '+N(f)+u(du),text:V(value)+' × '+N(f)+' = '+V(out)+u(du)});
  }
  return{formula:typed+u(su)+' →\uFE0E '+du,steps,result:V(out)+u(du),spaced:true};
 }
@@ -239,5 +244,5 @@ function howHtml(d){
   '<div class="how-steps">'+d.steps.map((s,i)=>{const text=typeof s==='string'?s:s.text;
    return '<div class="how-line"><span>'+(i+1)+'</span><div class="how-line-body"><strong>'+esc(s.title||'')+'</strong>'+(text?'<div'+(text.includes('\n')?' class="how-rows"':'')+'>'+esc(text)+'</div>':'')+
     (s.line?'<div class="how-now">'+mark(s.line)+'</div>':'')+'</div>'+(s.bits?bitsHtml(s.bits):'')+'</div>'}).join('')+'</div>'+
-  '<div class="how-result"><span>'+(el?'Αποτέλεσμα':'Result')+'</span><strong'+(String(d.result).length>13?' class="long"':'')+'>'+esc(d.result)+'</strong></div></div>';
+  '<div class="how-result"><span>'+(el?'Αποτέλεσμα':'Result')+'</span><strong'+(String(d.result).length>18?' class="long longer"':String(d.result).length>13?' class="long"':'')+'>'+esc(d.result)+'</strong></div></div>';
 }

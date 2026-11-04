@@ -6,6 +6,11 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.29.6 – 2026-11-04
+
+### Changed
+- "How was this calculated?" now shows the same full number as the display, up to 10 decimals: e + 5 = 7,7182818285 (it was rounded to 7,718282). Units' working shows small factors in full too (1 in = 0,0000254 km).
+
 ## 0.29.5 – 2026-11-04
 
 ### Fixed

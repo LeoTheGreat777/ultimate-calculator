@@ -173,7 +173,7 @@ function negate(){
   if(!lastResult)return;
   const prevShown=lastShown||formatExpressionDisplay(lastExpression);
   carry=null;resultNegated=!resultNegated;lastResult=vNeg(lastResult);lastExpression='-('+lastExpression+')';lastShown='−('+prevShown+')';lastOperation=null;
-  howData=explanationForExpression(lastExpression,lastResult)||{formula:lastShown,steps:[lastShown+' = '+fmt(lastResult)],result:fmt(lastResult)};
+  howData=explanationForExpression(lastExpression,lastResult)||{formula:lastShown,steps:[lastShown+' = '+fmt(lastResult)],result:howResult(lastResult)};
   if(howData&&!howData.spaced)howData.formula=lastShown;calcHowData=howData;
   render();return;
  }
@@ -196,7 +196,7 @@ function parseLastOperation(full){const m=String(full).match(/^(.*?)([+\-×÷])(
 function repeatEquals(){
  if(!justCalculated||!lastOperation)return false;
  resetHow();
- try{const rhs=lastOperation.rhs,base=isCx(lastResult)?(carryCx=lastResult,carry=null,'⟪⟫'):carryText(lastResult,24),full=base+lastOperation.op+rhs,value=evalExpr(full);lastExpression=full;lastShown=formatExpressionDisplay(full);lastResult=value;justCalculated=true;resultNegated=false;howData=explanationForExpression(full,value)||{formula:formatExpressionDisplay(full),steps:[`${formatExpressionDisplay(full)} = ${fmt(value)}`],result:fmt(value)};calcHowData=howData;saveHistory({expression:full,result:value,how:howData});render();return true}catch(e){calcError=calcErrorKind(e);render();return true}
+ try{const rhs=lastOperation.rhs,base=isCx(lastResult)?(carryCx=lastResult,carry=null,'⟪⟫'):carryText(lastResult,24),full=base+lastOperation.op+rhs,value=evalExpr(full);lastExpression=full;lastShown=formatExpressionDisplay(full);lastResult=value;justCalculated=true;resultNegated=false;howData=explanationForExpression(full,value)||{formula:formatExpressionDisplay(full),steps:[`${formatExpressionDisplay(full)} = ${fmt(value)}`],result:howResult(value)};calcHowData=howData;saveHistory({expression:full,result:value,how:howData});render();return true}catch(e){calcError=calcErrorKind(e);render();return true}
 }
 function equals(){
  if(justCalculated&&repeatEquals())return;
@@ -204,7 +204,7 @@ function equals(){
  let full=expression+current;if(!full||OP_END.test(full))return;
  if(/[()]/.test(full)){full=tidyParens(full);expression=full;current=''}// close what is open, drop brackets that change nothing
  if(!full||OP_OPEN_END.test(full))return;
- try{const value=evalExpr(full);lastExpression=full;lastShown=formatExpressionDisplay(full);lastResult=value;lastOperation=parseLastOperation(full);justCalculated=true;resultNegated=false;currentIsPercent=false;howData=explanationForExpression(full,value)||{formula:formatExpressionDisplay(full),steps:[`${formatExpressionDisplay(full)} = ${fmt(value)}`],result:fmt(value)};saveHistory({expression:full,result:value,how:howData});render()}
+ try{const value=evalExpr(full);lastExpression=full;lastShown=formatExpressionDisplay(full);lastResult=value;lastOperation=parseLastOperation(full);justCalculated=true;resultNegated=false;currentIsPercent=false;howData=explanationForExpression(full,value)||{formula:formatExpressionDisplay(full),steps:[`${formatExpressionDisplay(full)} = ${fmt(value)}`],result:howResult(value)};saveHistory({expression:full,result:value,how:howData});render()}
  catch(e){calcError=calcErrorKind(e);render()}
 }
 // ---------- Scientific ----------
