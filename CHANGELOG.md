@@ -6,6 +6,11 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.30.2 – 2026-11-04
+
+### Fixed
+- The scientific keys (sin, cos, MC… and the rest) now light up under the mouse like the other keys, and the f(x) and M chips on the display light up under the mouse and when pressed.
+
 ## 0.30.1 – 2026-11-04
 
 ### Fixed

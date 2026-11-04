@@ -740,8 +740,13 @@ html.landscape .theme-group{padding-top:3px;padding-bottom:1px}
 .date-bar{position:absolute;top:6px;left:0;z-index:3;display:flex}/* in the same place as f(x) */
 .date-bar.hidden{display:none}
 .display-wrap.has-date-bar .expression{padding-left:124px}
-.sci-chip{height:34px;min-width:48px;padding:0 12px;border:1px solid var(--border);border-radius:999px;background:var(--card2);color:var(--muted);font:inherit;font-size:13px;font-weight:750;letter-spacing:.03em;cursor:pointer;transition:color .15s,background-color .15s,border-color .15s}
+.sci-chip{height:34px;min-width:48px;padding:0 12px;border:1px solid var(--border);border-radius:999px;background:var(--card2);color:var(--muted);font:inherit;font-size:13px;font-weight:750;letter-spacing:.03em;cursor:pointer;transition:color .15s,background-color .15s,border-color .15s,transform .12s}
 .sci-chip.on{background:color-mix(in srgb,var(--accent) 14%,var(--card2));border-color:color-mix(in srgb,var(--accent) 55%,transparent);color:var(--accent2)}
+/* hover and pressed like the keys (ui.js setupTopPress); lit (.on) stays lit, a little brighter */
+@media (hover:hover) and (pointer:fine){.sci-chip:hover{background:var(--key-hover);color:var(--text)}.sci-chip.on:hover{background:color-mix(in srgb,var(--accent) 24%,var(--card2));color:var(--accent2)}}
+.sci-chip.pressed{background:var(--key-hover);color:var(--text);transform:scale(.93)}
+.sci-chip.on.pressed{background:color-mix(in srgb,var(--accent) 30%,var(--card2));color:var(--accent2)}
+@media (prefers-reduced-motion:reduce){.sci-chip.pressed{transform:none}}
 .sci-chip:focus{outline:none}
 .sci-chip:focus-visible{outline:2px solid var(--accent2);outline-offset:1px}
 .keypad.sci{display:flex;flex-direction:column;gap:8px}
@@ -749,6 +754,7 @@ html.landscape .theme-group{padding-top:3px;padding-bottom:1px}
 .keypad.sci .basic-pad{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .key.sci-key{background:var(--card2);box-shadow:inset 0 0 0 1px var(--border);color:var(--text);font-size:16px;font-weight:500;letter-spacing:0}
 .key.sci-key.on{background:var(--accent);box-shadow:none;color:var(--on-accent)}
+@media (hover:hover) and (pointer:fine){.key.sci-key:hover{background:var(--key-hover)}.key.sci-key.on:hover{background:var(--accent)}}/* hover like the other keys (.key:hover comes earlier, so it lost to the sci-key colour) */
 html.landscape .calculator-card.sci-on{grid-template-columns:minmax(0,.7fr) minmax(0,1.75fr)}
 html.landscape .keypad.sci{flex-direction:row}
 html.landscape .keypad.sci .sci-pad{flex:4;grid-template-columns:none;grid-template-rows:repeat(5,auto);grid-auto-flow:column;grid-auto-columns:minmax(0,1fr)}

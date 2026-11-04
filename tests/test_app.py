@@ -1928,6 +1928,26 @@ async def press_feedback(browser, url):
                 await p.mouse.up()
                 await p.wait_for_timeout(100)
                 return st
+            # the f(x) keys and the f(x) chip react to a mouse over them and to a press, like the other keys
+            await p.click('[data-bar="sci"]')
+            await p.wait_for_timeout(200)
+            bg = "(s=>getComputedStyle(document.querySelector(s)).backgroundColor)"
+            for sel in ['#keypad [data-sci="sin"]', '#keypad [data-mem="ms"]', '#sciBar [data-bar="sci"]']:
+                await p.mouse.move(0, 0)
+                await p.wait_for_timeout(250)
+                before = await p.evaluate(f"{bg}('{sel}')")
+                await p.hover(sel)
+                await p.wait_for_timeout(250)
+                check(L + f'{sel} lights up under the mouse', await p.evaluate(f"{bg}('{sel}')") != before)
+                await p.mouse.down()
+                check(L + f'{sel} shows it is pressed', await p.evaluate(f"document.querySelector('{sel}').classList.contains('pressed')"))
+                await p.mouse.move(0, 0)
+                await p.mouse.up()
+                await p.wait_for_timeout(250)
+                check(L + f'{sel} lets go', not await p.evaluate(f"document.querySelector('{sel}').classList.contains('pressed')"))
+            if await p.evaluate("sciMode"):
+                await p.click('[data-bar="sci"]')
+            await p.wait_for_timeout(200)
             # holding C (like the iPhone's calculator): turns into AC while still held and big, and clears everything
             await p.evaluate("clearAll()")
             for k in ['1', '2', '+', '3']:
