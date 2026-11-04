@@ -73,8 +73,12 @@ input[type=checkbox],input[type=radio],input[type=color],input[readonly],.key-ti
 .result-alt{font-size:19px;line-height:24px;color:var(--muted);white-space:nowrap;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;padding:0 3px 0 0;letter-spacing:-.01em}
 .result-alt::-webkit-scrollbar{display:none}
 .display-wrap.has-alt .result{font-size:clamp(40px,12vw,64px)}
-.calculator-card.compact-display .display-wrap.has-alt .result{font-size:clamp(34px,10vw,52px)}
-.calculator-card.compact-display .result-alt{font-size:16px;line-height:20px}
+/* a short display (Scientific on a phone): a lower calculation row, and the result no taller than the room left between
+   it and the polar line (28px row, 18px line, 2px padding), so the two never overlap */
+.calculator-card.compact-display .display-wrap.has-alt{container-type:size}
+.calculator-card.compact-display .display-wrap.has-alt.calculated .expression-row,.calculator-card.compact-display .display-wrap.has-alt.calculated .expression{height:28px;line-height:28px;font-size:19px}
+.calculator-card.compact-display .display-wrap.has-alt .result{font-size:max(24px,min(clamp(34px,10vw,52px),calc((100cqh - 48px) / 1.05)))}
+.calculator-card.compact-display .result-alt{font-size:16px;line-height:18px}
 .keypad{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .key{border:0;border-radius:14px;height:68px;min-height:68px;background:var(--key);color:var(--text);font-size:22px;font-weight:450;cursor:pointer;transition:background .1s}
 .key:focus{outline:none;box-shadow:none}

@@ -61,6 +61,10 @@ Part of the notes in CLAUDE.md (read that first). Covers numbers.js, calculator.
   asked; `renderResultAlt`, `#resultAlt`, `.has-alt` makes the result a little smaller): under a complex result, and while a
   calculation with i, ∠ or a carried complex is typed its value as it stands (`liveValue`; "= 5 − i  ·  5,09902 ∠ …", the
   a+bi part left out when it is what was typed). Real calculations never get the line; other modes remove it (`renderTool`).
+  Room for it on short phones (Pixel 9a in Scientific): Scientific's display never goes below 116px (94px on the smallest
+  phones, `FIT.sci`/`FIT.tight.sci`; `compact` there turns on the compact sizes too), and in a compact display a finished
+  complex result gets a lower calculation row (28px) and its size is capped by the display's height (`container-type:size`,
+  `100cqh`), so the result and the line never overlap.
   The working ends a complex result with its polar form (r = √(a² + b²), θ = atan2(b; a)). Mod, nCr, nPr and ! of a complex number are errors. The working folds 2 × i and 3 + 2i into written numbers.
 - **Memory** (memory.js; the owner asked for it after first declining): one exact number (`memory`, saved in `uc-memory`). The number
   on screen (`memScreenValue`) is the result, else the number being typed, else what is typed so far. MR types the memory as a

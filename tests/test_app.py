@@ -2317,6 +2317,15 @@ async def complex_numbers(browser, url):
     await p.evaluate("memKey('mc')")
     check(L + 'no JavaScript errors', not p.errors, p.errors)
     await p.context.close()
+    # Scientific on short phones (Pixel 9a ~412×780, 360×640): the result and its polar line don't overlap
+    for w, h in ((412, 780), (360, 640)):
+        p = await new_page(browser, url, 'en', 'dark', phone=True, size=(w, h))
+        await p.evaluate("store.set('uc-sci','1');sciMode=true;renderCalcKeypad();expression='(9+9×i)×5';current='';equals();fitLayout()")
+        await p.wait_for_timeout(200)
+        box = await p.evaluate("""(()=>{const r=document.querySelector('#result').getBoundingClientRect(),a=document.querySelector('#resultAlt').getBoundingClientRect(),
+          d=document.querySelector('#calculatorDisplay').getBoundingClientRect();return [Math.round(r.bottom-a.top),Math.round(a.bottom-d.bottom),Math.round(r.height)]})()""")
+        check(L + f'{w}×{h} Scientific: result and polar line apart, inside the display', box[0] <= 0 and box[1] <= 0 and box[2] >= 26, box)
+        await p.context.close()
 
 
 async def numbers_equations(browser, url):

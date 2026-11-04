@@ -6,6 +6,11 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.29.4 – 2026-11-04
+
+### Fixed
+- Scientific on phones with less height (like the Pixel 9a): a complex result such as 45 + 45i no longer overlaps the polar line under it.
+
 ## 0.29.3 – 2026-11-04
 
 ### Fixed

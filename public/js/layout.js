@@ -54,12 +54,12 @@ function refuseKey(el=$('#result')){
 const FIT={
  calc:{k:[68,40],d:[205,128],roomy:172,comfy:48,copy:true},
  units:{k:[68,40],d:[205,165],comfy:48,copy:false},
- sci:{k:[62,31],d:[180,96],roomy:150,comfy:42,copy:true},// Scientific: 10 rows of keys (memory, 4 scientific, 5 basic)
+ sci:{k:[62,31],d:[180,116],roomy:150,comfy:42,copy:true},// Scientific: 10 rows of keys (memory, 4 scientific, 5 basic)
  tool:{k:[56,36],d:[205,128],roomy:172,comfy:44,copy:true},
  mobileTool:{k:[56,36],d:[108,98],comfy:44,copy:true},
  graphMin:520,
  // small phones (320×568, 360×640): when even the sizes above don't fit, tighter limits before the page scrolls
- tight:{calc:{k:[68,36],d:[205,110],comfy:48},units:{k:[68,32],d:[205,160],comfy:48},sci:{k:[62,28],d:[180,84],comfy:42},
+ tight:{calc:{k:[68,36],d:[205,110],comfy:48,compact:172},units:{k:[68,32],d:[205,160],comfy:48},sci:{k:[62,28],d:[180,94],comfy:42,compact:150},
   tool:{k:[56,31],d:[108,76],comfy:44}}
 };
 // On phones the browser bars slide in and out while scrolling, changing the height; fitting to the smallest
@@ -150,7 +150,7 @@ function fitLayout(){refreshSide();fitBrand();
   const apply=()=>{
    card.style.setProperty('--k',k+'px');card.style.setProperty('--disp',d+'px');
    if(mode==='units')card.style.setProperty('--urow',Math.min(70,Math.floor((d-61)/2))+'px');
-   card.classList.toggle('compact-display',!!spec.roomy&&d<spec.roomy);
+   const roomy=spec.roomy||spec.compact;card.classList.toggle('compact-display',!!roomy&&d<roomy);// compact: the smaller display sizes below that height, without shrinking the display first
   };
   apply();
   let over=need()-avail;if(over<=0)return 0;
