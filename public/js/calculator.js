@@ -222,15 +222,18 @@ const SCI_KEYS=[['2nd'],['angle'],['sin','asin'],['cos','acos'],['tan','atan'],
  ['hyp'],['ncr','npr'],['mod','abs'],['i','polar'],['more']];
 // a function's name on a key: asin -> sin⁻¹, asinh -> sinh⁻¹
 const fnLabel=n=>/^a(?:sin|cos|tan|cot|sec|csc)h?$/.test(n)?n.slice(1)+'⁻¹':n;
+// Key labels are the same in both languages, as on calculators (the owner's choice: hyp, 2nd, Deg, EE stay in Greek);
+// the aria-label says in words what a key does (sciAria).
 function sciLabel(k){
  return {'2nd':'2nd',angle:angleUnit==='deg'?'Deg':'Rad',sin:'sin',cos:'cos',tan:'tan',asin:'sin⁻¹',acos:'cos⁻¹',atan:'tan⁻¹',
   sq:'x²',cube:'x³',pow:'xʸ',root:'ʸ√x',sqrt:'√x',cbrt:'∛x',ln:'ln',exp:'eˣ',log:'log',pow10:'10ˣ',inv:'1/x',fact:'x!',pi:'π',e:'e',ee:'EE',
   hyp:'hyp',ncr:'nCr',npr:'nPr',mod:'mod',abs:'|x|',phi:'φ',more:'⋯',i:'i',polar:'∠'}[k]??fnLabel(k);
 }
 function sciAria(k){
- const el={i:'Φανταστική μονάδα i',polar:'Πολική μορφή: μέτρο ∠ γωνία',hyp:'Υπερβολικές συναρτήσεις',ncr:'Συνδυασμοί (nCr)',npr:'Διατάξεις (nPr)',mod:'Υπόλοιπο διαίρεσης (mod)',abs:'Απόλυτη τιμή',phi:'Χρυσή τομή φ',more:'Περισσότερες συναρτήσεις και σταθερές','2nd':'Δεύτερες συναρτήσεις',angle:angleUnit==='deg'?'Μοίρες (πάτα για ακτίνια)':'Ακτίνια (πάτα για μοίρες)',sq:'Τετράγωνο',cube:'Κύβος',pow:'Δύναμη',root:'Ρίζα y τάξης',sqrt:'Τετραγωνική ρίζα',cbrt:'Κυβική ρίζα',inv:'Αντίστροφο',fact:'Παραγοντικό',ee:'Επί 10 εις τη',exp:'e εις τη',pow10:'10 εις τη',ln:'Φυσικός λογάριθμος',log:'Λογάριθμος'};
- const en={i:'Imaginary unit i',polar:'Polar form: size ∠ angle',hyp:'Hyperbolic functions',ncr:'Combinations (nCr)',npr:'Permutations (nPr)',mod:'Remainder (mod)',abs:'Absolute value',phi:'Golden ratio φ',more:'More functions and constants','2nd':'Second functions',angle:angleUnit==='deg'?'Degrees (tap for radians)':'Radians (tap for degrees)',sq:'Square',cube:'Cube',pow:'Power',root:'y-th root',sqrt:'Square root',cbrt:'Cube root',inv:'Reciprocal',fact:'Factorial',ee:'Times 10 to the power',exp:'e to the power',pow10:'10 to the power',ln:'Natural logarithm',log:'Logarithm'};
- return (lang==='el'?el:en)[k]||sciLabel(k);
+ const el={i:'Φανταστική μονάδα i',polar:'Πολική μορφή: μέτρο ∠ γωνία',hyp:'Υπερβολικές συναρτήσεις',ncr:'Συνδυασμοί (nCr)',npr:'Διατάξεις (nPr)',mod:'Υπόλοιπο διαίρεσης (mod)',abs:'Απόλυτη τιμή',phi:'Χρυσή τομή φ',more:'Περισσότερες συναρτήσεις και σταθερές','2nd':'Δεύτερες συναρτήσεις',angle:angleUnit==='deg'?'Μοίρες (πάτα για ακτίνια)':'Ακτίνια (πάτα για μοίρες)',sq:'Τετράγωνο',cube:'Κύβος',pow:'Δύναμη',root:'y-οστή ρίζα',sqrt:'Τετραγωνική ρίζα',cbrt:'Κυβική ρίζα',inv:'Αντίστροφο',fact:'Παραγοντικό',ee:'Επί 10 εις τη δύναμη',exp:'e εις τη δύναμη',pow10:'10 εις τη δύναμη',ln:'Φυσικός λογάριθμος',log:'Λογάριθμος',pi:'Πι',e:'Ο αριθμός e'};
+ const en={i:'Imaginary unit i',polar:'Polar form: size ∠ angle',hyp:'Hyperbolic functions',ncr:'Combinations (nCr)',npr:'Permutations (nPr)',mod:'Remainder (mod)',abs:'Absolute value',phi:'Golden ratio φ',more:'More functions and constants','2nd':'Second functions',angle:angleUnit==='deg'?'Degrees (tap for radians)':'Radians (tap for degrees)',sq:'Square',cube:'Cube',pow:'Power',root:'y-th root',sqrt:'Square root',cbrt:'Cube root',inv:'Reciprocal',fact:'Factorial',ee:'Times 10 to the power',exp:'e to the power',pow10:'10 to the power',ln:'Natural logarithm',log:'Logarithm',pi:'Pi',e:'Euler’s number e'};
+ const ft=typeof FN_TITLE!=='undefined'&&FN_TITLE[k];// sin: Ημίτονο / Sine (explain.js)
+ return (lang==='el'?el:en)[k]||(ft&&ft[lang==='el'?0:1])||sciLabel(k);
 }
 function sciKeysHtml(){
  return '<div class="sci-pad">'+memKeysHtml()+SCI_KEYS.map(([k,k2])=>{let key=sciSecond&&k2?k2:k;if(sciHyp&&/^a?(sin|cos|tan)$/.test(key))key+='h';

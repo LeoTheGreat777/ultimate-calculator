@@ -2213,6 +2213,15 @@ async def more_functions(browser, url):
     check(L + '1 sinh = 1,175201 (or 1,1752011936 when it fits)', await p.evaluate(R) in ('1,175201', '1,1752011936'), await p.evaluate(R))
     await p.click('[data-sci="hyp"]')
     await p.keyboard.press('Escape')
+    # Greek: the key labels stay (the owner's choice), screen readers hear them in Greek; Greek unit names (no English left)
+    await p.evaluate("setLanguage('el')")
+    await p.wait_for_timeout(400)  # the switch runs in a view transition
+    st = await p.evaluate("['2nd','angle','hyp','ee','sin','pi'].map(k=>{const b=document.querySelector('#keypad [data-sci=\"'+k+'\"]');return [b.textContent,b.getAttribute('aria-label')]})")
+    check(L + 'Greek: hyp, 2nd, Deg, EE keep their labels, sin and π are named in Greek', st == [['2nd', 'Δεύτερες συναρτήσεις'], ['Deg', 'Μοίρες (πάτα για ακτίνια)'], ['hyp', 'Υπερβολικές συναρτήσεις'], ['EE', 'Επί 10 εις τη δύναμη'], ['sin', 'Ημίτονο'], ['π', 'Πι']], st)
+    st = await p.evaluate("[UNIT_LABELS.energy.kWh[0],UNIT_LABELS.time.ms[0],UNIT_LABELS.temperature.K[0],UNIT_LABELS.length.m[1],Object.values(UNIT_LABELS).flatMap(c=>Object.values(c).map(x=>x[0])).filter(n=>/[a-z]{3}/.test(n)&&!/^(Bit|Byte|PSI)$/.test(n))]")
+    check(L + 'Greek unit names: Κιλοβατώρα, Χιλιοστό δευτ., Κέλβιν; English ones say metre', st == ['Κιλοβατώρα', 'Χιλιοστό δευτ.', 'Κέλβιν', 'Metre', []], st)
+    await p.evaluate("setLanguage('en')")
+    await p.wait_for_timeout(400)
     for k in ['5']:
         await p.keyboard.type(k)
     await p.click('[data-sci="ncr"]')

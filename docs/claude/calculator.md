@@ -34,6 +34,8 @@ Part of the notes in CLAUDE.md (read that first). Covers numbers.js, calculator.
   (`sciPretty`). Keyboard: ^ and !.
   A fourth row: **hyp** (`sciHyp`: sin cos tan become sinh cosh tanh, 2nd their inverses), **nCr** (2nd nPr), **mod** (2nd |x|), **i** (2nd ∠)
   and **⋯** (φ is there, with π and e) (funcs.js: every function, cot sec csc and the hyperbolic ones with inverses, abs, and the constants, with a search).
+  Key labels are the same in Greek and English, as on calculators (the owner kept hyp, 2nd, Deg/Rad, EE and sin cos tan, no ημ συν εφ);
+  `sciAria` says in words what each key does, in the language (trig names from `FN_TITLE`, explain.js).
   Functions are `FN_NAMES` (numbers.js, longest first; `FN_ALT`, `FN_END`, `FN_OPEN_END` build the regexes, so a new one is added
   in one place). nCr, nPr and mod are one-letter operators in the calculation: `C`, `P` (above × ÷, like Casio) and `m` (at × ÷;
   shown " mod "); `OP_END`/`OP_OPEN_END` know them, `VALUE_END` knows φ and constants. Constants (`CONSTS`, CODATA 2018, the

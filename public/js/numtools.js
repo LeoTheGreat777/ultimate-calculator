@@ -57,7 +57,7 @@ function numbersCalculate(){
  for(const [p,e] of f){if(p===left&&e===1){steps.push({title:bigFmt(p)+L(' είναι πρώτος',' is prime'),text:bigFmt(p)});break}
   const q=p**BigInt(e),next=left/q;
   steps.push({title:L('Διαίρεση με ','Divide by ')+bigFmt(p)+(e>1?L(' ('+e+' φορές)',' ('+e+' times)'):''),text:bigFmt(left)+' ÷ '+bigFmt(p)+(e>1?supText(String(e)):'')+' = '+bigFmt(next)});left=next}
- steps.push({title:L('Διαιρέτες: (κάθε δύναμη + 1), πολλαπλασιασμένα','Divisors: (each power + 1), multiplied'),text:f.map(([,e])=>'('+e+' + 1)').join(' × ')+' = '+fmt(rat(BigInt(count)))});
+ steps.push({title:L('Πλήθος διαιρετών: γινόμενο των (εκθέτης + 1)','Number of divisors: (each power + 1), multiplied'),text:f.map(([,e])=>'('+e+' + 1)').join(' × ')+' = '+fmt(rat(BigInt(count)))});
  if(ds)steps.push({title:L('Οι διαιρέτες','The divisors'),text:ds.slice(0,200).map(bigFmt).join(', ')+(ds.length>200?', …':'')});
  steps.push({title:L('Άθροισμα των διαιρετών','Sum of the divisors'),text:bigFmt(sum)});
  const how={formula:L('Πρώτοι παράγοντες του ','Prime factors of ')+bigFmt(n),steps,result:prime?bigFmt(n):bigFmt(n)+' = '+factorText(f)};

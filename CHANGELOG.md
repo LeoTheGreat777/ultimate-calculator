@@ -6,6 +6,14 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.29.5 – 2026-11-04
+
+### Fixed
+- Greek text checked across the app: unit names that were still in English are Greek (Βατώρα, Κιλοβατώρα, Κέλβιν, Χιλιοστό δευτ., Κουόρτ, Πίντα), Tip shows «Ανά άτομο», Fuel «Καύσιμο που χρειάζεται», Dates «Σάββατα, Κυριακές», and smoother wording in Tips and the working.
+- Screen readers name the scientific keys in the app's language (sin is «Ημίτονο» in Greek, π «Πι»); the keys themselves keep their usual labels.
+- English unit names use British spelling like the rest of the app (metre, litre); calorie and kilocalorie are written out.
+- Tips: ⊞ is described where it is (at the top right), and nPr is with 2nd, not by holding it.
+
 ## 0.29.4 – 2026-11-04
 
 ### Fixed
