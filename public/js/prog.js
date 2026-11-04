@@ -36,12 +36,13 @@ function progInput(input){
   if(caret!=null){let k=0,d=0;while(k<text.length&&d<caret){if(!/[ .]/.test(text[k]))d++;k++}input.setSelectionRange(k,k)}
  }
  toolState.prog.inputs[id]=text;progSource=id;
+ if(!text)PROG_IDS.forEach(k=>{toolState.prog.inputs[k]=''});// emptied (⌫ to the last digit): all four empty, not filled back from another field
  fitDisplayText(input,11,true);
  progCalculate();
 }
 function progCalculate(){
  const el=lang==='el',L=(g,e)=>el?g:e;
- const src=PROG_IDS.includes(progSource)&&toolState.prog.inputs[progSource]?progSource:PROG_IDS.find(id=>toolState.prog.inputs[id])||'progDec';
+ const src=PROG_IDS.includes(progSource)&&toolState.prog.inputs[progSource]?progSource:PROG_IDS.find(id=>toolState.prog.inputs[id])||(PROG_IDS.includes(progSource)?progSource:'progDec');
  const base=progBase(src),raw=progRaw(toolState.prog.inputs[src]);
  const fill=n=>PROG_IDS.forEach(id=>{if(id===src)return;const v=n===null?'':progText(n,progBase(id));toolState.prog.inputs[id]=v;const i=$('#'+id);if(i&&i.value!==v){i.value=v;fitDisplayText(i,11,true)}});
  if(!raw||!progValid(raw,base)){fill(null);setToolResult('','',null);return}
