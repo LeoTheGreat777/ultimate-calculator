@@ -20,7 +20,8 @@ Part of the notes in CLAUDE.md (read that first). Covers tools.js, units.js, cur
   (`dayNumber`), years 1000–9999; From and Date start at today (`TOOL_DEFAULTS`). The "Working days" chip on the
   display (`renderDateBar`, `dateCount`, saved as a choice) counts Monday–Friday without Greek public holidays
   (`greekHolidays`, `orthodoxEaster`): "between" counts both dates, "add" skips non-working days from the day after.
-  "Between" has no number to type, so `#keypad.date-details` shows a details list instead of keys.
+  "Between" has no number to type, so `#keypad.date-details` shows a details list instead of keys; filling it in fits the
+  screen again (`fitLayoutSoon`), and on a short screen the list scrolls in its own space (`fit-list`, screen.md).
   With a mouse (`ownCalendar`), a date is a button (`datePickHtml`, its `value` is YYYY-MM-DD) opening the app's
   calendar (`openCalendar`, `#calPop`: days/months/years views, holidays dotted); touch devices keep `<input type="date">`.
   Subnet (net.js): /31 = 2 addresses, /32 = 1, else 2^(32−p) − 2. Its details grid (`#netDetails`, `renderNetDetails`)

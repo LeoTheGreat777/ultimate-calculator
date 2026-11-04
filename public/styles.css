@@ -46,7 +46,7 @@ input[type=checkbox],input[type=radio],input[type=color],input[readonly],.key-ti
 .history-top{color:var(--muted)}
 .display-wrap{height:205px;padding:10px 12px 7px;display:flex;flex-direction:column;justify-content:flex-end;text-align:right;overflow:visible;position:relative}
 .display-wrap.tool-display{height:205px;padding-bottom:7px}
-.display-wrap.tool-display .expression{opacity:1;height:auto;line-height:1.35;font-size:15px;white-space:normal;overflow:hidden;text-overflow:ellipsis;max-height:42px;margin-bottom:3px}
+.display-wrap.tool-display .expression{opacity:1;height:auto;line-height:1.35;font-size:15px;white-space:normal;overflow:hidden;text-overflow:ellipsis;max-height:42px;margin-bottom:3px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2}
 .display-wrap.tool-display .result{font-size:clamp(46px,14vw,76px)}
 .display-wrap:not(.tool-display):not(.calculated):not(.error) .expression-row{height:0;overflow:visible}
 .expression-row{height:34px;display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0;position:relative}
@@ -119,11 +119,12 @@ html.landscape .calculator-card.fit-tight .seg-toggle button{min-height:24px}
 html:not(.landscape) .calculator-card.fit-tight .seg-toggle button{min-height:30px}
 .calculator-card.fit-tight .tool-field input{padding-top:4px;padding-bottom:4px}
 .calculator-card.fit-tight .date-rows div{padding:4px}
+.calculator-card.fit-list .date-details{overflow-y:auto;overscroll-behavior:contain}/* a short screen: the list scrolls in its own space (fitLayout) */
 .calculator-card.fit-tight .expression-row{height:28px}
 .calculator-card.fit-tight .how-button{flex-basis:28px;width:28px;height:28px}
 .calculator-card.mobile-tool.fit-tight .display-wrap.tool-display .result{font-size:clamp(28px,9vw,40px)}
 .calculator-card.mobile-tool.fit-tight .display-wrap.tool-display .expression{font-size:12px;line-height:1.25;max-height:30px;margin-bottom:1px}
-html.landscape .date-rows ~ .date-note{display:none}/* the working days note; "Pick two dates." still shows */
+html.landscape .date-rows ~ .date-note,.calculator-card.fit-no-details .date-rows ~ .date-note{display:none}/* the working days note; "Pick two dates." still shows */
 .date-details > .date-note:only-child{margin:auto;text-align:center;font-size:14px}
 html.landscape .tool-grid.kind-grid{grid-template-columns:repeat(var(--f,2),minmax(0,1fr))}
 /* one line per label there, so a long one can't make the row taller */
@@ -610,6 +611,7 @@ html.theme-fade *,html.theme-fade *::before,html.theme-fade *::after{transition:
 /* ---------- Logo next to the title: drawn with the theme's colours, so every theme recolours it ---------- */
 .topbar h1.brand{display:flex;align-items:center;gap:9px;min-width:0;white-space:nowrap}
 .brand-mark{width:28px;height:28px;flex:0 0 auto;display:block}
+.brand.no-mark .brand-mark{display:none}
 .brand-name{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .bm-screen{fill:var(--card2)}
 .bm-edge{fill:none;stroke:var(--border)}
@@ -651,6 +653,7 @@ html.landscape .brand-mark{width:24px;height:24px}
 html.landscape .top-actions .icon-button,html.landscape .top-actions .language-button{height:34px}
 html.landscape .top-actions .icon-button{width:34px}
 html.landscape .app-footer,html.fit-small .app-footer{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;column-gap:10px;margin-top:5px;line-height:1.4}
+html.fit-footer .footer-name{display:none}
 html.landscape .calculator-card,html.landscape .calculator-card.graph-mode,html.landscape .calculator-card.mobile-tool{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto auto;column-gap:12px;align-items:stretch;padding:8px}
 /* a fold down the middle (html.hinge-v, layout.js): the whole width, and the gap between the two sides over the fold */
 html.hinge-v .app-shell{width:100%}
@@ -936,7 +939,7 @@ html.landscape .eq-form{margin:4px 0 0;font-size:13px}
 .stat-chip span{color:var(--muted);font-size:15px;line-height:1}
 @media (hover:hover) and (pointer:fine){.stat-chip:hover{border-color:var(--danger)}.stat-chip:hover span{color:var(--danger)}}
 .stat-chip:active{border-color:var(--danger)}
-.calculator-card.mobile-tool .stat-chip{height:28px;font-size:13.5px}
+.calculator-card.mobile-tool .stat-chip{height:30px;font-size:13.5px}
 .stat-details span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tool-keypad.stat-keypad{grid-template-columns:repeat(4,minmax(0,1fr))}
 .tool-keypad.stat-keypad [data-value="-"]{grid-column:4;grid-row:1}
@@ -963,6 +966,8 @@ html.landscape .calculator-card.fit-tight .prog-grid .tool-field span{white-spac
 .calculator-card.mobile-tool .how-button,.calculator-card.compact-display .how-button{position:relative;inset:auto}
 .help-link::after,.graph-fn-btn::after,.graph-tool::after,.how-button::after{content:'';position:absolute;inset:-6px}
 .help-link::after{inset:-10px -4px}
+.modes-seg button{position:relative}
+.modes-seg button::after{content:'';position:absolute;inset:-3px 0}
 /* the unit names under Units' values: a taller box (transparent) with the text where it was */
 .unit-unit{height:36px!important;padding-top:9px!important;padding-bottom:7px!important;margin-top:-7px!important;margin-bottom:-7px!important}
 /* The buttons at the top: hover, pressed (.pressed, ui.js setupTopPress) and lit while their menu or window is open */

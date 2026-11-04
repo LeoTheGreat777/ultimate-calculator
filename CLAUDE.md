@@ -80,7 +80,7 @@ Everything the app serves is in `public/` (the web root for both GitHub Pages an
   in `index.html`, and is deployed automatically (the build joins every script `index.html` loads, in that order; it
   fails if a file in `public/js/` isn't loaded).
 
-Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`, `tools/build.mjs` + `package.json`
+Outside `public/`: `tests/test_app.py` (browser tests; `tests/layout_probe.js` is its layout check), `tools/bump-version.py`, `tools/build.mjs` + `package.json`
 (the deploy build, esbuild), `Dockerfile` + `nginx.conf` (the Docker image), `docker-compose.yml` (for self-hosting), `.github/workflows/deploy.yml`.
 
 ## Notes by topic: read the one you need before changing that part
@@ -134,7 +134,12 @@ When you change how something works, update its topic file (not this one, unless
 Claude Code cloud sessions get it from `.claude/hooks/session-start.sh`: the playwright version matching their Chromium).
 It serves `public/` itself and checks the calculator basics, brackets, C/AC, Units, the tools, History, tabs,
 the language switch, and that nothing is cut off at phone sizes, in both languages and themes. Add a check there
-for what you add or fix. GitHub runs the same tests on the built site before every deploy; to do that yourself
+for what you add or fix. `phone_sizes` (part of the run) opens every tab, sheet and popup on the popular phones in `PHONES`
+(iPhone SE to Pro Max, iPhone Duo, Pixel, Galaxy S/A, Fold, Flip, upright and sideways) in both languages and checks them with
+`tests/layout_probe.js`: no text over text, nothing cut or off screen, keys and buttons big enough. After any change to
+the layout, text lengths or a new tab/sheet, run `python3 tests/test_app.py --phones` (about 2 minutes) before the full run;
+a new tab or kind goes into `PHONE_TABS`, a new sheet or popup into `PHONE_SHEETS`, a new popular phone into `PHONES`.
+GitHub runs the same tests on the built site before every deploy; to do that yourself
 (after changing the build, or if something only breaks once deployed): `npm ci && node tools/build.mjs && python3 tests/test_app.py --site build`.
 
 For a change you can see, also look at it yourself in a browser (`python3 -m http.server 8099 -d public`,

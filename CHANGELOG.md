@@ -6,6 +6,19 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.31.1 – 2026-11-04
+
+### Fixed
+- Checked on about 25 popular phones (iPhone SE to Pro Max, iPhone Duo, Pixel 9a/9/Pro, Galaxy S and A, Fold, Flip), upright
+  and sideways, in both languages, and fixed what didn't fit:
+- Greek on an iPhone SE: the tools fit the screen again instead of scrolling (the footer stays on one line).
+- Dates: the details list no longer runs off the bottom of the screen after picking a date; on small phones it scrolls in its own space.
+- Numbers just 1–2 px too wide for their field or box (a GCD field, a subnet mask) are no longer cut at the last digit.
+- On the narrowest phones (Galaxy Z Fold's outer screen) the title is no longer cut to "Ultimate Calcul…": the logo makes room.
+- All modes: long mode names (Αριθμομηχανή) fit their tiles on 360px phones, and the All | Default | None switch is easier to tap.
+- Statistics: the number chips are big enough to tap.
+- The details line above a tool's result ends with "…" when it is longer than two lines.
+
 ## 0.31.0 – 2026-11-04
 
 ### Added

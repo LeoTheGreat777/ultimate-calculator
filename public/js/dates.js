@@ -65,6 +65,7 @@ function addWorkingDays(a,n){let d=a,k=Math.abs(n);const s=Math.sign(n);while(k>
 function renderDateDetails(rows,note){
  const box=$('#keypad.date-details');if(!box)return;
  box.innerHTML=rows?'<dl class="date-rows">'+rows.map(([k,v])=>'<div><dt>'+esc(k)+'</dt><dd>'+esc(v)+'</dd></div>').join('')+'</dl>'+(note?'<p class="date-note">'+esc(note)+'</p>':''):'<p class="date-note">'+esc(t('pickTwoDates'))+'</p>';
+ fitLayoutSoon();// the list is taller than the note it replaces (or shorter): fit the screen again
 }
 
 function datesCalculate(){

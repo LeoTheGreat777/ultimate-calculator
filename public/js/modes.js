@@ -100,7 +100,9 @@ function renderModesList(){
 // a long name (Αριθμομηχανή on a phone) gets a slightly smaller font rather than "…"
 function fitModeNames(){
  if(!modesOpen())return;
- for(const n of $$('#modesList .mode-pick-name')){n.style.fontSize='';for(let px=12.5;px>=11&&n.scrollWidth>n.clientWidth+1;px-=.5)n.style.fontSize=px+'px'}
+ for(const n of $$('#modesList .mode-pick-name')){n.style.fontSize='';n.style.letterSpacing='';const cut=()=>n.scrollWidth>n.clientWidth+1;
+  for(let px=12.5;px>=11&&cut();px-=.5)n.style.fontSize=px+'px';
+  if(cut()){n.style.letterSpacing='-.03em';for(let px=11;px>=10&&cut();px-=.5)n.style.fontSize=px+'px'}}// a narrow phone with a wide font: a little tighter, then 10px
 }
 addEventListener('resize',()=>{fitModeNames();fitModesHead()});
 function pickMode(m){closeModes(false);if(m!==currentTab())switchMode(m);else syncModeTabs()}

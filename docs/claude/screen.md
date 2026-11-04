@@ -2,7 +2,7 @@
 
 Part of the notes in CLAUDE.md (read that first). Covers layout.js, side.js, modes.js, ui.js, styles.css.
 
-- **Long text:** `fitDisplayText(el,minSize,showEnd)` shrinks text to minSize, then scrolls it: a result shows its
+- **Long text:** `fitDisplayText(el,minSize,showEnd)` shrinks text that is more than 1px too wide (2px already cuts a digit) to minSize, then scrolls it: a result shows its
   start, a calculation (typed or above a result) its end; the cut-off side fades (`fade-start`/`fade-end`). Used for the result and
   expression lines, Units values, tool fields and Subnet's details. A fitted element is watched (`fitWatch`, a
   ResizeObserver): when its own width changes it is fitted again, so turning the phone never leaves a number sized for
@@ -11,11 +11,27 @@ Part of the notes in CLAUDE.md (read that first). Covers layout.js, side.js, mod
   mode, and switches the tools to their compact layout when needed; only if nothing fits does the page scroll
   (`html.page-scroll`). Small phones upright (320×568, 360×640, an iPhone SE in Safari 375×553): when the normal limits
   don't fit, `fitLayout` tries tighter ones (`FIT.tight`): tools get less padding and a smaller result (`fit-tight`), the footer
-  goes on one line (`html.fit-small`), display and keys get smaller (tool keys down to 31px; Units' values stay readable, `--urow`), then a kind's fields share one row
+  goes on one line (`html.fit-small`), display and keys get smaller (tool keys down to 30px; Units' values stay readable, `--urow`), then a kind's fields share one row
   with short labels (`fit-row`), then Equations' form line and Subnet's and Statistics' details go (`fit-no-form`, `fit-no-details`; ? shows
-  them). If even that doesn't fit (Scientific at 320×568) it goes back to the normal sizes and the page scrolls.
+  them), and Dates' note under its list goes and the list scrolls in its own space (`fit-list`, at least 150px of it). If even that
+  doesn't fit (Scientific's ten rows of keys at 320×568 and in Safari on an iPhone SE, 375×553) it goes back to the normal sizes and
+  the page scrolls. The one-line footer (`fit-small`, sideways) drops the app's name when it would still take two lines (`fitFooter`,
+  `html.fit-footer`: Greek on an iPhone SE). Anything that changes a tab's height after it was fitted calls `fitLayoutSoon()`
+  (Dates' list replacing its "pick two dates" note does).
   `upright_small_phones` in the tests checks every tab there.
-- **Touch areas:** every button and field is at least 30×30 px to a finger (`touch_areas` in the tests). Small buttons (Tips,
+- **The title** (`fitBrand`): beside the top buttons it shrinks to 14px; if it still doesn't fit (344px and narrower, or a wide
+  font) the logo goes (`.brand.no-mark`) and it may shrink to 12px. Never "…".
+- **Popular phone sizes** (`phone_sizes` in the tests, `--phones` runs only it): every tab and kind filled with long values
+  (`PHONE_TABS`; Scientific with 2nd and a complex result too) and every sheet and popup (`PHONE_SHEETS`: All modes, History,
+  ⋯, the working, Tips, theme menu, own theme editor) on the phones in `PHONES`, in both languages, each checked by
+  `tests/layout_probe.js`: text over other text, text cut by a box that hides (not one that scrolls, not `fade-start/-end`
+  scrolling, not a line clamp), text or boxes off the screen, text wider than its button, a number cut in its field, keys under
+  30px and buttons or fields under 30×30 (sideways 24, like the kind switches). Sizes are what the browser leaves the page with
+  its bars showing (Safari, Chrome). Android phones get DejaVu Sans, wider than Roboto and the font GitHub's runner has, so CI
+  and the phones agree. Page scrolling fails the check except where `PHONES` allows it: Scientific on an iPhone SE,
+  everything on the iPhone Duo's outer screen in Safari (466×490) and a Galaxy S held sideways (732×290), shorter than any
+  layout fits. A new tab or kind goes into `PHONE_TABS`, a new sheet or popup into `PHONE_SHEETS`.
+- **Touch areas:** every button and field is at least 30×30 px to a finger (`touch_areas` and `phone_sizes` in the tests; Statistics' chips are 30px tall, All modes' All | Default | None switch has a hit area). Small buttons (Tips,
   ?, Graph's buttons) look the same but get an invisible hit area (`::after`, "Bigger touch areas" at the end of styles.css;
   a static button becomes `position:relative;inset:auto` for it: without inset:auto its right/bottom from the absolute layout move it, which put ? on the mode tabs); Units' unit names are taller transparent boxes with negative margins.
   A kind switch is at least 30px tall upright, even when tightened (sideways 24px). Field labels and kind switch buttons count as cut by exact width (`labelCut`); a cut one takes its short form, then a smaller font (`fitShortLabels`, run at the end of `fitLayout`). The tests also check 320×568 with a wider font (the GitHub runner's fonts measure wider). Don't add fixed pixel heights per screen size or device; let `fitLayout` handle it,
@@ -43,7 +59,7 @@ Part of the notes in CLAUDE.md (read that first). Covers layout.js, side.js, mod
   each tile) in `MODE_LABELS` order, plus the mode on screen while it isn't pinned (`.unpinned`, dashed). When they don't
   all fit, the tabs not on screen show only their icon (`.mode-tabs.icons`; names in aria-label/title). A new mode: also
   a group in `MODE_GROUPS` and words in `MODE_WORDS`. On phones the search isn't focused (no keyboard popping up); long
-  names shrink a little (`fitModeNames`), never "…".
+  names shrink a little (`fitModeNames`, to 11px, then a little tighter down to 10px), never "…".
   The header has an **All | Default | None** switch (`#modesPins`, `PIN_SETS`, `savePins`): it pins every mode, the starting four, or none; the matching choice is lit
   (`pinSetNow`), none when pinned by hand. When the title and the switch don't fit on one line (Greek on a phone) the
   switch moves to its own full-width line under the title (`fitModesHead`, `.seg-below`). The mode on screen is marked

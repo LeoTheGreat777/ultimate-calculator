@@ -23,8 +23,8 @@ function fitDisplayText(el,minSize,showEnd=false){
    if(!el.isConnected)return;
    const width=el.clientWidth;let contentWidth=el.scrollWidth;
    const cs=getComputedStyle(el);el.dataset.fitW=Math.round(width-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight));fitWatch?.observe(el);// the same width the watcher sees
-   if(twoForms&&width&&contentWidth>width+2&&width/contentWidth*0.97<0.7){el.textContent=el.dataset.short;contentWidth=el.scrollWidth}
-   if(width&&contentWidth>width+2){
+   if(twoForms&&width&&contentWidth>width+1&&width/contentWidth*0.97<0.7){el.textContent=el.dataset.short;contentWidth=el.scrollWidth}
+   if(width&&contentWidth>width+1){// even 2px more cuts the last digit
      const base=parseFloat(getComputedStyle(el).fontSize);
      el.style.setProperty('font-size',Math.max(minSize,base*(width/contentWidth)*0.97)+'px','important');// beats the !important sizes of .unit-value
      el.style.setProperty('letter-spacing','-0.04em','important');
@@ -60,7 +60,7 @@ const FIT={
  graphMin:520,
  // small phones (320×568, 360×640): when even the sizes above don't fit, tighter limits before the page scrolls
  tight:{calc:{k:[68,36],d:[205,110],comfy:48,compact:172},units:{k:[68,32],d:[205,160],comfy:48},sci:{k:[62,28],d:[180,94],comfy:42,compact:150},
-  tool:{k:[56,31],d:[108,76],comfy:44}}
+  tool:{k:[56,30],d:[108,76],comfy:44}}
 };
 // On phones the browser bars slide in and out while scrolling, changing the height; fitting to the smallest
 // height seen (per width, i.e. per orientation) keeps the layout from jumping back and forth.
@@ -122,8 +122,18 @@ function fitLandscape(card,root,avail,need,tool,setToolLayout){
 let fitRaf=0;
 function fitLayoutSoon(){if(!fitRaf)fitRaf=requestAnimationFrame(()=>{fitRaf=0;fitLayout()})}
 // The app's name beside the buttons at the top: smaller rather than cut (on a phone with Install, All modes, EN and theme)
-function fitBrand(){const n=$('.brand-name'),h=n&&n.parentElement;if(!h)return;h.style.fontSize='';
- let s=parseFloat(getComputedStyle(h).fontSize);while(n.scrollWidth>n.clientWidth+.5&&s>14){s-=.5;h.style.fontSize=s+'px'}}
+// The title beside the top buttons: a smaller font down to 14px; if it still doesn't fit (the narrowest phones, a wide
+// font), the logo goes (.no-mark) and the font may go down to 12px. Never "…".
+function fitBrand(){const n=$('.brand-name'),h=n&&n.parentElement;if(!h)return;h.style.fontSize='';h.classList.remove('no-mark');
+ const cut=()=>n.scrollWidth>n.clientWidth+.5,base=parseFloat(getComputedStyle(h).fontSize);
+ let s=base;while(cut()&&s>14){s-=.5;h.style.fontSize=s+'px'}
+ if(!cut())return;
+ h.classList.add('no-mark');h.style.fontSize='';s=base;while(cut()&&s>12){s-=.5;h.style.fontSize=s+'px'}}
+// The footer on one line (small phones, sideways: fit-small, landscape): when it still takes two (Greek on an iPhone SE),
+// the app's name in it goes (.fit-footer; the title at the top has it), so the version, Tips and the author stay.
+function fitFooter(){const f=$('.app-footer'),r=document.documentElement;if(!f)return;r.classList.remove('fit-footer');
+ if(!r.classList.contains('fit-small')&&!r.classList.contains('landscape'))return;
+ const a=f.firstElementChild,b=f.lastElementChild;if(a&&b&&b.getBoundingClientRect().top>a.getBoundingClientRect().top+2)r.classList.add('fit-footer')}
 function fitLayout(){refreshSide();fitBrand();
  const card=$('#calculatorCard'),shell=$('.app-shell'),footer=$('.app-footer'),root=document.documentElement;if(!card||!shell||!footer)return;
  document.body.classList.add('fit');
@@ -132,7 +142,7 @@ function fitLayout(){refreshSide();fitBrand();
  // everything below is in CSS pixels (screen pixels / zoom)
  const avail=fitAvailHeight()/Z;
  const need=()=>Math.ceil((footer.getBoundingClientRect().bottom+window.scrollY)/Z+(parseFloat(getComputedStyle(shell).paddingBottom)||0));
- root.classList.remove('page-scroll','fit-small');shell.style.height='';card.classList.remove('compact-display','fit-no-copy','fit-no-details','fit-tight','fit-no-form','fit-row');
+ root.classList.remove('page-scroll','fit-small','fit-footer');shell.style.height='';card.classList.remove('compact-display','fit-no-copy','fit-no-details','fit-tight','fit-no-form','fit-row','fit-list');$('#keypad')?.style.removeProperty('max-height');
  const tool=TOOL_MODES.includes(mode),touchTool=tool&&isMobileDevice();
  const setToolLayout=compact=>{card.classList.toggle('mobile-tool',compact);document.body.classList.toggle('mobile-tool-on',compact)};
  if(tool)setToolLayout(touchTool);
@@ -142,7 +152,7 @@ function fitLayout(){refreshSide();fitBrand();
  root.classList.toggle('hinge-v',hinge!==null);if(hinge!==null)root.style.setProperty('--hinge-w',hinge+'px');
  const land=matchMedia(LANDSCAPE).matches||hinge!==null;root.classList.toggle('landscape',land);if(!land)root.classList.remove('land-fill');
  if(tool)fitShortLabels();
- if(land){fitLandscape(card,root,avail,need,tool,setToolLayout);if(tool)fitShortLabels();return}
+ if(land){fitFooter();fitLandscape(card,root,avail,need,tool,setToolLayout);if(tool)fitShortLabels();return}
  card.style.removeProperty('--gk');// back in portrait, Graph keys size themselves again (styles.css)
  if(mode==='graph'){if(avail<FIT.graphMin){root.classList.add('page-scroll');shell.style.height=FIT.graphMin+'px'}return}
  const attempt=spec=>{
@@ -169,17 +179,20 @@ function fitLayout(){refreshSide();fitBrand();
  const spec=mode==='calc'?(sciMode?FIT.sci:FIT.calc):mode==='units'?FIT.units:FIT.tool;
  if(over>0&&spec.copy){card.classList.add('fit-no-copy');over=need()-avail}
  // still too tall (a small phone): the tools get less padding (fit-tight) and the display and keys may get smaller, then
- // a kind's fields share one row (fit-row, short labels), last Equations' form line and the details (Subnet, Statistics) go (? shows them)
+ // a kind's fields share one row (fit-row, short labels), last Equations' form line and the details (Subnet, Statistics; Dates' note) go (? shows them)
  if(over>0){
   const tight=FIT.tight[mode==='calc'?(sciMode?'sci':'calc'):mode==='units'?'units':'tool'];
   if(tool)card.classList.add('fit-tight');
-  root.classList.add('fit-small');// the footer on one line, as sideways
+  root.classList.add('fit-small');fitFooter();// the footer on one line, as sideways
   over=attempt(tight);
   if(over>0&&tool&&$('#toolPanel .kind-grid')){card.classList.add('fit-row');fitShortLabels();over=attempt(tight)}// the fields in one row, as sideways
   if(over>0&&tool&&$('#eqForm')){card.classList.add('fit-no-form');over=attempt(tight)}
-  if(over>0&&tool&&$('#netDetails,#statDetails')){card.classList.add('fit-no-details');over=attempt(tight)}
+  if(over>0&&tool&&$('#netDetails,#statDetails,#keypad .date-rows')){card.classList.add('fit-no-details');over=attempt(tight)}// Dates: its note under the list
+  // Dates' list (in the keypad's space) scrolls in its own space, at least four rows of it showing
+  const list=$('#keypad.date-details');
+  if(over>0&&list&&$('#keypad .date-rows')){const h=Math.floor(list.getBoundingClientRect().height-over);if(h>=150){list.style.maxHeight=h+'px';card.classList.add('fit-list');over=need()-avail}}
   // even that doesn't fit (Scientific on the smallest phones): back to the normal sizes, and the page scrolls
-  if(over>0){card.classList.remove('fit-tight','fit-row','fit-no-form','fit-no-details');root.classList.remove('fit-small');if(tool)fitShortLabels();over=attempt(card.classList.contains('mobile-tool')?FIT.mobileTool:spec)}
+  if(over>0){card.classList.remove('fit-tight','fit-row','fit-no-form','fit-no-details','fit-list');$('#keypad')?.style.removeProperty('max-height');root.classList.remove('fit-small','fit-footer');if(tool)fitShortLabels();over=attempt(card.classList.contains('mobile-tool')?FIT.mobileTool:spec)}
  }
  if(tool)fitShortLabels();// the fields' final widths
  if(over>0)root.classList.add('page-scroll');

@@ -4,6 +4,7 @@
     pip install playwright && python3 -m playwright install chromium   # once
     python3 tests/test_app.py
     python3 tests/test_app.py --site build   # the deployed version instead: after `node tools/build.mjs` (GitHub does this)
+    python3 tests/test_app.py --phones       # only the popular phone sizes (PHONES), after a layout change
 
 Serves public/ (or the --site folder) on a free port, checks the app in Chromium at desktop and phone sizes, in both languages and
 themes, and exits with an error if anything fails. Add a check here when you add or fix a feature.
@@ -46,7 +47,8 @@ def serve(directory=SITE):
         def log_message(self, *args):
             pass
     handler = functools.partial(Quiet, directory=str(directory))
-    server = socketserver.TCPServer(('127.0.0.1', 0), handler)
+    server = socketserver.ThreadingTCPServer(('127.0.0.1', 0), handler)  # threads: several pages load at once (phone_sizes)
+    server.daemon_threads = True
     threading.Thread(target=server.serve_forever, daemon=True).start()
     return f'http://127.0.0.1:{server.server_address[1]}/'
 
@@ -1280,7 +1282,7 @@ async def screen_reader(browser, url):
 async def upright_small_phones(browser, url):
     """Small phones held upright (old iPhone SE 320×568, small Android 360×640), filled in: every tab fits without the
     page scrolling (Scientific only from 360×640: its ten rows of keys don't fit 320×568), nothing sticks out, no label
-    is cut (kind switches included), and keys stay at least 31px tall."""
+    is cut (kind switches included), and keys stay at least 30px tall."""
     fill = {'vat': [['amount', '1234567,89']], 'pct': [['pctOfRate', '12,5'], ['pctOfNum', '1234567,89'], ['pctPrice', '1250'], ['pctOff', '25']], 'fuel': [['fuelD', '1250'], ['fuelC', '6,5'], ['fuelP', '1,85']],
             'energy': [['energyP', '2000'], ['energyH', '3'], ['energyD', '30'], ['energyR', '0,15'], ['energyK', '1234567,89']], 'loan': [['loanAmount', '250000'], ['loanRate', '4'], ['loanYears', '30']],
             'net': [['netIp', '192.168.100.100'], ['netPrefix', '26']], 'dates': [['dateTo', '2027-03-15']],
@@ -1322,7 +1324,7 @@ async def upright_small_phones(browser, url):
                   for(const id of ['expression','result']){const r=document.getElementById(id)?.getBoundingClientRect();if(r&&r.height&&(r.top<d.top-1||r.bottom>d.bottom+1))out.push(id+' outside the display')}
                   document.querySelectorAll('.unit-value').forEach(e=>{if(e.offsetParent&&parseFloat(getComputedStyle(e).fontSize)<20)out.push('unit value '+getComputedStyle(e).fontSize)});
                   const k=[...document.querySelectorAll('#keypad button')].filter(b=>b.offsetParent).map(b=>b.getBoundingClientRect().height);
-                  if(k.length&&Math.min(...k)<31)out.push('keys '+Math.round(Math.min(...k))+'px');
+                  if(k.length&&Math.min(...k)<30)out.push('keys '+Math.round(Math.min(...k))+'px');
                   return [...new Set(out)]})()""")
                 if st:
                     bad.append([m + (':' + kind if kind else ''), st])
@@ -2713,6 +2715,141 @@ async def big_screen_dialogs(browser, url):
     await p.context.close()
 
 
+# Popular phones: the part of the screen the browser leaves the page, upright (Safari / Chrome with their bars showing)
+# unless named otherwise. Android phones get DejaVu Sans, a wide font like GitHub's (Roboto is narrower), so a label that
+# only just fits there fits on the phone too. scroll: the tabs that may scroll there (the page scrolling is the last resort
+# of fitLayout; nothing may overlap or be cut even then); '*' every tab.
+PHONES = [
+    ('iPhone SE', 375, 553, False, {'sci', 'sci complex', 'sci 2nd'}),  # Scientific's ten rows of keys don't fit
+    ('iPhone 13 mini', 375, 629, False, set()),
+    ('iPhone 16', 393, 659, False, set()),
+    ('iPhone 17 Pro', 402, 681, False, set()),
+    ('iPhone Air', 420, 719, False, set()),
+    ('iPhone 16 Plus', 430, 739, False, set()),
+    ('iPhone 17 Pro Max', 440, 763, False, set()),
+    ('iPhone Duo outer, home-screen app', 466, 624, False, set()),
+    ('iPhone Duo outer, Safari', 466, 490, False, {'*'}),
+    ('iPhone Duo inner', 890, 560, False, set()),
+    ('Pixel 9a', 412, 780, True, set()),
+    ('Pixel 9', 412, 790, True, set()),
+    ('Pixel 9 Pro', 427, 830, True, set()),
+    ('Pixel 9 Pro Fold inner', 791, 700, True, set()),
+    ('Galaxy S25', 360, 660, True, set()),
+    ('Galaxy S25+', 384, 712, True, set()),
+    ('Galaxy S25 Ultra', 412, 772, True, set()),
+    ('Galaxy A56', 384, 740, True, set()),
+    ('Galaxy A06', 360, 690, True, set()),
+    ('Galaxy Z Fold outer', 344, 770, True, set()),
+    ('Galaxy Z Fold inner', 720, 780, True, set()),
+    ('Galaxy Z Flip', 412, 890, True, set()),
+    ('Redmi Note', 393, 760, True, set()),
+    ('iPhone 16 sideways', 852, 340, False, set()),
+    ('iPhone 17 Pro Max sideways', 956, 390, False, set()),
+    ('Pixel 9a sideways', 850, 330, True, set()),
+    ('Galaxy S25 sideways', 732, 290, True, {'*'}),
+]
+LAYOUT_PROBE = (ROOT / 'tests/layout_probe.js').read_text()
+# waits until the box has stopped moving and no animation runs (a sheet sliding up, a switch sliding), at most 2 s
+SETTLED = """async box=>{const e=document.querySelector(box);let last=null;for(let i=0;i<40;i++){await new Promise(r=>setTimeout(r,50));
+  const t=e?Math.round(e.getBoundingClientRect().top):0;if(t===last&&!document.getAnimations().some(a=>a.playState==='running'))return;last=t}}"""
+_fill = lambda *fv: ';'.join(f"(e=>{{if(e){{e.value='{v}';e.dispatchEvent(new Event('input',{{bubbles:true}}))}}}})(document.getElementById('{f}'))" for f, v in fv)
+_sci = "switchMode('calc');if(!sciMode)toggleSci();"
+_tool = lambda m, k=None: "if(sciMode)toggleSci();switchMode('%s');" % m + (f"setToolKind('{m}','{k}');" if k else '')
+# Every tab, filled with long values, and the Calculator with a long result, Scientific, 2nd and a complex result
+PHONE_TABS = [
+    ('calc', "if(sciMode)toggleSci();switchMode('calc');expression='';current='1234567,89';render()"),
+    ('sci', _sci + "expression='';current='';render()"),
+    ('sci complex', _sci + "expression='(9+9×i)×5';current='';equals()"),
+    ('sci 2nd', _sci + "sciKey('2nd')"),
+    ('units', _tool('units')), ('currency', _tool('currency')), ('graph', _tool('graph')),
+    ('vat', _tool('vat') + _fill(('amount', '1234567,89'))),
+    ('pct:of', _tool('pct', 'of') + _fill(('pctOfRate', '12,5'), ('pctOfNum', '1234567,89'))),
+    ('pct:discount', _tool('pct', 'discount') + _fill(('pctPrice', '1250'), ('pctOff', '25'))),
+    ('pct:change', _tool('pct', 'change') + _fill(('pctFrom', '1250'), ('pctTo', '1999,99'))),
+    ('pct:tip', _tool('pct', 'tip') + _fill(('tipBill', '1234,5'), ('tipRate', '15'), ('tipPeople', '4'))),
+    ('loan:loan', _tool('loan', 'loan') + _fill(('loanAmount', '250000'), ('loanRate', '4'), ('loanYears', '30'))),
+    ('loan:payoff', _tool('loan', 'payoff') + _fill(('payAmount', '250000'), ('payRate', '4'), ('payMonthly', '1500'))),
+    ('loan:savings', _tool('loan', 'savings') + _fill(('saveStart', '10000'), ('saveMonthly', '250'), ('saveRate', '3,5'), ('saveYears', '20'))),
+    ('dates:between', _tool('dates', 'between') + _fill(('dateTo', '2027-03-15'))),
+    ('dates:add', _tool('dates', 'add') + _fill(('dateDays', '100'))),
+    ('fuel', _tool('fuel') + _fill(('fuelD', '1250'), ('fuelC', '6,5'), ('fuelP', '1,85'))),
+    ('energy:device', _tool('energy', 'device') + _fill(('energyP', '2000'), ('energyH', '3'), ('energyD', '30'), ('energyR', '0,15'))),
+    ('energy:kwh', _tool('energy', 'kwh') + _fill(('energyK', '1234567,89'), ('energyR', '0,15'))),
+    ('net:subnet', _tool('net', 'subnet') + _fill(('netIp', '192.168.100.100'), ('netPrefix', '26'))),
+    ('net:hosts', _tool('net', 'hosts') + _fill(('netHosts', '500'))),
+    ('prog', _tool('prog') + _fill(('progHex', 'DEADBEEFCAFE'))),
+    ('numbers:gcd', _tool('numbers', 'gcd') + _fill(('numA', '123456789012'), ('numB', '987654321'), ('numC', '360'))),
+    ('numbers:factors', _tool('numbers', 'factors') + _fill(('numN', '600851475143'))),
+    ('equation:quad', _tool('equation', 'quad') + _fill(('eqA', '1'), ('eqB', '2'), ('eqC', '5'))),
+    ('equation:sys2', _tool('equation', 'sys2') + _fill(('sxA1', '2'), ('sxB1', '1'), ('sxC1', '5'), ('sxA2', '1'), ('sxB2', '-1'), ('sxC2', '1'))),
+    ('stats', _tool('stats') + "if(!document.querySelector('.stat-chip'))for(const v of ['12','1234,75','-3','15,5','9']){statX.value=v;statX.dispatchEvent(new Event('input',{bubbles:true}));statAdd()}"),
+]
+# The sheets and popups: how to open one, the box to check, how to close it
+PHONE_SHEETS = [
+    ('All modes', "openModes()", '#modesModal .modal-card', "closeModes()"),
+    ('History', "switchMode('calc');openHistory()", '#historyPanel', "closeHistory()"),
+    ('Functions (⋯)', "switchMode('calc');openFunctions()", '#howModal .modal-card', "closeHow()"),
+    ('the working (?) of a complex result', "switchMode('calc');expression='(9+9×i)×5';current='';equals();showHow()", '#howModal .modal-card', "closeHow()"),
+    ('the working (?) of VAT', "switchMode('vat');showHow()", '#howModal .modal-card', "closeHow()"),
+    ('Tips', "switchMode('calc');showHelp()", '#howModal .modal-card', "closeHow()"),
+    ('theme menu', "openThemeMenu()", '#themeMenu', "closeThemeMenu()"),
+    ('own theme editor', "openThemeEditor('dark')", '#themeEditor', "closeThemeEditor()"),
+]
+
+
+async def phone_size(browser, url, name, w, h, wide, scroll, lang):
+    """One phone in one language: every tab (PHONE_TABS) and every sheet (PHONE_SHEETS) through LAYOUT_PROBE."""
+    L = f'[phones {name} {w}×{h} {lang}] '
+    ctx = await browser.new_context(viewport={'width': w, 'height': h}, is_mobile=True, has_touch=True)
+    await ctx.add_init_script(SEED % (lang, 'dark'))
+    if wide:
+        await ctx.add_init_script("new MutationObserver((m,o)=>{if(document.head){const s=document.createElement('style');"
+                                  "s.textContent='*{font-family:\"DejaVu Sans\",sans-serif!important}';document.head.prepend(s);o.disconnect()}})"
+                                  ".observe(document,{childList:true,subtree:true})")
+    await ctx.route('https://api.frankfurter.dev/**', lambda r: r.fulfill(status=200, content_type='application/json', body=RATES_JSON,
+                                                                          headers={'Access-Control-Allow-Origin': '*'}))
+    p = await ctx.new_page()
+    errors = []
+    p.on('pageerror', lambda e: errors.append(str(e)))
+    await p.goto(url)
+    await p.wait_for_timeout(300)
+    side = w > h  # sideways: smaller keys and switches are allowed (screen.md)
+    bad = {}
+    for tab, js in PHONE_TABS:
+        await p.evaluate(js)
+        await p.wait_for_timeout(100)
+        await p.evaluate(SETTLED, '.app-shell')
+        found = await p.evaluate(LAYOUT_PROBE, {'scope': '.app-shell', 'minKey': 24 if side else 30, 'minTap': 24 if side else 30, 'sheet': False})
+        if await p.evaluate("document.documentElement.classList.contains('page-scroll')") and not ({tab, '*'} & scroll):
+            found = ['the page scrolls'] + found
+        if found:
+            bad[tab] = found
+    await p.evaluate("if(sciMode)toggleSci();switchMode('calc');expression='';current='';render()")
+    for sheet, js, box, close in PHONE_SHEETS:
+        await p.evaluate(js)
+        await p.wait_for_timeout(100)
+        await p.evaluate(SETTLED, box)
+        found = await p.evaluate(LAYOUT_PROBE, {'scope': box, 'minKey': 0, 'minTap': 24 if side else 30, 'sheet': True})
+        if found:
+            bad[sheet] = found
+        await p.evaluate(close)
+        await p.wait_for_timeout(250)
+    check(L + 'every tab, sheet and popup: no text over text, nothing cut or off the screen, keys and buttons big enough', not bad, bad)
+    check(L + 'no JavaScript errors', not errors, errors)
+    await ctx.close()
+
+
+async def phone_sizes(browser, url):
+    """Popular phone sizes (PHONES), both languages, six at a time: every tab and sheet, see phone_size and
+    tests/layout_probe.js. `python3 tests/test_app.py --phones` runs only this (after a layout change)."""
+    limit = asyncio.Semaphore(6)
+
+    async def one(*a):
+        async with limit:
+            await phone_size(browser, url, *a)
+    await asyncio.gather(*[one(name, w, h, wide, scroll, lang) for name, w, h, wide, scroll in PHONES for lang in ['en', 'el']])
+
+
 def built_site():
     """With --site: the folder tools/build.mjs made is public/ with the scripts joined into one js/app.js and the CSS
     minified, and nothing else changed or missing."""
@@ -2741,6 +2878,11 @@ async def main():
     url = serve()
     async with async_playwright() as pw:
         browser = await pw.chromium.launch()
+        if '--phones' in sys.argv:  # only the phone sizes, after a layout change
+            await phone_sizes(browser, url)
+            await browser.close()
+            print(f'{sum(results)}/{len(results)} checks passed')
+            sys.exit(0 if all(results) else 1)
         for lang, theme in [('en', 'dark'), ('el', 'light')]:
             await desktop(browser, url, lang, theme)
             await scientific(browser, url, lang, theme)
@@ -2775,6 +2917,7 @@ async def main():
         await explanations(browser, url)
         await side_panels(browser, url)
         await foldables(browser, url)
+        await phone_sizes(browser, url)
         await memory_keys(browser, url)
         await no_magnifier(browser, url)
         await more_functions(browser, url)

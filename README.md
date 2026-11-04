@@ -83,7 +83,7 @@ public/              the website, exactly as it is served
   styles.css         all styles and themes
   js/                the app, one file per area (calculator, units, tools, graph, history, ...)
   manifest.webmanifest, icons
-tests/test_app.py    browser tests (Playwright)
+tests/test_app.py    browser tests (Playwright); tests/layout_probe.js checks a screen's layout for them
 tools/bump-version.py  sets the version everywhere it appears
 tools/build.mjs      the deploy build: public/ with the scripts joined and minified (esbuild, package.json)
 Dockerfile, nginx.conf the Docker image: nginx serving the built public/
@@ -116,9 +116,11 @@ pip install playwright && python3 -m playwright install chromium   # once
 python3 tests/test_app.py
 # the deployed version instead (GitHub tests this one):
 npm ci && node tools/build.mjs && python3 tests/test_app.py --site build
+# only the popular phone sizes, after a layout change:
+python3 tests/test_app.py --phones
 ```
 
-The tests open the app in Chromium at desktop and phone sizes, in both languages and themes, and check the calculator, brackets, Units, the tools, History, the mode tabs, the language switch and that nothing is cut off on phones.
+The tests open the app in Chromium at desktop and phone sizes, in both languages and themes, and check the calculator, brackets, Units, the tools, History, the mode tabs, the language switch and that nothing is cut off on phones. Every mode, sheet and popup is also checked on about 25 popular phone sizes (small and big iPhones, Pixel, Galaxy S and A, foldables, upright and sideways) in both languages: no text over other text, nothing cut or off the screen, keys big enough to press.
 
 ## Deployment
 
