@@ -31,10 +31,15 @@ Part of the notes in CLAUDE.md (read that first). Covers numbers.js, calculator.
   (clears everything). Same in Units (`unitEntry`). Delete = C, Esc = AC on a keyboard.
 - **Scientific:** a view of the Calculator, not a mode: the f(x) switch on the display (`sciMode`, `uc-sci`; the only chip
   there, the angle unit is the keypad's Deg/Rad key; at the display's top-left in line with History, styled like ?, and
-  Dates' Working days chip sits in the same place) adds 25
-  keys above the basic ones (beside them in landscape, five columns whose labels size with the keys; `sciKeysHtml`, `.keypad.sci`). Functions apply to the value
+  Dates' Working days chip sits in the same place) adds the
+  five memory keys and 24 more in six columns above the basic ones (`sciKeysHtml`, `.keypad.sci`, the memory keys in `.mem-row`; labels size with
+  the pad's width, `cqw`, and labels over 4 characters get `.long`, so sinh⁻¹ fits a 320px phone). Sideways they stand beside the basic keys
+  in five rows: memory the first column, the rest placed by `SCI_LAND` (`--lr`/`--lc`; ⋯ two columns wide).
+  Rows: 2nd Deg sin cos tan hyp · x² xʸ √x ln log log₂ · ( ) 1/x x! π e · EE nCr mod i Rand ⋯. In Scientific the basic pad's
+  ( ) key is ± (`negate`), as ( and ) are keys there; ) with nothing open is refused. Rand types a number from 0 to 1 with up to
+  10 decimals like MR (it replaces a number being typed; after a value it adds ×). log₂ is a function (`log₂(`), exact for powers of 2. Functions apply to the value
   just typed / the result / the bracket just closed (`sciKey`, `lastValueStart`), else open `sin(`. x², xʸ, ʸ√x and x! take the whole value, so a negative one or a power gets brackets: (−3)², (9²)². 2nd swaps keys
-  for inverses; Deg/Rad is `angleUnit` (`uc-angle`). The engine (numbers.js: `evalExpr`, `ratPow`, `sciFunction`)
+  for inverses (x³ ʸ√x ∛x eˣ 10ˣ 2ˣ); Deg/Rad is `angleUnit` (`uc-angle`). The engine (numbers.js: `evalExpr`, `ratPow`, `sciFunction`)
   stays exact where the answer is exact and rounds floats to 15 digits otherwise. Shown with superscripts and sin⁻¹
   (`sciPretty`). Keyboard: ^ and !.
   A fourth row: **hyp** (`sciHyp`: sin cos tan become sinh cosh tanh, 2nd their inverses), **nCr** (2nd nPr), **mod** (2nd |x|), **i** (2nd ∠)

@@ -506,7 +506,7 @@ async def scientific(browser, url, lang, theme):
     L = f'[scientific {lang} {theme}] '
     check(L + 'starts in Basic, no scientific keys', await p.locator('.sci-key').count() == 0)
     await p.click('[data-bar="sci"]')
-    check(L + 'f(x) shows 25 scientific keys (memory included), the Deg key, and no second chip on the display', await p.locator('.sci-key').count() == 25
+    check(L + 'f(x) shows 29 scientific keys (memory included), the Deg key, and no second chip on the display', await p.locator('.sci-key').count() == 29
           and await p.inner_text('[data-sci="angle"]') == 'Deg' and await p.locator('#sciBar button').count() == 1)
 
     async def keys(*seq):
@@ -521,6 +521,8 @@ async def scientific(browser, url, lang, theme):
                 await p.click('.key[data-action="paren"]')
             elif k == '±':
                 await p.keyboard.press('F9')
+            elif k == '±key':
+                await p.click('.key[data-action="negate"]')
             else:
                 await p.click(f'.key[data-value="{k}"]')
         return [await p.evaluate(X), await p.evaluate(R)]
@@ -538,6 +540,9 @@ async def scientific(browser, url, lang, theme):
         (('2', 'sci:pi', '='), ['2×π', '6,283185']),
         (('3', '0', '±', 'sci:sin', '='), ['sin(−30)', '-0,5']),
         (('2', 'sci:sq', '+', '1', '='), ['2²+1', '5']),
+        (('8', 'sci:log2', '='), ['log₂(8)', '3']),
+        (('sci:open', '2', '+', '3', 'sci:close', '*', '4', '='), ['(2+3)×4', '20']),
+        (('5', '±key', '+', '2', '='), ['(−5)+2', '-3']),
     ]
     for seq, want in cases:
         got = await keys(*seq)
@@ -553,6 +558,8 @@ async def scientific(browser, url, lang, theme):
     await p.click('[data-sci="2nd"]')
     got = await keys('0', ',', '5', 'sci:asin', '=')
     check(L + '2nd sin = sin⁻¹: sin⁻¹(0,5) = 30°', got == ['sin⁻¹(0,5)', '30'], got)
+    got = await keys('5', 'sci:pow2', '=')
+    check(L + '2nd log₂ = 2ˣ: 2⁵ = 32', got == ['2⁵', '32'], got)
     await p.click('[data-sci="2nd"]')
     await p.click('[data-sci="angle"]')
     check(L + 'Rad on', await p.inner_text('[data-sci="angle"]') == 'Rad')
@@ -584,7 +591,7 @@ async def scientific(browser, url, lang, theme):
     # the choice is remembered; Units keeps its own keypad
     await p.reload()
     await p.wait_for_timeout(300)
-    check(L + 'Scientific kept after reload', await p.locator('.sci-key').count() == 25)
+    check(L + 'Scientific kept after reload', await p.locator('.sci-key').count() == 29)
     await p.evaluate("switchMode('units')")
     await p.wait_for_timeout(150)
     check(L + 'Units has no scientific keys', await p.locator('.sci-key').count() == 0)
@@ -2308,6 +2315,14 @@ async def more_functions(browser, url):
       'sinh(0)','cosh(0)','tanh(0)','acosh(1)','atanh(0)','asinh(0)','abs(-2.5)','φ^2-φ','⟨c⟩','⟨NA⟩×⟨k⟩÷⟨R⟩'].map(e=>{try{return formatRat(evalExpr(e))}catch(x){return x.message}})""")
     want = ['10', '20', '1', '0', '2', '3', '1,5', '12', '1', '0', '2', '2', '45', '60', '30', '0', '1', '0', '0', '0', '0', '2,5', '1', '299.792.458', '1']
     check(L + 'nCr, nPr, mod, cot/sec/csc and inverses, hyperbolic, |x|, φ, constants', vals == want, list(zip(vals, want)))
+    vals = await p.evaluate("['log₂(8)','log₂(0.25)','log₂(1)','log₂(1024)','log₂(10)','log₂(-8)','2^10','log₂(0)'].map(e=>{try{return fmt(evalExpr(e))}catch(x){return x.message}})")
+    check(L + 'log₂: exact for powers of 2, complex for a negative number, an error at 0', vals == ['3', '-2', '0', '10', '3,321928', '3 + 4,53236i', '1.024', 'MATH'], vals)
+    st = await p.evaluate("(()=>{clearAll();sciKey('rand');const a=current;clearAll();digit('2');operator('×');sciKey('rand');const b=expression;equals();return [a,b,lastResult&&ratToFloat(lastResult)]})()")
+    check(L + 'Rand types a number from 0 to 1 with up to 10 decimals, and works in a calculation', bool(re.fullmatch(r'0(\.\d{1,10})?', st[0])) and st[1] == '2×' and 0 <= st[2] < 2, st)
+    st = await p.evaluate("(()=>{clearAll();digit('5');sciKey('close');return expression+current})()")
+    check(L + ') with nothing open does nothing', st == '5', st)
+    st = await p.evaluate("(()=>{clearAll();digit('8');sciKey('log2');equals();return howData.steps.map(s=>s.title+' | '+s.text)})()")
+    check(L + 'the working of log₂(8) checks it by hand: 2³ = 8', any('2³ = 8' in x and 'log₂(8) = 3' in x for x in st), st)
     errs = await p.evaluate("['5.5C2','-1C1','5m0','acosh(0.5)','atanh(1)','coth(0)','csc(0)'].map(e=>{try{return formatRat(evalExpr(e))}catch(x){return x.message}})")
     check(L + 'outside their domain they say why', errs == ['MATH', 'MATH', 'DIV0', 'MATH', 'MATH', 'MATH', 'MATH'], errs)
     await p.evaluate("toggleSci()")

@@ -4,7 +4,7 @@
 const FN_GROUPS=[
  ['trig',['sin','cos','tan','cot','sec','csc','asin','acos','atan','acot','asec','acsc']],
  ['hyp',['sinh','cosh','tanh','coth','sech','csch','asinh','acosh','atanh','acoth','asech','acsch']],
- ['other',['abs','ncr','npr','mod','sqrt','cbrt','fact','inv']],
+ ['other',['abs','ncr','npr','mod','sqrt','cbrt','fact','inv','log2']],
  ['math',['pi','e','phi']]];
 const fnText=k=>({el:{title:'Συναρτήσεις και σταθερές',search:'Αναζήτηση…',trig:'Τριγωνομετρικές',hyp:'Υπερβολικές',other:'Άλλες',
   math:'Μαθηματικές σταθερές',phys:'Φυσικές σταθερές',none:'Δεν βρέθηκε τίποτα.',source:'Τιμές CODATA 2018· με * οι ακριβείς (SI 2019).',

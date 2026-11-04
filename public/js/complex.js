@@ -59,11 +59,11 @@ function vPolar(r,t){if(isCx(r)||isCx(t))throw Error('MATH');return vMul(r,cx(sc
 function sciFunctionV(name,a){
  if(!isCx(a)){
   try{return sciFunction(name,a)}catch(e){
-   if(e.message!=='MATH'||a.n>=0n||!['√','ln','log'].includes(name))throw e;
+   if(e.message!=='MATH'||a.n>=0n||!['√','ln','log','log₂'].includes(name))throw e;
    const p=rat(-a.n,a.d);
    if(name==='√')return cx(rat(0n),sciFunction('√',p));// √−4 = 2i
    const l=sciFunction('ln',p);// ln(−x) = ln x + iπ
-   return name==='ln'?cx(l,ratFromFloat(Math.PI)):cx(sciFunction('log',p),ratFromFloat(Math.PI/Math.LN10));
+   return name==='ln'?cx(l,ratFromFloat(Math.PI)):cx(sciFunction(name,p),ratFromFloat(Math.PI/(name==='log'?Math.LN10:Math.LN2)));
   }
  }
  if(name==='abs')return vAbs(a);
@@ -85,7 +85,7 @@ function sciFunctionV(name,a){
   sinh,cosh,tanh:z=>fDiv(sinh(z),cosh(z)),coth:z=>fDiv(cosh(z),sinh(z)),sech:z=>inv(cosh(z)),csch:z=>inv(sinh(z)),
   asin,acos,atan,acot:z=>atan(inv(z)),asec:z=>acos(inv(z)),acsc:z=>asin(inv(z)),
   asinh,acosh,atanh,acoth:z=>atanh(inv(z)),asech:z=>acosh(inv(z)),acsch:z=>asinh(inv(z)),
-  ln:fLn,log:z=>{const l=fLn(z);return [l[0]/Math.LN10,l[1]/Math.LN10]},'√':fSqrt,'∛':z=>{const [l,t]=fLn(z);return fExp([l/3,t/3])}};
+  ln:fLn,log:z=>{const l=fLn(z);return [l[0]/Math.LN10,l[1]/Math.LN10]},'log₂':z=>{const l=fLn(z);return [l[0]/Math.LN2,l[1]/Math.LN2]},'√':fSqrt,'∛':z=>{const [l,t]=fLn(z);return fExp([l/3,t/3])}};
  if(!F[name])throw Error('MATH');
  let w=F[name](z);
  if(deg&&/^a(sin|cos|tan|cot|sec|csc)$/.test(name))w=[w[0]/D,w[1]/D];

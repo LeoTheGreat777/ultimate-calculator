@@ -86,7 +86,7 @@ function ratLimit(r){
 // ---------- Expressions: + − × ÷ %, brackets, and the scientific parts (functions, π, e, ^, !) ----------
 // Functions are written in the expression as a name and "(": sin( cos( tan( asin( acos( atan( ln( log( √( ∛(
 // (also cot sec csc, the hyperbolic ones and every inverse, abs). Longest first, so "sinh(" isn't read as "sin" + "h(".
-const FN_NAMES=['sin','cos','tan','cot','sec','csc','sinh','cosh','tanh','coth','sech','csch'].flatMap(n=>[n,'a'+n]).concat(['ln','log','√','∛','abs']).sort((a,b)=>b.length-a.length);
+const FN_NAMES=['sin','cos','tan','cot','sec','csc','sinh','cosh','tanh','coth','sech','csch'].flatMap(n=>[n,'a'+n]).concat(['ln','log','log₂','√','∛','abs']).sort((a,b)=>b.length-a.length);
 const FN_ALT=FN_NAMES.join('|');
 const FN_END=new RegExp('(?:'+FN_ALT+')$'),FN_OPEN_END=new RegExp('(?:'+FN_ALT+')\\($');
 // Two-number operators besides + − × ÷ ^ are written as one letter: C (nCr, combinations), P (nPr, permutations),
@@ -270,9 +270,11 @@ function sciFunction(name,a){
  }
  if(name==='asin'||name==='acos'){if(x<-1||x>1)throw Error('MATH');const v=Math[name](x);return ratFromFloat(deg?v*180/Math.PI:v)}
  if(name==='atan'){const v=Math.atan(x);return ratFromFloat(deg?v*180/Math.PI:v)}
- if(name==='ln'||name==='log'){if(a.n<=0n)throw Error('MATH');
+ if(name==='ln'||name==='log'||name==='log₂'){if(a.n<=0n)throw Error('MATH');
   if(name==='log'){const r=ratToDecimal(a,0),m=/^1(0*)$/.exec(r);if(a.d===1n&&m)return rat(BigInt(m[1].length))}// log of 10, 100, 1000 … exactly
-  const ln=ratLn(a);return ratFromFloat(name==='ln'?ln:ln/Math.LN10)}
+  const pow2=n=>n>0n&&(n&(n-1n))===0n;// log₂ of 2, 4, 8 … and ½, ¼ … exactly
+  if(name==='log₂'&&(a.d===1n&&pow2(a.n)||a.n===1n&&pow2(a.d)))return rat(BigInt(a.d===1n?bitLen(a.n)-1:1-bitLen(a.d)));
+  const ln=ratLn(a);return ratFromFloat(name==='ln'?ln:ln/(name==='log'?Math.LN10:Math.LN2))}
  if(name==='√'){if(a.n<0n)throw Error('MATH');return ratPow(a,rat(1n,2n))}
  if(name==='∛')return ratPow(a,rat(1n,3n));
  throw Error('FN');

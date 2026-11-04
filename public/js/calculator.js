@@ -209,36 +209,51 @@ function equals(){
 }
 // ---------- Scientific ----------
 // Basic or Scientific is a view of the same calculator (the switch on the display, saved as uc-sci): the same
-// calculation, History and explanation. Scientific adds 20 keys above the basic ones (on a phone held sideways,
-// beside them). 2nd swaps some keys for their inverse; Deg/Rad sets the angle unit (angleUnit, numbers.js).
+// calculation, History and explanation. Scientific adds the memory keys and 24 more above the basic ones (on a phone held
+// sideways, beside them), and ± takes the place of ( ) (the brackets are keys of their own there). 2nd swaps some keys for their inverse; Deg/Rad sets the angle unit (angleUnit, numbers.js).
 let sciMode=store.get('uc-sci')==='1',sciSecond=false;
 // every function (numbers.js FN_NAMES) by its own name, plus √ and ∛ as keys
-const SCI_FN={...Object.fromEntries(FN_NAMES.map(n=>[n,n])),sqrt:'√',cbrt:'∛'};
+const SCI_FN={...Object.fromEntries(FN_NAMES.map(n=>[n,n])),sqrt:'√',cbrt:'∛',log2:'log₂'};
 let sciHyp=false;// hyp: sin, cos, tan become sinh, cosh, tanh (and their inverses with 2nd)
-// [key, its 2nd key] in rows of five; labels from sciLabel
-const SCI_KEYS=[['2nd'],['angle'],['sin','asin'],['cos','acos'],['tan','atan'],
- ['sq','cube'],['pow','root'],['sqrt','cbrt'],['ln','exp'],['log','pow10'],
- ['inv'],['fact'],['pi'],['e'],['ee'],
- ['hyp'],['ncr','npr'],['mod','abs'],['i','polar'],['more']];
+// [key, its 2nd key] in rows of six under the memory keys (labels from sciLabel)
+const SCI_KEYS=[['2nd'],['angle'],['sin','asin'],['cos','acos'],['tan','atan'],['hyp'],
+ ['sq','cube'],['pow','root'],['sqrt','cbrt'],['ln','exp'],['log','pow10'],['log2','pow2'],
+ ['open'],['close'],['inv'],['fact'],['pi'],['e'],
+ ['ee'],['ncr','npr'],['mod','abs'],['i','polar'],['rand'],['more']];
+// Sideways the keys stand beside the basic ones in five rows (the memory keys the first column): each key's row and column
+// there (styles.css places them with --lr/--lc); ⋯ is two columns wide.
+const SCI_LAND=[['2nd','angle','hyp','open','close'],['sin','cos','tan','inv','fact'],['sq','pow','sqrt','pi','e'],
+ ['ln','log','log2','ee','i'],['ncr','mod','rand','more']];
+const SCI_LAND_AT=Object.fromEntries(SCI_LAND.flatMap((row,r)=>row.map((k,c)=>[k,[r+1,c+2]])));
 // a function's name on a key: asin -> sin⁻¹, asinh -> sinh⁻¹
 const fnLabel=n=>/^a(?:sin|cos|tan|cot|sec|csc)h?$/.test(n)?n.slice(1)+'⁻¹':n;
 // Key labels are the same in both languages, as on calculators (the owner's choice: hyp, 2nd, Deg, EE stay in Greek);
 // the aria-label says in words what a key does (sciAria).
 function sciLabel(k){
  return {'2nd':'2nd',angle:angleUnit==='deg'?'Deg':'Rad',sin:'sin',cos:'cos',tan:'tan',asin:'sin⁻¹',acos:'cos⁻¹',atan:'tan⁻¹',
-  sq:'x²',cube:'x³',pow:'xʸ',root:'ʸ√x',sqrt:'√x',cbrt:'∛x',ln:'ln',exp:'eˣ',log:'log',pow10:'10ˣ',inv:'1/x',fact:'x!',pi:'π',e:'e',ee:'EE',
+  sq:'x²',cube:'x³',pow:'xʸ',root:'ʸ√x',sqrt:'√x',cbrt:'∛x',ln:'ln',exp:'eˣ',log:'log',pow10:'10ˣ',log2:'log₂',pow2:'2ˣ',rand:'Rand',open:'(',close:')',inv:'1/x',fact:'x!',pi:'π',e:'e',ee:'EE',
   hyp:'hyp',ncr:'nCr',npr:'nPr',mod:'mod',abs:'|x|',phi:'φ',more:'⋯',i:'i',polar:'∠'}[k]??fnLabel(k);
 }
 function sciAria(k){
- const el={i:'Φανταστική μονάδα i',polar:'Πολική μορφή: μέτρο ∠ γωνία',hyp:'Υπερβολικές συναρτήσεις',ncr:'Συνδυασμοί (nCr)',npr:'Διατάξεις (nPr)',mod:'Υπόλοιπο διαίρεσης (mod)',abs:'Απόλυτη τιμή',phi:'Χρυσή τομή φ',more:'Περισσότερες συναρτήσεις και σταθερές','2nd':'Δεύτερες συναρτήσεις',angle:angleUnit==='deg'?'Μοίρες (πάτα για ακτίνια)':'Ακτίνια (πάτα για μοίρες)',sq:'Τετράγωνο',cube:'Κύβος',pow:'Δύναμη',root:'y-οστή ρίζα',sqrt:'Τετραγωνική ρίζα',cbrt:'Κυβική ρίζα',inv:'Αντίστροφο',fact:'Παραγοντικό',ee:'Επί 10 εις τη δύναμη',exp:'e εις τη δύναμη',pow10:'10 εις τη δύναμη',ln:'Φυσικός λογάριθμος',log:'Λογάριθμος',pi:'Πι',e:'Ο αριθμός e'};
- const en={i:'Imaginary unit i',polar:'Polar form: size ∠ angle',hyp:'Hyperbolic functions',ncr:'Combinations (nCr)',npr:'Permutations (nPr)',mod:'Remainder (mod)',abs:'Absolute value',phi:'Golden ratio φ',more:'More functions and constants','2nd':'Second functions',angle:angleUnit==='deg'?'Degrees (tap for radians)':'Radians (tap for degrees)',sq:'Square',cube:'Cube',pow:'Power',root:'y-th root',sqrt:'Square root',cbrt:'Cube root',inv:'Reciprocal',fact:'Factorial',ee:'Times 10 to the power',exp:'e to the power',pow10:'10 to the power',ln:'Natural logarithm',log:'Logarithm',pi:'Pi',e:'Euler’s number e'};
+ const el={i:'Φανταστική μονάδα i',polar:'Πολική μορφή: μέτρο ∠ γωνία',hyp:'Υπερβολικές συναρτήσεις',ncr:'Συνδυασμοί (nCr)',npr:'Διατάξεις (nPr)',mod:'Υπόλοιπο διαίρεσης (mod)',abs:'Απόλυτη τιμή',phi:'Χρυσή τομή φ',more:'Περισσότερες συναρτήσεις και σταθερές','2nd':'Δεύτερες συναρτήσεις',angle:angleUnit==='deg'?'Μοίρες (πάτα για ακτίνια)':'Ακτίνια (πάτα για μοίρες)',sq:'Τετράγωνο',cube:'Κύβος',pow:'Δύναμη',root:'y-οστή ρίζα',sqrt:'Τετραγωνική ρίζα',cbrt:'Κυβική ρίζα',inv:'Αντίστροφο',fact:'Παραγοντικό',ee:'Επί 10 εις τη δύναμη',exp:'e εις τη δύναμη',pow10:'10 εις τη δύναμη',ln:'Φυσικός λογάριθμος',log:'Λογάριθμος',log2:'Λογάριθμος με βάση 2',pow2:'2 εις τη δύναμη',rand:'Τυχαίος αριθμός από 0 έως 1',open:'Άνοιγμα παρένθεσης',close:'Κλείσιμο παρένθεσης',pi:'Πι',e:'Ο αριθμός e'};
+ const en={i:'Imaginary unit i',polar:'Polar form: size ∠ angle',hyp:'Hyperbolic functions',ncr:'Combinations (nCr)',npr:'Permutations (nPr)',mod:'Remainder (mod)',abs:'Absolute value',phi:'Golden ratio φ',more:'More functions and constants','2nd':'Second functions',angle:angleUnit==='deg'?'Degrees (tap for radians)':'Radians (tap for degrees)',sq:'Square',cube:'Cube',pow:'Power',root:'y-th root',sqrt:'Square root',cbrt:'Cube root',inv:'Reciprocal',fact:'Factorial',ee:'Times 10 to the power',exp:'e to the power',pow10:'10 to the power',ln:'Natural logarithm',log:'Logarithm',log2:'Logarithm base 2',pow2:'2 to the power',rand:'Random number from 0 to 1',open:'Open bracket',close:'Close bracket',pi:'Pi',e:'Euler’s number e'};
  const ft=typeof FN_TITLE!=='undefined'&&FN_TITLE[k];// sin: Ημίτονο / Sine (explain.js)
  return (lang==='el'?el:en)[k]||(ft&&ft[lang==='el'?0:1])||sciLabel(k);
 }
 function sciKeysHtml(){
- return '<div class="sci-pad">'+memKeysHtml()+SCI_KEYS.map(([k,k2])=>{let key=sciSecond&&k2?k2:k;if(sciHyp&&/^a?(sin|cos|tan)$/.test(key))key+='h';
-  const on=k==='2nd'&&sciSecond||k==='hyp'&&sciHyp,toggle=k==='2nd'||k==='hyp';
-  return '<button class="key sci-key'+(on?' on':'')+'" data-sci="'+key+'" type="button" aria-label="'+esc(sciAria(key))+'"'+(toggle?' aria-pressed="'+on+'"':'')+'>'+esc(sciLabel(key))+'</button>'}).join('')+'</div>';
+ return '<div class="sci-pad"><div class="mem-row">'+memKeysHtml()+'</div>'+SCI_KEYS.map(([k,k2])=>{let key=sciSecond&&k2?k2:k;if(sciHyp&&/^a?(sin|cos|tan)$/.test(key))key+='h';
+  const on=k==='2nd'&&sciSecond||k==='hyp'&&sciHyp,toggle=k==='2nd'||k==='hyp',[lr,lc]=SCI_LAND_AT[k];
+  return '<button class="key sci-key'+(on?' on':'')+(k==='more'?' land-wide':'')+([...sciLabel(key)].length>4?' long':'')+'" data-sci="'+key+'" style="--lr:'+lr+';--lc:'+lc+'" type="button" aria-label="'+esc(sciAria(key))+'"'+(toggle?' aria-pressed="'+on+'"':'')+'>'+esc(sciLabel(key))+'</button>'}).join('')+'</div>';
+}
+// Rand: a random number from 0 to 1 with 10 decimals, typed in like a number (as MR types the memory)
+function randomText(){let d='';try{const a=new Uint32Array(2);crypto.getRandomValues(a);d=String((a[0]%100000)*100000+a[1]%100000)}catch{d=String(Math.floor(Math.random()*1e10))}
+ return ('0.'+d.padStart(10,'0')).replace(/0+$/,'').replace(/\.$/,'')}
+function typeRandom(){
+ if(justCalculated){expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null;carry=null}
+ if(currentIsPercent){expression+=current+'×';current='';currentIsPercent=false}
+ else if(!current&&VALUE_END.test(expression))expression+='×';// after a value: 5 × 0,123…
+ else if(current==='-'||current==='−'){expression+='-';current=''}// a minus waiting for its number (a number being typed is replaced, as by MR)
+ current=randomText();render();
 }
 // a finished result becomes the start of a new calculation (as when an operator follows it)
 // The switch on the display: f(x) turns Scientific on and off. (The angle unit is the Deg/Rad key on the keypad.)
@@ -275,11 +290,14 @@ function sciKey(k){
  if(k==='2nd'){sciSecond=!sciSecond;renderCalcKeypad();fitLayout();return}
  if(k==='hyp'){sciHyp=!sciHyp;renderCalcKeypad();fitLayout();return}
  if(k==='more'){openFunctions();return}
+ if(k==='open'){parenthesis('(');return}
+ if(k==='close'){if(!parenthesis(')'))refuseKey();return}// nothing open to close
+ if(k==='rand'){typeRandom();return}
  if(k==='ncr'||k==='npr'||k==='mod'){operator(k==='ncr'?'C':k==='npr'?'P':'m');return}// between two numbers, like ×
  if(k==='angle'){angleUnit=angleUnit==='deg'?'rad':'deg';store.set('uc-angle',angleUnit);renderCalcKeypad();render();return}
  if(justCalculated){if(!lastResult)return;continueFromResult()}
  // a minus waiting for its number ("2×−"): a function or constant can follow it (2×−sin(30)); the rest cannot
- if(current==='-'||current==='−'){if(!SCI_FN[k]&&!['pi','e','phi','i','exp','pow10','inv'].includes(k)&&!k.startsWith('const:'))return;expression+='-';current=''}
+ if(current==='-'||current==='−'){if(!SCI_FN[k]&&!['pi','e','phi','i','exp','pow10','pow2','inv'].includes(k)&&!k.startsWith('const:'))return;expression+='-';current=''}
  else if(current){expression+=current;current='';currentIsPercent=false}
  const start=lastValueStart(expression),value=start>=0?expression.slice(start):'',head=start>=0?expression.slice(0,start):expression;
  const grouped=v=>{if(v[0]!=='(')return false;let d=0;for(let i=0;i<v.length;i++){d+=v[i]==='('?1:v[i]===')'?-1:0;if(d===0)return i===v.length-1}return false};
@@ -290,7 +308,7 @@ function sciKey(k){
  const topLevel=v=>{let t=v;for(let u;(u=t.replace(/\([^()]*\)/g,''))!==t;)t=u;return t};
  const whole=v=>/^[-−]/.test(v)||/\^/.test(topLevel(v))?'('+v+')':v;
  if(SCI_FN[k]){expression=value?head+SCI_FN[k]+wrap(value):expression+SCI_FN[k]+'(';}
- else if(k==='exp'||k==='pow10'){const b=k==='exp'?'e':'10';expression=value?head+b+'^'+(plainNumber(value)?value:wrap(value)):expression+b+'^(';}
+ else if(k==='exp'||k==='pow10'||k==='pow2'){const b=k==='exp'?'e':k==='pow2'?'2':'10';expression=value?head+b+'^'+(plainNumber(value)?value:wrap(value)):expression+b+'^(';}
  else if(k==='inv'){expression=value?head+'(1÷'+(plainNumber(value)||/^(?:[πeφi]|⟨\w+⟩)$/.test(value)?value:wrap(value))+')':expression+'1÷(';}
  else if(k==='pi'||k==='e'||k==='phi'||k==='i'||k.startsWith('const:')){const c=k==='pi'?'π':k==='e'?'e':k==='phi'?'φ':k==='i'?'i':'⟨'+k.slice(6)+'⟩';expression+=(value?'×':'')+c;}
  else if(!value)return;// the rest need a value before them
@@ -313,7 +331,7 @@ function renderCalcKeypad(){
  $('#calculatorCard').classList.toggle('sci-on',sci);
  // The "( )" key is only in Calculator mode; Units keeps its own layout.
  const extra=mode==='calc'||mode==='units',parenLabel=lang==='el'?'Παρενθέσεις':'Parentheses';
- $('#keypad').innerHTML=(sci?sciKeysHtml()+'<div class="basic-pad">':'')+'<button class="key utility" data-action="backspace" type="button" aria-label="'+esc(t('deleteKey'))+'">⌫</button><button id="clearButton" class="key utility" data-action="clear" type="button">AC</button><button class="key utility" data-value="%" type="button">%</button><button class="key operator" data-value="/" type="button">÷</button><button class="key" data-value="7" type="button">7</button><button class="key" data-value="8" type="button">8</button><button class="key" data-value="9" type="button">9</button><button class="key operator" data-value="*" type="button">×</button><button class="key" data-value="4" type="button">4</button><button class="key" data-value="5" type="button">5</button><button class="key" data-value="6" type="button">6</button><button class="key operator" data-value="-" type="button">−</button><button class="key" data-value="1" type="button">1</button><button class="key" data-value="2" type="button">2</button><button class="key" data-value="3" type="button">3</button><button class="key operator" data-value="+" type="button">+</button>'+(extra?'<button class="key utility" data-action="paren" type="button" aria-label="'+esc(parenLabel)+'">( )</button><button class="key" data-value="0" type="button">0</button>':'<button class="key wide" data-value="0" type="button">0</button>')+'<button class="key" data-value="," type="button">,</button><button class="key equals" data-action="equals" type="button">=</button>'+(sci?'</div>':'');
+ $('#keypad').innerHTML=(sci?sciKeysHtml()+'<div class="basic-pad">':'')+'<button class="key utility" data-action="backspace" type="button" aria-label="'+esc(t('deleteKey'))+'">⌫</button><button id="clearButton" class="key utility" data-action="clear" type="button">AC</button><button class="key utility" data-value="%" type="button">%</button><button class="key operator" data-value="/" type="button">÷</button><button class="key" data-value="7" type="button">7</button><button class="key" data-value="8" type="button">8</button><button class="key" data-value="9" type="button">9</button><button class="key operator" data-value="*" type="button">×</button><button class="key" data-value="4" type="button">4</button><button class="key" data-value="5" type="button">5</button><button class="key" data-value="6" type="button">6</button><button class="key operator" data-value="-" type="button">−</button><button class="key" data-value="1" type="button">1</button><button class="key" data-value="2" type="button">2</button><button class="key" data-value="3" type="button">3</button><button class="key operator" data-value="+" type="button">+</button>'+(sci?'<button class="key utility" data-action="negate" type="button" aria-label="'+esc(lang==='el'?'Αλλαγή προσήμου':'Change sign')+'">±</button><button class="key" data-value="0" type="button">0</button>':extra?'<button class="key utility" data-action="paren" type="button" aria-label="'+esc(parenLabel)+'">( )</button><button class="key" data-value="0" type="button">0</button>':'<button class="key wide" data-value="0" type="button">0</button>')+'<button class="key" data-value="," type="button">,</button><button class="key equals" data-action="equals" type="button">=</button>'+(sci?'</div>':'');
 }
 function restoreCalculatorDisplay(){
  const d=$('#calculatorDisplay');

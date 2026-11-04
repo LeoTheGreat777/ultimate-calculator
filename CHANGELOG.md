@@ -6,6 +6,12 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.31.0 – 2026-11-04
+
+### Added
+- More scientific keys, in a sixth column so the keypad is no taller: ( and ) as their own keys, log₂ (2nd: 2ˣ), Rand (a random
+  number from 0 to 1) and ± where ( ) was. hyp now sits beside sin, cos and tan. The working explains log₂ too (log₂(8) = 3: 2³ = 8).
+
 ## 0.30.2 – 2026-11-04
 
 ### Fixed

@@ -10,7 +10,7 @@ const HL_ON='\u0001',HL_OFF='\u0002';// around the number a step has just worked
 const FN_LABEL=new Proxy({},{get:(o,n)=>typeof n==='string'&&/^a(?:sin|cos|tan|cot|sec|csc)h?$/.test(n)?n.slice(1)+'⁻¹':undefined});// asinh -> sinh⁻¹
 const FN_TITLE={sin:['Ημίτονο','Sine'],cos:['Συνημίτονο','Cosine'],tan:['Εφαπτομένη','Tangent'],asin:['Τόξο ημιτόνου','Inverse sine'],
  acos:['Τόξο συνημιτόνου','Inverse cosine'],atan:['Τόξο εφαπτομένης','Inverse tangent'],ln:['Φυσικός λογάριθμος','Natural logarithm'],
- log:['Λογάριθμος (βάση 10)','Logarithm (base 10)'],'√':['Τετραγωνική ρίζα','Square root'],'∛':['Κυβική ρίζα','Cube root'],
+ log:['Λογάριθμος (βάση 10)','Logarithm (base 10)'],'log₂':['Λογάριθμος (βάση 2)','Logarithm (base 2)'],'√':['Τετραγωνική ρίζα','Square root'],'∛':['Κυβική ρίζα','Cube root'],
  cot:['Συνεφαπτομένη','Cotangent'],sec:['Τέμνουσα','Secant'],csc:['Συντέμνουσα','Cosecant'],acot:['Τόξο συνεφαπτομένης','Inverse cotangent'],
  asec:['Τόξο τέμνουσας','Inverse secant'],acsc:['Τόξο συντέμνουσας','Inverse cosecant'],abs:['Απόλυτη τιμή','Absolute value'],
  sinh:['Υπερβολικό ημίτονο','Hyperbolic sine'],cosh:['Υπερβολικό συνημίτονο','Hyperbolic cosine'],tanh:['Υπερβολική εφαπτομένη','Hyperbolic tangent'],
@@ -187,7 +187,7 @@ function explanationForExpression(input,result){
     const whole=!isCx(v)&&!isCx(a)&&v.d===1n&&(v.n<0n?-v.n:v.n)<=1000000n;
     if(n.name==='√'&&!isCx(a)&&a.n<0n)title+=L(': αρνητικός αριθμός, άρα φανταστικό: √(−x) = i√x',': a negative number, so imaginary: √(−x) = i√x');
     if(whole&&(n.name==='√'||n.name==='∛')&&a.d===1n)title+=': '+Array(n.name==='√'?2:3).fill(V(v)).join(' × ')+' = '+V(a);
-    if(whole&&n.name==='log'&&a.d===1n&&v.n>0n)title+=': 10'+supText(String(v.n))+' = '+V(a);
+    if(whole&&(n.name==='log'||n.name==='log₂')&&a.d===1n&&v.n>0n)title+=': '+(n.name==='log'?'10':'2')+supText(String(v.n))+' = '+V(a);
    }else if(n.k==='pow'){
     const b=n.b.v,e=n.e.v;v=lim(vPow(b,e));title=T('pow');
     const bs=exprText(n.b,false,{plain:true}),lhs=exprText(n,true,{plain:true});

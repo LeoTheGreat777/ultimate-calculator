@@ -22,7 +22,7 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 - ⋯ opens every function and constant by group, with a search
 
 ### Scientific
-- The f(x) switch on the calculator's display adds scientific keys: sin, cos, tan and their inverses, ln, log, powers, roots, 1/x, x!, π, e and EE
+- The f(x) switch on the calculator's display adds scientific keys: sin, cos, tan and their inverses, ln, log, log₂, powers, roots, 1/x, x!, π, e, EE, Rand, ( ) and ±
 - Degrees or radians; exact answers wherever they are exact (2¹⁰, √(9/4), sin 30°)
 - Functions apply to the number just typed or to the result: 30 then sin gives sin(30)
 - Hyperbolic functions and their inverses, cot, sec, csc, |x|, nCr, nPr and mod; π, e, φ and 41 physical constants (CODATA 2018) with a search
