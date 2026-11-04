@@ -5,6 +5,10 @@
 // so each version has its own addresses and a saved file never goes stale: they come from the saved copy first.
 // Every fresh page saves the files it uses and deletes those of older versions. Other files (icons, manifest) come from
 // the saved copy and are refreshed in the background.
+// Cloudflare's human check (calc.kampaxis.com): when its cookie has run out, Cloudflare answers the page with its check
+// page (403, header cf-mitigated) instead of the app. That page is shown, not the saved copy (which would be an older
+// version, and Ctrl+Shift+R was the only way past it); once the check passes, the new version loads. Cloudflare's own
+// files (/cdn-cgi/) are never saved.
 // Registered by main.js. Nothing here to update when the version changes. It works the same on the deployed site, where
 // tools/build.mjs has joined the scripts into one js/app.js: it saves whatever files the page links to.
 const SCOPE = new URL(self.registration.scope);
@@ -31,6 +35,7 @@ self.addEventListener('fetch', event => {
   const url = new URL(request.url);
   if (url.origin !== SCOPE.origin || !url.pathname.startsWith(SCOPE.pathname)) return;
   if (SCOPE.pathname === '/' && url.pathname.startsWith('/preview/')) return;  // the test version has its own
+  if (url.pathname.startsWith('/cdn-cgi/')) return;  // Cloudflare's check and its scripts
   const isPage = request.mode === 'navigate' && (url.pathname === SCOPE.pathname || url.pathname === SCOPE.pathname + 'index.html');
   event.respondWith(isPage ? page(event) : file(event));
 });
@@ -44,18 +49,18 @@ async function page(event) {
     if (response.ok) event.waitUntil(saveVersion(response.clone(), true));
     return response;
   }
-  const fresh = network.then(r => (r.ok ? r : null), () => null);
+  const fresh = network.then(r => (r.ok || cloudflareCheck(r) ? r : null), () => null);
   let timer;
   const tooSlow = new Promise(resolve => { timer = setTimeout(() => resolve(null), TIMEOUT); });
   const response = await Promise.race([fresh, tooSlow]);
   clearTimeout(timer);
   if (response) {
-    event.waitUntil(saveVersion(response.clone(), true));
+    if (response.ok) event.waitUntil(saveVersion(response.clone(), true));
     return response;
   }
   // Offline or slow: open the saved copy. If the network answers later, save that version for next time, but keep
   // the files of the saved one, which this page is about to load.
-  event.waitUntil(fresh.then(r => r && saveVersion(r, false)));
+  event.waitUntil(fresh.then(r => r && r.ok && saveVersion(r, false)));
   return saved;
 }
 
@@ -89,6 +94,11 @@ async function saveVersion(response, prune) {
   for (const request of await cache.keys()) {
     if (VERSIONED.test(request.url) && !keep.has(request.url)) await cache.delete(request);
   }
+}
+
+// Cloudflare's human check instead of the page (its cookie ran out): the browser has to show it.
+function cloudflareCheck(response) {
+  return response.headers.has('cf-mitigated');
 }
 
 // A page that arrived through a redirect can't be handed to the browser as is; copy it into a plain response.

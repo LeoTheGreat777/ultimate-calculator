@@ -24,6 +24,9 @@ Part of the notes in CLAUDE.md (read that first). Covers main.js, sw.js, help.js
   reloads if its footer version differs from `VERSION` (the start-up check catches a saved copy opened on a slow network;
   at most one such reload per 30 s, `uc-update-reload` in sessionStorage, so a reload that still gets the old copy can't loop; a failed check resets the minute). Not while the own theme editor is open (the reload would close
   the colour picker); the editor's colours are also kept on `pagehide`, so a reload never loses them. Test with `offline()` in tests/test_app.py.
+  **Cloudflare's human check** (calc.kampaxis.com sits behind a managed challenge): when its cookie runs out, the page
+  answers 403 with header `cf-mitigated`; sw.js hands that page to the browser instead of the saved copy (which used to
+  open the old version until Ctrl+Shift+R), never saves it, and leaves `/cdn-cgi/` alone. Test: `cloudflare_check()`.
 - **Keyboard:** desktop typing is handled in the `window` `keydown` listener in `main.js`.
   Keys that do nothing in a mode are ignored.
 - **Deploy build (`tools/build.mjs`):** GitHub Pages and the Docker image serve `public/` built by `node tools/build.mjs`

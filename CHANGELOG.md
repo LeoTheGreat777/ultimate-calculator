@@ -6,6 +6,12 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.30.1 – 2026-11-04
+
+### Fixed
+- calc.kampaxis.com no longer opens an older saved copy of the app after a while away (when Cloudflare's human check
+  comes up again); the check shows, and the newest version opens after it, without Ctrl+Shift+R.
+
 ## 0.30.0 – 2026-11-04
 
 ### Added

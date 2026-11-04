@@ -829,6 +829,80 @@ async def offline(browser):
     shutil.rmtree(folder, ignore_errors=True)
 
 
+async def cloudflare_check(browser):
+    """Cloudflare's human check (calc.kampaxis.com) when its cookie has run out: the page answers 403 with the check
+    (header cf-mitigated). sw.js shows the check, not the saved older copy, and never saves Cloudflare's /cdn-cgi/ files;
+    once the check passes, the new version opens without Ctrl+Shift+R."""
+    folder = Path(tempfile.mkdtemp())
+    shutil.copytree(SITE, folder, dirs_exist_ok=True)
+    state = {'check': False}
+    check_page = b'<!DOCTYPE html><title>Just a moment...</title><script src="/cdn-cgi/challenge-platform/check.js"></script>'
+
+    class Cloudflare(http.server.SimpleHTTPRequestHandler):
+        def log_message(self, *args):
+            pass
+
+        def do_GET(self):
+            path = self.path.split('?')[0]
+            if path.startswith('/cdn-cgi/'):
+                body = b'window.__check=1'
+                self.send_response(200)
+                self.send_header('Content-Type', 'text/javascript')
+            elif state['check'] and path in ('/', '/index.html'):
+                body = check_page
+                self.send_response(403)
+                self.send_header('cf-mitigated', 'challenge')
+                self.send_header('Content-Type', 'text/html; charset=UTF-8')
+            else:
+                return super().do_GET()
+            self.send_header('Content-Length', str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+    server = socketserver.TCPServer(('127.0.0.1', 0), functools.partial(Cloudflare, directory=str(folder)))
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    url = f'http://127.0.0.1:{server.server_address[1]}/'
+    ctx = await browser.new_context(viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True)
+    await ctx.add_init_script(SEED % ('en', 'dark'))
+    p = await ctx.new_page()
+    await p.goto(url)
+    await p.evaluate("navigator.serviceWorker.ready")
+    await p.wait_for_function("navigator.serviceWorker.controller!==null", timeout=5000)
+    saved = "caches.open('uc-app').then(c=>c.keys()).then(k=>k.map(r=>r.url.replace(location.origin,'')))"
+    await p.wait_for_function(f"{saved}.then(k=>k.some(u=>u.includes('{LAST_SCRIPT}')))", timeout=5000)
+
+    # a new version on the server, and Cloudflare's check in front of it
+    html = (folder / 'index.html').read_text().replace(f'?v={VERSION}"', '?v=9.9.9"').replace(f'>v{VERSION}<', '>v9.9.9<')
+    (folder / 'index.html').write_text(html)
+    for js in SCRIPTS:
+        (folder / js).write_text(re.sub(r'VERSION=([\'"])' + re.escape(VERSION) + r'\1', 'VERSION="9.9.9"', (folder / js).read_text()))
+    state['check'] = True
+    await p.reload()
+    await p.wait_for_timeout(500)
+    got = await p.evaluate("[document.title,window.__check,!!document.querySelector('#footerVersion')]")
+    check('cloudflare: its check is shown, not the saved older copy', got == ['Just a moment...', 1, False], got)
+    await p.goto('about:blank')
+    await p.goto(url)
+    await p.wait_for_timeout(500)
+    got = await p.evaluate("[document.title,window.__check]")
+    check('cloudflare: the check is shown again on the next visit (its files run from Cloudflare)', got == ['Just a moment...', 1], got)
+    keys = await p.evaluate(saved)
+    check('cloudflare: the check page and /cdn-cgi/ files are never saved',
+          not any('/cdn-cgi/' in k for k in keys) and any(f'v={VERSION}' in k for k in keys), keys)
+    # the check passed: the next load is the new version
+    state['check'] = False
+    await p.reload()
+    await p.wait_for_function("document.querySelector('#footerVersion')?.textContent==='v9.9.9'", timeout=5000)
+    check('cloudflare: after the check the new version opens', True)
+    await ctx.set_offline(True)
+    await p.reload()
+    await p.wait_for_timeout(300)
+    check('cloudflare: offline still opens the saved app', await p.evaluate("document.querySelector('#footerVersion')?.textContent") == 'v9.9.9')
+    await ctx.close()
+    server.shutdown()
+    shutil.rmtree(folder, ignore_errors=True)
+
+
 async def currency_offline(browser, url):
     """No internet: Currency still converts, with the rates shipped with the app, and says it's offline."""
     ctx = await browser.new_context(viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True)
@@ -2674,6 +2748,7 @@ async def main():
         await statistics(browser, url)
         await programmer(browser, url)
         await offline(browser)
+        await cloudflare_check(browser)
         await preview_site(browser)
         await currency_offline(browser, url)
         await browser.close()
