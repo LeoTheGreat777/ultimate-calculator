@@ -34,7 +34,7 @@ function render(){refreshSide();
  $('#result').textContent=display;
  $('#result').classList.remove('long-value','near-limit');
  // a result with more decimals than shown: up to 10 when the display has room (fitDisplayText picks)
- const longer=justCalculated&&!calcError&&!isCx(lastResult)&&lastResult?.n!==undefined?formatRat(lastResult,10):'';
+ const longer=justCalculated&&!calcError&&!isCx(lastResult)&&lastResult?.n!==undefined?formatRatLong(lastResult):'';
  if(longer&&longer!==display&&!longer.includes('×')){$('#result').dataset.long=longer;$('#result').dataset.short=display}
  else{delete $('#result').dataset.long;delete $('#result').dataset.short}
  const hasEntry=Boolean(raw);

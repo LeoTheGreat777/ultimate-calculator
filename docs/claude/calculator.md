@@ -11,7 +11,10 @@ Part of the notes in CLAUDE.md (read that first). Covers numbers.js, calculator.
   0,1428571429; copying copies what is shown, and carrying on shows it the same way (`shownResult`, `carry.plain` for ⌫).
   History keeps 6. The working (?) shows real numbers with up to 10 decimals (`HOW_DECIMALS`, `ratShown`, `howResult`;
   Leonidas asked for e + 5 = 7,7182818285 there too), complex parts keep 6 like the display; Units' working shows
-  numbers like the converted value (`formatUnitResult`). A Result over 18 characters gets `.longer` (smaller) to fit a phone. Tests read the result after its frame, or accept either form.
+  numbers like the converted value (`formatUnitResult`). A Result over 18 characters gets `.longer` (smaller) to fit a phone.
+  Numbers the 6-decimal form writes with a power of ten keep it (`formatRatLong`, display and working: 3,33715 × 10⁻¹⁰,
+  not 0,0000000003). The working's first step says what each symbol is worth (`symbolsStep`: e, π, φ with their
+  names, i = √(−1), physical constants with unit and name), each once, in the order typed. Tests read the result after its frame, or accept either form.
 - **Limits** (numbers.js, as on Windows' calculator): typed numbers have at most 15 digits (`MAX_DIGITS`, `digitCount`)
   in every mode, a calculation at most 150 characters (`MAX_INPUT`; Graph functions 120), and every step of a
   calculation must stay below 10¹⁰⁰⁰⁰ and (unless 0) above 10⁻¹⁰⁰⁰⁰ (`ratLimit`), else "Too large"/"Too small".

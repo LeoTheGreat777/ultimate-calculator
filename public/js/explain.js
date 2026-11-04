@@ -30,16 +30,33 @@ const HOW_DECIMALS=10;
 function ratShown(v,max=HOW_DECIMALS){
  if(isCx(v)){const neg=v.im.n<0n,abs=neg?rat(-v.im.n,v.im.d):v.im,ims=(abs.n===abs.d?'':ratShown(abs,6))+'i';// 0,707107… + 0,707107…i
   return v.re.n===0n?(neg?'-':'')+ims:ratShown(v.re,6)+(neg?' − ':' + ')+ims}
- const s=formatRat(v,max);if(/×/.test(s))return s;
+ const s=formatRatLong(v,max);if(/×/.test(s))return s;
  let exact=false;try{exact=ratEq(ratFromString(s.replace(/\./g,'').replace(',','.')),v)}catch{}
  return s+(exact?'':'…')}
 const ratEq=(a,b)=>vEq(a,b);
 // the Result line of the working: a real result with up to 10 decimals (no …), a complex one as the display shows it
-const howResult=v=>isCx(v)?fmt(v):v&&typeof v==='object'&&'n'in v?formatRat(v,HOW_DECIMALS):fmt(v);
+const howResult=v=>isCx(v)?fmt(v):v&&typeof v==='object'&&'n'in v?formatRatLong(v,HOW_DECIMALS):fmt(v);
 // order classes: 1 powers, functions, nCr nPr; 2 × ÷ mod; 3 + −
 const binClass=op=>op==='*'||op==='/'||op==='m'?2:op==='C'||op==='P'?1:3;
 const TRIG=['sin','cos','tan','cot','sec','csc'],isTrig=n=>TRIG.includes(n),isArc=n=>n[0]==='a'&&TRIG.includes(n.slice(1));
 
+// The symbols in a calculation and what they are worth, as the first step: e = 2,7182818285… · Euler's number;
+// physical constants with their unit and name; i as √(−1). Each symbol once, in the order it appears.
+function symbolsStep(input){
+ const el=lang==='el',L=(g,e)=>el?g:e,seen=new Set(),rows=[];let toks;try{toks=tokenize(input)}catch{return null}
+ const MATH={'π':[RAT_PI,'Ο αριθμός π','Pi'],e:[RAT_E,'Ο αριθμός e','Euler’s number'],'φ':[RAT_PHI,'Η χρυσή τομή','Golden ratio']};
+ toks.forEach((tk,j)=>{const r=tk.type==='number'&&tk.raw;if(!r||seen.has(r))return;
+  if(r==='i'&&['*','+','-'].includes(toks[j-1]?.type)&&toks[j-2]?.type==='number'&&toks[j-2].raw!=='i')return;// 2i, 3 + 2i, 1 − i: written as a number, nothing to explain
+  if(MATH[r]){const [v,g,e]=MATH[r];rows.push(r+' = '+ratShown(v)+' · '+L(g,e))}
+  else if(r==='i')rows.push('i = √(−1) · '+L('η φανταστική μονάδα, i² = −1','the imaginary unit, i² = −1'));
+  else if(r[0]==='⟨'){const c=CONSTS[r.slice(1,-1)];if(!c)return;const raw=c[1];
+   const val=/e/.test(raw)?ratScientific(ratSci(raw),15):formatGroupedNumber(raw);
+   rows.push(c[0]+' = '+val+(c[2]?' '+c[2]:'')+' · '+L(c[3],c[4]))}
+  else return;
+  seen.add(r)});
+ if(!rows.length)return null;
+ return{title:rows.length>1?L('Οι τιμές των συμβόλων','What the symbols stand for'):L('Η τιμή του συμβόλου','What the symbol stands for'),text:rows.join('\n')};
+}
 // The calculation as a tree, read exactly like evalExpr (numbers.js) reads it. `at` is where the node's own sign is
 // in the calculation, for "left to right".
 function exprTree(input){
@@ -97,6 +114,7 @@ function explanationForExpression(input,result){
   else return;
   const at=n.at;for(const k of Object.keys(n))delete n[k];Object.assign(n,{k:'num',v,shown,lit:true,at})})(tree);
  const formula=exprText(tree,true,{plain:true,whole:tree.k==='num'}),steps=[];// whole: no brackets around a lone 3 + 2i
+ const sym=symbolsStep(input);if(sym)steps.push(sym);// first, what e, π, c … are worth
  // the order rule, when the calculation mixes levels: "Order: brackets → × ÷ → + −, each from left to right."
  const levels=new Set();(function scan(n,inFn){if(!n)return;
   if(n.k==='group'){if(!inFn&&n.c.k!=='num')levels.add(0);scan(n.c,false)}
@@ -205,7 +223,7 @@ function unitsHow(){
  const su=src==='from'?$('#unitFrom')?.value:$('#unitTo')?.value,du=src==='from'?$('#unitTo')?.value:$('#unitFrom')?.value;
  const expr=String(unitExpressions[src]??'').trim();if(!cc||!su||!du||!expr||expr==='0')return null;
  const kept=unitError,value=unitEvaluate(expr);unitError=kept;if(value===null)return null;// only reading: the error on screen stays
- const cur=cc==='currency',N=v=>cur?formatRat(v,HOW_DECIMALS):formatUnitResult(ratToDecimal(v,30)),V=v=>cur?formatMoneyValue(v):N(v).replace(/^-/,'−'),R=formatRateValue,u=x=>' '+x;
+ const cur=cc==='currency',N=v=>cur?formatRatLong(v,HOW_DECIMALS):formatUnitResult(ratToDecimal(v,30)),V=v=>cur?formatMoneyValue(v):N(v).replace(/^-/,'−'),R=formatRateValue,u=x=>' '+x;
  const out=unitConvertValue(cc,value,su,du),steps=[];
  const typed=formatUnitDisplayValue(expr);
  if(/[+\-×÷*/(%]/.test(expr.replace(/^[-−]/,'')))steps.push({title:L('Η πράξη','The calculation'),text:typed+' = '+N(value)});

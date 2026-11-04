@@ -1979,7 +1979,13 @@ async def explanations(browser, url):
     await p.evaluate("angleUnit='deg'")
     # the working shows the full number, like the display: e + 5 = 7,7182818285, not 7,718282
     h = await p.evaluate("(()=>{const d=explanationForExpression('e+5',evalExpr('e+5'));return [d.result,d.steps.map(s=>s.text)]})()")
-    check(L + 'working shows up to 10 decimals', h == ['7,7182818285', ['e + 5 = 7,7182818285…']], h)
+    check(L + 'working shows up to 10 decimals', h[0] == '7,7182818285' and h[1][-1] == 'e + 5 = 7,7182818285…', h)
+    # what the symbols are worth, first: e = 2,7182818285… · Euler’s number; constants with their unit and name
+    h = await p.evaluate("(()=>{const d=explanationForExpression('⟨c⟩*2+e+e',evalExpr('⟨c⟩*2+e+e'));return d.steps[0]})()")
+    check(L + 'working says what the symbols are worth', h['text'].split('\n') == ['c = 299.792.458 m/s · Speed of light', 'e = 2,7182818285… · Euler’s number'], h)
+    # tiny numbers keep the power of ten instead of 0,0000000003
+    h = await p.evaluate("(()=>{const d=explanationForExpression('⟨G⟩*5',evalExpr('⟨G⟩*5'));return [d.result,d.steps.map(s=>s.text)]})()")
+    check(L + 'tiny results keep the power of ten', h[0] == '3,33715 × 10⁻¹⁰' and h[1][-1] == 'G × 5 = 3,33715 × 10⁻¹⁰', h)
     # Units' working: small factors in full (1 in = 0,0000254 km, was 0,000025)
     await p.evaluate("switchMode('units');const c=document.getElementById('unitCategory');c.value='length';c.dispatchEvent(new Event('change',{bubbles:true}));for(const [id,v] of [['unitFrom','in'],['unitTo','km']]){const s=document.getElementById(id);s.value=v;s.dispatchEvent(new Event('change',{bubbles:true}))}")
     await p.click('#keypad [data-value="1"]')

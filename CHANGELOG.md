@@ -6,6 +6,14 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.30.0 – 2026-11-04
+
+### Added
+- "How was this calculated?" first says what each symbol is worth: e = 2,7182818285… (Euler’s number), π, φ, i = √(−1), and physical constants with their unit and name (c = 299.792.458 m/s · Speed of light).
+
+### Fixed
+- Very small results keep their power-of-ten form on the display and in the working (3,33715 × 10⁻¹⁰ instead of 0,0000000003).
+
 ## 0.29.6 – 2026-11-04
 
 ### Changed
