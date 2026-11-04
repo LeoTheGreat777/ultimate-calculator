@@ -26,7 +26,7 @@ Two people work on this repo, each with their own Claude sessions, and both push
 
 Versions are `MAJOR.MINOR.PATCH` (semantic versioning). Once per push that changes app files (not for docs-only
 changes), pick one: `python3 tools/bump-version.py patch` for fixes and small tweaks (0.5.0 -> 0.5.1),
-`minor` for a new feature (0.5.1 -> 0.6.0), `major` only when the owner says (1.0.0 = ready for everyone).
+`minor` for a new feature (0.5.1 -> 0.6.0), `major` only when Leonidas says (1.0.0 = ready for everyone).
 It updates `VERSION` in `public/js/core.js`, the footer and every `?v=` in `public/index.html` (the `?v=` makes
 browsers load the new files), and adds a `## X.Y.Z – date` heading to `CHANGELOG.md`. Under it, write what changed
 for the people using the app (not the code), in `### Added` / `### Changed` / `### Fixed`; keep it short.
@@ -87,7 +87,7 @@ Outside `public/`: `tests/test_app.py` (browser tests), `tools/bump-version.py`,
 
 How the code works is split into topic files so this file stays short (it is loaded into every session). Before you
 change something, read the topic file for it; read more than one when a change crosses parts. Each holds the decisions
-the owner made there, so don't skip it.
+made for that part, so don't skip it.
 
 | File | Read it before changing |
 |---|---|
@@ -122,7 +122,7 @@ When you change how something works, update its topic file (not this one, unless
   some modes have their own small tables (`gText`, `cText`, `fText`, and `HELP` for Tips & shortcuts).
   Switching language happens in place (`setLanguage` -> `applyLanguage`), no reload: anything that shows text
   must be re-rendered by `applyLanguage`, and a new text must look the same after a live switch as after a fresh load.
-- **Credits:** the owner, Leonidas Kampaxis, is the app's only credited author (his decision): `AUTHORS` in `i18n.js`, in
+- **Credits:** Leonidas Kampaxis is the app's only credited author: `AUTHORS` in `i18n.js`, in
   Greek and English, the English name also in `index.html` (footer and `<meta name="author">`) and both in the README.
   Don't add other names anywhere (footer, README, changelog). Change them in all places together.
 - **Storage:** all in the browser (`uc-history`, `uc-history-modes`, `uc-tools`, `uc-rates`, `uc-lang`, `uc-pins`, `uc-memory`,
@@ -142,6 +142,6 @@ Playwright screenshots are fine) at desktop (1280×860) and phone (390×844, tou
 
 ## Style of the app
 
-The owner cares about consistent behaviour across the whole app: when fixing a bug, fix it
+The app needs consistent behaviour across the whole app: when fixing a bug, fix it
 everywhere the same pattern appears, not only where it was reported. Keep the UI compact and
 polished, like a native calculator rather than a web form.

@@ -16,7 +16,7 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 - Copy results
 - Keyboard support
 - Works offline once opened: the app keeps a copy on the device and updates it when online
-- Step-by-step explanations of how a result was worked out
+- Step-by-step explanations of how a result was worked out (How was this calculated?): the full result, and what each symbol such as e, π or a constant is worth
 - Brackets that change nothing are tidied away; C clears the number being typed, AC everything
 - Memory keys: MC, MR, M+, M−, MS (Ctrl+L, R, P, Q, M on a keyboard), kept after the app is closed
 - ⋯ opens every function and constant by group, with a search

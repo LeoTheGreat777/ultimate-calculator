@@ -14,7 +14,7 @@ Part of the notes in CLAUDE.md (read that first). Covers main.js, sw.js, help.js
   ui.js, re-run by a MutationObserver on `#keypad` and in `applyLanguage`); a key with its own `aria-label` (⌫, scientific
   keys) keeps it. A new symbol key: add it to `KEY_NAMES`. Icon-only buttons need an `aria-label` in both languages,
   drawn decoration `aria-hidden` (chart bars), and a message that only shows visually is also put in `#srNote`
-  (aria-live), as `refuseLimit` does. The Tips link's icon is a drawn lightbulb (the owner didn't want a ?).
+  (aria-live), as `refuseLimit` does. The Tips link's icon is a drawn lightbulb, not a ?.
 - **Offline:** `public/sw.js` (registered at the end of main.js) keeps a copy of the app in the cache `uc-app`. The page
   comes from the network first (`no-cache`), the saved copy only offline or after 3 s; `?v=` files from the saved copy
   first; each fresh page saves the files it links to and deletes other versions' `?v=` files. Nothing to update per

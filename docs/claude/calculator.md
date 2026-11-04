@@ -10,7 +10,7 @@ Part of the notes in CLAUDE.md (read that first). Covers numbers.js, calculator.
   (`#result` data-long / data-short, picked by `fitDisplayText`, again when the width changes), like the iPhone: 1 ÷ 7 =
   0,1428571429; copying copies what is shown, and carrying on shows it the same way (`shownResult`, `carry.plain` for ⌫).
   History keeps 6. The working (?) shows real numbers with up to 10 decimals (`HOW_DECIMALS`, `ratShown`, `howResult`;
-  Leonidas asked for e + 5 = 7,7182818285 there too), complex parts keep 6 like the display; Units' working shows
+  e + 5 = 7,7182818285 as on the display), complex parts keep 6 like the display; Units' working shows
   numbers like the converted value (`formatUnitResult`). A Result over 18 characters gets `.longer` (smaller) to fit a phone.
   Numbers the 6-decimal form writes with a power of ten keep it (`formatRatLong`, display and working: 3,33715 × 10⁻¹⁰,
   not 0,0000000003). The working's first step says what each symbol is worth (`symbolsStep`: e, π, φ with their
@@ -39,7 +39,7 @@ Part of the notes in CLAUDE.md (read that first). Covers numbers.js, calculator.
   (`sciPretty`). Keyboard: ^ and !.
   A fourth row: **hyp** (`sciHyp`: sin cos tan become sinh cosh tanh, 2nd their inverses), **nCr** (2nd nPr), **mod** (2nd |x|), **i** (2nd ∠)
   and **⋯** (φ is there, with π and e) (funcs.js: every function, cot sec csc and the hyperbolic ones with inverses, abs, and the constants, with a search).
-  Key labels are the same in Greek and English, as on calculators (the owner kept hyp, 2nd, Deg/Rad, EE and sin cos tan, no ημ συν εφ);
+  Key labels are the same in Greek and English, as on calculators (hyp, 2nd, Deg/Rad, EE and sin cos tan, no ημ συν εφ);
   `sciAria` says in words what each key does, in the language (trig names from `FN_TITLE`, explain.js).
   Functions are `FN_NAMES` (numbers.js, longest first; `FN_ALT`, `FN_END`, `FN_OPEN_END` build the regexes, so a new one is added
   in one place). nCr, nPr and mod are one-letter operators in the calculation: `C`, `P` (above × ÷, like Casio) and `m` (at × ÷;
@@ -64,8 +64,8 @@ Part of the notes in CLAUDE.md (read that first). Covers numbers.js, calculator.
   is 0). √, even roots and ln/log of a negative number are complex (√−4 = 2i); other real domain errors stay errors. `i` is a
   number in the calculation (`2×i` shows as 2i), `∠` an operator as tight as ^ (r∠θ, θ in the angle unit). A complex result
   carried on is `⟪⟫` (`carryCx`; History stores it written out, `expandCarry`); History and memory keep `re|im` strings
-  (`vToStore`/`vFromStore`). `fmt` shows complex values as a+bi; the Calculator shows r∠θ under it at the same time, no button (the owner
-  asked; `renderResultAlt`, `#resultAlt`, `.has-alt` makes the result a little smaller): under a complex result, and while a
+  (`vToStore`/`vFromStore`). `fmt` shows complex values as a+bi; the Calculator shows r∠θ under it at the same time, no button
+  (`renderResultAlt`, `#resultAlt`, `.has-alt` makes the result a little smaller): under a complex result, and while a
   calculation with i, ∠ or a carried complex is typed its value as it stands (`liveValue`; "= 5 − i  ·  5,09902 ∠ …", the
   a+bi part left out when it is what was typed). Real calculations never get the line; other modes remove it (`renderTool`).
   Room for it on short phones (Pixel 9a in Scientific): Scientific's display never goes below 116px (94px on the smallest
@@ -73,7 +73,7 @@ Part of the notes in CLAUDE.md (read that first). Covers numbers.js, calculator.
   complex result gets a lower calculation row (28px) and its size is capped by the display's height (`container-type:size`,
   `100cqh`), so the result and the line never overlap.
   The working ends a complex result with its polar form (r = √(a² + b²), θ = atan2(b; a)). Mod, nCr, nPr and ! of a complex number are errors. The working folds 2 × i and 3 + 2i into written numbers.
-- **Memory** (memory.js; the owner asked for it after first declining): one exact number (`memory`, saved in `uc-memory`). The number
+- **Memory** (memory.js): one exact number (`memory`, saved in `uc-memory`). The number
   on screen (`memScreenValue`) is the result, else the number being typed, else what is typed so far. MR types the memory as a
   number of up to 15 significant digits (very large/small ones as `(1.2×10^20)`); after any memory key the next digit starts
   a new number (`memFresh`). The keys are the first row of the scientific keys (`memKeysHtml`, `.mem-key`, `data-mem`;

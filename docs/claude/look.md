@@ -7,13 +7,12 @@ Part of the notes in CLAUDE.md (read that first). Covers theme.js, the theme blo
   and light on dark ones), the PNGs (`icon-192/512.png` rounded; `icon-maskable-512.png` and `apple-touch-icon.png` full
   square; `icon-monochrome-512.png` for Android's themed icons) and the small logo by the title in `index.html`
   (`<svg class="brand-mark">`, coloured by theme tokens through `.bm-*` classes, so every theme recolours it). The = sign's
-  spacing was chosen by the owner (`EQ_HOME`, `EQ_SMALL`); keep it. No letters in the icon, so it survives a rename.
+  spacing is set (`EQ_HOME`, `EQ_SMALL`); keep it. No letters in the icon, so it survives a rename.
   iOS can't switch a web app's home screen icon for dark mode, so there is one, opaque and full square. The tests fail
   if the files or the logo differ from what the script draws.
 - **Themes** (theme.js): ready-made ones, light: Light, Paper; dark: Dark, Black (OLED) (`LIGHT_PRESETS`, `DARK_PRESETS`);
-  and an own theme in each group, `custom-light` / `custom-dark`, for everything else. Rose, Sky, Ocean, Violet, Ember
-  and Forest were removed on purpose in 0.14.2 (Graphite and Retro before them): don't add colourful presets back;
-  `REMOVED_THEMES` turns a saved one into the own theme with the same colours. Every colour is a
+  and an own theme in each group, `custom-light` / `custom-dark`, for everything else. No colourful presets (don't add any);
+  `REMOVED_THEMES` (old Rose, Sky, Ocean, Violet, Ember, Forest, Graphite, Retro) turns a saved one into the own theme with the same colours. Every colour is a
   token in the theme blocks at the top of styles.css (`html[data-theme]`); never write a colour into a rule, add a token
   instead. `theme` is one theme or `'auto'` (**Match device**, a switch at the top of the menu): then the device picks
   between a light and a dark theme, `themePair` (`uc-theme-pair`), and a tap in the menu sets that group's one (the menu

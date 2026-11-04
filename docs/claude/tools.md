@@ -11,7 +11,7 @@ Part of the notes in CLAUDE.md (read that first). Covers tools.js, units.js, cur
   'date' (the device's own date picker, `<input type="date">`, value YYYY-MM-DD, not on the keypad), 'ip'/'mask'
   (`dottedField`: digits and dots, each part ≤ 255, via `dottedKey`, which adds the dot itself after a third digit or
   before a digit that can't fit, and ignores a dot typed right after one; the , key types a dot;
-  / in the address jumps to the prefix, a pasted 10.0.0.5/16 fills both). The tip has nothing filled in (the owner asked): People left empty means one person, and its
+  / in the address jumps to the prefix, a pasted 10.0.0.5/16 fills both). The tip has nothing filled in: People left empty means one person, and its
   grey hint says 1. A tip split between people is rounded
   up to the cent (`ratCentsUp`) so the shares cover the bill. Interest (`loanNumbers`, floats like Fuel/Energy): yearly
   rate, interest monthly, months = round(years × 12) up to 1200; a loan's payment is rounded to cents; savings deposits
@@ -53,7 +53,7 @@ Part of the notes in CLAUDE.md (read that first). Covers tools.js, units.js, cur
   digits on the right, ⌫ AC under the letters, no C (it would read as the hex digit); keys a base hasn't got are dimmed
   (`progDimKeys`). Having 4 rows, its keys are taller sideways than other tabs' (the sideways test leaves it out, like Graph);
   on a very short sideways screen (`fit-tight`) the four fields share one row with their short labels DEC HEX BIN OCT. The working: place values to decimal; repeated division for the other bases (rows joined with \n:
-  explain.js gives such text `.how-rows`, white-space: pre-line).
+  explain.js gives such text `.how-rows`, white-space: pre-line). ⌫ to the last digit of a field empties all four (`progInput`), it doesn't fill back from another field.
 - **Switches** (VAT add/remove, the kinds of Percent, Interest and Dates) are one generic segmented control: `TOGGLES`, `toggleHtml`
   (a button that doesn't fit even at 9,5px uses its `SWITCH_SHORT` text: Greek «Φιλοδ.», «Μεταβ.», «Έκπτ.» on a 320px phone; GitHub's wider font needs both),
   `renderToggles`, `setupToggleSlide` (tap, drag, swipe, ← →), `.seg-toggle` in styles.css (`--n` options, `--i` chosen).
@@ -67,7 +67,7 @@ Part of the notes in CLAUDE.md (read that first). Covers tools.js, units.js, cur
   functions. Tools have no =, so `recordModeHistory` saves what is finished when you leave the mode, press AC/Esc, change
   kind, copy the result, or the app goes to the background (also = in Units, AC in Graph); the same one twice is kept
   once. The sheet shows the mode on screen (`History · VAT`); tapping an entry brings its numbers back
-  (`restoreModeEntry`), Delete all empties that mode only. Clear all asks first without moving anything (the owner chose this): the button
+  (`restoreModeEntry`), Delete all empties that mode only. Clear all asks first without moving anything: the button
   itself turns into a red "Delete all?" (`confirmShort`, `.armed`; the chart button hides meanwhile, so the header never gets
   wider); a second press deletes, a press elsewhere or 4 s put it back (`clearHistoryConfirm`, `clearHistoryPress`); a press
   outside the sheet and Esc also only take it back, History stays open (`historyBackdropClick`); screen
@@ -98,4 +98,4 @@ Part of the notes in CLAUDE.md (read that first). Covers tools.js, units.js, cur
   Energy cost and kWh per hour, day, month, year (the days typed highlighted); a loan or payoff year by year
   (`loanYears`: interest per year, rounded so the years add up to the result's interest, and what's left). Bar rows
   are `chRows` (`.chart-body` grid, `.crow`). Savings keeps its canvas line chart (`chLineChart`).
-- **No fuel log:** the save/saved-entries buttons in Fuel were removed on purpose (0.15.5); don't add them back.
+- **No fuel log:** Fuel has no save/saved-entries buttons; don't add them.

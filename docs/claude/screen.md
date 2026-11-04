@@ -34,7 +34,7 @@ Part of the notes in CLAUDE.md (read that first). Covers layout.js, side.js, mod
 - **The buttons at the top** (Install, All modes, language, theme): hover and a pressed look (`.pressed` from `setupTopPress`,
   ui.js, held at least 110 ms so a quick tap shows), and lit with the accent while their menu or window is open
   (`aria-expanded`, `#themeButton.open` while the own theme editor is open); styles at the end of styles.css.
-- **All modes** (modes.js): the ⊞ button at the top beside the language button (`#modesButton`, `.icon-button` like EN and the theme button; moved there at the owner's request so the tab row starts with History and the tabs; the title shrinks to fit beside it, `fitBrand`) opens a sheet (`#modesModal`, `openModes`) with
+- **All modes** (modes.js): the ⊞ button at the top beside the language button (`#modesButton`, `.icon-button` like EN and the theme button; so the tab row starts with History and the tabs; the title shrinks to fit beside it, `fitBrand`) opens a sheet (`#modesModal`, `openModes`) with
   every mode in groups (`MODE_GROUPS`) and a search (`modeMatches`: names in both languages plus `MODE_WORDS`, word
   starts, accents and capitals ignored; Enter opens the first; Ctrl+K / ⌘K opens it, Esc closes, a press outside closes).
   The strip shows only the pinned modes (`pinnedModes`, `uc-pins`, default Calculator, Units, Currency, VAT; the pin on
@@ -42,11 +42,10 @@ Part of the notes in CLAUDE.md (read that first). Covers layout.js, side.js, mod
   all fit, the tabs not on screen show only their icon (`.mode-tabs.icons`; names in aria-label/title). A new mode: also
   a group in `MODE_GROUPS` and words in `MODE_WORDS`. On phones the search isn't focused (no keyboard popping up); long
   names shrink a little (`fitModeNames`), never "…".
-  The header has an **All | Default | None** switch (`#modesPins`, `PIN_SETS`, `savePins`; the owner picked it over
-  bottom links or per-group links): it pins every mode, the starting four, or none; the matching choice is lit
+  The header has an **All | Default | None** switch (`#modesPins`, `PIN_SETS`, `savePins`): it pins every mode, the starting four, or none; the matching choice is lit
   (`pinSetNow`), none when pinned by hand. When the title and the switch don't fit on one line (Greek on a phone) the
   switch moves to its own full-width line under the title (`fitModesHead`, `.seg-below`). The mode on screen is marked
-  with a soft accent fill (`.mode-tile.on`), not an outline: the owner found the outline looked like keyboard focus.
+  with a soft accent fill (`.mode-tile.on`), not an outline (an outline looks like keyboard focus).
 - **Modes are tabs:** a strip of tabs at the top of the card (`MODE_LABELS`, `renderModeTabs`, `switchMode`), one tap
   each, scrolling sideways when they don't fit; Alt+1…9 on a keyboard (Energy, Subnet, Programmer, Numbers, Equations and Statistics, the last six, have none). When they don't all fit, a slim bar under them
   (`.tabs-scrollbar`, `syncTabEdges`, `flashTabsBar`) shows while they move and briefly on start; it can be dragged
@@ -59,14 +58,14 @@ Part of the notes in CLAUDE.md (read that first). Covers layout.js, side.js, mod
 - **iPhone home-screen app:** iOS draws a soft blur under the status bar over the page, which made the title look
   blurred. The `<head>` script sets `html.ios-app` when `navigator.standalone` (Apple's own), and held upright the page
   starts 28px below the safe area (styles.css). Can't be seen in desktop browsers; the tests fake `navigator.standalone`.
-- **Side panels** (side.js, option A chosen by the owner): when there is room for a 260–300px panel on each side of the card
+- **Side panels** (side.js): when there is room for a 260–300px panel on each side of the card
   (a 1280px-wide window and up; never in the sideways layout or when the page scrolls), `html.side-panels` shows this mode's
   History on the left (`historyRowsHtml`, the same list and `historyClick` as the sheet) and on the right the working
   (`howHtml`; Units `unitsHow`; Graph `graphPointsHtml`) with a tool's chart under it (`toolChartHtml(false)`,
   `drawToolChart(box)`: the dialog's chart parts keep their ids, the panel's have classes only). They are `position:fixed`
   level with the card (`--side-l/r/top/h/w`). Anything that changes the screen calls `refreshSide()` (once per frame; the
   calculator's `render`, `renderToolDisplay`, `updateUnitsDisplay`, Graph's points, History, `fitLayout`, language, theme).
-  With the panels showing (the owner chose this), the History, ? and chart buttons are hidden (`html.side-panels #historyButton…`
+  With the panels showing, the History, ? and chart buttons are hidden (`html.side-panels #historyButton…`
   in styles.css) and the History sheet's `#historyClearWrap` (chart button, Clear all) and `#historyChartWrap` move into the
   History panel's header (`sideTools`, the same elements, back to the sheet when the panels go); `syncHistoryChart` hides the
   chart outside the Calculator.
@@ -87,13 +86,13 @@ Part of the notes in CLAUDE.md (read that first). Covers layout.js, side.js, mod
 - **Pressing keys** (`setupPressFeedback`, ui.js), the same with a mouse and a finger, like the iPhone's calculator:
   every key in `#keypad` lights up the moment it's pressed (`.pressed`, a `::after` layer of `--text`, so it suits every
   key colour and theme), held a moment longer it grows (after .09s, easing out over .3s, to scale 1.12, over its neighbours, `will-change`
-  set as it's pressed so the move starts smoothly; the owner tuned it: a quick tap only lights up), and let go it
+  set as it's pressed so the move starts smoothly; a quick tap only lights up), and let go it
   fades and settles back. No `:active` shrink anywhere on the keypad. On phones a tick: Android `navigator.vibrate(8)` on
   pointerdown. iPhone has no vibrate for websites; its own switch (`<input type="checkbox" switch>`, iOS 18+) ticks, but
   since iOS 26.5 only when a finger toggles it (a script's `label.click()` is silent). So on iPhone every key holds an
   invisible `<label class="key-tick">` over its face with a hidden switch inside (`addKeyTicks`, kept on re-drawn and
   re-labelled keys by a MutationObserver): the tap lands on the label, which toggles its switch (the tick), and the same
   click goes on to the keypad as the key press (the switch's own click is stopped). Apple doesn't document it; if it
-  stops, nothing breaks. No sounds (the owner said no). `selectstart` is blocked outside fields you can type in (`SELECTABLE`): a fast double tap or a long press on iOS
+  stops, nothing breaks. No sounds. `selectstart` is blocked outside fields you can type in (`SELECTABLE`): a fast double tap or a long press on iOS
   otherwise starts a selection and shows the magnifier bubble. The key-tick switches and read-only fields (phones) are
   inputs too, so they are excluded in both the handler and the CSS (`user-select:none`); `no_magnifier` tests it.
