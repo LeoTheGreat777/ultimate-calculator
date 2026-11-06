@@ -70,7 +70,7 @@ Part of the notes in CLAUDE.md (read that first). Covers numbers.js, calculator.
   number in the calculation (`2×i` shows as 2i), `∠` an operator as tight as ^ (r∠θ, θ in the angle unit). In degrees sin and cos of a non-quarter angle come from one
   quarter turn (`degSinCos`: sin x = cos(90° − x) is the same number), so sin 45° − cos 45° = 0 and (5 + 5i) × 1∠45 = 7,071068i exactly
   on screen, not 5 × 10⁻¹⁵ + 7,071068i. A complex result
-  carried on is `⟪⟫` (`carryCx`; History stores it written out, `expandCarry`); History and memory keep `re|im` strings
+  carried on is `⟪⟫` (`carryCx`; shown without spaces like a typed one, `(5+5i)×2`; History stores it written out, `expandCarry`); History and memory keep `re|im` strings
   (`vToStore`/`vFromStore`). `fmt` shows complex values as a+bi; the Calculator shows r∠θ under it at the same time, no button
   (`renderResultAlt`, `#resultAlt`, `.has-alt` makes the result a little smaller): under a complex result, and while a
   calculation with i, ∠ or a carried complex is typed its value as it stands (`liveValue`; "= 5 − i  ·  5,09902 ∠ …", the
