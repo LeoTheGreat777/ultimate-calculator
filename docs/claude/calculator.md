@@ -35,14 +35,14 @@ Part of the notes in CLAUDE.md (read that first). Covers numbers.js, calculator.
   five memory keys and 24 more in six columns above the basic ones (`sciKeysHtml`, `.keypad.sci`, the memory keys in `.mem-row`; labels size with
   the pad's width, `cqw`, and labels over 4 characters get `.long`, so sinh⁻¹ fits a 320px phone). Sideways they stand beside the basic keys
   in five rows: memory the first column, the rest placed by `SCI_LAND` (`--lr`/`--lc`; ⋯ two columns wide).
-  Rows: 2nd Deg sin cos tan hyp · x² xʸ √x ln log log₂ · ( ) 1/x x! π e · EE nCr mod i Rand ⋯. In Scientific the basic pad's
-  ( ) key is ± (`negate`), as ( and ) are keys there; ) with nothing open is refused. Rand types a number from 0 to 1 with up to
+  Rows: 2nd Deg sin cos tan hyp · x² xʸ √x ln log log₂ · ( ) 1/x x! π e · EE nCr mod i ∠ ⋯. In Scientific the basic pad's
+  ( ) key is ± (`negate`), as ( and ) are keys there; ) with nothing open is refused. Rand (2nd on ∠) types a number from 0 to 1 with up to
   10 decimals like MR (it replaces a number being typed; after a value it adds ×). log₂ is a function (`log₂(`), exact for powers of 2. Functions apply to the value
   just typed / the result / the bracket just closed (`sciKey`, `lastValueStart`), else open `sin(`. x², xʸ, ʸ√x and x! take the whole value, so a negative one or a power gets brackets: (−3)², (9²)². 2nd swaps keys
   for inverses (x³ ʸ√x ∛x eˣ 10ˣ 2ˣ); Deg/Rad is `angleUnit` (`uc-angle`). The engine (numbers.js: `evalExpr`, `ratPow`, `sciFunction`)
   stays exact where the answer is exact and rounds floats to 15 digits otherwise. Shown with superscripts and sin⁻¹
   (`sciPretty`). Keyboard: ^ and !.
-  A fourth row: **hyp** (`sciHyp`: sin cos tan become sinh cosh tanh, 2nd their inverses), **nCr** (2nd nPr), **mod** (2nd |x|), **i** (2nd ∠)
+  A fourth row: **hyp** (`sciHyp`: sin cos tan become sinh cosh tanh, 2nd their inverses), **nCr** (2nd nPr), **mod** (2nd |x|), **i**, **∠** (2nd Rand; it needs a size before it, else `refuseKey`, like x², xʸ, x!)
   and **⋯** (φ is there, with π and e) (funcs.js: every function, cot sec csc and the hyperbolic ones with inverses, abs, and the constants, with a search).
   Key labels are the same in Greek and English, as on calculators (hyp, 2nd, Deg/Rad, EE and sin cos tan, no ημ συν εφ);
   `sciAria` says in words what each key does, in the language (trig names from `FN_TITLE`, explain.js).
@@ -67,7 +67,9 @@ Part of the notes in CLAUDE.md (read that first). Covers numbers.js, calculator.
   back into a fraction, so real calculations never see the difference. `evalExpr` uses `vAdd`, `vMul`, `vPow`,
   `sciFunctionV`… (exact + − × ÷ and whole powers; floats rounded to 15 digits for the rest, a part under 1e−13 of the size
   is 0). √, even roots and ln/log of a negative number are complex (√−4 = 2i); other real domain errors stay errors. `i` is a
-  number in the calculation (`2×i` shows as 2i), `∠` an operator as tight as ^ (r∠θ, θ in the angle unit). A complex result
+  number in the calculation (`2×i` shows as 2i), `∠` an operator as tight as ^ (r∠θ, θ in the angle unit). In degrees sin and cos of a non-quarter angle come from one
+  quarter turn (`degSinCos`: sin x = cos(90° − x) is the same number), so sin 45° − cos 45° = 0 and (5 + 5i) × 1∠45 = 7,071068i exactly
+  on screen, not 5 × 10⁻¹⁵ + 7,071068i. A complex result
   carried on is `⟪⟫` (`carryCx`; History stores it written out, `expandCarry`); History and memory keep `re|im` strings
   (`vToStore`/`vFromStore`). `fmt` shows complex values as a+bi; the Calculator shows r∠θ under it at the same time, no button
   (`renderResultAlt`, `#resultAlt`, `.has-alt` makes the result a little smaller): under a complex result, and while a

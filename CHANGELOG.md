@@ -6,6 +6,15 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.33.0 – 2026-11-06
+
+### Added
+- Scientific has its own ∠ key for polar form, next to i: (5 + 5i) × 1∠45 = 7,071068i, with the angle in Deg or Rad. Rand moved to 2nd on that key.
+
+### Fixed
+- Angles in degrees no longer leave a tiny leftover: sin 45° − cos 45° = 0, and (5 + 5i) × 1∠45 shows 7,071068i instead of 5 × 10⁻¹⁵ + 7,071068i.
+- Scientific keys that need a number before them (x², xʸ, x!, ∠ …) now give a small shake when there is none, like other keys that can't be used.
+
 ## 0.32.2 – 2026-11-06
 
 ### Changed

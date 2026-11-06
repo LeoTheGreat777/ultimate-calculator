@@ -243,6 +243,13 @@ function ratComb(a,b){const n=ratWhole(a);let r=ratWhole(b);if(r>n)return rat(0n
 function ratFloor(a){const q=a.n/a.d;return a.n<0n&&q*a.d!==a.n?q-1n:q}
 function ratMod(a,b){if(isCx(a)||isCx(b))throw Error('MATH');if(b.n===0n)throw Error('DIV0');return ratSub(a,ratMul(b,rat(ratFloor(ratDiv(a,b)))))}
 const RECIP_FN={cot:'tan',sec:'cos',csc:'sin',coth:'tanh',sech:'cosh',csch:'sinh'};
+// sin and cos of x degrees (0 ≤ x < 360) from one quarter turn, with sin x = cos(90° − x) taken from the same number,
+// so sin 45° = cos 45° exactly and sin 45° − cos 45° = 0 (and 5(1 + i) × 1∠45 = 7,071068i, no 5 × 10⁻¹⁵ left over)
+function degSinCos(name,x){
+ if(name==='cos')x=(x+90)%360;// cos x = sin(x + 90°)
+ const sign=x>=180?-1:1;x%=180;if(x>90)x=180-x;// sin(180° + x) = −sin x, sin(180° − x) = sin x
+ return sign*(x<=45?Math.sin(x*Math.PI/180):Math.cos((90-x)*Math.PI/180));
+}
 function sciFunction(name,a){
  if(name==='abs')return a.n<0n?rat(-a.n,a.d):a;
  // cot, sec, csc (and coth, sech, csch): 1 ÷ tan, cos, sin (tan's 15-digit rounding keeps cot(45°) exactly 1)
@@ -264,7 +271,8 @@ function sciFunction(name,a){
     if(name==='tan'){if(k%2)throw Error('MATH');return rat(0n)}
     return rat(BigInt(name==='sin'?[0,1,0,-1][k]:[1,0,-1,0][k]))}
    const turns=a.n/(a.d*360n),r=ratSub(a,rat(turns*360n));
-   const v=Math[name](ratToFloat(r)*Math.PI/180);if(name==='tan'&&Math.abs(v)>1e13)throw Error('MATH');return ratFromFloat(snap(v));
+   if(name==='tan'){const v=Math.tan(ratToFloat(r)*Math.PI/180);if(Math.abs(v)>1e13)throw Error('MATH');return ratFromFloat(snap(v))}
+   return ratFromFloat(snap(degSinCos(name,ratToFloat(r))));
   }
   const v=Math[name](x);if(name==='tan'&&Math.abs(v)>1e13)throw Error('MATH');return ratFromFloat(snap(v));
  }

@@ -219,11 +219,11 @@ let sciHyp=false;// hyp: sin, cos, tan become sinh, cosh, tanh (and their invers
 const SCI_KEYS=[['2nd'],['angle'],['sin','asin'],['cos','acos'],['tan','atan'],['hyp'],
  ['sq','cube'],['pow','root'],['sqrt','cbrt'],['ln','exp'],['log','pow10'],['log2','pow2'],
  ['open'],['close'],['inv'],['fact'],['pi'],['e'],
- ['ee'],['ncr','npr'],['mod','abs'],['i','polar'],['rand'],['more']];
+ ['ee'],['ncr','npr'],['mod','abs'],['i'],['polar','rand'],['more']];
 // Sideways the keys stand beside the basic ones in five rows (the memory keys the first column): each key's row and column
 // there (styles.css places them with --lr/--lc); ⋯ is two columns wide.
 const SCI_LAND=[['2nd','angle','hyp','open','close'],['sin','cos','tan','inv','fact'],['sq','pow','sqrt','pi','e'],
- ['ln','log','log2','ee','i'],['ncr','mod','rand','more']];
+ ['ln','log','log2','ee','i'],['ncr','mod','polar','more']];
 const SCI_LAND_AT=Object.fromEntries(SCI_LAND.flatMap((row,r)=>row.map((k,c)=>[k,[r+1,c+2]])));
 // a function's name on a key: asin -> sin⁻¹, asinh -> sinh⁻¹
 const fnLabel=n=>/^a(?:sin|cos|tan|cot|sec|csc)h?$/.test(n)?n.slice(1)+'⁻¹':n;
@@ -311,7 +311,7 @@ function sciKey(k){
  else if(k==='exp'||k==='pow10'||k==='pow2'){const b=k==='exp'?'e':k==='pow2'?'2':'10';expression=value?head+b+'^'+(plainNumber(value)?value:wrap(value)):expression+b+'^(';}
  else if(k==='inv'){expression=value?head+'(1÷'+(plainNumber(value)||/^(?:[πeφi]|⟨\w+⟩)$/.test(value)?value:wrap(value))+')':expression+'1÷(';}
  else if(k==='pi'||k==='e'||k==='phi'||k==='i'||k.startsWith('const:')){const c=k==='pi'?'π':k==='e'?'e':k==='phi'?'φ':k==='i'?'i':'⟨'+k.slice(6)+'⟩';expression+=(value?'×':'')+c;}
- else if(!value)return;// the rest need a value before them
+ else if(!value){refuseKey();return}// the rest need a value before them
  else if(k==='sq')expression=head+whole(value)+'^2';
  else if(k==='cube')expression=head+whole(value)+'^3';
  else if(k==='pow')expression=head+whole(value)+'^';
