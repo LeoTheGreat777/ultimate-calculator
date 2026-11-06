@@ -14,7 +14,74 @@ let calcError='';
 const ERROR_TEXT={DIV0:'errDiv0',BIG:'errBig',SMALL:'errSmall'};
 const calcErrorKind=e=>ERROR_TEXT[e?.message]?e.message:'MATH';
 // how long the calculation being typed is (a carried result counts as one character), for MAX_INPUT
-function inputLength(){const s=expression+current;return s.length-(carry&&carry.raw&&s.includes(carry.raw)?carry.raw.length-1:0)}
+function inputLength(){const s=typedText();return s.length-(carry&&carry.raw&&s.includes(carry.raw)?carry.raw.length-1:0)}
+// ---------- The cursor ----------
+// Tapping the calculation (or ← → on a keyboard) puts a cursor in it, to add or delete something forgotten. What is
+// before the cursor is expression + current as always, so every key works there as it does at the end; what is after
+// it waits in caretTail. Where the two meet, a × is added between two values ((5+5) after 2 → 2×(5+5)) and an operator
+// typed before another replaces it (5|+3, then × → 5×3); caretTo makes that real when the cursor moves. = works out
+// the whole calculation; =, AC, a result and leaving the mode drop the cursor.
+let caretTail='',caretOn=false;
+// a carried result (carry.raw) at the meeting point counts as a whole value, never as digits to join
+function carryAt(s,i){if(!carry?.raw)return false;const c=s.indexOf(carry.raw);return c>=0&&(c===i||c+carry.raw.length===i)}
+const VALUE_START=new RegExp('^(?:[(πeφ⟨⟪i√∛\\d.]|(?:'+FN_ALT+')\\()');
+function typedText(mark){
+ const h=expression+current;let t=caretTail;
+ if(!t)return h+(mark?CARET:'');
+ if(OP_END.test(h)&&/^[+×÷^CPm∠]/.test(t))t=t.slice(1);// the operator just typed replaces the one after the cursor
+ const s=h+t,times=VALUE_END.test(h)&&VALUE_START.test(t)&&!(/[\d.]$/.test(h)&&/^[\d.]/.test(t)&&!carryAt(s,h.length));
+ return h+(mark?CARET:'')+(times?'×':'')+t;
+}
+// the places the cursor can stand in s: never inside a function's name, a constant, a carried result or a power's digits
+function caretStops(s){
+ const no=new Set(),block=(a,b)=>{for(let k=a+1;k<b;k++)no.add(k)};
+ for(const m of s.matchAll(new RegExp('(?:'+FN_ALT+')\\(|⟨\\w+⟩|⟪⟫|\\^[-−]?\\d+','g')))block(m.index,m.index+m[0].length);
+ if(carry?.raw){const c=s.indexOf(carry.raw);if(c>=0)block(c,c+carry.raw.length)}
+ const out=[];for(let k=0;k<=s.length;k++)if(!no.has(k))out.push(k);
+ return out;
+}
+// puts the cursor at index k of the whole calculation: what is before it becomes expression + the number being typed
+function caretTo(k){
+ const s=typedText();k=Math.max(0,Math.min(s.length,k));
+ const head=s.slice(0,k);caretTail=s.slice(k);currentIsPercent=false;
+ const m=head.match(/([-−]?)(\d+(?:\.\d*)?%?)$/);
+ if(carry?.raw&&head.endsWith(carry.raw)&&carryAt(s,k)){expression=head;current=''}
+ else if(m){const before=head.slice(0,-m[0].length),own=m[1]==='−'||m[1]==='-'&&(before===''||/[×÷(^CPm∠]$/.test(before));current=(own?m[1]:'')+m[2];expression=head.slice(0,head.length-current.length);currentIsPercent=current.endsWith('%')}
+ else if(/(?:^|[×÷(^CPm∠])-$/.test(head)){expression=head.slice(0,-1);current='-'}
+ else{expression=head;current=''}
+ caretOn=Boolean(s);
+}
+function dropCaret(){if(caretTail||caretOn){if(caretTail)caretTo(Infinity);caretTail='';caretOn=false}}
+// ← → (and Home, End) move the cursor one place
+function moveCaret(dir){
+ if(mode!=='calc'||justCalculated||calcError)return false;
+ const s=typedText();if(!s)return false;
+ const at=(expression+current).length,stops=caretStops(s);
+ const k=dir==='home'?0:dir==='end'?s.length:dir<0?[...stops].reverse().find(x=>x<at):stops.find(x=>x>at);
+ if(k===undefined){refuseKey();return true}
+ resetHow();caretTo(k);render();return true;
+}
+// a tap on the calculation: the cursor goes to the place nearest the finger
+function caretFromPoint(x){
+ const el=$('#result'),s=typedText();if(!el||!s)return;
+ const node=document.createTreeWalker(el,NodeFilter.SHOW_TEXT),texts=[];for(let n;(n=node.nextNode());)texts.push(n);
+ const xAt=i=>{for(const n of texts){if(i<=n.length){const r=document.createRange();r.setStart(n,i);r.collapse(true);const b=r.getClientRects()[0]||r.getBoundingClientRect();return b.left}i-=n.length}return null};
+ let best=null,bestD=Infinity;
+ for(const k of caretStops(s)){
+  const shown=formatExpressionDisplay(s.slice(0,k)+CARET+s.slice(k)),i=shown.indexOf(CARET),px=xAt(i);
+  if(px==null)continue;const d=Math.abs(px-x);if(d<bestD){bestD=d;best=k}
+ }
+ if(best===null)return;
+ resetHow();caretTo(best);caretOn=true;render();
+}
+// ")" with nothing open, or ( ) after a calculation with nothing open: the brackets go around everything before the
+// cursor, 5+5 → (5+5), so a forgotten bracket needs no retyping. Only when they group something (an operator outside brackets).
+function topOperator(s){let d=0;for(let i=0;i<s.length;i++){const c=s[i];if(c==='('||c==='⟨')d++;else if(c===')'||c==='⟩')d--;else if(d===0&&i>0&&'+-×÷*/^CPm∠'.includes(c)&&!/[×÷*/(^CPm∠]/.test(s[i-1]))return true}return false}// also Units' * and /
+function wrapAll(){
+ const h=expression+current,open=(h.match(/\(/g)||[]).length-(h.match(/\)/g)||[]).length;
+ if(justCalculated||calcError||open>0||!VALUE_END.test(h)||!topOperator(h))return false;
+ expression='('+h+')';current='';currentIsPercent=false;return true;
+}
 
 // the result as the screen shows it: with up to 10 decimals when the display had room for them, else as fmt
 function shownResult(r){const el=$('#result'),f=fmt(r);return el&&el.dataset.short===f&&el.textContent===el.dataset.long?el.dataset.long:f}
@@ -24,21 +91,24 @@ function resetHow(){memFresh=false;calcError='';howData=null;calcHowData=null;$(
 function render(){refreshSide();
  if(mode!=='calc')return;
  renderSciBar();
- const raw=expression+current;
+ if(justCalculated){caretTail='';caretOn=false}
+ const raw=typedText();if(!raw)caretOn=false;
+ const withCaret=caretOn&&!justCalculated&&!calcError?formatExpressionDisplay(typedText(true)).split(CARET):null;
  const display=calcError?t(ERROR_TEXT[calcError]||'errMath'):justCalculated?fmt(lastResult):(raw?formatExpressionDisplay(raw):'0');
  $('#calculatorDisplay').classList.remove('tool-display','tool-empty');
  $('#calculatorDisplay').classList.toggle('calculated',justCalculated);
  $('#calculatorDisplay').classList.toggle('error',Boolean(calcError));
  $('#expression').textContent=justCalculated?(lastShown||formatExpressionDisplay(lastExpression)):calcError?formatExpressionDisplay(raw):'';
  const exprEl=$('#expression');
- $('#result').textContent=display;
+ if(withCaret)$('#result').innerHTML=esc(withCaret[0])+'<span class="caret" aria-hidden="true"></span>'+esc(withCaret[1]);
+ else $('#result').textContent=display;
+ $('#calculatorDisplay').classList.toggle('editing',Boolean(withCaret));
  $('#result').classList.remove('long-value','near-limit');
  // a result with more decimals than shown: up to 10 when the display has room (fitDisplayText picks)
  const longer=justCalculated&&!calcError&&!isCx(lastResult)&&lastResult?.n!==undefined?formatRatLong(lastResult):'';
  if(longer&&longer!==display&&!longer.includes('×')){$('#result').dataset.long=longer;$('#result').dataset.short=display}
  else{delete $('#result').dataset.long;delete $('#result').dataset.short}
- const hasEntry=Boolean(raw);
- $('#clearButton').textContent=current&&!justCalculated&&!calcError?'C':'AC';// C clears the number being typed; with none, the key clears everything
+ $('#clearButton').textContent=raw&&!justCalculated&&!calcError?'C':'AC';// C while anything is typed (it clears the number being typed, else everything); AC after a result, an error or with nothing
  $('#howButton').classList.toggle('hidden',!howData?.steps?.length);// nothing to explain: no ?
  $('#chartButton')?.classList.add('hidden');
  const alt=renderResultAlt(raw);
@@ -77,20 +147,24 @@ function renderResultAlt(raw){
  alt.textContent=text;$('#calculatorDisplay')?.classList.add('has-alt');
  return alt;
 }
-function clearAll(){carry=null;resultNegated=false;expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null;lastOperation=null;resetHow();render()}
-function clearCurrent(){resetHow();if(current){current='';currentIsPercent=false;render();return}clearAll()}
+function clearAll(){caretTail='';caretOn=false;carry=null;resultNegated=false;expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null;lastOperation=null;resetHow();render()}
+// C clears the number being typed (with the cursor in it: the whole number, both sides); a second C, or C with no number, everything
+function clearCurrent(){resetHow();if(current){if(/\d/.test(current))caretTail=caretTail.replace(/^[\d.]+%?/,'');current='';currentIsPercent=false;render();return}clearAll()}
 function clearButtonAction(){
  if(justCalculated||calcError){clearAll();return}// the key shows AC then
-
- if(current){clearCurrent();return}
- if(expression){clearAll();return}
- clearAll();
+ clearCurrent();
 }
-function backspace(){resetHow();if(justCalculated){clearAll();return}if(!current&&carry&&expression===carry.raw){expression=carry.plain;carry=null}if(current){current=current.slice(0,-1);if(current==='−')current='-';currentIsPercent=false}else if(expression){const f=expression.match(FN_OPEN_END)||expression.match(/⟨\w+⟩$|⟪⟫$/);expression=expression.slice(0,-(f?f[0].length:1))}render()}
+function backspace(){resetHow();if(justCalculated){clearAll();return}if(!expression&&!current&&caretTail){refuseKey();return}/* the cursor is at the start */if(!current&&carry&&expression===carry.raw){expression=carry.plain;carry=null}if(current){current=current.slice(0,-1);if(current==='−')current='-';currentIsPercent=false}else if(expression){const f=expression.match(FN_OPEN_END)||expression.match(/⟨\w+⟩$|⟪⟫$/);expression=expression.slice(0,-(f?f[0].length:1))}render()}
 function digit(v){
  if(v===',')v='.';
  if(memFresh&&current&&!justCalculated){current='';currentIsPercent=false}// after MR, M+ …: a new number
- if(!justCalculated&&(digitCount(current)>=MAX_DIGITS&&!currentIsPercent||inputLength()>=MAX_INPUT)){refuseKey();return}// 15 digits a number, 150 characters
+ // a digit right after a carried result edits the number as it is shown (0,3333333333 then 5 → 0,33333333335); one shown
+ // as × 10ⁿ is a value of its own, so the digit is multiplied
+ if(!justCalculated&&!current&&carry?.raw&&expression.endsWith(carry.raw)&&expression.indexOf(carry.raw)===expression.length-carry.raw.length){
+  if(carry.plain){expression=expression.slice(0,-carry.raw.length);current=carry.plain;carry=null}else expression+='×'}
+ const after=justCalculated||carryAt(typedText(),(expression+current).length)?'':(caretTail.match(/^[\d.]+/)||[''])[0];// the same number goes on after the cursor
+ if(!justCalculated&&(digitCount(current+after)>=MAX_DIGITS&&!currentIsPercent||inputLength()>=MAX_INPUT)){refuseKey();return}// 15 digits a number, 150 characters
+ if(v==='.'&&after.includes('.')){refuseKey();return}
  resetHow();
  if(justCalculated){expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null}
  // after a closed bracket or a percent, a new number is multiplied: (8+9)5 → (8+9)×5, 10%5 → 10%×5 (as in Units)
@@ -145,6 +219,7 @@ function parenthesis(ch){
    expression+='(';
  }else{
    if(current==='-')return false;
+   if(wrapAll()){render();return true}// nothing open: around everything before it, 5+5 → (5+5)
    if(current){expression+=current;current='';currentIsPercent=false}
    const opens=(expression.match(/\(/g)||[]).length,closes=(expression.match(/\)/g)||[]).length;
    if(opens<=closes||OP_OPEN_END.test(expression))return false;
@@ -184,10 +259,12 @@ function negate(){
  else return;
  render();
 }
-// One "( )" key: closes a parenthesis when one is open and a number was just typed, otherwise opens one (after a number it adds × first).
+// One "( )" key: closes a parenthesis when one is open and a number was just typed; after a calculation with none open it
+// puts the brackets around it (5+5 → (5+5), wrapAll); otherwise opens one (after a single value it adds × first: 5 → 5×().
 function smartParen(){
  const full=justCalculated?'':expression+current,open=(full.match(/\(/g)||[]).length-(full.match(/\)/g)||[]).length,afterValue=VALUE_END.test(full);
  if(open>0&&afterValue){parenthesis(')');return}
+ if(afterValue&&inputLength()+2<=MAX_INPUT&&wrapAll()){resetHow();render();return}
  if(afterValue)operator('×');
  parenthesis('(')
 }
@@ -201,9 +278,11 @@ function repeatEquals(){
 function equals(){
  if(justCalculated&&repeatEquals())return;
  resetHow();
- let full=expression+current;if(!full||OP_END.test(full))return;
+ const was=[expression,current,currentIsPercent,caretTail,caretOn],back=()=>{if(was[3]){[expression,current,currentIsPercent,caretTail,caretOn]=was;refuseKey();render()}};
+ dropCaret();// the whole calculation, also what is after the cursor
+ let full=expression+current;if(!full||OP_END.test(full)){back();return}
  if(/[()]/.test(full)){full=tidyParens(full);expression=full;current=''}// close what is open, drop brackets that change nothing
- if(!full||OP_OPEN_END.test(full))return;
+ if(!full||OP_OPEN_END.test(full)){back();return}
  try{const value=evalExpr(full);lastExpression=full;lastShown=formatExpressionDisplay(full);lastResult=value;lastOperation=parseLastOperation(full);justCalculated=true;resultNegated=false;currentIsPercent=false;howData=explanationForExpression(full,value)||{formula:formatExpressionDisplay(full),steps:[`${formatExpressionDisplay(full)} = ${fmt(value)}`],result:howResult(value)};saveHistory({expression:full,result:value,how:howData});render()}
  catch(e){calcError=calcErrorKind(e);render()}
 }
