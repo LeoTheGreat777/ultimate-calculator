@@ -137,6 +137,18 @@ function fitBrand(){const n=$('.brand-name'),h=n&&n.parentElement;if(!h)return;h
 function fitFooter(){const f=$('.app-footer'),r=document.documentElement;if(!f)return;r.classList.remove('fit-footer');
  if(!r.classList.contains('fit-small')&&!r.classList.contains('landscape'))return;
  const a=f.firstElementChild,b=f.lastElementChild;if(a&&b&&b.getBoundingClientRect().top>a.getBoundingClientRect().top+2)r.classList.add('fit-footer')}
+// Preview: bigger keys on phones held upright. B: taller keys, no Copy button in the Calculator (tap the result to copy),
+// the footer on one line. C: the same with round keys and no card frame. ?keys=b or ?keys=c picks one (remembered).
+let keyStyle=(()=>{const q=new URLSearchParams(location.search).get('keys');if(q==='b'||q==='c'){store.set('uc-keys-preview',q);return q}return store.get('uc-keys-preview')==='c'?'c':'b'})();
+function setKeyStyle(s){keyStyle=s;store.set('uc-keys-preview',s);history.replaceState(null,'','?keys='+s);fitLayout();renderKeyStyleSwitch()}
+function renderKeyStyleSwitch(){const f=$('.app-footer');if(!f||!location.pathname.startsWith('/preview/')&&!new URLSearchParams(location.search).has('keys'))return;
+ let w=$('#keyStyleSwitch');if(!w){w=document.createElement('span');w.id='keyStyleSwitch';w.className='key-style-switch';f.firstElementChild.append(w);
+  w.addEventListener('click',e=>{const b=e.target.closest('button[data-k]');if(b)setKeyStyle(b.dataset.k)})}
+ w.innerHTML=['b','c'].map(k=>`<button type="button" data-k="${k}" class="${k===keyStyle?'on':''}">${k.toUpperCase()}</button>`).join('')}
+// the most a key may grow to on a phone upright (B, C); C keeps the Calculator's keys round (as tall as they are wide)
+function bigSpec(spec,big){if(!big)return spec;const w=$('#keypad .key')?.getBoundingClientRect().width/(window.__uiZoom||1)||86;
+ const max=spec===FIT.calc||spec===FIT.units?(keyStyle==='c'?Math.floor(w):100):spec===FIT.sci?62:76;
+ return {...spec,k:[Math.max(spec.k[1],max),spec.k[1]],roomy:spec.roomy&&Math.min(spec.roomy,150)}}
 function fitLayout(){refreshSide();fitBrand();
  const card=$('#calculatorCard'),shell=$('.app-shell'),footer=$('.app-footer'),root=document.documentElement;if(!card||!shell||!footer)return;
  document.body.classList.add('fit');
@@ -155,6 +167,8 @@ function fitLayout(){refreshSide();fitBrand();
  root.classList.toggle('hinge-v',hinge!==null);if(hinge!==null)root.style.setProperty('--hinge-w',hinge+'px');
  const land=matchMedia(LANDSCAPE).matches||hinge!==null;root.classList.toggle('landscape',land);if(!land)root.classList.remove('land-fill');
  if(tool)fitShortLabels();
+ const big=!land&&isMobileDevice()&&mode!=='graph'&&innerWidth/Z<=500;root.classList.toggle('big-keys',big);root.classList.toggle('keys-b',big&&keyStyle==='b');root.classList.toggle('keys-c',big&&keyStyle==='c');
+ if(big){root.classList.add('fit-small');fitFooter()}
  if(land){fitFooter();fitLandscape(card,root,avail,need,tool,setToolLayout);if(tool)fitShortLabels();return}
  card.style.removeProperty('--gk');// back in portrait, Graph keys size themselves again (styles.css)
  if(mode==='graph'){if(avail<FIT.graphMin){root.classList.add('page-scroll');shell.style.height=FIT.graphMin+'px'}return}
@@ -177,8 +191,8 @@ function fitLayout(){refreshSide();fitBrand();
   apply();
   return need()-avail;
  };
- let over=attempt(mode==='calc'?(sciMode?FIT.sci:FIT.calc):mode==='units'?FIT.units:touchTool?FIT.mobileTool:FIT.tool);
- if(over>0&&tool&&!touchTool){setToolLayout(true);over=attempt(FIT.mobileTool)}
+ let over=attempt(bigSpec(mode==='calc'?(sciMode?FIT.sci:FIT.calc):mode==='units'?FIT.units:touchTool?FIT.mobileTool:FIT.tool,big));
+ if(over>0&&tool&&!touchTool){setToolLayout(true);over=attempt(bigSpec(FIT.mobileTool,big))}
  const spec=mode==='calc'?(sciMode?FIT.sci:FIT.calc):mode==='units'?FIT.units:FIT.tool;
  if(over>0&&spec.copy){card.classList.add('fit-no-copy');over=need()-avail}
  // still too tall (a small phone): the tools get less padding (fit-tight) and the display and keys may get smaller, then

@@ -9,3 +9,8 @@ Part of the notes in CLAUDE.md (read that first). Read this before pushing to `p
   the footer (main.js) and has its own offline copy (sw.js: one cache per address). It shares the browser's storage with
   the app (same site), so settings carry over; new storage keys there must not break the app. When he approves,
   merge `preview` into main (bump the version on main then); if not, reset `preview` to main or delete it.
+- **On preview now: bigger keys on phones** (upright, touch, up to 500px wide; `html.big-keys`, `bigSpec` in layout.js).
+  Two styles to compare, switched by B | C in the footer or `?keys=b` / `?keys=c` (`uc-keys-preview`, default B):
+  B: keys up to 100px tall (tools 76px), no Copy result in the Calculator (tapping the result copies), footer on one line.
+  C: the same, with round keys (as tall as wide in the Calculator and Units, pills elsewhere) and no card frame.
+  Whichever is chosen goes to main without the switch.

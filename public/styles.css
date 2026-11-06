@@ -997,3 +997,14 @@ html.landscape .calculator-card.fit-tight .prog-grid .tool-field span{white-spac
 @media (prefers-reduced-motion:reduce){.top-actions .icon-button,.top-actions .language-button{transition:none}.top-actions .pressed{transform:none}}
 /* The Equations icon is the text x= (ICONS.equation): the same font, size and line as the tab's name, so they share a baseline */
 .mode-tab-icon:has(.eq-icon){font-size:inherit;line-height:inherit;height:auto;font-weight:800;letter-spacing:-.02em}
+/* Preview: bigger keys on phones held upright (html.big-keys, fitLayout). B: taller keys; C: round keys, no card frame */
+html.big-keys .calculator-card:not(.tool-mode) .bottom-actions{display:none}
+html.big-keys .calculator-card:not(.graph-mode) .keypad:not(.sci) .key{font-size:clamp(25px,calc(var(--k) * .36),34px)}
+html.keys-c .calculator-card{background:transparent;border-color:transparent;box-shadow:none;padding-left:0;padding-right:0}
+html.keys-c .calculator-card:not(.graph-mode) .keypad:not(.sci){column-gap:14px}
+html.keys-c .calculator-card .key,html.keys-c .calculator-card .tool-keypad button{border-radius:999px}
+html.keys-c .calculator-card:not(.graph-mode) .keypad:not(.sci) .key{font-size:clamp(25px,calc(var(--k) * .42),36px);font-weight:400}
+.key-style-switch{display:inline-flex;gap:2px;margin-left:6px}
+.key-style-switch button{border:1px solid var(--border);background:transparent;color:var(--muted);font:inherit;font-weight:700;padding:0 8px;border-radius:999px;cursor:pointer;position:relative}
+.key-style-switch button.on{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.key-style-switch button::after{content:"";position:absolute;inset:-8px -2px}

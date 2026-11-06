@@ -92,6 +92,7 @@ window.addEventListener('keydown',e=>{
 window.__UC_VERSION=VERSION;$('#footerVersion').textContent=`v${VERSION}`;
 // The test version (the preview branch, published at /preview/): a mark beside the version so it can't be mistaken for the app.
 if(location.pathname.startsWith('/preview/')){const b=document.createElement('span');b.className='preview-badge';b.textContent=lang==='el'?'Δοκιμαστική':'Preview';$('#footerVersion').after(b);document.title+=' (preview)'}
+renderKeyStyleSwitch();// preview: B | C, the two key styles to compare
 loadTools();lang=readLanguage();bindTools();renderHistory();renderTool();renderModeTabs();syncModeTabs();setupModes();setupHistorySheet();setupToggleSlide();bindHistoryChart();$('#chartButton')?.addEventListener('click',showToolChart);applyLanguage();applyTheme();window.addEventListener('pageshow',e=>{if(e.persisted&&mode!=='calc')setMode('calc')});
 // A home-screen shortcut (manifest "shortcuts", tools/make-shortcut-icons.py) opens the app in a mode: ./?mode=vat.
 // The address then goes back to plain ./, so a reload or a bookmark opens the Calculator as usual.
