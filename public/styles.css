@@ -145,7 +145,7 @@ html.landscape .tool-grid.kind-grid .tool-field span{white-space:nowrap;overflow
 .tool-keypad .tool-utility{color:var(--accent2)}
 .hint{text-align:center;color:var(--muted);font-size:12px;margin:10px 10px 0;flex:0 0 auto}
 .app-footer{text-align:center;color:var(--muted);font-size:10px;line-height:1.6;margin-top:8px;opacity:.7;flex:0 0 auto}
-.sheet-backdrop{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.42);backdrop-filter:blur(3px);opacity:0;transition:opacity .2s ease;pointer-events:none}
+.sheet-backdrop{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.16);opacity:0;transition:opacity .2s ease;pointer-events:none}
 .sheet-backdrop.open{opacity:1;pointer-events:auto}
 .history-panel{position:fixed;z-index:90;left:50%;bottom:0;transform:translate(-50%,100%);width:min(680px,100%);height:min(calc(42dvh / var(--z,1)),470px);margin:0;padding:10px 14px calc(15px + env(safe-area-inset-bottom));background:var(--card);border:1px solid var(--border);border-bottom:0;border-radius:24px 24px 0 0;box-shadow:0 -20px 70px rgba(0,0,0,.48);transition:transform .23s ease,height .23s ease;overflow:hidden;display:flex;flex-direction:column;touch-action:pan-y}
 .history-panel.open{transform:translate(-50%,0)}
@@ -645,10 +645,10 @@ html.theme-fade *,html.theme-fade *::before,html.theme-fade *::after{transition:
 /* Frosted like the iPhone's: the sheet is glass (the app shows through it, blurred), and the list scrolls under its top bar
    (handle, title, buttons) and the title of the group on screen, which stay put and blur what passes under them. --hbar: the bar's height (history.js).
    A sticky title's top counts from inside the list's padding, so top:0 keeps it just under the bar. */
-#historyPanel{--hpad:14px;--glass:color-mix(in srgb,var(--card) 62%,transparent);--glass-edge:color-mix(in srgb,var(--card) 60%,transparent);padding:0 0 calc(15px + env(safe-area-inset-bottom));background:transparent}
+#historyPanel{--hpad:14px;--glass:color-mix(in srgb,var(--card) 42%,transparent);--glass-edge:color-mix(in srgb,var(--card) 62%,transparent);padding:0 0 calc(15px + env(safe-area-inset-bottom));background:transparent}
 /* The glass is a layer of its own behind the content (not a blur on the sheet itself): so the bar's and titles' blur sees the
    whole picture, and where nothing passes under them they look exactly like the rest of the sheet (no lighter stripes) */
-#historyPanel::before{content:'';position:absolute;inset:0;z-index:-1;border-radius:inherit;background:var(--glass);-webkit-backdrop-filter:blur(22px) saturate(1.8);backdrop-filter:blur(22px) saturate(1.8);pointer-events:none}
+#historyPanel::before{content:'';position:absolute;inset:0;z-index:-1;border-radius:inherit;background:var(--glass);-webkit-backdrop-filter:blur(18px) saturate(1.6);backdrop-filter:blur(18px) saturate(1.6);pointer-events:none}
 .history-bar{position:absolute;z-index:3;top:0;left:0;right:0;display:flex;flex-direction:column;padding:10px var(--hpad) 9px;background:transparent;-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);transition:background-color .2s}
 /* Something scrolled under the bar (iPhone's scroll edge): a little more of the sheet's colour, so the bar's text stays clear */
 #historyPanel.scrolled .history-bar,#historyPanel .history-group-title.stuck{background-color:var(--glass-edge)}

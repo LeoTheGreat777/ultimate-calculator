@@ -2,7 +2,7 @@
 // After a result, the next calculation starts from its full-precision value (carry). On screen that value shows rounded, like the result did.
 function formatExpressionDisplay(s){
  s=String(s??'');
- if(s.includes('⟪⟫'))return formatInputDisplay(s.replace(/⟪⟫/g,'\u0005')).replace(/\u0005/g,carryCx?'('+fmtCx(carryCx,'rect')+')':'');// a complex result carried on
+ if(s.includes('⟪⟫'))return formatInputDisplay(s.replace(/⟪⟫/g,'\u0005')).replace(/\u0005/g,carryCx?'('+fmtCx(carryCx,'rect').replace(/\s+/g,'')+')':'');// a complex result carried on, written like a typed one: (5+5i)
  if(carry&&carry.raw){const i=s.indexOf(carry.raw);if(i===0)return carry.shown+formatInputDisplay(s.slice(carry.raw.length));if(i>0&&!/[0-9.]/.test(s[i-1])&&!/[0-9.]/.test(s[i+carry.raw.length]||''))return formatInputDisplay(s.slice(0,i))+carry.shown+formatInputDisplay(s.slice(i+carry.raw.length))}
  return formatInputDisplay(s);
 }
