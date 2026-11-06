@@ -1674,6 +1674,40 @@ async def history_per_mode(browser, url):
     await p.context.close()
 
 
+async def history_groups(browser, url):
+    """History is grouped by when, like the iPhone's (Today, Yesterday, Previous 7 / 30 days, months, older years with the
+    year), in both languages; on a phone the list scrolls under the frosted bar and the group's title stays just under it."""
+    L = '[history groups] '
+    p = await new_page(browser, url, 'en', 'dark', phone=True)
+    keys = await p.evaluate("""(()=>{const now=new Date(2026,10,6,12),d=(y,m,day)=>new Date(y,m-1,day,9).getTime();
+      return [d(2026,11,6),d(2026,11,5),d(2026,10,30),d(2026,10,29),d(2026,10,7),d(2026,10,6),d(2026,1,3),d(2025,12,31),NaN].map(x=>historyGroupKey(x,now))})()""")
+    check(L + 'today, yesterday, 7 and 30 days, then months', keys == ['today', 'yesterday', 'days7', 'days30', 'days30', '2026-10', '2026-1', '2025-12', None], keys)
+    await p.evaluate("""(()=>{const D=86400000,now=Date.now(),ages=[0,0,1,3,3,9,12,40,45,400,400,400];
+      store.set('uc-history',JSON.stringify(ages.map((a,i)=>({id:now-a*D-i+Math.random()/2,expression:i+'+1',shown:i+'+1',result:String(i+1)}))));openHistory()})()""")
+    await p.wait_for_timeout(400)
+    titles = "[...document.querySelectorAll('#historyList .history-group-title')].map(e=>e.textContent)"
+    got = await p.evaluate(titles)
+    check(L + 'titles in English', got[:4] == ['Today', 'Yesterday', 'Previous 7 days', 'Previous 30 days'] and len(got) in (6, 7) and got[-1][-4:].isdigit() and got[-2][-1:].isalpha(), got)  # months, the older year's with its year
+    check(L + 'every entry is shown once', await p.evaluate("document.querySelectorAll('#historyList .history-item').length") == 12)
+    await p.evaluate("setLanguage('el')")
+    await p.wait_for_timeout(150)
+    got = await p.evaluate(titles)
+    check(L + 'titles in Greek after a live switch', got[:4] == ['Σήμερα', 'Χθες', 'Προηγούμενες 7 ημέρες', 'Προηγούμενες 30 ημέρες'], got)
+    await p.evaluate("historyPanel.classList.add('expanded')")
+    await p.wait_for_timeout(400)
+    at_rest = await p.evaluate("(()=>{const b=document.querySelector('.history-bar').getBoundingClientRect(),t=document.querySelector('.history-group-title').getBoundingClientRect();return t.top-b.bottom})()")
+    check(L + 'at the top the first title starts under the bar', -1 <= at_rest <= 6, at_rest)
+    await p.evaluate("historyList.scrollTop=100")
+    await p.wait_for_timeout(150)
+    st = await p.evaluate("""(()=>{const b=document.querySelector('.history-bar').getBoundingClientRect(),bar=getComputedStyle(document.querySelector('.history-bar'));
+      const stuck=[...document.querySelectorAll('#historyList .history-group-title')].map(e=>e.getBoundingClientRect()).filter(r=>Math.abs(r.top-b.bottom)<=1.5);
+      const under=document.elementFromPoint(40,b.bottom-4);
+      return [stuck.length,!!(bar.backdropFilter||bar.webkitBackdropFilter||'').includes('blur'),!!under?.closest('.history-bar')]})()""")
+    check(L + 'scrolled: one title stays just under the frosted bar, which covers what scrolls under it', st == [1, True, True], st)
+    check(L + 'no JavaScript errors', not p.errors, p.errors)
+    await p.context.close()
+
+
 async def shortcuts(browser, url):
     """Home-screen shortcuts: the manifest lists them with icons that load and match tools/make-shortcut-icons.py's list,
     and ./?mode=… opens that mode, then the address goes back to plain ./ ."""
@@ -2787,7 +2821,7 @@ PHONE_TABS = [
 # The sheets and popups: how to open one, the box to check, how to close it
 PHONE_SHEETS = [
     ('All modes', "openModes()", '#modesModal .modal-card', "closeModes()"),
-    ('History', "switchMode('calc');openHistory()", '#historyPanel', "closeHistory()"),
+    ('History', "switchMode('calc');if(!historyItems().length)store.set('uc-history',JSON.stringify([0,0,2,9,40].map((a,i)=>({id:Date.now()-a*864e5-i,expression:'12+'+i,shown:'12+'+i,result:String(12+i)}))));openHistory()", '#historyPanel', "closeHistory()"),
     ('Functions (⋯)', "switchMode('calc');openFunctions()", '#howModal .modal-card', "closeHow()"),
     ('the working (?) of a complex result', "switchMode('calc');expression='(9+9×i)×5';current='';equals();showHow()", '#howModal .modal-card', "closeHow()"),
     ('the working (?) of VAT', "switchMode('vat');showHow()", '#howModal .modal-card', "closeHow()"),
@@ -2908,6 +2942,7 @@ async def main():
         await all_modes(browser, url)
         await esc_everywhere(browser, url)
         await history_per_mode(browser, url)
+        await history_groups(browser, url)
         await shortcuts(browser, url)
         await ios_app(browser, url)
         await offline_status_and_turning(browser, url)

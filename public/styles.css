@@ -230,7 +230,7 @@ html.landscape .tool-grid.kind-grid .tool-field span{white-space:nowrap;overflow
   .app-footer{margin-top:6px}
   .calculator-card:not(.mobile-tool) .keypad{gap:8px}
   .calculator-card:not(.mobile-tool) .key{height:68px;min-height:68px;font-size:25px}
-  .history-panel{width:100%;border-radius:22px 22px 0 0;padding-left:12px;padding-right:12px}
+  .history-panel{width:100%;border-radius:22px 22px 0 0;--hpad:12px}
   .history-panel.expanded{height:calc(94dvh / var(--z,1))}
   .modal{padding:12px}
   .modal-card{width:calc(calc(100vw / var(--z,1)) - 24px);border-radius:20px;padding:15px}
@@ -635,13 +635,27 @@ html.theme-fade *,html.theme-fade *::before,html.theme-fade *::after{transition:
 #historyPanel{will-change: height, transform;transform: translate(-50%, 100%);transition: transform .26s cubic-bezier(.22,.61,.36,1), height .26s cubic-bezier(.22,.61,.36,1);overscroll-behavior: contain;}
 #historyPanel.open{transform: translate(-50%, 0);}
 #historyPanel.dragging{transition: none !important;}
-#historyPanel .sheet-handle, #historyPanel .section-heading{touch-action: none;cursor: grab;-webkit-user-select: none;user-select: none;}
-#historyPanel.dragging .sheet-handle, #historyPanel.dragging .section-heading{cursor: grabbing;}
+#historyPanel .history-bar, #historyPanel .sheet-handle, #historyPanel .section-heading{touch-action: none;cursor: grab;-webkit-user-select: none;user-select: none;}
+#historyPanel.dragging .history-bar, #historyPanel.dragging .sheet-handle, #historyPanel.dragging .section-heading{cursor: grabbing;}
 #historyPanel.dragging .history-list{pointer-events: none;}
 #historyPanel.expanded{height: min(calc(92dvh / var(--z,1)), 780px);}
 @media (max-width: 480px){
   #historyPanel.expanded{height: calc(100dvh / var(--z,1));border-radius: 20px 20px 0 0;}
 }
+/* Frosted like the iPhone's: the list scrolls under the sheet's top bar (handle, title, buttons) and the title of the group
+   on screen, which stay put and blur what passes under them. --hbar: the bar's height (history.js).
+   A sticky title's top counts from inside the list's padding, so top:0 keeps it just under the bar. */
+#historyPanel{--hpad:14px;--glass:color-mix(in srgb,var(--card) 78%,transparent);padding:0 0 calc(15px + env(safe-area-inset-bottom))}
+.history-bar{position:absolute;z-index:3;top:0;left:0;right:0;display:flex;flex-direction:column;padding:10px var(--hpad) 9px;background:var(--glass);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px)}
+#historyPanel .history-list{margin-top:0;padding:var(--hbar,77px) var(--hpad) 0}
+#historyPanel .history-chart:not(.hidden){margin:var(--hbar,77px) var(--hpad) 0}
+#historyPanel .history-chart:not(.hidden)~.history-list{margin-top:9px;padding-top:0}
+.history-group{display:flex;flex-direction:column;flex:0 0 auto}
+.history-group-title{position:sticky;top:0;z-index:2;margin:0;padding:14px 2px 7px;font-size:15px;font-weight:600;color:var(--muted);border-bottom:1px solid var(--border);background:var(--card)}
+.history-group-title+.history-item{border-top:0}
+.history-group:first-child .history-group-title{padding-top:4px}
+/* In the sheet the title spans its whole width like the bar above it (its line stays in line with the rows') */
+#historyPanel .history-group-title{margin:0 calc(-1 * var(--hpad));padding-left:calc(var(--hpad) + 2px);padding-right:calc(var(--hpad) + 2px);border-bottom:0;background:linear-gradient(var(--border),var(--border)) var(--hpad) 100%/calc(100% - 2 * var(--hpad)) 1px no-repeat,var(--glass);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px)}
 /* ---------- Landscape on phones (and other short, wide windows): keypad on the right, the rest on the left ----------
    html.landscape is set by fitLayout (layout.js, LANDSCAPE); it also sets the key height (--k, --gk) and the unit rows. */
 /* iPhone home-screen app held upright: iOS blurs a band under the status bar, so the page starts below it */

@@ -6,6 +6,15 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.32.0 – 2026-11-06
+
+### Added
+- History is grouped like the iPhone's: Today, Yesterday, Previous 7 days, Previous 30 days, then each month (with its
+  year for older years), in every mode and in the History panel on big screens.
+
+### Changed
+- History sheet: the list scrolls under a frosted, see-through top bar, and the title of the group on screen stays just under it.
+
 ## 0.31.1 – 2026-11-04
 
 ### Fixed

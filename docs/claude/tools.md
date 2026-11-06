@@ -73,6 +73,15 @@ Part of the notes in CLAUDE.md (read that first). Covers tools.js, units.js, cur
   wider); a second press deletes, a press elsewhere or 4 s put it back (`clearHistoryConfirm`, `clearHistoryPress`); a press
   outside the sheet and Esc also only take it back, History stays open (`historyBackdropClick`); screen
   readers hear the full `confirm` question. It is dimmed when there is nothing to clear (`syncHistoryButtons`). A new mode: make `modeSnapshot`/`restoreModeEntry` know it.
+- **History groups** (`historyRowsHtml`): entries come in `<section class="history-group">` with a sticky `<h3 class="history-group-title">`,
+  by when they were made (`historyGroupKey`: an entry's `t`, or its id, which is `Date.now()` plus a fraction): Today, Yesterday,
+  Previous 7 days (2–7 days ago), Previous 30 days (8–30), then each calendar month (`MONTHS` from dates.js; another year's
+  gets the year, `historyGroupTitle`). Texts `histToday`, `histYesterday`, `hist7`, `hist30`. The sheet and the PC panel both use it.
+- **Frosted sheet top** (styles.css, after the History sheet rules): `.history-bar` (handle, title, buttons) lies over the list
+  (`position:absolute`), see-through with a blur (`--glass`); the list starts under it (`padding-top:var(--hbar)`, the bar's
+  height kept by a ResizeObserver in `setupHistorySheet`), so rows scroll under the bar. Group titles in the sheet are the same
+  glass, full width; a sticky title's `top` counts from inside the list's padding, so `top:0` keeps it just under the bar.
+  With the chart open the list starts below the chart instead. The drag area is the whole bar (`setupHistoryGestures`).
 - **Number fields** (every tool field but dates and IP/mask, `groupedField`) show thousands as they are typed: 10000 ->
   10.000 (`groupDigits` in the `input` handler, the cursor kept in place). In them a dot is always a thousands dot and the
   comma the decimal, so read a field with `fieldValue(id)` (the text without dots), never `.value`; `liveToolNumber` and

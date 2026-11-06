@@ -50,7 +50,7 @@ function sideTools(on){
   $('#sideHistoryHead').appendChild(wrap);$('#sideHistoryHead').after(chart);
   if(!$('#historyPanel').classList.contains('hidden'))closeHistory();
   const how=$('#howModal');if(!how.classList.contains('hidden')&&!how.classList.contains('help-open')&&!how.classList.contains('fn-open'))closeHow();
- }else{$('#historyPanel .section-heading').appendChild(wrap);$('#historyPanel .section-heading').after(chart)}
+ }else{$('#historyPanel .section-heading').appendChild(wrap);$('#historyPanel .history-bar').after(chart)}
  historyChartRefresh();
 }
 function setupSide(){

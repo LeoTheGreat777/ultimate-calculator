@@ -11,7 +11,7 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 - Calculator-style percentages
 - Change sign (±): hold − on the keypad, or F9 on a keyboard
 - Decimal and negative number support
-- Calculation history
+- Calculation history, grouped by day and month
 - Results show up to 10 decimals when the screen has room (6 on a narrow phone); copying copies what you see
 - Copy results
 - Keyboard support

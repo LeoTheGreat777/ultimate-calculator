@@ -26,9 +26,30 @@ function syncHistoryButtons(tab=currentTab()){
 function historyRowsHtml(tab=currentTab()){
  const calc=tab==='calc';
  const row=(id,top,bottom)=>`<div class="history-item"><button class="history-main" data-history="${id}" type="button"><div class="history-expression">${esc(top)}</div><div class="history-result">${esc(bottom)}</div></button><button class="history-delete" data-delete="${id}" type="button" aria-label="${esc(t('delete'))}">×</button></div>`;
- const rows=calc?historyItems().map(x=>row(x.id,x.shown||formatInputDisplay(x.expression),fmt(x.result&&typeof x.result==='string'?vFromStore(x.result):x.result)))
-  :modeHistory(tab).map(x=>{const [a,b]=modeEntryLines(x);return row(x.id,a,b)});
- return rows.length?rows.join(''):`<div class="empty">${esc(calc?t('none'):t('noneMode'))}</div>`;
+ const items=calc?historyItems():modeHistory(tab);
+ if(!items.length)return `<div class="empty">${esc(calc?t('none'):t('noneMode'))}</div>`;
+ const now=new Date();let html='',key=null;
+ for(const x of items){
+  const k=historyGroupKey(x.t||Math.floor(Number(x.id)),now)||key||'today';// newest first, so a group follows the one before
+  if(k!==key){html+=(key?'</section>':'')+`<section class="history-group"><h3 class="history-group-title">${esc(historyGroupTitle(k,now))}</h3>`;key=k}
+  if(calc)html+=row(x.id,x.shown||formatInputDisplay(x.expression),fmt(x.result&&typeof x.result==='string'?vFromStore(x.result):x.result));
+  else{const [a,b]=modeEntryLines(x);html+=row(x.id,a,b)}
+ }
+ return html+'</section>';
+}
+// Entries are grouped by when they were made, like the iPhone's: Today, Yesterday, Previous 7 days, Previous 30 days, then
+// each month (with its year when it is not this year). An entry's time is its t, or its id (Date.now() + a fraction).
+const historyDay=d=>Math.round(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/86400000);
+function historyGroupKey(ms,now=new Date()){
+ if(!Number.isFinite(ms)||ms<=0)return null;
+ const d=new Date(ms),ago=historyDay(now)-historyDay(d);
+ if(ago<=0)return 'today';if(ago===1)return 'yesterday';if(ago<=7)return 'days7';if(ago<=30)return 'days30';
+ return d.getFullYear()+'-'+(d.getMonth()+1);
+}
+function historyGroupTitle(k,now=new Date()){
+ if(!k.includes('-'))return t({today:'histToday',yesterday:'histYesterday',days7:'hist7',days30:'hist30'}[k]);
+ const [y,m]=k.split('-').map(Number),name=MONTHS[lang==='el'?'el':'en'][m-1];
+ return y===now.getFullYear()?name:name+' '+y;
 }
 
 function openHistory(){const p=$('#historyPanel'),b=$('#historyBackdrop');renderHistory();p.classList.remove('hidden');b.classList.remove('hidden');requestAnimationFrame(()=>{p.classList.add('open');b.classList.add('open')});p.classList.remove('expanded');$('#historyList').scrollTop=0}
@@ -45,6 +66,8 @@ function setupHistorySheet(){
  // Swipe down collapses it only if the list was already at the top when the touch began.
  const end=e=>{if(!tracking)return;const dy=e.changedTouches[0].clientY-startY;tracking=false;if(dy<-35&&!p.classList.contains('expanded')){p.classList.add('expanded');list.scrollTop=0}else if(dy>35&&startScroll<=2){p.classList.remove('expanded')}startY=0};
  [p,handle].forEach(el=>{el.addEventListener('touchstart',start,{passive:true});el.addEventListener('touchend',end,{passive:true})});
+ // The list starts under the bar on top of it (styles.css): it needs the bar's height, which the language and screen width change
+ const bar=p.querySelector('.history-bar');if(bar&&window.ResizeObserver)new ResizeObserver(()=>p.style.setProperty('--hbar',bar.offsetHeight+'px')).observe(bar);
  let timer;list.addEventListener('scroll',()=>{list.classList.add('is-scrolling');clearTimeout(timer);timer=setTimeout(()=>list.classList.remove('is-scrolling'),650)},{passive:true})
 }
 // Clear all asks first without moving anything: the button itself turns into a red "Delete all?" (the same height, right
@@ -75,7 +98,7 @@ function setupHistoryGestures() {
 
   const panel = document.querySelector('#historyPanel');
   const handle = panel?.querySelector('.sheet-handle');
-  const heading = panel?.querySelector('.section-heading');
+  const heading = panel?.querySelector('.history-bar');// the handle, title and buttons
   const list = document.querySelector('#historyList');
   if (!panel || !handle || !list) return;
 
