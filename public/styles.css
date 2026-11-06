@@ -631,8 +631,8 @@ html.theme-fade *,html.theme-fade *::before,html.theme-fade *::after{transition:
   .top-actions{gap:4px}
   .top-actions .icon-button,.top-actions .language-button{width:38px;height:38px}
 }
-/* ---------- History sheet: slides up from the bottom, can be dragged taller (history.js) ---------- */
-#historyPanel{will-change: height, transform;transform: translate(-50%, 100%);transition: transform .26s cubic-bezier(.22,.61,.36,1), height .26s cubic-bezier(.22,.61,.36,1);overscroll-behavior: contain;}
+/* ---------- History sheet: slides up from the bottom; dragged from anywhere on it, it follows the finger (history.js) ---------- */
+#historyPanel{will-change: height, transform;transform: translate(-50%, 100%);transition: transform .42s cubic-bezier(.22,1,.36,1), height .42s cubic-bezier(.22,1,.36,1);overscroll-behavior: contain;}/* the iPhone's soft stop */
 #historyPanel.open{transform: translate(-50%, 0);}
 #historyPanel.dragging{transition: none !important;}
 #historyPanel .history-bar, #historyPanel .sheet-handle, #historyPanel .section-heading{touch-action: none;cursor: grab;-webkit-user-select: none;user-select: none;}

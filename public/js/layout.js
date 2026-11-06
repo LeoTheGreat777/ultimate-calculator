@@ -39,6 +39,9 @@ function fitFade(el){
  el.classList.toggle('fade-end',max>2&&el.scrollLeft<max-2);
 }
 document.addEventListener('scroll',e=>{if(e.target?.dataset?.fit)fitFade(e.target)},true);
+// A page that fits doesn't scroll, but iPhone can still move it (a swipe running past a sheet or list): put it back, or the top
+// of the app ends up under the blur beneath the status bar
+addEventListener('scroll',()=>{if(!document.documentElement.classList.contains('page-scroll')&&(scrollX||scrollY))scrollTo(0,0)},{passive:true});
 // A key that cannot do anything more (the number or the calculation is as long as it can be): a small shake, and on
 // phones that support it a short vibration. el: what shakes (the result line by default).
 function refuseKey(el=$('#result')){

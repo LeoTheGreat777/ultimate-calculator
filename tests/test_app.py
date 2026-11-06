@@ -1708,6 +1708,51 @@ async def history_groups(browser, url):
     await p.context.close()
 
 
+async def history_drag(browser, url):
+    """The History sheet follows the finger from anywhere on it, entries too (like the iPhone's): up from an entry opens it
+    fully, down from the list's top shrinks it, a flick down closes it; a tap still brings an entry back; a long list scrolls."""
+    L = '[history drag] '
+    p = await new_page(browser, url, 'en', 'dark', phone=True)
+    await p.evaluate("store.set('uc-history',JSON.stringify(Array.from({length:40},(_,i)=>({id:Date.now()-i*3e7-i,expression:i+'+1',shown:i+'+1',result:String(i+1)}))));renderHistory()")
+    cdp = await p.context.new_cdp_session(p)
+    touch = lambda kind, y: cdp.send('Input.dispatchTouchEvent', {'type': kind, 'touchPoints': [] if kind == 'touchEnd' else [{'x': 200, 'y': y}]})
+    state = "(()=>{const r=historyPanel.getBoundingClientRect();return [Math.round(r.top),historyPanel.classList.contains('expanded'),historyPanel.classList.contains('hidden'),Math.round(historyList.scrollTop),scrollY]})()"
+
+    async def drag(y0, y1, steps=15, ms=20):
+        await touch('touchStart', y0)
+        for i in range(1, steps + 1):
+            await touch('touchMove', y0 + (y1 - y0) * i / steps)
+            await p.wait_for_timeout(ms)
+        mid = await p.evaluate(state)
+        await touch('touchEnd', 0)
+        await p.wait_for_timeout(650)
+        return mid, await p.evaluate(state)
+    await p.evaluate("openHistory()")
+    await p.wait_for_timeout(600)
+    top0 = (await p.evaluate(state))[0]
+    mid, after = await drag(700, 450)
+    check(L + 'dragging up from an entry moves the sheet with the finger', 225 <= top0 - mid[0] <= 250 and mid[3] == 0, [top0, mid])
+    check(L + 'let go high: fully open', after[1] and after[0] == 0, after)
+    mid, after = await drag(700, 300)
+    check(L + 'fully open: the list scrolls', after[3] > 300 and after[0] == 0, after)
+    before = await p.evaluate(state)
+    mid, after = await drag(300, 500)
+    check(L + 'scrolled down: dragging down scrolls the list back, the sheet stays', mid[0] == 0 and after[0] == 0 and after[3] < before[3] - 100, [before, mid, after])
+    await p.evaluate("historyList.scrollTop=0")
+    mid, after = await drag(300, 600, ms=30)
+    check(L + 'at the list\'s top, dragging down shrinks the sheet to half', mid[0] > 250 and not after[1] and after[0] == top0, [mid, after])
+    mid, after = await drag(600, 800, steps=4, ms=10)
+    check(L + 'a flick down closes it, the page behind did not move', after[2] and after[4] == 0, after)
+    await p.evaluate("openHistory()")
+    await p.wait_for_timeout(600)
+    await touch('touchStart', top0 + 150)
+    await touch('touchEnd', 0)
+    await p.wait_for_timeout(500)
+    check(L + 'a tap on an entry still brings it back', await p.evaluate("[historyPanel.classList.contains('hidden'),lastShown]") == [True, '0+1'])
+    check(L + 'no JavaScript errors', not p.errors, p.errors)
+    await p.context.close()
+
+
 async def shortcuts(browser, url):
     """Home-screen shortcuts: the manifest lists them with icons that load and match tools/make-shortcut-icons.py's list,
     and ./?mode=… opens that mode, then the address goes back to plain ./ ."""
@@ -2943,6 +2988,7 @@ async def main():
         await esc_everywhere(browser, url)
         await history_per_mode(browser, url)
         await history_groups(browser, url)
+        await history_drag(browser, url)
         await shortcuts(browser, url)
         await ios_app(browser, url)
         await offline_status_and_turning(browser, url)

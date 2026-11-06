@@ -6,6 +6,14 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.32.1 – 2026-11-06
+
+### Fixed
+- History sheet follows the finger again, from anywhere on it, entries included (like the iPhone's): drag up from the list to
+  open it fully, down from the top of the list to shrink or close it. A tap still brings an entry back; a long list scrolls.
+- On letting go it moves to half open, fully open or closed with the finger's speed, and slows down softly.
+- iPhone: the app no longer stays moved up under the status bar after swiping in History.
+
 ## 0.32.0 – 2026-11-06
 
 ### Added

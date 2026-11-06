@@ -52,20 +52,20 @@ function historyGroupTitle(k,now=new Date()){
  return y===now.getFullYear()?name:name+' '+y;
 }
 
-function openHistory(){const p=$('#historyPanel'),b=$('#historyBackdrop');renderHistory();p.classList.remove('hidden');b.classList.remove('hidden');requestAnimationFrame(()=>{p.classList.add('open');b.classList.add('open')});p.classList.remove('expanded');$('#historyList').scrollTop=0}
+function openHistory(){const p=$('#historyPanel'),b=$('#historyBackdrop');renderHistory();p.style.height='';p.style.transform='';p.classList.remove('hidden');b.classList.remove('hidden');requestAnimationFrame(()=>{p.classList.add('open');b.classList.add('open')});p.classList.remove('expanded');$('#historyList').scrollTop=0}
 // A press outside the sheet while it asks "Delete all?" only takes the question back (as a press inside would); the next one closes it
 function historyBackdropClick(){if(historyClearConfirm)clearHistoryConfirm();else closeHistory()}
-function closeHistory(){if(historyClearConfirm)clearHistoryConfirm();const p=$('#historyPanel'),b=$('#historyBackdrop');p.classList.remove('open','expanded');b.classList.remove('open');setTimeout(()=>{if(!p.classList.contains('open')){p.classList.add('hidden');b.classList.add('hidden')}},220)}
+// It slides down at the height it has (dragged or fully open) and goes; the page behind is put back where it was (iPhone can
+// scroll even a page that doesn't scroll when a swipe runs past the sheet)
+function closeHistory(){
+ if(historyClearConfirm)clearHistoryConfirm();const p=$('#historyPanel'),b=$('#historyBackdrop');
+ if(!p.classList.contains('hidden'))p.style.height=p.getBoundingClientRect().height/(window.__uiZoom||1)+'px';
+ p.style.transform='';p.classList.remove('open','dragging');b.classList.remove('open');
+ if(!document.documentElement.classList.contains('page-scroll')&&(scrollX||scrollY))scrollTo(0,0);
+ setTimeout(()=>{if(!p.classList.contains('open')){p.classList.add('hidden');b.classList.add('hidden');p.classList.remove('expanded');p.style.height='';$('#historyList').scrollTop=0}},450);
+}
 function setupHistorySheet(){
- const p=$('#historyPanel'),handle=$('.sheet-handle'),list=$('#historyList');let startY=0,tracking=false;
- // Only tracks swipes to expand/collapse. The handle drag itself lives in history-interaction.js;
- // adding .dragging here disabled the list (pointer-events:none) and stopped it scrolling.
- let startScroll=0;
- const start=e=>{startY=e.touches[0].clientY;startScroll=list.scrollTop;tracking=true};
- // Swipe up expands the sheet (only when it is not expanded yet, otherwise it is a normal scroll).
- // Swipe down collapses it only if the list was already at the top when the touch began.
- const end=e=>{if(!tracking)return;const dy=e.changedTouches[0].clientY-startY;tracking=false;if(dy<-35&&!p.classList.contains('expanded')){p.classList.add('expanded');list.scrollTop=0}else if(dy>35&&startScroll<=2){p.classList.remove('expanded')}startY=0};
- [p,handle].forEach(el=>{el.addEventListener('touchstart',start,{passive:true});el.addEventListener('touchend',end,{passive:true})});
+ const p=$('#historyPanel'),list=$('#historyList');// the drag: setupHistoryGestures
  // The list starts under the bar on top of it (styles.css): it needs the bar's height, which the language and screen width change
  const bar=p.querySelector('.history-bar');if(bar&&window.ResizeObserver)new ResizeObserver(()=>p.style.setProperty('--hbar',bar.offsetHeight+'px')).observe(bar);
  let timer;list.addEventListener('scroll',()=>{list.classList.add('is-scrolling');clearTimeout(timer);timer=setTimeout(()=>list.classList.remove('is-scrolling'),650)},{passive:true})
@@ -92,156 +92,124 @@ function historyClick(e){
  if(del){store.set('uc-history',JSON.stringify(historyItems().filter(x=>String(x.id)!==del.dataset.delete)));renderHistory();return}
  if(item){const x=historyItems().find(x=>String(x.id)===item.dataset.history);if(!x)return;closeHistory();setMode('calc');carry=null;resultNegated=false;lastExpression=x.expression;lastShown=(x.shown||formatInputDisplay(x.expression));lastResult=vFromStore(String(x.result));justCalculated=true;expression='';current='';currentIsPercent=false;howData=explanationForExpression(x.expression,lastResult)||x.how||null;if(howData&&lastShown&&!howData.spaced)howData.formula=lastShown;calcHowData=howData;lastOperation=parseLastOperation(x.expression);render();syncModeTabs()}
 }
-// History sheet gestures: drag the handle to resize or close it; wheel and keys scroll it from anywhere.
+// History sheet gestures, like the iPhone's: the sheet follows the finger from anywhere on it, the entries too. A touch that
+// moves is a drag (the entry under it is not used); one that doesn't is a tap. Dragging the list down when it is at its top,
+// or up while the sheet is not fully open, moves the sheet; otherwise the list scrolls. On letting go the sheet goes, with the
+// finger's speed, to half open, fully open, or closed. The mouse drags the bar (handle, title); wheel and keys scroll it.
 function setupHistoryGestures() {
-  // Version is owned by app.js; this interaction layer must never overwrite it.
-
-  const panel = document.querySelector('#historyPanel');
-  const handle = panel?.querySelector('.sheet-handle');
-  const heading = panel?.querySelector('.history-bar');// the handle, title and buttons
-  const list = document.querySelector('#historyList');
-  if (!panel || !handle || !list) return;
-
-  [handle, heading].forEach(el => {
-    el?.addEventListener('touchstart', e => e.stopImmediatePropagation(), {capture:true, passive:true});
-    el?.addEventListener('touchmove', e => e.stopImmediatePropagation(), {capture:true, passive:true});
-    el?.addEventListener('touchend', e => e.stopImmediatePropagation(), {capture:true, passive:true});
-    el?.addEventListener('touchcancel', e => e.stopImmediatePropagation(), {capture:true, passive:true});
-  });
-
-
-  const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
-  // On big screens the app is scaled up (app.js, window.__uiZoom): screen pixels / zoom = CSS pixels.
+  const panel = $('#historyPanel'), bar = panel?.querySelector('.history-bar'), list = $('#historyList'), backdrop = $('#historyBackdrop');
+  if (!panel || !bar || !list) return;
+  const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+  // On big screens the app is scaled up (layout.js, window.__uiZoom): screen pixels / zoom = CSS pixels.
   const Z = () => window.__uiZoom || 1;
-  const cy = e => e.clientY / Z();
   const collapsedHeight = () => Math.min(window.innerHeight * 0.42 / Z(), 470);
-  const expandedHeight = () => window.innerWidth <= 480
-    ? window.innerHeight / Z()
-    : Math.min(window.innerHeight * 0.92 / Z(), 780);
-
-  let pointerId = null;
-  let startY = 0;
-  let lastY = 0;
-  let lastTime = 0;
-  let velocityY = 0;
-  let startHeight = 0;
-  let moved = false;
-
-  function currentHeight() { return panel.getBoundingClientRect().height / Z(); }
-  function setHeight(height) { panel.style.height = `${height}px`; }
-  function clearInlineGeometry() { panel.style.height = ''; panel.style.transform = ''; }
+  const expandedHeight = () => window.innerWidth <= 480 ? window.innerHeight / Z() : Math.min(window.innerHeight * 0.92 / Z(), 780);
+  const currentHeight = () => panel.getBoundingClientRect().height / Z();
+  const canScroll = () => list.scrollHeight > list.clientHeight + 1;
+  const isOpen = () => panel.classList.contains('open') && !panel.classList.contains('hidden');
+  const SLOP = 6;// a touch that moves less than this is a tap
 
   function snap(expanded) {
     panel.classList.toggle('expanded', expanded);
     panel.style.transform = '';
-    panel.style.height = expanded ? `${expandedHeight()}px` : `${collapsedHeight()}px`;
+    panel.style.height = `${expanded ? expandedHeight() : collapsedHeight()}px`;// animates from where the finger left it
     requestAnimationFrame(() => { panel.style.height = ''; });
   }
 
-  function closeSheet() {
-    panel.classList.remove('expanded', 'open', 'dragging');
-    panel.style.height = '';
-    panel.style.transform = '';
-    list.scrollTop = 0;
+  let drag = null;// {y0, h0, scroll0, fromList, mode: null | 'sheet' | 'scroll', moved, down, samples}
+  let dragEndedAt = 0;
+  function begin(y, fromList) {
+    drag = { y0: y, h0: currentHeight(), scroll0: list.scrollTop, fromList, mode: null, moved: false, down: 0, samples: [[performance.now(), y]] };
   }
-
-  function finishDrag(y) {
-    if (pointerId === null) return;
-    const dy = y - startY;
-    const downwardVelocity = Math.max(0, velocityY);
-    const upwardVelocity = Math.max(0, -velocityY);
-    const collapsed = collapsedHeight();
-    const expanded = expandedHeight();
-    const height = currentHeight();
-    const dismissByFling = downwardVelocity > 0.9 && Math.abs(dy) > 24;
-    panel.classList.remove('dragging');
-    pointerId = null;
-
-    if (dismissByFling || dy > 130) {
-      closeSheet();
-      document.querySelector('#historyBackdrop')?.classList.remove('open');
-      setTimeout(() => {
-        if (!panel.classList.contains('open')) panel.classList.add('hidden');
-        const backdrop = document.querySelector('#historyBackdrop');
-        if (backdrop && !backdrop.classList.contains('open')) backdrop.classList.add('hidden');
-      }, 260);
-      return;
+  // The first move decides (iPhone browsers decide then whether the page may scroll): sheet or list
+  function decide(dy) {
+    if (!drag.fromList) return 'sheet';
+    if (dy > 0) return list.scrollTop <= 0 ? 'sheet' : 'scroll';
+    if (dy < 0) return currentHeight() < expandedHeight() - 1 || !canScroll() ? 'sheet' : 'scroll';
+    return canScroll() ? 'scroll' : 'sheet';
+  }
+  function move(y) {
+    if (!drag) return false;
+    drag.samples.push([performance.now(), y]); if (drag.samples.length > 8) drag.samples.shift();
+    if (!drag.mode) drag.mode = decide(y - drag.y0);
+    if (drag.mode !== 'sheet') return false;
+    if (!drag.moved) {
+      if (Math.abs(y - drag.y0) < SLOP) return true;
+      drag.moved = true; drag.y0 = y; drag.h0 = currentHeight(); drag.scroll0 = list.scrollTop;
+      panel.classList.add('dragging');
     }
-
-    let targetExpanded;
-    if (upwardVelocity > 0.9 && dy < -24) targetExpanded = true;
-    else if (downwardVelocity > 0.9 && dy > 24) targetExpanded = false;
-    else targetExpanded = height > (collapsed + expanded) / 2;
-
-    snap(targetExpanded);
-    if (targetExpanded) list.scrollTop = 0;
-    moved = false;
-  }
-
-  function onPointerDown(e) {
-    if (!panel.classList.contains('open') || e.button > 0 || pointerId !== null) return;
-    // Buttons in the heading (close, clear all, chart) must get their own click; capturing the pointer here would swallow it.
-    if (e.target.closest('button')) return;
-    pointerId = e.pointerId;
-    startY = lastY = cy(e);
-    lastTime = performance.now();
-    velocityY = 0;
-    startHeight = currentHeight();
-    moved = false;
-    panel.classList.add('dragging');
-    e.currentTarget.setPointerCapture?.(e.pointerId);
-  }
-
-  function onPointerMove(e) {
-    if (pointerId !== e.pointerId) return;
-    const now = performance.now();
-    const dy = cy(e) - startY;
-    const dt = Math.max(1, now - lastTime);
-    velocityY = (cy(e) - lastY) / dt;
-    lastY = cy(e);
-    lastTime = now;
-    if (Math.abs(dy) > 3) moved = true;
-
     const min = collapsedHeight(), max = expandedHeight();
-    const height = clamp(startHeight - dy, min, max);
-    const atMin = startHeight - dy < min;
-    const atMax = startHeight - dy > max;
-    setHeight(height);
-    if (atMin && dy > 0) panel.style.transform = `translate(-50%, ${Math.min(220, dy - (startHeight - min))}px)`;
-    else panel.style.transform = 'translate(-50%, 0)';
-    e.preventDefault();
+    let h = drag.h0 - (y - drag.y0);
+    // Pulled past fully open from the list: the list scrolls on, and back again before the sheet shrinks
+    if (drag.fromList) list.scrollTop = drag.scroll0 + Math.max(0, h - max);
+    h = Math.min(h, max);
+    drag.down = Math.max(0, min - h);// below half open the sheet slides down instead (to close)
+    panel.style.height = `${Math.max(h, min)}px`;
+    panel.style.transform = `translate(-50%, ${drag.down}px)`;
+    return true;
+  }
+  // The finger's speed over its last ~100 ms, in CSS pixels per ms (down is positive)
+  function speed(samples) {
+    const last = samples[samples.length - 1];let first = last;
+    for (const s of samples) if (last[0] - s[0] <= 100) { first = s; break; }
+    return last[0] > first[0] ? (last[1] - first[1]) / (last[0] - first[0]) : 0;
+  }
+  function end() {
+    const d = drag; drag = null;
+    if (!d || d.mode !== 'sheet' || !d.moved) return;
+    dragEndedAt = performance.now();
+    panel.classList.remove('dragging');
+    const v = speed(d.samples), min = collapsedHeight(), max = expandedHeight(), h = currentHeight() - d.down;
+    const aim = h - v * 200;// where the flick would carry it
+    if (d.down > 90 || (d.down > 0 && v > 0.35) || aim < min - 120) { closeHistory(); return; }
+    snap(aim > (min + max) / 2);
   }
 
-  function onPointerUp(e) { if (pointerId === e.pointerId) finishDrag(cy(e)); }
+  // Touch: on the whole sheet (the chart has its own)
+  panel.addEventListener('touchstart', e => {
+    if (!isOpen() || e.touches.length > 1 || e.target.closest('#historyChart')) { drag = null; return; }
+    begin(e.touches[0].clientY / Z(), !!e.target.closest('#historyList'));
+  }, { passive: true });
+  panel.addEventListener('touchmove', e => {
+    if (!drag) return;
+    if (e.touches.length > 1) { end(); return; }
+    if (move(e.touches[0].clientY / Z()) && e.cancelable) e.preventDefault();// the sheet moves, not the page behind it
+  }, { passive: false });
+  panel.addEventListener('touchend', end, { passive: true });
+  panel.addEventListener('touchcancel', end, { passive: true });
+  // A drag is not a tap: the entry or button it started on is not used
+  panel.addEventListener('click', e => { if (performance.now() - dragEndedAt < 400) { e.preventDefault(); e.stopPropagation(); } }, true);
+  // Nothing behind the sheet scrolls (iPhone scrolls the page under a list that can't scroll)
+  backdrop?.addEventListener('touchmove', e => { if (e.cancelable) e.preventDefault(); }, { passive: false });
 
-  [handle, heading].forEach(el => {
-    el?.addEventListener('pointerdown', onPointerDown);
-    el?.addEventListener('pointermove', onPointerMove);
-    el?.addEventListener('pointerup', onPointerUp);
-    el?.addEventListener('pointercancel', e => { if (pointerId === e.pointerId) finishDrag(cy(e)); });
+  // Mouse and pen: drag the bar (its buttons keep their clicks)
+  let pointerId = null;
+  bar.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'touch' || !isOpen() || e.button > 0 || pointerId !== null || e.target.closest('button')) return;
+    pointerId = e.pointerId; begin(e.clientY / Z(), false); drag.mode = 'sheet';
+    bar.setPointerCapture?.(e.pointerId);
   });
+  bar.addEventListener('pointermove', e => { if (e.pointerId === pointerId) { move(e.clientY / Z()); e.preventDefault(); } });
+  const pointerEnd = e => { if (e.pointerId === pointerId) { pointerId = null; end(); } };
+  bar.addEventListener('pointerup', pointerEnd);
+  bar.addEventListener('pointercancel', pointerEnd);
 
   // While History is open it is the page's scroll area: the mouse wheel and the keyboard scroll it from anywhere on screen.
   // Like a map app's bottom sheet: scrolling down first opens the sheet fully, then scrolls the list;
   // scrolling up goes back to the top of the list, then shrinks the sheet again.
-  const isOpen = () => panel.classList.contains('open') && !panel.classList.contains('hidden');
   let sheetMovedAt = 0;
   function scrollHistory(dy, smooth) {
     if (!dy) return;
     const now = performance.now();
     if (now - sheetMovedAt < 280) return; // let the open/shrink animation finish before scrolling on
     const expanded = panel.classList.contains('expanded');
-    if (dy > 0 && !expanded && list.scrollHeight > list.clientHeight + 1) {
-      snap(true); list.scrollTop = 0; sheetMovedAt = now; return;
-    }
-    if (dy < 0 && expanded && list.scrollTop <= 0) {
-      snap(false); sheetMovedAt = now; return;
-    }
+    if (dy > 0 && !expanded && canScroll()) { snap(true); list.scrollTop = 0; sheetMovedAt = now; return; }
+    if (dy < 0 && expanded && list.scrollTop <= 0) { snap(false); sheetMovedAt = now; return; }
     list.scrollBy({ top: dy, behavior: smooth ? 'smooth' : 'auto' });
   }
 
   document.addEventListener('wheel', e => {
-    if (!isOpen() || pointerId !== null || e.ctrlKey) return;
+    if (!isOpen() || drag || e.ctrlKey) return;
     e.preventDefault();
     e.stopPropagation(); // nothing behind the sheet (e.g. the graph) reacts to the wheel
     const dy = e.deltaMode === 1 ? e.deltaY * 32 : e.deltaMode === 2 ? e.deltaY * list.clientHeight : e.deltaY;
@@ -261,31 +229,7 @@ function setupHistoryGestures() {
     }
   }, true);
 
-  let scrollTimer;
-  list.addEventListener('scroll', () => {
-    list.classList.add('is-scrolling');
-    clearTimeout(scrollTimer);
-    scrollTimer = setTimeout(() => list.classList.remove('is-scrolling'), 550);
-  }, { passive: true });
-
-  const observer = new MutationObserver(() => {
-    if (pointerId !== null) return;
-    if (!panel.classList.contains('open')) {
-      clearInlineGeometry();
-      list.scrollTop = 0;
-      return;
-    }
-    if (!panel.classList.contains('expanded')) {
-      panel.style.height = '';
-      panel.style.transform = '';
-    }
-  });
-  observer.observe(panel, {attributes:true, attributeFilter:['class']});
-
-  window.addEventListener('resize', () => {
-    if (pointerId !== null) return;
-    if (panel.classList.contains('expanded')) panel.style.height = '';
-  });
+  window.addEventListener('resize', () => { if (!drag && panel.classList.contains('expanded')) panel.style.height = ''; });
 }
 
 /* ---------- History per mode ----------

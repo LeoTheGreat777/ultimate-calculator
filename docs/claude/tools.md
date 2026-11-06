@@ -81,7 +81,14 @@ Part of the notes in CLAUDE.md (read that first). Covers tools.js, units.js, cur
   (`position:absolute`), see-through with a blur (`--glass`); the list starts under it (`padding-top:var(--hbar)`, the bar's
   height kept by a ResizeObserver in `setupHistorySheet`), so rows scroll under the bar. Group titles in the sheet are the same
   glass, full width; a sticky title's `top` counts from inside the list's padding, so `top:0` keeps it just under the bar.
-  With the chart open the list starts below the chart instead. The drag area is the whole bar (`setupHistoryGestures`).
+  With the chart open the list starts below the chart instead.
+- **Dragging the sheet** (`setupHistoryGestures`, touch events on the whole sheet): like the iPhone's, it follows the finger from
+  anywhere, entries too. The first move decides (iPhone decides then whether the page may scroll): from the bar always the sheet;
+  from the list the sheet when dragging down at the list's top or up while not fully open, else the list scrolls natively.
+  Under 6 px is a tap; after a drag the next click is swallowed (the entry isn't used). Past fully open the list scrolls on.
+  On letting go: `speed` (last 100 ms) projects where it would go: half, full (`snap`) or closed. The mouse drags the bar
+  (pointer events). Touch moves on the sheet and backdrop are `preventDefault`ed, and a page that fits is scrolled back to the
+  top (layout.js): iPhone otherwise moved the page up under the status bar blur. Animation: .42s `cubic-bezier(.22,1,.36,1)`.
 - **Number fields** (every tool field but dates and IP/mask, `groupedField`) show thousands as they are typed: 10000 ->
   10.000 (`groupDigits` in the `input` handler, the cursor kept in place). In them a dot is always a thousands dot and the
   comma the decimal, so read a field with `fieldValue(id)` (the text without dots), never `.value`; `liveToolNumber` and
