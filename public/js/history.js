@@ -6,6 +6,7 @@ function renderHistory(){
  $('#historyTitle').textContent=t('history')+(calc?'':' · '+modeText(tab));
  syncHistoryChart(tab);syncHistoryButtons(tab);
  $('#historyList').innerHTML=historyRowsHtml(tab);
+ markHistoryStuck();
  if(calc)historyChartRefresh();
  refreshSide();
 }
@@ -64,11 +65,18 @@ function closeHistory(){
  if(!document.documentElement.classList.contains('page-scroll')&&(scrollX||scrollY))scrollTo(0,0);
  setTimeout(()=>{if(!p.classList.contains('open')){p.classList.add('hidden');b.classList.add('hidden');p.classList.remove('expanded');p.style.height='';$('#historyList').scrollTop=0}},450);
 }
+// The frosted bar and the group title stuck under it get a little more colour once something scrolls under them (styles.css)
+function markHistoryStuck(){
+ const p=$('#historyPanel'),list=$('#historyList');if(!p||!list)return;
+ const scrolled=list.scrollTop>0,ref=list.getBoundingClientRect().top+parseFloat(getComputedStyle(list).paddingTop||0);
+ p.classList.toggle('scrolled',scrolled&&$('#historyChartWrap')?.classList.contains('hidden')!==false);
+ for(const el of list.querySelectorAll('.history-group-title'))el.classList.toggle('stuck',scrolled&&el.getBoundingClientRect().top<=ref+1);
+}
 function setupHistorySheet(){
  const p=$('#historyPanel'),list=$('#historyList');// the drag: setupHistoryGestures
  // The list starts under the bar on top of it (styles.css): it needs the bar's height, which the language and screen width change
  const bar=p.querySelector('.history-bar');if(bar&&window.ResizeObserver)new ResizeObserver(()=>p.style.setProperty('--hbar',bar.offsetHeight+'px')).observe(bar);
- let timer;list.addEventListener('scroll',()=>{list.classList.add('is-scrolling');clearTimeout(timer);timer=setTimeout(()=>list.classList.remove('is-scrolling'),650)},{passive:true})
+ let timer;list.addEventListener('scroll',()=>{markHistoryStuck();list.classList.add('is-scrolling');clearTimeout(timer);timer=setTimeout(()=>list.classList.remove('is-scrolling'),650)},{passive:true})
 }
 // Clear all asks first without moving anything: the button itself turns into a red "Delete all?" (the same height, right
 // aligned); a second press deletes, a press elsewhere or 4 seconds put it back. Screen readers hear the full question.

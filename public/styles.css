@@ -642,11 +642,16 @@ html.theme-fade *,html.theme-fade *::before,html.theme-fade *::after{transition:
 @media (max-width: 480px){
   #historyPanel.expanded{height: calc(100dvh / var(--z,1));border-radius: 20px 20px 0 0;}
 }
-/* Frosted like the iPhone's: the list scrolls under the sheet's top bar (handle, title, buttons) and the title of the group
-   on screen, which stay put and blur what passes under them. --hbar: the bar's height (history.js).
+/* Frosted like the iPhone's: the sheet is glass (the app shows through it, blurred), and the list scrolls under its top bar
+   (handle, title, buttons) and the title of the group on screen, which stay put and blur what passes under them. --hbar: the bar's height (history.js).
    A sticky title's top counts from inside the list's padding, so top:0 keeps it just under the bar. */
-#historyPanel{--hpad:14px;--glass:color-mix(in srgb,var(--card) 78%,transparent);padding:0 0 calc(15px + env(safe-area-inset-bottom))}
-.history-bar{position:absolute;z-index:3;top:0;left:0;right:0;display:flex;flex-direction:column;padding:10px var(--hpad) 9px;background:var(--glass);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px)}
+#historyPanel{--hpad:14px;--glass:color-mix(in srgb,var(--card) 62%,transparent);--glass-edge:color-mix(in srgb,var(--card) 60%,transparent);padding:0 0 calc(15px + env(safe-area-inset-bottom));background:transparent}
+/* The glass is a layer of its own behind the content (not a blur on the sheet itself): so the bar's and titles' blur sees the
+   whole picture, and where nothing passes under them they look exactly like the rest of the sheet (no lighter stripes) */
+#historyPanel::before{content:'';position:absolute;inset:0;z-index:-1;border-radius:inherit;background:var(--glass);-webkit-backdrop-filter:blur(22px) saturate(1.8);backdrop-filter:blur(22px) saturate(1.8);pointer-events:none}
+.history-bar{position:absolute;z-index:3;top:0;left:0;right:0;display:flex;flex-direction:column;padding:10px var(--hpad) 9px;background:transparent;-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);transition:background-color .2s}
+/* Something scrolled under the bar (iPhone's scroll edge): a little more of the sheet's colour, so the bar's text stays clear */
+#historyPanel.scrolled .history-bar,#historyPanel .history-group-title.stuck{background-color:var(--glass-edge)}
 #historyPanel .history-list{margin-top:0;padding:var(--hbar,77px) var(--hpad) 0}
 #historyPanel .history-chart:not(.hidden){margin:var(--hbar,77px) var(--hpad) 0}
 #historyPanel .history-chart:not(.hidden)~.history-list{margin-top:9px;padding-top:0}
@@ -655,7 +660,7 @@ html.theme-fade *,html.theme-fade *::before,html.theme-fade *::after{transition:
 .history-group-title+.history-item{border-top:0}
 .history-group:first-child .history-group-title{padding-top:4px}
 /* In the sheet the title spans its whole width like the bar above it (its line stays in line with the rows') */
-#historyPanel .history-group-title{margin:0 calc(-1 * var(--hpad));padding-left:calc(var(--hpad) + 2px);padding-right:calc(var(--hpad) + 2px);border-bottom:0;background:linear-gradient(var(--border),var(--border)) var(--hpad) 100%/calc(100% - 2 * var(--hpad)) 1px no-repeat,var(--glass);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px)}
+#historyPanel .history-group-title{margin:0 calc(-1 * var(--hpad));padding-left:calc(var(--hpad) + 2px);padding-right:calc(var(--hpad) + 2px);border-bottom:0;background:linear-gradient(var(--border),var(--border)) var(--hpad) 100%/calc(100% - 2 * var(--hpad)) 1px no-repeat;-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px)}
 /* ---------- Landscape on phones (and other short, wide windows): keypad on the right, the rest on the left ----------
    html.landscape is set by fitLayout (layout.js, LANDSCAPE); it also sets the key height (--k, --gk) and the unit rows. */
 /* iPhone home-screen app held upright: iOS blurs a band under the status bar, so the page starts below it */

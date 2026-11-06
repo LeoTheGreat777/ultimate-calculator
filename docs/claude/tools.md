@@ -77,10 +77,13 @@ Part of the notes in CLAUDE.md (read that first). Covers tools.js, units.js, cur
   by when they were made (`historyGroupKey`: an entry's `t`, or its id, which is `Date.now()` plus a fraction): Today, Yesterday,
   Previous 7 days (2–7 days ago), Previous 30 days (8–30), then each calendar month (`MONTHS` from dates.js; another year's
   gets the year, `historyGroupTitle`). Texts `histToday`, `histYesterday`, `hist7`, `hist30`. The sheet and the PC panel both use it.
-- **Frosted sheet top** (styles.css, after the History sheet rules): `.history-bar` (handle, title, buttons) lies over the list
-  (`position:absolute`), see-through with a blur (`--glass`); the list starts under it (`padding-top:var(--hbar)`, the bar's
-  height kept by a ResizeObserver in `setupHistorySheet`), so rows scroll under the bar. Group titles in the sheet are the same
-  glass, full width; a sticky title's `top` counts from inside the list's padding, so `top:0` keeps it just under the bar.
+- **Glass sheet** (styles.css, after the History sheet rules): the sheet's own background is transparent; `#historyPanel::before`
+  (z-index -1) is the glass (`--glass`, blur and saturate). A blur on the sheet itself would make it the bar's backdrop root, and
+  the bar and titles would then show as lighter stripes. `.history-bar` (handle, title, buttons) lies over the list
+  (`position:absolute`), with only a blur, so at rest it looks like the rest of the sheet; once the list scrolls,
+  `markHistoryStuck` sets `.scrolled` on the sheet and `.stuck` on the title under the bar, which get `--glass-edge` colour.
+  The list starts under the bar (`padding-top:var(--hbar)`, the bar's height kept by a ResizeObserver in `setupHistorySheet`),
+  so rows scroll under it. Group titles in the sheet are full width, blurred the same way; a sticky title's `top` counts from inside the list's padding, so `top:0` keeps it just under the bar.
   With the chart open the list starts below the chart instead.
 - **Dragging the sheet** (`setupHistoryGestures`, touch events on the whole sheet): like the iPhone's, it follows the finger from
   anywhere, entries too. The first move decides (iPhone decides then whether the page may scroll): from the bar always the sheet;

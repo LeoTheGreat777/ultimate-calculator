@@ -1702,8 +1702,10 @@ async def history_groups(browser, url):
     st = await p.evaluate("""(()=>{const b=document.querySelector('.history-bar').getBoundingClientRect(),bar=getComputedStyle(document.querySelector('.history-bar'));
       const stuck=[...document.querySelectorAll('#historyList .history-group-title')].map(e=>e.getBoundingClientRect()).filter(r=>Math.abs(r.top-b.bottom)<=1.5);
       const under=document.elementFromPoint(40,b.bottom-4);
-      return [stuck.length,!!(bar.backdropFilter||bar.webkitBackdropFilter||'').includes('blur'),!!under?.closest('.history-bar')]})()""")
-    check(L + 'scrolled: one title stays just under the frosted bar, which covers what scrolls under it', st == [1, True, True], st)
+      const glass=getComputedStyle(historyPanel,'::before');
+      return [stuck.length,!!(bar.backdropFilter||bar.webkitBackdropFilter||'').includes('blur'),!!under?.closest('.history-bar'),
+        document.querySelectorAll('#historyList .history-group-title.stuck').length,historyPanel.classList.contains('scrolled'),(glass.backdropFilter||glass.webkitBackdropFilter||'').includes('blur')]})()""")
+    check(L + 'scrolled: one title stays just under the frosted bar (marked stuck), which covers what scrolls under it; the sheet is glass', st == [1, True, True, 1, True, True], st)
     check(L + 'no JavaScript errors', not p.errors, p.errors)
     await p.context.close()
 
