@@ -311,14 +311,34 @@ function setupTopPress(){
  ['pointerup','pointercancel'].forEach(t=>document.addEventListener(t,up));
  document.addEventListener('pointerleave',e=>{if(on&&e.target===on)up()},true);
 }
+// Android (and other touch screens that aren't iPhones): one light tick the moment a finger touches a key, and the key
+// is pressed when the finger lets go, like on the iPhone. The browser's own click is not used for a finger: after a long
+// press Android sends none (so a key held a moment did nothing), so touchend is stopped (no click of the browser's own)
+// and the key gets its click from here, if the finger is still on it. A long press's context menu (and its buzz) is blocked.
+const KEY_TICK_MS=4;
+function keyTick(ms=KEY_TICK_MS){try{navigator.vibrate?.(ms)}catch{}}
+function setupTouchRelease(pad){
+ let key=null,x0=0,y0=0;
+ pad.addEventListener('touchstart',e=>{const t=e.touches[0];key=e.touches.length===1?e.target.closest?.('button'):null;if(key&&!key.disabled){x0=t.clientX;y0=t.clientY;keyTick()}},{passive:true});
+ pad.addEventListener('touchmove',e=>{const t=e.touches[0];if(key&&Math.hypot(t.clientX-x0,t.clientY-y0)>24)key=null},{passive:true});
+ ['touchcancel','pointercancel'].forEach(t=>pad.addEventListener(t,()=>key=null));
+ pad.addEventListener('touchend',e=>{
+  const b=key;key=null;if(!b)return;
+  e.preventDefault();
+  const t=e.changedTouches[0],at=document.elementFromPoint(t.clientX,t.clientY)?.closest?.('button');
+  if(at!==b||b.disabled||!b.isConnected)return;
+  b.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,clientX:t.clientX,clientY:t.clientY,view:window}));
+ },{passive:false});
+ pad.addEventListener('contextmenu',e=>{if(e.target.closest?.('button'))e.preventDefault()});
+}
 function setupPressFeedback(){
  const pad=$('#keypad');
  nameKeys(pad);new MutationObserver(()=>nameKeys(pad)).observe(pad,{childList:true,subtree:true,characterData:true});
  pad.addEventListener('pointerdown',e=>{
   const b=e.target.closest('button');if(!b||b.disabled)return;
   b.classList.add('pressed');b._pressedAt=performance.now();
-  if(e.pointerType!=='mouse'&&!IS_IOS){try{navigator.vibrate?.(8)}catch{}}
  });
+ if(!IS_IOS)setupTouchRelease(pad);
  // let go: fade back, after showing for at least a moment even on the quickest tap
  const release=e=>{const b=e.target.closest?.('button.pressed');if(!b)return;
   setTimeout(()=>b.classList.remove('pressed'),Math.max(0,90-(performance.now()-(b._pressedAt||0))))};
@@ -337,7 +357,7 @@ function setupHoldKeys(){
  pad.addEventListener('pointerdown',e=>{
   const k=holdKey(e.target);if(!k||e.button>0)return;
   cancel();fired=false;key=k.b;k.b.classList.add('holding');
-  timer=setTimeout(()=>{timer=0;fired=true;k.b.classList.remove('holding');k.h.run();try{navigator.vibrate?.(15)}catch{}
+  timer=setTimeout(()=>{timer=0;fired=true;k.b.classList.remove('holding');k.h.run();if(e.pointerType!=='mouse')keyTick(KEY_TICK_MS*2);
    const now=holdKey(document.elementFromPoint(e.clientX,e.clientY))?.b||k.b;now.classList.add('held');setTimeout(()=>now.classList.remove('held'),300)},500);
  });
  pad.addEventListener('pointerup',cancel);pad.addEventListener('pointercancel',cancel);

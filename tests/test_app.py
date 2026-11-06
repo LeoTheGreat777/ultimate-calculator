@@ -2173,8 +2173,33 @@ async def press_feedback(browser, url):
         await p.tap('#keypad [data-value="8"]')
         after = await p.evaluate("[window.__vib.length,document.querySelector('#keypad [data-value=\"8\"] .key-tick input')?.checked??null,document.querySelector('#result').textContent]")
         if name == 'Android':
-            check(L + 'a tap vibrates briefly', after[0] > before[0], [before, after])
+            check(L + 'a tap vibrates once, lightly', after[0] == before[0] + 1 and await p.evaluate("window.__vib.at(-1)") <= 5, [before, after])
             check(L + 'no iPhone switches on Android', not await p.evaluate("document.querySelectorAll('.key-tick').length"))
+            # one tick as the finger touches the key; the press happens when it lets go, also after holding a while
+            cdp = await ctx.new_cdp_session(p)
+            async def finger(sel, ms, move=0):
+                b = await p.locator('#keypad ' + sel).bounding_box()
+                fx, fy = b['x'] + b['width'] / 2, b['y'] + b['height'] / 2
+                await cdp.send('Input.dispatchTouchEvent', {'type': 'touchStart', 'touchPoints': [{'x': fx, 'y': fy}]})
+                await p.wait_for_timeout(ms // 2)
+                mid = await p.evaluate("[window.__vib.length,document.querySelector('#result').textContent]")
+                if move:
+                    await cdp.send('Input.dispatchTouchEvent', {'type': 'touchMove', 'touchPoints': [{'x': fx, 'y': fy + move}]})
+                await p.wait_for_timeout(ms - ms // 2)
+                await cdp.send('Input.dispatchTouchEvent', {'type': 'touchEnd', 'touchPoints': []})
+                await p.wait_for_timeout(80)
+                return mid
+            v0 = await p.evaluate("window.__vib.length")
+            mid = await finger('[data-value="9"]', 900)
+            st = await p.evaluate("[window.__vib.length,document.querySelector('#result').textContent]")
+            check(L + 'a finger on a key ticks once at once, the key is not pressed yet', mid == [v0 + 1, '8'], mid)
+            check(L + 'let go after holding, the key is pressed once, no second tick', st == [v0 + 1, '89'], st)
+            mid = await finger('[data-value="4"]', 200, move=200)
+            st = await p.evaluate("[window.__vib.length,document.querySelector('#result').textContent]")
+            check(L + 'a finger that slides off the key presses nothing', st == [v0 + 2, '89'], st)
+            await finger('[data-action="clear"]', 900)
+            st = await p.evaluate("[window.__vib.length,document.querySelector('#result').textContent]")
+            check(L + 'holding C: a tick on touch, one as it clears, none on letting go', st == [v0 + 4, '0'], st)
         else:
             check(L + "a tap toggles the key's own switch (the tick), no vibrate", before[1] is False and after[1] is True and after[0] == before[0], [before, after])
             hit = await p.evaluate(f"document.elementFromPoint({x},{y}).className")
