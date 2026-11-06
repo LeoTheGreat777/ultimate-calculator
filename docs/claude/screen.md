@@ -105,8 +105,12 @@ Part of the notes in CLAUDE.md (read that first). Covers layout.js, side.js, mod
   every key in `#keypad` lights up the moment it's pressed (`.pressed`, a `::after` layer of `--text`, so it suits every
   key colour and theme), held a moment longer it grows (after .09s, easing out over .3s, to scale 1.12, over its neighbours, `will-change`
   set as it's pressed so the move starts smoothly; a quick tap only lights up), and let go it
-  fades and settles back. No `:active` shrink anywhere on the keypad. On phones a tick: Android `navigator.vibrate(8)` on
-  pointerdown. iPhone has no vibrate for websites; its own switch (`<input type="checkbox" switch>`, iOS 18+) ticks, but
+  fades and settles back. No `:active` shrink anywhere on the keypad. On phones a tick: Android (any touch screen but iPhone)
+  one light `navigator.vibrate(KEY_TICK_MS)` (4 ms) on touchstart, once per press, and the key is pressed when the finger
+  lets go (`setupTouchRelease`): touchend is cancelled and the key gets its click from there if the finger is still on it
+  (moved over 24 px or off the key: no press). Android sends no click after a long press, so a held key did nothing
+  otherwise; the long-press context menu (and its buzz) is blocked. A hold key that fired ticks once more (8 ms) and its
+  release does nothing. iPhone has no vibrate for websites; its own switch (`<input type="checkbox" switch>`, iOS 18+) ticks, but
   since iOS 26.5 only when a finger toggles it (a script's `label.click()` is silent). So on iPhone every key holds an
   invisible `<label class="key-tick">` over its face with a hidden switch inside (`addKeyTicks`, kept on re-drawn and
   re-labelled keys by a MutationObserver): the tap lands on the label, which toggles its switch (the tick), and the same

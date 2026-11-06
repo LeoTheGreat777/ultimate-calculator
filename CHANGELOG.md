@@ -6,6 +6,23 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.34.1 – 2026-11-06
+
+### Fixed
+- Android: a key now gives one light tick as you touch it (no more double, strong buzz) and is pressed when you let go, also after holding it a while, like on the iPhone.
+
+## 0.34.0 – 2026-11-06
+
+### Added
+- Calculator: tap the calculation to put a cursor there, then type, delete with ⌫ or add brackets at that place; = works out
+  the whole calculation. On a keyboard ← → Home End move it.
+- Forgot a bracket? ( ) after a calculation with none open (and ) in Scientific) puts it in brackets: 5 + 5 becomes (5 + 5).
+  Also in Units.
+
+### Fixed
+- The C key no longer turns back into AC after an operator (5 + showed AC): it stays C while anything is typed. C clears the
+  number being typed, a second C everything. Also in Units.
+
 ## 0.33.1 – 2026-11-06
 
 ### Changed

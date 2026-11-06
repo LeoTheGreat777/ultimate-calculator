@@ -63,10 +63,18 @@ function formatGroupedNumber(raw){
 // "2^", or one in brackets, "2^(1÷3)", stays as it is); asin( -> sin⁻¹( and the same for cos and tan.
 const SUP_DIGITS='⁰¹²³⁴⁵⁶⁷⁸⁹';
 const sciPretty=s=>s.replace(/a(sinh|cosh|tanh|coth|sech|csch|sin|cos|tan|cot|sec|csc)\(/g,'$1⁻¹(').replace(/\^([-−]?)(\d+)(?![\d.])/g,(m,sg,d)=>(sg?'⁻':'')+[...d].map(c=>SUP_DIGITS[c]).join(''));
+// CARET (U+0007) may stand anywhere in the text: where the Calculator's cursor is (calculator.js). It is kept in place,
+// numbers keep their grouping around it (1.2|34.567), and it never changes how the rest is shown.
+const CARET='\u0007';
+function groupWithCaret(m){
+ const at=m.indexOf(CARET);if(at<0)return formatGroupedNumber(m);
+ const f=formatGroupedNumber(m.replace(CARET,''));let i=0;for(let n=0;i<f.length&&n<at;i++)if(/[\d,]/.test(f[i]))n++;
+ return f.slice(0,i)+CARET+f.slice(i);
+}
 function formatInputDisplay(s){
- return pretty(sciPretty(constPretty(String(s)))).replace(/\d+(?:\.\d*)?/g,m=>formatGroupedNumber(m)).replace(/([\d)])×i(?![\w(])/g,'$1i')// 2×i shows as 2i
-  .replace(/([×÷+\-])[-−](\d[\d.,]*%?)/g,'$1(−$2)').replace(/\([-−](?=\d)/g,'(−')
-  .replace(/^−(\d[\d.,]*%?)/,'(−$1)');
+ return pretty(sciPretty(constPretty(String(s)))).replace(/\d(?:\u0007?[\d.])*\u0007?/g,groupWithCaret).replace(/([\d)]\u0007?)×(\u0007?)i(?![\w(])/g,'$1$2i')// 2×i shows as 2i
+  .replace(/([×÷+\-])(\u0007?)[-−](\u0007?\d[\d.,\u0007]*%?)/g,'$1$2(−$3)').replace(/\((\u0007?)[-−](?=\u0007?\d)/g,'($1−')
+  .replace(/^(\u0007?)−(\u0007?\d[\d.,\u0007]*%?)/,'$1(−$2)');
 }
 // ---------- Limits ----------
 // What can be typed: numbers of up to 15 digits (as on Windows' calculator; a leading "0," does not count) and

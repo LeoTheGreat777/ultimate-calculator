@@ -128,8 +128,10 @@ function unitSideText(side){
  if(unitError&&side!==unitSource)return t(ERROR_TEXT[unitError]);
  return side===unitSource&&unitSourceTyped&&!unitReplaceOnNextKey?formatUnitDisplayValue(expr):formatUnitResult(expr);
 }
-// The number being typed at the end of the Units value, which C clears (like the calculator's C).
-// null when there is none – a finished value, one brought from the calculator, or 0 – and the key is AC.
+// The number being typed at the end of the Units value, which C clears (like the calculator's C); null when there is
+// none (then C clears both values). The key shows C while anything is typed (5+ too), AC for a finished value, one
+// brought from the calculator, or 0 (unitTyped).
+const unitTyped=()=>unitSourceTyped&&!unitReplaceOnNextKey&&!['','0'].includes(unitExpressions[unitActiveInput==='to'?'to':'from']||'');
 function unitEntry(){
  if(!unitSourceTyped||unitReplaceOnNextKey)return null;
  const v=unitExpressions[unitActiveInput==='to'?'to':'from']||'';
@@ -142,7 +144,7 @@ function unitEntry(){
 function updateUnitsDisplay(){refreshSide();
  const from=$('#unitValueFrom'),to=$('#unitValueTo');
  if(!from||!to)return;
- if(mode==='units'&&$('#clearButton'))$('#clearButton').textContent=unitEntry()?'C':'AC';
+ if(mode==='units'&&$('#clearButton'))$('#clearButton').textContent=unitTyped()?'C':'AC';
  from.value=unitSideText('from');
  if(unitView==='currency'){renderRateInfo();shortCurrencyLabels()}
  to.value=unitSideText('to');
@@ -248,9 +250,10 @@ function unitKeyInput(key){
    if(value==='0'&&(key==='paren'||key==='('))value='';
    const open=(value.match(/\(/g)||[]).length-(value.match(/\)/g)||[]).length;
    if(key==='paren'||key==='('||key===')'){
-     // the same smart ( ) as the calculator: closes when one is open after a number, otherwise opens (× first after a number)
+     // the same smart ( ) as the calculator: closes when one is open after a number; after a calculation with none open, puts the brackets around it; otherwise opens (× first after a number)
      const close=key===')'||(key==='paren'&&open>0&&afterValue.test(value));
-     if(close){if(open<=0||!afterValue.test(value))return false;value=closeParen(value)}// (5) and ((…)) lose the brackets
+     if(open<=0&&afterValue.test(value)&&key!=='('&&topOperator(value))value='('+value+')';// nothing open: around everything, 5+5 → (5+5)
+     else if(close){if(open<=0||!afterValue.test(value))return false;value=closeParen(value)}// (5) and ((…)) lose the brackets
      else value+=afterValue.test(value)?'*(':'(';
    }else if(key==='.'||key===','){
      const tail=value.split(/[+*/()-]/).pop();

@@ -30,6 +30,9 @@ function fitDisplayText(el,minSize,showEnd=false){
      el.style.setProperty('letter-spacing','-0.04em','important');
    }
    el.scrollLeft=showEnd?el.scrollWidth:0;
+   const caret=el.querySelector('.caret');// the Calculator's cursor stays in view, with a little room on its sides
+   if(caret){const z=window.__uiZoom||1,x=(caret.getBoundingClientRect().left-el.getBoundingClientRect().left)/z+el.scrollLeft,room=Math.min(40,el.clientWidth/4);
+    if(x<el.scrollLeft+room||x>el.scrollLeft+el.clientWidth-room)el.scrollLeft=x-el.clientWidth/2}
    fitFade(el);
  });
 }

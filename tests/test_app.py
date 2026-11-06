@@ -119,10 +119,80 @@ async def desktop(browser, url, lang, theme):
     await p.keyboard.type('5+3')
     check(L + 'C shown while typing a number', (await p.evaluate(state))[1] == 'C')
     await p.click('#clearButton')
-    check(L + 'C clears only the number, then shows AC', await p.evaluate(state) == ['5+', 'AC'])
+    check(L + 'C clears only the number and stays C while anything is typed', await p.evaluate(state) == ['5+', 'C'])
     await p.keyboard.type('3')
     await p.keyboard.press('F9')
     check(L + 'F9 changes the sign: 5+(−3)', await p.evaluate(R) == '5+(−3)', await p.evaluate(R))
+    await p.keyboard.press('Escape')
+    labels = []
+    for k in '5+5':
+        await p.keyboard.type(k)
+        labels.append(await p.evaluate("document.querySelector('#clearButton').textContent"))
+    check(L + 'the key stays C while anything is typed (5, 5+, 5+5)', labels == ['C', 'C', 'C'], labels)
+    await p.click('#clearButton')
+    await p.click('#clearButton')
+    check(L + 'a second C clears everything and shows AC', await p.evaluate(state) == ['', 'AC'], await p.evaluate(state))
+
+    # brackets around what is typed: ( ) or ) with nothing open
+    await p.keyboard.press('Escape')
+    await p.keyboard.type('5+5')
+    await p.click('#keypad [data-action="paren"]')
+    check(L + '( ) after 5+5 puts it in brackets: (5+5)', await p.evaluate(R) == '(5+5)', await p.evaluate(R))
+    await p.keyboard.type('*2')
+    await p.keyboard.press('Enter')
+    check(L + '(5+5)×2 = 20', await p.evaluate(R) == '20', await p.evaluate(X))
+    await p.keyboard.press('Escape')
+    await p.keyboard.type('5')
+    await p.click('#keypad [data-action="paren"]')
+    check(L + '( ) after a single number still opens one: 5×(', await p.evaluate(R) == '5×(', await p.evaluate(R))
+    got = await calc(p, '2+3)*4')
+    check(L + ') with nothing open puts the brackets around everything: (2+3)×4 = 20', got == '20' and await p.evaluate(X) == '(2+3)×4',
+          [got, await p.evaluate(X)])
+
+    # the cursor: ← → move it, keys work where it is, = works out everything
+    caret = "[document.querySelector('#result').textContent, !!document.querySelector('#result .caret')]"
+    await p.keyboard.press('Escape')
+    await p.keyboard.type('5+5*2')
+    await p.keyboard.press('Home')
+    check(L + 'Home puts the cursor at the start', await p.evaluate(caret) == ['5+5×2', True], await p.evaluate(caret))
+    await p.keyboard.type('(')
+    for _ in range(3):
+        await p.keyboard.press('ArrowRight')
+    await p.keyboard.type(')')
+    check(L + 'a bracket added at the start and one in the middle: (5+5)×2', await p.evaluate(R) == '(5+5)×2', await p.evaluate(R))
+    await p.keyboard.press('Enter')
+    check(L + 'with the cursor in the middle = works out everything: 20', await p.evaluate(R) == '20' and await p.evaluate(X) == '(5+5)×2'
+          and not await p.evaluate("!!document.querySelector('#result .caret')"), [await p.evaluate(R), await p.evaluate(X)])
+    await p.keyboard.press('Escape')
+    await p.keyboard.type('5+3')
+    await p.keyboard.press('ArrowLeft')
+    await p.keyboard.press('ArrowLeft')
+    await p.keyboard.type('*')
+    check(L + 'an operator typed before another replaces it: 5×3', await p.evaluate(R) == '5×3', await p.evaluate(R))
+    await p.keyboard.press('Escape')
+    await p.keyboard.type('(5+5)')
+    await p.keyboard.press('Home')
+    await p.keyboard.type('2')
+    check(L + 'a number before a bracket is multiplied: 2×(5+5)', await p.evaluate(R) == '2×(5+5)', await p.evaluate(R))
+    await p.keyboard.press('Escape')
+    await p.keyboard.type('1234+567')
+    x = await p.evaluate("""(()=>{const el=document.querySelector('#result'),n=el.firstChild,i=el.textContent.indexOf('+'),r=document.createRange();
+        r.setStart(n,i);r.setEnd(n,i+1);const b=r.getBoundingClientRect();return [b.left,b.top+b.height/2]})()""")
+    await p.mouse.click(x[0] + 1, x[1])
+    await p.keyboard.type('9')
+    check(L + 'a tap puts the cursor there: 1.234|+567, then 9 → 12.349+567', await p.evaluate(R) == '12.349+567', await p.evaluate(R))
+    await p.keyboard.press('Backspace')
+    await p.keyboard.press('Backspace')
+    check(L + '⌫ deletes before the cursor: 123+567', await p.evaluate(R) == '123+567', await p.evaluate(R))
+    await p.keyboard.press('Delete')
+    check(L + 'C with the cursor in a number clears that number', await p.evaluate(R) == '+567', await p.evaluate(R))
+    await p.keyboard.press('Escape')
+    await p.keyboard.type('1234567')
+    for _ in range(3):
+        await p.keyboard.press('ArrowLeft')
+    await p.keyboard.type('0')
+    check(L + 'a digit added in a number keeps the grouping: 12.340.567', await p.evaluate(R) == '12.340.567', await p.evaluate(R))
+    await p.keyboard.press('Escape')
 
     # negative numbers: one made with ± (hold −, F9) shows in brackets, (−5); one typed with − first stays -5;
     # after an operator always in brackets, 5×(−3); finished results plain
@@ -2055,6 +2125,13 @@ async def press_feedback(browser, url):
             await hold('[data-action="clear"]')
             st = await p.evaluate("[unitValueFrom.value,unitValueTo.value,document.querySelector('#clearButton').textContent]")
             check(L + 'Units: holding C clears both values', st[0] in ('', '0') and st[1] in ('', '0') and st[2] == 'AC', st)
+            for k in ['5', '+']:
+                await p.click(f'#keypad [data-value="{k}"]')
+            check(L + 'Units: the key stays C after an operator (5+)', await p.evaluate("document.querySelector('#clearButton').textContent") == 'C')
+            await p.click('#keypad [data-value="5"]')
+            await p.click('#keypad [data-action="paren"]')
+            check(L + 'Units: ( ) after 5+5 puts it in brackets', await p.evaluate("unitValueFrom.value") == '(5+5)', await p.evaluate("unitValueFrom.value"))
+            await hold('[data-action="clear"]')
             await p.evaluate("switchMode('fuel')")
             await p.click('#keypad [data-value="6"]')
             await p.click('#keypad [data-value="8"]')
@@ -2096,8 +2173,33 @@ async def press_feedback(browser, url):
         await p.tap('#keypad [data-value="8"]')
         after = await p.evaluate("[window.__vib.length,document.querySelector('#keypad [data-value=\"8\"] .key-tick input')?.checked??null,document.querySelector('#result').textContent]")
         if name == 'Android':
-            check(L + 'a tap vibrates briefly', after[0] > before[0], [before, after])
+            check(L + 'a tap vibrates once, lightly', after[0] == before[0] + 1 and await p.evaluate("window.__vib.at(-1)") <= 5, [before, after])
             check(L + 'no iPhone switches on Android', not await p.evaluate("document.querySelectorAll('.key-tick').length"))
+            # one tick as the finger touches the key; the press happens when it lets go, also after holding a while
+            cdp = await ctx.new_cdp_session(p)
+            async def finger(sel, ms, move=0):
+                b = await p.locator('#keypad ' + sel).bounding_box()
+                fx, fy = b['x'] + b['width'] / 2, b['y'] + b['height'] / 2
+                await cdp.send('Input.dispatchTouchEvent', {'type': 'touchStart', 'touchPoints': [{'x': fx, 'y': fy}]})
+                await p.wait_for_timeout(ms // 2)
+                mid = await p.evaluate("[window.__vib.length,document.querySelector('#result').textContent]")
+                if move:
+                    await cdp.send('Input.dispatchTouchEvent', {'type': 'touchMove', 'touchPoints': [{'x': fx, 'y': fy + move}]})
+                await p.wait_for_timeout(ms - ms // 2)
+                await cdp.send('Input.dispatchTouchEvent', {'type': 'touchEnd', 'touchPoints': []})
+                await p.wait_for_timeout(80)
+                return mid
+            v0 = await p.evaluate("window.__vib.length")
+            mid = await finger('[data-value="9"]', 900)
+            st = await p.evaluate("[window.__vib.length,document.querySelector('#result').textContent]")
+            check(L + 'a finger on a key ticks once at once, the key is not pressed yet', mid == [v0 + 1, '8'], mid)
+            check(L + 'let go after holding, the key is pressed once, no second tick', st == [v0 + 1, '89'], st)
+            mid = await finger('[data-value="4"]', 200, move=200)
+            st = await p.evaluate("[window.__vib.length,document.querySelector('#result').textContent]")
+            check(L + 'a finger that slides off the key presses nothing', st == [v0 + 2, '89'], st)
+            await finger('[data-action="clear"]', 900)
+            st = await p.evaluate("[window.__vib.length,document.querySelector('#result').textContent]")
+            check(L + 'holding C: a tick on touch, one as it clears, none on letting go', st == [v0 + 4, '0'], st)
         else:
             check(L + "a tap toggles the key's own switch (the tick), no vibrate", before[1] is False and after[1] is True and after[0] == before[0], [before, after])
             hit = await p.evaluate(f"document.elementFromPoint({x},{y}).className")

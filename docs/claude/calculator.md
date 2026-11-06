@@ -27,8 +27,21 @@ Part of the notes in CLAUDE.md (read that first). Covers numbers.js, calculator.
   screen shows it rounded via `formatExpressionDisplay`. Use that function to display expressions.
 - **Brackets:** useless ones are dropped (`tidyParens`, `closeParen`): `((5))` -> `5`, open ones at the end
   are dropped on =. A number or `(` after `)`, and a number after `%`, adds `×` first. Same in Units.
-- **C / AC:** the key shows C while a number is being typed (C clears just that number), otherwise AC
-  (clears everything). Same in Units (`unitEntry`). Delete = C, Esc = AC on a keyboard.
+  With no bracket open, `)` (Scientific, keyboard) and the basic pad's ( ) after a calculation put brackets around
+  everything before the cursor: 5+5 -> (5+5) (`wrapAll`; only when an operator stands outside brackets, `topOperator`, so after
+  a single value ( ) still opens one, 5 -> 5×(). Same in Units.
+- **C / AC:** the key shows C while anything is typed (5, 5+, 5+5), AC with nothing typed, after a result or an error.
+  C clears the number being typed (with the cursor in a number, the whole number); with none (5+), everything. Same in
+  Units (`unitTyped` for the label, `unitEntry` for what C clears). Delete = C, Esc = AC on a keyboard.
+- **The cursor** (`caretTail`, `caretOn`): a tap on the calculation being typed (`caretFromPoint`, the nearest of
+  `caretStops`) or ← → Home End (`moveCaret`) puts a cursor in it (`.caret`, kept in view by `fitDisplayText`). What is before
+  it stays `expression` + `current`, so every key works there as at the end; what is after it is `caretTail`, and
+  `typedText()` is the whole calculation (use it, not expression+current, for anything that reads what is typed). Where the
+  two meet, a × goes between two values (2 before (5+5) -> 2×(5+5)) and an operator typed before another replaces it;
+  `caretTo` makes that real when the cursor moves. It never stands inside a function's name, a constant, a power's digits or
+  a carried result; a digit right after a carried result edits it as shown (`carry.plain`). = works out everything and drops
+  the cursor, as do AC and a result. The display marks the cursor with `CARET` (U+0007), which `formatInputDisplay` keeps in
+  place (grouping stays right: 1.2|34.567).
 - **Scientific:** a view of the Calculator, not a mode: the f(x) switch on the display (`sciMode`, `uc-sci`; the only chip
   there, the angle unit is the keypad's Deg/Rad key; at the display's top-left in line with History, styled like ?, and
   Dates' Working days chip sits in the same place) adds the

@@ -25,7 +25,8 @@ $('#keypad').addEventListener('click',e=>{
 $('#howButton').addEventListener('click',showHow);$('#closeHow').addEventListener('click',closeHow);$('#howModal').addEventListener('click',e=>{if(e.target.id==='howModal')closeHow()});
 $('#historyButton').addEventListener('click',openHistory);$('#closeHistory').addEventListener('click',closeHistory);$('#historyBackdrop').addEventListener('click',historyBackdropClick);$('#historyList').addEventListener('click',historyClick);$('#copyButton').addEventListener('click',copyResult);
 // Tapping a result copies it too (on short screens the copy button is hidden to make room for the keypad).
-$('#calculatorDisplay').addEventListener('click',e=>{if(mode==='units'||mode==='graph'||!e.target.closest('#result'))return;if(mode==='calc'?!justCalculated:!toolResult?.main)return;copyResult();const r=$('#result');r.classList.add('copied');setTimeout(()=>r.classList.remove('copied'),700)});
+// While a calculation is typed, a tap on it puts the cursor there (calculator.js, caretFromPoint).
+$('#calculatorDisplay').addEventListener('click',e=>{if(mode==='units'||mode==='graph'||!e.target.closest('#result'))return;if(mode==='calc'&&!justCalculated&&!calcError){caretFromPoint(e.clientX);return}if(mode==='calc'?!justCalculated:!toolResult?.main)return;copyResult();const r=$('#result');r.classList.add('copied');setTimeout(()=>r.classList.remove('copied'),700)});
 $('#langButton').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();setLanguage(lang==='el'?'en':'el')});
 $('#themeButton').addEventListener('click',toggleThemeMenu);
 $('#installButton')?.addEventListener('click',installApp);
@@ -60,6 +61,7 @@ window.addEventListener('keydown',e=>{
  // In a tool field that has the focus, Backspace is the browser's own: it deletes the selection, or the character before the cursor.
  const toolFieldFocused=document.activeElement?.matches('#toolPanel input[data-tool-input]');
  if((e.key==='Backspace'||e.code==='Backspace')&&toolFieldFocused)return;
+ if(mode==='calc'&&nothingOpen&&['ArrowLeft','ArrowRight','Home','End'].includes(e.key)&&!e.ctrlKey&&!e.metaKey&&!e.altKey){if(moveCaret(e.key==='Home'?'home':e.key==='End'?'end':e.key==='ArrowLeft'?-1:1))e.preventDefault();return}// the cursor
  if(e.key==='Backspace'||e.code==='Backspace'){e.preventDefault();if(mode==='calc')backspace();else toolKeyInput('backspace');return;}
  if(e.key==='%'&&mode==='units'){e.preventDefault();toolKeyInput('%');return}
  if(e.key===','||e.key==='.'||e.key==='Decimal'){e.preventDefault();if(mode==='calc')digit('.');else if(toolFieldFocused){const input=document.activeElement,end=input.value.length,a=input.selectionStart??end,b=input.selectionEnd??a;if(noDecimalField(input.id)||/,/.test(input.value.slice(0,a)+input.value.slice(b))){refuseKey(input);return}input.setRangeText(',',a,b,'end');input.dispatchEvent(new Event('input',{bubbles:true}))}else toolKeyInput('.');return}

@@ -21,7 +21,7 @@ function memScreenValue(){
  if(justCalculated)return lastResult;
  try{
   if(current&&current!=='-'&&current!=='−')return evalExpr(current);
-  const s=expression.replace(new RegExp('(?:[+\\-×÷^(CPm]|(?:'+FN_ALT+')\\()+$'),'');
+  const s=(caretTail?typedText():expression).replace(new RegExp('(?:[+\\-×÷^(CPm]|(?:'+FN_ALT+')\\()+$'),'');
   return s?evalExpr(tidyParens(s)):null;
  }catch{return null}
 }
