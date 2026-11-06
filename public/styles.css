@@ -57,6 +57,8 @@ input[type=checkbox],input[type=radio],input[type=color],input[readonly],.key-ti
 .how-button{position:absolute;right:0;bottom:calc(100% + 7px);width:34px;height:34px;border:1px solid var(--border);border-radius:50%;background:var(--card2);color:var(--accent2);font-size:17px;font-weight:750;cursor:pointer;z-index:3}
 .how-button.hidden{display:none}
 .result{font-size:clamp(46px,14vw,76px);line-height:1.05;font-weight:400;letter-spacing:-.055em;overflow-x:auto;overflow-y:hidden;white-space:nowrap;scrollbar-width:none;padding:0 3px 2px 0}
+.display-wrap:not(.calculated):not(.tool-display):not(.unit-display):not(.error) .result{cursor:text}/* a tap places the cursor */
+.result .caret{display:inline-block;width:0;height:.82em;margin-right:calc(-1*max(2px,.035em));border-left:max(2px,.035em) solid var(--accent);vertical-align:-.04em;animation:gcaret 1s steps(1) infinite;pointer-events:none}
 .result::-webkit-scrollbar{display:none}
 /* text too long for its line (fitDisplayText): the cut-off side fades out; the mask's colour only sets opacity */
 .fade-start{-webkit-mask-image:linear-gradient(to right,transparent,#000 28px);mask-image:linear-gradient(to right,transparent,#000 28px)}

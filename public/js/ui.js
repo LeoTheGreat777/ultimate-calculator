@@ -198,7 +198,7 @@ function calcNumberForUnits(){
   let value;
   if(justCalculated&&lastResult)value=lastResult;
   else{
-   let full=tidyParens(expression+current);if(OP_END.test(full))full=full.slice(0,-1);
+   let full=tidyParens(typedText());if(OP_END.test(full))full=full.slice(0,-1);
    if(!full)return null;
    const open=(full.match(/\(/g)||[]).length-(full.match(/\)/g)||[]).length;if(open>0)full+=')'.repeat(open);
    value=evalExpr(full);
@@ -350,7 +350,7 @@ function copyResult(){
  setTimeout(recordModeHistory,0);// a result copied is a result worth keeping
  // Copies what the screen shows: the result, the expression being typed, or in Units the converted value.
  const unitResult=()=>{const side=unitSource==='to'?'from':'to';return formatUnitResult(unitExpressions[side]??'')};
- const value=mode==='calc'?(justCalculated?($('#result')?.dataset.long&&$('#result').textContent||fmt(lastResult)):(expression+current?formatExpressionDisplay(expression+current):'')):mode==='units'?unitResult():(toolResult?.main??'');
+ const value=mode==='calc'?(justCalculated?($('#result')?.dataset.long&&$('#result').textContent||fmt(lastResult)):(typedText()?formatExpressionDisplay(typedText()):'')):mode==='units'?unitResult():(toolResult?.main??'');
  if(value===''||value===t('toolReady')||!navigator.clipboard)return;
  navigator.clipboard.writeText(String(value)).then(()=>{const b=$('#copyButton');b.textContent=t('copied');setTimeout(()=>b.textContent=t('copy'),900)}).catch(()=>{})
 }
