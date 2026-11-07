@@ -2190,6 +2190,7 @@ async def press_feedback(browser, url):
                 await cdp.send('Input.dispatchTouchEvent', {'type': 'touchEnd', 'touchPoints': []})
                 await p.wait_for_timeout(80)
                 return mid
+            await p.wait_for_timeout(150)  # never two ticks within 80 ms
             v0 = await p.evaluate("window.__vib.length")
             mid = await finger('[data-value="9"]', 900)
             st = await p.evaluate("[window.__vib.length,document.querySelector('#result').textContent]")
@@ -2201,6 +2202,8 @@ async def press_feedback(browser, url):
             await finger('[data-action="clear"]', 900)
             st = await p.evaluate("[window.__vib.length,document.querySelector('#result').textContent]")
             check(L + 'holding C: a tick on touch, one as it clears, none on letting go', st == [v0 + 4, '0'], st)
+            await p.evaluate("window.__vib=[];keyTick();keyTick()")
+            check(L + 'never two ticks at once', await p.evaluate("window.__vib") == [1])
         else:
             check(L + "a tap toggles the key's own switch (the tick), no vibrate", before[1] is False and after[1] is True and after[0] == before[0], [before, after])
             hit = await p.evaluate(f"document.elementFromPoint({x},{y}).className")

@@ -314,8 +314,11 @@ function setupTopPress(){
 // is pressed when the finger lets go, like on the iPhone. The browser's own click is not used for a finger: after a long
 // press Android sends none (so a key held a moment did nothing), so touchend is stopped (no click of the browser's own)
 // and the key gets its click from here, if the finger is still on it. A long press's context menu (and its buzz) is blocked.
-const KEY_TICK_MS=4;
-function keyTick(ms=KEY_TICK_MS){try{navigator.vibrate?.(ms)}catch{}}
+// A website can only switch the phone's motor on for a time, at full strength (no light "click" like Android's own keys),
+// and a short pulse can feel like two knocks (the motor starting and braking), so the tick is the shortest there is: 1 ms.
+// Never two within 80 ms.
+const KEY_TICK_MS=1;let lastTick=-1e9;
+function keyTick(ms=KEY_TICK_MS){const now=performance.now();if(now-lastTick<80)return;lastTick=now;try{navigator.vibrate?.(ms)}catch{}}
 function setupTouchRelease(pad){
  let key=null,x0=0,y0=0;
  pad.addEventListener('touchstart',e=>{const t=e.touches[0];key=e.touches.length===1?e.target.closest?.('button'):null;if(key&&!key.disabled){x0=t.clientX;y0=t.clientY;keyTick()}},{passive:true});
