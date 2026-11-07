@@ -1450,8 +1450,9 @@ async def more_decimals(browser, url):
         await p.evaluate("copyResult()")
         await p.wait_for_timeout(150)
         clip = await p.evaluate("navigator.clipboard.readText()")
-        # a phone: 6 decimals, or 8 where the frameless card leaves room for them (the font decides)
-        mid = ('17.636.684,142857', '17.636.684,14285714') if touch else ('17.636.684,14285714',)
+        # 6 decimals, or 8 where the column leaves room for them (the font decides: GitHub's runner has the wider DejaVu Sans;
+        # on a computer the column narrows with the keys, layout.js deskKey)
+        mid = ('17.636.684,142857', '17.636.684,14285714')
         check(f'[decimals {w}x{h}] up to 10 decimals when they fit, else fewer', got[0] == '0,1428571429' and got[1] in mid and got[2] == '0,5', got)
         check(f'[decimals {w}x{h}] copying the result copies what is shown', clip == '0,1428571429', clip)
         await ctx.close()
