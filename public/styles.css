@@ -908,6 +908,13 @@ html.side-panels .side-panel{display:flex;flex-direction:column;position:fixed;t
 .side-head .history-clear-wrap{margin-left:auto;min-height:30px}
 .side-head .history-close{display:none}
 .side-panel .history-chart{margin:4px 0 6px}
+/* the three parts share the window, like the frameless keypad (html.frameless): no boxes, a thin line between them, all as
+   tall as the calculator; the title bar runs across all three */
+html.side-panels .side-panel{height:var(--side-h);background:transparent;border:0;border-radius:0;box-shadow:none;padding-top:6px}
+html.side-panels .side-left{border-right:1px solid var(--border);padding-left:2px;padding-right:20px}
+html.side-panels .side-right{border-left:1px solid var(--border);padding-left:20px;padding-right:2px}
+html.side-panels .app-shell{overflow:visible}
+html.side-panels .topbar{margin-left:calc(-20px - var(--side-w,300px));margin-right:calc(-20px - var(--side-w,300px))}
 html.side-panels #historyButton,html.side-panels #howButton,html.side-panels #unitHow,html.side-panels #chartButton{display:none!important}
 .side-panel .side-list{margin-top:4px;min-height:0;overflow-y:auto;scrollbar-width:thin}
 .side-panel .history-result{font-size:17px}

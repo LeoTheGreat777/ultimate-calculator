@@ -35,7 +35,8 @@ Part of the notes in CLAUDE.md (read that first). Covers theme.js, the theme blo
   mode. Changing theme: circle reveal from the theme button (View Transitions, `transitionTheme`), fade fallback,
   instant with reduced motion.
 - **The keys are round** everywhere (`html.keys-round`, always set by `fitLayout`; there is no choice in the theme menu):
-  every key is a pill (`border-radius:999px`), a circle where it is as tall as wide (phones upright, screen.md). On a touch
-  screen the card also has no frame
-  (`html.frameless`, set by `fitLayout`: a phone upright or sideways, a tablet; not Graph, not a computer): the page takes the
-  card's colour (`--card`), the keys get a wider gap and lighter, bigger digits.
+  every key is a pill (`border-radius:999px`), a circle where it is as tall as wide (phones upright, screen.md). The card
+  also has no frame
+  (`html.frameless`, set by `fitLayout`: a phone upright or sideways, a tablet (not Graph there), a computer (Graph too)): the page
+  takes the card's colour (`--card`); on touch screens the keys also get a wider gap and lighter, bigger digits. On a
+  computer the side panels have no boxes either, only a thin line beside the calculator (screen.md, Side panels).

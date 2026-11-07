@@ -143,14 +143,18 @@ function fitFooter(){const f=$('.app-footer'),r=document.documentElement;if(!f)r
 // tablet 110; Scientific stays 62, on a tablet 72, sideways 90). Every keypad's keys may grow as tall as the Calculator's
 // (a quarter of the keypad's width), and no key is taller than it is wide, so the round keys are circles where they can be
 // (a phone) and pills where they are wider (a tablet, the tools' three columns): the keypads look the same in every mode.
-function bigSpec(spec,big,tablet){if(!big)return spec;
+function bigSpec(spec,big,tablet,desk){if(!big&&!desk)return spec;
  const kp=$('#keypad'),Z=window.__uiZoom||1,widths=[...(kp?.querySelectorAll('button')||[])].map(b=>b.getBoundingClientRect().width/Z).filter(x=>x>0);
  const calcW=kp?(kp.clientWidth-3*(tablet?18:14))/4:86,w=Math.min(calcW,...widths)||86;// the column gap of the Calculator's round keys (styles.css)
- const top=tablet?110:100,max=spec===FIT.sci?(tablet?(innerWidth>innerHeight?90:72):62):Math.min(top,Math.floor(w));
- return {...spec,k:[Math.max(spec.k[1],max),spec.k[1]],roomy:spec.roomy&&Math.min(spec.roomy,150)}}
+ const top=desk?DESK_KEY_MAX:tablet?110:100,max=spec===FIT.sci?(desk?spec.k[0]:tablet?(innerWidth>innerHeight?90:72):62):Math.min(top,Math.floor(w));
+ return {...spec,k:[Math.max(spec.k[1],max),spec.k[1]],roomy:spec.roomy&&(desk?spec.roomy:Math.min(spec.roomy,150))}}
 // A tablet (a touch screen wider than a phone, not in the sideways layout): the app takes the whole width (html.tablet), up to
 // the width where the side panels fit (TABLET_MAX_W; an iPad Pro 13" held sideways keeps the column with History and the working)
 const TABLET_MAX_W=1264;
+// A computer (mouse, not touch): the keys may grow to 80px and the display takes the height left over, so the keys sit at the
+// bottom of the window as on phones and tablets; no card frame (html.frameless), and with the side panels the three parts
+// share the window, split by thin lines (styles.css).
+const DESK_KEY_MAX=80;
 function fitLayout(){refreshSide();fitBrand();
  const card=$('#calculatorCard'),shell=$('.app-shell'),footer=$('.app-footer'),root=document.documentElement;if(!card||!shell||!footer)return;
  document.body.classList.add('fit');
@@ -171,9 +175,10 @@ function fitLayout(){refreshSide();fitBrand();
  if(tool)fitShortLabels();
  const touch=isMobileDevice(),wide=innerWidth/Z,tablet=!land&&touch&&wide>500&&wide<TABLET_MAX_W;root.classList.toggle('tablet',tablet);
  const big=!land&&touch&&mode!=='graph'&&(wide<=500||tablet);root.classList.toggle('big-keys',big);root.classList.add('keys-round');
- // on a touch screen: no card frame, upright and sideways, phone and tablet (styles.css, html.frameless)
+ // no card frame (styles.css, html.frameless): on a computer, and on a touch screen upright and sideways, phone and tablet
  root.classList.toggle('sci-side',land||(tablet&&innerWidth>innerHeight));// Scientific's keys beside the basic ones (styles.css)
- root.classList.toggle('frameless',touch&&mode!=='graph'&&(big||land));
+ const desk=!touch&&!land&&mode!=='graph';
+ root.classList.toggle('frameless',touch?mode!=='graph'&&(big||land):true);
  if(big&&!tablet){root.classList.add('fit-small');fitFooter()}
  if(land){fitFooter();fitLandscape(card,root,avail,need,tool,setToolLayout);if(tool)fitShortLabels();return}
  card.style.removeProperty('--gk');// back in portrait, Graph keys size themselves again (styles.css)
@@ -197,8 +202,8 @@ function fitLayout(){refreshSide();fitBrand();
   apply();
   return need()-avail;
  };
- let over=attempt(bigSpec(mode==='calc'?(sciMode?FIT.sci:FIT.calc):mode==='units'?FIT.units:touchTool?FIT.mobileTool:FIT.tool,big,tablet));
- if(over>0&&tool&&!touchTool){setToolLayout(true);over=attempt(bigSpec(FIT.mobileTool,big,tablet))}
+ let over=attempt(bigSpec(mode==='calc'?(sciMode?FIT.sci:FIT.calc):mode==='units'?FIT.units:touchTool?FIT.mobileTool:FIT.tool,big,tablet,desk));
+ if(over>0&&tool&&!touchTool){setToolLayout(true);over=attempt(bigSpec(FIT.mobileTool,big,tablet,desk))}
  const spec=mode==='calc'?(sciMode?FIT.sci:FIT.calc):mode==='units'?FIT.units:FIT.tool;
  // still too tall (a small phone): the tools get less padding (fit-tight) and the display and keys may get smaller, then
  // a kind's fields share one row (fit-row, short labels), last Equations' form line and the details (Subnet, Statistics; Dates' note) go (? shows them)
@@ -217,10 +222,10 @@ function fitLayout(){refreshSide();fitBrand();
   if(over>0){card.classList.remove('fit-tight','fit-row','fit-no-form','fit-no-details','fit-list');$('#keypad')?.style.removeProperty('max-height');root.classList.remove('fit-small','fit-footer');if(tool)fitShortLabels();over=attempt(card.classList.contains('mobile-tool')?FIT.mobileTool:spec)}
  }
  if(tool)fitShortLabels();// the fields' final widths
- // a phone upright or a tablet: the display takes the height left over, so the keys sit at the bottom of the screen in every
+ // a phone upright, a tablet or a computer: the display takes the height left over, so the keys sit at the bottom of the screen in every
  // mode, like the iPhone's and the iPad's calculator; Dates (a list, no keys) keeps its display and its list reaches the bottom,
  // so the date fields don't move when the list appears
- if(big&&over<=0){const free=Math.floor(avail-need());if(free>0){
+ if((big||desk)&&over<=0){const free=Math.floor(avail-need());if(free>0){
   const list=$('#keypad.date-details'),d=parseFloat(card.style.getPropertyValue('--disp'))||0;
   if(list){list.style.minHeight=Math.floor(list.getBoundingClientRect().height/Z+free)+'px';over=need()-avail}
   else if(d){card.style.setProperty('--disp',(d+free)+'px');over=need()-avail}}}

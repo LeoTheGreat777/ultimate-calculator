@@ -6,6 +6,12 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.38.0 – 2026-11-07
+
+### Changed
+- On computers the app now looks like it does on phones and tablets: no box around the calculator, and the keypad reaches the bottom of the window in every mode (bigger keys, extra room above the result).
+- With History and "How was this calculated?" beside the calculator, all three are as tall as the calculator, without boxes, split by thin lines, and the title bar runs across all three.
+
 ## 0.37.0 – 2026-11-07
 
 ### Changed

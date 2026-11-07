@@ -15,7 +15,10 @@ Part of the notes in CLAUDE.md (read that first). Covers layout.js, side.js, mod
   **The keys sit at the bottom in every mode:** once everything fits, the display takes the height left over (`--disp` grows), so
   nothing is left empty under the keypad; extra room shows above the result. Dates (a list, no keys) keeps its display and its
   list reaches the bottom instead (`min-height` on `#keypad.date-details`), so the date fields don't move when the list appears.
-  `keys_fill_the_bottom` in the tests checks every mode on phones and an iPad.
+  **Computers too** (mouse, not touch, not Graph or the sideways layout: `desk` in `fitLayout`): keys may grow to
+  `DESK_KEY_MAX` 80px (Scientific keeps 62; the display shrinks to its `roomy` height before the keys get smaller) and the
+  display takes the height left over, so the keys sit at the bottom of the window as on phones; no card frame (look.md).
+  `keys_fill_the_bottom` in the tests checks every mode on phones, an iPad and computers (1024×768 to 1920×1080).
 - **Tablets** (`html.tablet`, `fitLayout`: a touch screen wider than 500px, not in the sideways layout, narrower than
   `TABLET_MAX_W` 1264px, where the side panels fit, so an iPad Pro 13" sideways keeps the column with them): the app takes the
   whole width (up to 1100px) like the iPad's calculator, gets `big-keys` (up to 110px; Scientific 72, sideways 90),
@@ -98,7 +101,9 @@ Part of the notes in CLAUDE.md (read that first). Covers layout.js, side.js, mod
   History on the left (`historyRowsHtml`, the same list and `historyClick` as the sheet) and on the right the working
   (`howHtml`; Units `unitsHow`; Graph `graphPointsHtml`) with a tool's chart under it (`toolChartHtml(false)`,
   `drawToolChart(box)`: the dialog's chart parts keep their ids, the panel's have classes only). They are `position:fixed`
-  level with the card (`--side-l/r/top/h/w`). Anything that changes the screen calls `refreshSide()` (once per frame; the
+  level with the card (`--side-l/r/top/h/w`) and as tall as it (`height:var(--side-h)`, the list scrolls inside): no
+  boxes, the page's colour, a thin line (`--border`) on the calculator's side, like the frameless keypad. The title bar
+  then runs across all three (`html.side-panels .topbar`, negative margins of `--side-w` + 20px; `.app-shell` overflow visible). Anything that changes the screen calls `refreshSide()` (once per frame; the
   calculator's `render`, `renderToolDisplay`, `updateUnitsDisplay`, Graph's points, History, `fitLayout`, language, theme).
   With the panels showing, the History, ? and chart buttons are hidden (`html.side-panels #historyButton…`
   in styles.css) and the History sheet's `#historyClearWrap` (chart button, Clear all) and `#historyChartWrap` move into the

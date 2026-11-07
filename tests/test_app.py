@@ -1045,7 +1045,7 @@ async def own_themes(browser, url):
     await p.click('[data-te-row="accent"] [data-te-colour="#a3e635"]')
     await p.mouse.click(400, 300)  # outside the panel
     st = await p.evaluate("[themeEditorOpen(),theme,localStorage.getItem('uc-theme'),document.documentElement.dataset.theme,getComputedStyle(document.body).backgroundColor]")
-    check(L + 'a tap outside closes it and keeps the own theme', st == [False, 'custom-dark', 'custom-dark', 'custom-dark', 'rgb(28, 16, 48)'], st)
+    check(L + 'a tap outside closes it and keeps the own theme', st == [False, 'custom-dark', 'custom-dark', 'custom-dark', 'rgb(36, 25, 54)'], st)  # the page is the card's colour (no card frame)
     check(L + 'Recent keeps at most 8, newest first', await p.evaluate("themeRecent.dark.length<=8&&themeRecent.dark[0].bg==='#1c1030'"))
     accent = await p.evaluate(var % '--accent')
     await p.reload()
@@ -3046,21 +3046,27 @@ async def tablets(browser, url):
             check(D + 'a phone sideways: no card frame with round keys, a big result', not st['tablet'] and st['frameless'] and
                   await p.evaluate("parseFloat(getComputedStyle($('#result')).fontSize)") >= 60, st)
         else:
-            check(D + 'a computer keeps the card frame and the column', not st['tablet'] and not st['frameless'] and st['w'] < 700, st)
+            check(D + 'a computer keeps the column, no card frame (like phones and tablets)', not st['tablet'] and st['frameless'] and st['w'] < 700, st)
         await ctx.close()
 
 
 async def keys_fill_the_bottom(browser, url):
-    """Phones upright and tablets: in every mode the keypad reaches the bottom of the screen (the display takes the room
-    left over), and the tools' keys are as tall as the Calculator's when there is room, never taller than wide."""
+    """Phones upright, tablets and computers: in every mode the keypad reaches the bottom of the screen (the display takes the
+    room left over), and the tools' keys are as tall as the Calculator's when there is room, never taller than wide. On a
+    computer the side panels are as tall as the calculator, with no boxes around them or the calculator."""
     L = '[keys fill the bottom] '
     state = """(()=>{const f=$('.app-footer').getBoundingClientRect(),keys=[...$$('#keypad button')].map(b=>b.getBoundingClientRect());
       return {gap:Math.round(innerHeight-f.bottom),keyH:keys.length?Math.round(keys[0].height):0,
         tall:keys.some(r=>r.height<=keys[0].height+1&&r.height>r.width+1),scroll:document.documentElement.classList.contains('page-scroll')}})()"""
     modes = ['calc', 'units', 'currency', 'vat', 'pct', 'loan', 'dates', 'fuel', 'energy', 'net', 'numbers', 'equation', 'stats', 'prog']
-    for w, h in [(440, 956), (390, 844), (412, 780), (834, 1194)]:
+    side = """(()=>{const r=s=>$(s).getBoundingClientRect(),c=r('#calculatorCard'),a=r('#sideHistory'),b=r('#sideWork'),cs=getComputedStyle,
+      t=r('.topbar');return {on:document.documentElement.classList.contains('side-panels'),frameless:document.documentElement.classList.contains('frameless'),
+        h:[Math.round(a.height-c.height),Math.round(b.height-c.height)],box:[cs($('#sideHistory')).backgroundColor,cs($('#calculatorCard')).borderTopColor],
+        bar:[Math.round(t.left-a.left),Math.round(b.right-t.right)]}})()"""
+    for w, h, touch in [(440, 956, True), (390, 844, True), (412, 780, True), (834, 1194, True), (1024, 768, False), (1280, 860, False),
+                        (1440, 900, False), (1920, 1080, False)]:
         D = L + f'{w}x{h} '
-        ctx = await browser.new_context(viewport={'width': w, 'height': h}, is_mobile=True, has_touch=True)
+        ctx = await browser.new_context(viewport={'width': w, 'height': h}, is_mobile=touch, has_touch=touch)
         await ctx.add_init_script(SEED % ('en', 'dark'))
         p = await ctx.new_page()
         await p.goto(url)
@@ -3074,6 +3080,11 @@ async def keys_fill_the_bottom(browser, url):
             check(D + m + ": no key taller than it is wide (Statistics' Add spans rows)", not st['tall'], st)
             if w == 440 and m in ('vat', 'pct', 'numbers', 'stats'):
                 check(D + m + ": keys as tall as the Calculator's", abs(st['keyH'] - calcH) <= 2, (st, calcH))
+            if not touch and w >= 1280 and m in ('calc', 'vat', 'dates', 'stats'):
+                st = await p.evaluate(side)
+                check(D + m + ': History and the working as tall as the calculator, no boxes, the title bar across all three',
+                      st['on'] and st['frameless'] and max(map(abs, st['h'])) <= 2 and st['box'] == ['rgba(0, 0, 0, 0)'] * 2
+                      and max(map(abs, st['bar'])) <= 2, st)
         await ctx.close()
 
 
