@@ -2992,14 +2992,144 @@ PHONE_SHEETS = [
     ('Tips', "switchMode('calc');showHelp()", '#howModal .modal-card', "closeHow()"),
     ('theme menu', "openThemeMenu()", '#themeMenu', "closeThemeMenu()"),
     ('own theme editor', "openThemeEditor('dark')", '#themeEditor', "closeThemeEditor()"),
+    ('Copy and Paste menu', "switchMode('calc');openClipMenu(clipTarget($('#result')),innerWidth/2,innerHeight/3)", '#clipMenu', "closeClipMenu()"),
 ]
 
 
-async def phone_size(browser, url, name, w, h, wide, scroll, lang):
-    """One phone in one language: every tab (PHONE_TABS) and every sheet (PHONE_SHEETS) through LAYOUT_PROBE."""
-    L = f'[phones {name} {w}×{h} {lang}] '
+async def keys_and_clipboard(browser, url):
+    """Square or round keys from the theme menu; no Copy result button; holding (or right-clicking) a number gives Copy and
+    Paste; Ctrl+C / Ctrl+V; pasted numbers in any common form."""
+    L = '[keys, copy, paste] '
+    clip = "navigator.clipboard.readText()"
+    put = "t=>navigator.clipboard.writeText(t)"
+    for touch, (w, h) in [(True, (402, 874)), (False, (1280, 860))]:
+        D = L + ('phone ' if touch else 'computer ')
+        ctx = await browser.new_context(viewport={'width': w, 'height': h}, is_mobile=touch, has_touch=touch)
+        await ctx.add_init_script(SEED % ('en', 'dark'))
+        await ctx.grant_permissions(['clipboard-read', 'clipboard-write'])
+        p = await ctx.new_page()
+        errors = []
+        p.on('pageerror', lambda e: errors.append(str(e)))
+        await p.goto(url)
+        await p.wait_for_timeout(300)
+        check(D + 'no Copy result button', await p.evaluate("!document.querySelector('#copyButton,.bottom-actions')"))
+        if touch:
+            k = await p.evaluate("(()=>{const b=$('.key[data-value=\"7\"]').getBoundingClientRect();return [b.width,b.height]})()")
+            check(D + 'upright, the keys grow into the room (square keys taller than 68px)', k[1] > 80, k)
+        # the theme menu: Keys, square or round
+        await p.evaluate("openThemeMenu()")
+        check(D + 'the theme menu has Keys: square (chosen) and round', await p.evaluate(
+            "[...document.querySelectorAll('#themeMenu [data-key-shape]')].map(b=>b.dataset.keyShape+':'+b.getAttribute('aria-checked')).join()") == 'square:true,round:false')
+        await p.click('#themeMenu [data-key-shape="round"]')
+        await p.wait_for_timeout(150)
+        check(D + 'round keys: chosen, kept and on screen', await p.evaluate(
+            "[keyShape,store.get('uc-keys'),document.documentElement.classList.contains('keys-round'),$('#themeMenu [data-key-shape=\"round\"]').getAttribute('aria-checked'),getComputedStyle($('.key[data-value=\"7\"]')).borderTopLeftRadius]")
+              == ['round', 'round', True, 'true', '999px'])
+        if touch:
+            k = await p.evaluate("(()=>{const b=$('.key[data-value=\"7\"]').getBoundingClientRect();return [b.width,b.height]})()")
+            check(D + 'round keys on a phone are circles', abs(k[0] - k[1]) <= 2 and k[1] > 75, k)
+        await p.evaluate("closeThemeMenu()")
+        await p.reload()
+        await p.wait_for_timeout(300)
+        check(D + 'round keys stay after a reload', await p.evaluate("document.documentElement.classList.contains('keys-round')"))
+        # holding the result: Copy and Paste
+        await p.keyboard.type('125*8')
+        await p.keyboard.press('Enter')
+        await p.wait_for_timeout(100)
+        box = await p.evaluate("(()=>{const b=$('#result').getBoundingClientRect();return [b.right-30,b.top+b.height/2]})()")
+        if touch:
+            await p.evaluate("([x,y])=>{const t=document.elementFromPoint(x,y);t.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,clientX:x,clientY:y,pointerType:'touch',button:0,isPrimary:true}))}", box)
+            await p.wait_for_timeout(650)
+            await p.evaluate("([x,y])=>{const t=document.elementFromPoint(x,y);t.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,clientX:x,clientY:y,pointerType:'touch',button:0}));t.dispatchEvent(new MouseEvent('click',{bubbles:true,clientX:x,clientY:y}))}", box)
+        else:
+            await p.mouse.click(box[0], box[1], button='right')
+        await p.wait_for_timeout(100)
+        check(D + ('holding' if touch else 'right-clicking') + ' the result opens Copy and Paste', await p.evaluate(
+            "clipMenuOpen()&&[...$$('#clipMenu button')].map(b=>b.textContent).join()") == 'Copy,Paste')
+        await p.evaluate(put, 'x')
+        await p.click('#clipMenu [data-clip="copy"]')
+        await p.wait_for_timeout(600)
+        check(D + 'Copy copies the result and closes the menu', [await p.evaluate(clip), await p.evaluate("clipMenuOpen()")] == ['1.000', False])
+        await p.evaluate(put, '1,234.56')
+        await p.evaluate("openClipMenu(clipTarget($('#result')),200,300)")
+        await p.click('#clipMenu [data-clip="paste"]')
+        await p.wait_for_timeout(150)
+        check(D + 'Paste after a result types the number (1,234.56 -> 1.234,56)', await p.evaluate(R) == '1.234,56', await p.evaluate(R))
+        await p.keyboard.type('+')
+        await p.evaluate(put, '€ -12,5')
+        await p.evaluate("openClipMenu(clipTarget($('#result')),200,300)")
+        await p.click('#clipMenu [data-clip="paste"]')
+        await p.wait_for_timeout(100)
+        await p.keyboard.press('Enter')
+        await p.wait_for_timeout(100)
+        check(D + 'Paste after + starts the next number, its sign kept (1.234,56 + (−12,5))', await p.evaluate(R) == '1.222,06', await p.evaluate(R))
+        await p.evaluate(put, '1234567890123456')
+        await p.evaluate("openClipMenu(clipTarget($('#result')),200,300)")
+        await p.click('#clipMenu [data-clip="paste"]')
+        await p.wait_for_timeout(100)
+        check(D + 'a number of more than 15 digits is refused', await p.evaluate(R) == '1.222,06', await p.evaluate(R))
+        await p.evaluate(put, 'hello')
+        await p.evaluate("openClipMenu(clipTarget($('#result')),200,300)")
+        await p.click('#clipMenu [data-clip="paste"]')
+        await p.wait_for_timeout(100)
+        check(D + 'text that is not a number is refused', await p.evaluate(R) == '1.222,06', await p.evaluate(R))
+        await p.evaluate("openClipMenu(clipTarget($('#result')),200,300)")
+        await p.mouse.click(5, h - 5)
+        await p.wait_for_timeout(100)
+        check(D + 'a press outside closes the menu', not await p.evaluate("clipMenuOpen()"))
+        if not touch:
+            await p.keyboard.press('Escape')
+            await p.evaluate(put, '2.5')
+            await p.keyboard.press('Control+v')
+            await p.wait_for_timeout(100)
+            check(D + 'Ctrl+V pastes into the calculation', await p.evaluate(R) == '2,5', await p.evaluate(R))
+            await p.keyboard.type('*4')
+            await p.keyboard.press('Enter')
+            await p.keyboard.press('Control+c')
+            await p.wait_for_timeout(100)
+            check(D + 'Ctrl+C copies the result', await p.evaluate(clip) == '10', await p.evaluate(clip))
+        # Units: a value, VAT: the amount (read-only on a phone) and the result
+        await p.evaluate("switchMode('units')")
+        await p.wait_for_timeout(150)
+        await p.evaluate(put, '1.500')
+        await p.evaluate("openClipMenu(clipTarget($('#unitValueFrom')),200,300)")
+        await p.click('#clipMenu [data-clip="paste"]')
+        await p.wait_for_timeout(150)
+        check(D + 'Units: Paste on a value converts it', await p.evaluate("[unitValueFrom.value,unitValueTo.value]") == ['1.500', '150'],
+              await p.evaluate("[unitValueFrom.value,unitValueTo.value]"))
+        await p.evaluate("switchMode('vat')")
+        await p.wait_for_timeout(150)
+        await p.evaluate(put, '1.234,50 €')
+        tgt = "clipTarget($('#amount'))" if touch else "clipTarget($('#calculatorDisplay'))"
+        await p.evaluate("openClipMenu(" + tgt + ",200,300)")
+        await p.click('#clipMenu [data-clip="paste"]')
+        await p.wait_for_timeout(150)
+        check(D + 'VAT: Paste fills the amount', await p.evaluate("amount.value") == '1.234,5', await p.evaluate("amount.value"))
+        if not touch:
+            check(D + 'a field you can type in keeps the browser\'s own menu', await p.evaluate("clipTarget($('#amount'))") is None)
+        await p.evaluate("openClipMenu(clipTarget($('#calculatorDisplay')),200,300)")
+        await p.click('#clipMenu [data-clip="copy"]')
+        await p.wait_for_timeout(600)
+        check(D + 'VAT: Copy copies the result', await p.evaluate(clip) == await p.evaluate("toolResult.main"), await p.evaluate(clip))
+        check(D + 'no JavaScript errors', not errors, errors)
+        await ctx.close()
+    # numbers written in other ways
+    ctx = await browser.new_context()
+    p = await ctx.new_page()
+    await p.goto(url)
+    got = await p.evaluate("""['1.234,56','1,234.56','12.5','0.125','1.234','1,234,567','€ 1 234,50','-12','(1.000,00)','24%','abc','1.2e5','.5']
+      .map(s=>{const n=readPastedNumber(s);return n?(n.neg?'-':'')+n.int+(n.frac?','+n.frac:''):null})""")
+    check(L + 'pasted numbers are read in any common form', got == ['1234,56', '1234,56', '12,5', '0,125', '1234', '1234567', '1234,5', '-12',
+                                                                    '-1000', '24', None, None, '0,5'], got)
+    await ctx.close()
+
+
+async def phone_size(browser, url, name, w, h, wide, scroll, lang, shape='square'):
+    """One phone in one language and key shape: every tab (PHONE_TABS) and every sheet (PHONE_SHEETS) through LAYOUT_PROBE."""
+    L = f'[phones {name} {w}×{h} {lang}{" round" if shape == "round" else ""}] '
     ctx = await browser.new_context(viewport={'width': w, 'height': h}, is_mobile=True, has_touch=True)
     await ctx.add_init_script(SEED % (lang, 'dark'))
+    await ctx.add_init_script("localStorage.setItem('uc-keys','%s')" % shape)
     if wide:
         await ctx.add_init_script("new MutationObserver((m,o)=>{if(document.head){const s=document.createElement('style');"
                                   "s.textContent='*{font-family:\"DejaVu Sans\",sans-serif!important}';document.head.prepend(s);o.disconnect()}})"
@@ -3038,14 +3168,15 @@ async def phone_size(browser, url, name, w, h, wide, scroll, lang):
 
 
 async def phone_sizes(browser, url):
-    """Popular phone sizes (PHONES), both languages, six at a time: every tab and sheet, see phone_size and
-    tests/layout_probe.js. `python3 tests/test_app.py --phones` runs only this (after a layout change)."""
+    """Popular phone sizes (PHONES), both languages with square keys and English with round ones, six at a time: every
+    tab and sheet, see phone_size and tests/layout_probe.js. `python3 tests/test_app.py --phones` runs only this."""
     limit = asyncio.Semaphore(6)
 
     async def one(*a):
         async with limit:
             await phone_size(browser, url, *a)
-    await asyncio.gather(*[one(name, w, h, wide, scroll, lang) for name, w, h, wide, scroll in PHONES for lang in ['en', 'el']])
+    await asyncio.gather(*[one(name, w, h, wide, scroll, lang, shape) for name, w, h, wide, scroll in PHONES
+                           for lang, shape in [('en', 'square'), ('el', 'square'), ('en', 'round')]])
 
 
 def built_site():
@@ -3102,6 +3233,7 @@ async def main():
         await upright_small_phones(browser, url)
         await touch_areas(browser, url)
         await more_decimals(browser, url)
+        await keys_and_clipboard(browser, url)
         await how_buttons_in_place(browser, url)
         await all_modes(browser, url)
         await esc_everywhere(browser, url)

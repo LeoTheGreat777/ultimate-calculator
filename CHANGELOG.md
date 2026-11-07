@@ -6,6 +6,16 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.35.0 – 2026-11-07
+
+### Added
+- Round keys: pick Square or Round under Keys at the bottom of the theme menu. On a phone held upright, round keys are circles like the iPhone's.
+- Copy and Paste: press and hold a number (or right-click it on a computer) for a small menu. Paste takes a number copied from a web page or another app, written in any common way (1.234,56, 1,234.56, € 12). Ctrl+C and Ctrl+V work too.
+
+### Changed
+- On phones held upright the keys are bigger and fill the screen.
+- The Copy result button is gone in every mode. Use the new menu, or tap a result to copy it.
+
 ## 0.34.1 – 2026-11-06
 
 ### Fixed

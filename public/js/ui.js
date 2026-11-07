@@ -1,4 +1,4 @@
-// The app around the modes: language, switching modes (tabs), the explanation dialog, copying, holding keys,
+// The app around the modes: language, switching modes (tabs), the explanation dialog, holding keys,
 // and installing on a phone. Themes are in theme.js.
 function showHow(){if(mode==='units')howData=unitsHow();if(!howData)return;$('#howTitle').textContent=t('how');$('#howModal').classList.remove('help-open','help-wide','fn-open');$('#howContent').innerHTML=howHtml(howData);$('#howModal').classList.remove('hidden')}
 function closeHow(){if($('#howModal').contains(document.activeElement))document.activeElement.blur();$('#howModal').classList.add('hidden');$('#howModal').classList.remove('help-open','help-wide','fn-open')}
@@ -227,7 +227,6 @@ function applyLanguage(){
  $('#langButton').textContent=lang==='el'?'ΕΛ':'EN';
  {const l=lang==='el'?'Γλώσσα: Ελληνικά':'Language: English';$('#langButton').setAttribute('aria-label',l);$('#langButton').title=l}
  nameKeys();
- $('#copyButton').textContent=t('copy');
  {const b=$('.preview-badge');if(b)b.textContent=lang==='el'?'Δοκιμαστική':'Preview';}
  $('#historyButtonText').textContent=t('history');
  $('#historyButton').setAttribute('aria-label',t('history'));$('#historyButton').title=t('history');
@@ -366,14 +365,6 @@ function setupHoldKeys(){
  pad.addEventListener('click',e=>{if(fired&&holdKey(e.target)){fired=false;e.stopImmediatePropagation();e.preventDefault()}},true);
  pad.addEventListener('contextmenu',e=>{if(holdKey(e.target))e.preventDefault()});
 }
-function copyResult(){
- setTimeout(recordModeHistory,0);// a result copied is a result worth keeping
- // Copies what the screen shows: the result, the expression being typed, or in Units the converted value.
- const unitResult=()=>{const side=unitSource==='to'?'from':'to';return formatUnitResult(unitExpressions[side]??'')};
- const value=mode==='calc'?(justCalculated?($('#result')?.dataset.long&&$('#result').textContent||fmt(lastResult)):(typedText()?formatExpressionDisplay(typedText()):'')):mode==='units'?unitResult():(toolResult?.main??'');
- if(value===''||value===t('toolReady')||!navigator.clipboard)return;
- navigator.clipboard.writeText(String(value)).then(()=>{const b=$('#copyButton');b.textContent=t('copied');setTimeout(()=>b.textContent=t('copy'),900)}).catch(()=>{})
-}
 // Install on a phone's home screen. Android browsers give us their install dialog (beforeinstallprompt);
 // iPhones have no such API, so there (and in Android browsers without it) the button shows a short guide.
 let installPrompt=null;
@@ -417,7 +408,8 @@ setupTabsBar();
 $('#modeTabs').addEventListener('wheel',e=>{const t=$('#modeTabs .mode-tabs-track');if(t.scrollWidth<=t.clientWidth)return;e.preventDefault();t.scrollLeft+=Math.abs(e.deltaY)>Math.abs(e.deltaX)?e.deltaY:e.deltaX},{passive:false});
 // arrow keys move between tabs when one has keyboard focus
 $('#modeTabs').addEventListener('keydown',e=>{if(e.key!=='ArrowLeft'&&e.key!=='ArrowRight')return;e.preventDefault();e.stopPropagation();const list=stripModes(),i=list.indexOf(currentTab()),n=list[Math.max(0,Math.min(list.length-1,i+(e.key==='ArrowRight'?1:-1)))];switchMode(n);requestAnimationFrame(()=>$('#modeTabs .mode-tab.active')?.focus())});
-window.addEventListener('resize',()=>syncModeTabs(true));
+// (not before modes.js has loaded: a resize can come while the scripts are still loading)
+window.addEventListener('resize',()=>{if(window.stripModes)syncModeTabs(true)});
 // The strip's own width: when it changes (the phone turned; iOS reports the new size late, after 'resize'), the bar
 // under the tabs is measured again, so it never keeps its old width and position.
-if(window.ResizeObserver){let w=0;new ResizeObserver(([e])=>{const nw=Math.round(e.contentRect.width);if(nw!==w){const first=!w;w=nw;if(!first)syncModeTabs(true)}}).observe($('#modeTabs'))}
+if(window.ResizeObserver){let w=0;new ResizeObserver(([e])=>{const nw=Math.round(e.contentRect.width);if(nw!==w){const first=!w;w=nw;if(!first&&window.stripModes)syncModeTabs(true)}}).observe($('#modeTabs'))}

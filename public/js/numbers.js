@@ -83,6 +83,29 @@ function formatInputDisplay(s){
 const MAX_DIGITS=15,MAX_INPUT=150,MAX_BITS=33220;// 2^33220 ≈ 10^10000
 const digitCount=s=>String(s).replace(/^[-−]?0(?=[.,])/,'').replace(/\D/g,'').length;
 // the number at the end of a typed text is full: no more digits fit
+// A number pasted from anywhere (a web page, a spreadsheet, another app): {neg,int,frac} with plain digits, or null.
+// Spaces, currency signs and units around it go. With both . and , the last one is the decimal point (1,234.56 and
+// 1.234,56); one comma is a decimal comma (as the app writes numbers); one dot is a thousands dot only before exactly three
+// digits after 1–3 (1.234), else a decimal point (12.5, 0.125); several of one kind are thousands (1,234,567).
+function readPastedNumber(text){
+ let s=String(text??'').replace(/[\s\u00a0\u202f\u2009'’]/g,'').replace(/^[^\d\-−–+.,(]+|[^\d.,)]+$/g,'');
+ let neg=false;
+ if(/^\(.*\)$/.test(s)){neg=true;s=s.slice(1,-1)}// (1.234,00): negative, as accounts write it
+ if(/^[-−–]/.test(s)){neg=!neg;s=s.slice(1)}else if(s[0]==='+')s=s.slice(1);
+ if(!/^[\d.,]+$/.test(s)||!/\d/.test(s))return null;
+ const dots=(s.match(/\./g)||[]).length,commas=(s.match(/,/g)||[]).length;
+ let dec=null;
+ if(dots&&commas)dec=s.lastIndexOf('.')>s.lastIndexOf(',')?'.':',';
+ else if(commas===1)dec=',';
+ else if(dots===1){const [a,b]=s.split('.');dec=/^[1-9]\d{0,2}$/.test(a)&&b.length===3?null:'.'}
+ if(dec&&s.split(dec).length>2)return null;
+ const th=dec===','?'.':dec==='.'?',':dots?'.':',';
+ let [i,f='']=dec?s.split(dec):[s];
+ i=i.split(th).join('');
+ if(!/^\d*$/.test(i)||!/^\d*$/.test(f))return null;
+ i=i.replace(/^0+(?=\d)/,'')||'0';f=f.replace(/0+$/,'');
+ return {neg:neg&&/[1-9]/.test(i+f),int:i,frac:f};
+}
 const numberFull=s=>digitCount((String(s).match(/[\d.,]+$/)||[''])[0])>=MAX_DIGITS;
 const LIMIT_POW=10n**10000n;
 function ratLimit(r){

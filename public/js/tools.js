@@ -105,7 +105,8 @@ const groupedField=id=>!dottedField(id)&&FIELD_TYPE[id]!=='date';
 const fieldValue=id=>{const v=$('#'+id)?.value??'';return groupedField(id)?v.replace(/\./g,''):v};
 function groupDigits(s){const m=/^(-?)(\d*)(,\d*)?$/.exec(s);return m?m[1]+m[2].replace(/\B(?=(\d{3})+(?!\d))/g,'.')+(m[3]??''):s}
 // Pasted: "1.234,5" and "1.234.567" have thousands dots; "12.5" (one dot, not three digits after it) is a decimal point.
-function pastedNumber(s){s=s.replace(/\s/g,'');if(s.includes(','))return s.replace(/\./g,'');const p=s.split('.');return p.length===2&&!/^\d{3}$/.test(p[1])?p.join(','):s.replace(/\./g,'')}
+// A number readPastedNumber understands comes back in the fields' own form (-1234,5); anything else as before.
+function pastedNumber(s){const n=readPastedNumber(s);if(n)return (n.neg?'-':'')+n.int+(n.frac?','+n.frac:'');s=s.replace(/\s/g,'');if(s.includes(','))return s.replace(/\./g,'');const p=s.split('.');return p.length===2&&!/^\d{3}$/.test(p[1])?p.join(','):s.replace(/\./g,'')}
 // A key past a field's top: the usual shake, and the label says "Up to 50%" for a moment.
 function refuseLimit(input,[max,unit]){
  refuseKey(input);
