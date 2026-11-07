@@ -6,6 +6,15 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.36.0 – 2026-11-07
+
+### Added
+- Tablets (iPad and others): the app uses the whole screen like the iPad's calculator, with bigger keys at the bottom and a bigger result. Held sideways, Scientific's keys sit beside the number keys.
+
+### Changed
+- Round keys have no frame around them on tablets and on phones held sideways too, as on a phone held upright.
+- Phones held sideways: a bigger result and bigger digits on the keys, closer to the upright look.
+
 ## 0.35.1 – 2026-11-07
 
 ### Fixed

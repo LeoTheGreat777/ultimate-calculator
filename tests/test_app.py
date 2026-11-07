@@ -2945,6 +2945,16 @@ PHONES = [
     ('iPhone 17 Pro Max sideways', 956, 390, False, set()),
     ('Pixel 9a sideways', 850, 330, True, set()),
     ('Galaxy S25 sideways', 732, 290, True, {'*'}),
+    # tablets: the whole width, bigger keys (html.tablet); an iPad mini sideways in Safari is short enough for the sideways layout
+    ('iPad Pro 11, home-screen app', 834, 1194, False, set()),
+    ('iPad Pro 11, Safari', 834, 1112, False, set()),
+    ('iPad Pro 11 sideways, home-screen app', 1194, 834, False, set()),
+    ('iPad Pro 11 sideways, Safari', 1194, 760, False, set()),
+    ('iPad mini, Safari', 744, 1062, False, set()),
+    ('iPad mini sideways, Safari', 1133, 690, False, set()),
+    ('iPad Pro 13, Safari', 1032, 1300, False, set()),
+    ('iPad Pro 13 sideways, Safari', 1376, 950, False, set()),
+    ('Galaxy Tab S10', 800, 1180, True, set()),
 ]
 LAYOUT_PROBE = (ROOT / 'tests/layout_probe.js').read_text()
 # waits until the box has stopped moving and no animation runs (a sheet sliding up, a switch sliding), at most 2 s
@@ -2994,6 +3004,42 @@ PHONE_SHEETS = [
     ('own theme editor', "openThemeEditor('dark')", '#themeEditor', "closeThemeEditor()"),
     ('Copy and Paste menu', "switchMode('calc');openClipMenu(clipTarget($('#result')),innerWidth/2,innerHeight/3)", '#clipMenu', "closeClipMenu()"),
 ]
+
+
+async def tablets(browser, url):
+    """Tablets use the whole width with big keys at the bottom; sideways Scientific sits beside the number keys; round keys
+    have no card frame on tablets and on phones sideways, but keep it on a computer."""
+    L = '[tablets] '
+    state = """(()=>{const c=document.documentElement.classList,k=$('#keypad').getBoundingClientRect(),s=$('#keypad .key[data-value="7"]').getBoundingClientRect(),
+      f=$('.app-footer').getBoundingClientRect();
+      return {tablet:c.contains('tablet'),frameless:c.contains('frameless'),side:c.contains('sci-side'),w:Math.round(k.width),keyH:Math.round(s.height),
+        gap:Math.round(innerHeight-f.bottom),rows:new Set([...$$('#keypad button')].map(b=>Math.round(b.getBoundingClientRect().top))).size}})()"""
+    for w, h, touch in [(834, 1194, True), (1194, 834, True), (956, 440, True), (1280, 860, False)]:
+        D = L + f'{w}x{h} '
+        ctx = await browser.new_context(viewport={'width': w, 'height': h}, is_mobile=touch, has_touch=touch)
+        await ctx.add_init_script(SEED % ('en', 'dark'))
+        await ctx.add_init_script("localStorage.setItem('uc-keys','round')")
+        p = await ctx.new_page()
+        await p.goto(url)
+        await p.wait_for_timeout(400)
+        st = await p.evaluate(state)
+        if w in (834, 1194):
+            check(D + 'a tablet: the whole width, no card frame with round keys', st['tablet'] and st['frameless'] and st['w'] > min(w, 1100) - 100, st)
+            check(D + 'big keys at the bottom of the screen', st['keyH'] >= 85 and st['gap'] < 40, st)
+            await p.evaluate("if(!sciMode)toggleSci()")
+            await p.wait_for_timeout(300)
+            st = await p.evaluate(state)
+            if w > h:
+                check(D + 'sideways, Scientific beside the number keys: five rows', st['side'] and st['rows'] == 5 and st['keyH'] >= 70, st)
+            else:
+                check(D + 'upright, Scientific above the number keys', not st['side'] and st['rows'] == 10, st)
+            check(D + 'Scientific fits without scrolling', await p.evaluate("!document.documentElement.classList.contains('page-scroll')"))
+        elif touch:
+            check(D + 'a phone sideways: no card frame with round keys, a big result', not st['tablet'] and st['frameless'] and
+                  await p.evaluate("parseFloat(getComputedStyle($('#result')).fontSize)") >= 60, st)
+        else:
+            check(D + 'a computer keeps the card frame and the column', not st['tablet'] and not st['frameless'] and st['w'] < 700, st)
+        await ctx.close()
 
 
 async def keys_and_clipboard(browser, url):
@@ -3234,6 +3280,7 @@ async def main():
         await touch_areas(browser, url)
         await more_decimals(browser, url)
         await keys_and_clipboard(browser, url)
+        await tablets(browser, url)
         await how_buttons_in_place(browser, url)
         await all_modes(browser, url)
         await esc_everywhere(browser, url)

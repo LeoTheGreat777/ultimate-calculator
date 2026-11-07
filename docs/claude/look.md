@@ -36,5 +36,6 @@ Part of the notes in CLAUDE.md (read that first). Covers theme.js, the theme blo
   instant with reduced motion.
 - **The keys' shape** (`keyShape`, `uc-keys`: `square` by default or `round`; `setKeyShape` in theme.js): the last row of
   the theme menu (Keys, two drawn keys). Round (`html.keys-round`) makes every key a pill (`border-radius:999px`), a circle
-  where it is as tall as wide (phones upright, screen.md). On a phone upright round keys also lose the card's frame: the
-  page takes the card's colour (`--card`), the keys get a wider gap and lighter, bigger digits.
+  where it is as tall as wide (phones upright, screen.md). On a touch screen round keys also lose the card's frame
+  (`html.frameless`, set by `fitLayout`: a phone upright or sideways, a tablet; not Graph, not a computer): the page takes the
+  card's colour (`--card`), the keys get a wider gap and lighter, bigger digits.

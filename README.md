@@ -60,7 +60,7 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 - Each mode keeps its own History; AC clears the values
 
 ### Interface
-- Responsive desktop and mobile layouts, in portrait and landscape (keypad beside the display when a phone is turned sideways)
+- Responsive desktop, tablet and mobile layouts, in portrait and landscape (the whole screen on tablets like the iPad's calculator; keypad beside the display when a phone is turned sideways)
 - Themes: Light, Paper, Dark, Black (true black for OLED screens), your own light and dark themes, or Match device; square or round keys
 - English and Greek language support
 - Installable on phones: an install button opens the install dialog on Android, and shows a short Add to Home Screen guide on iPhone
@@ -121,7 +121,7 @@ npm ci && node tools/build.mjs && python3 tests/test_app.py --site build
 python3 tests/test_app.py --phones
 ```
 
-The tests open the app in Chromium at desktop and phone sizes, in both languages and themes, and check the calculator, brackets, Units, the tools, History, the mode tabs, the language switch and that nothing is cut off on phones. Every mode, sheet and popup is also checked on about 25 popular phone sizes (small and big iPhones, Pixel, Galaxy S and A, foldables, upright and sideways) in both languages: no text over other text, nothing cut or off the screen, keys big enough to press.
+The tests open the app in Chromium at desktop and phone sizes, in both languages and themes, and check the calculator, brackets, Units, the tools, History, the mode tabs, the language switch and that nothing is cut off on phones. Every mode, sheet and popup is also checked on about 35 popular phone and tablet sizes (small and big iPhones, Pixel, Galaxy S and A, foldables, iPads, upright and sideways) in both languages: no text over other text, nothing cut or off the screen, keys big enough to press.
 
 ## Deployment
 
