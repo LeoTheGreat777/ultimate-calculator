@@ -9,7 +9,7 @@ Part of the notes in CLAUDE.md (read that first). Covers layout.js, side.js, mod
   the old width (iOS reports the new width late, after the resize event).
 - **Bigger keys on phones held upright** (`html.big-keys`: touch, upright, at most 500px wide, or a tablet; not Graph): the keys grow into
   the room the screen leaves (`bigSpec`: up to 100px tall, tools 76px, Scientific 62px), the display giving way down to
-  150px first; digits grow with them; the footer is on one line (`fit-small`). Round keys (look.md) there are at most as
+  150px first; digits grow with them; the footer is on one line (`fit-small`). The round keys (look.md) there are at most as
   tall as they are wide, so the Calculator's and Units' keys are circles.
 - **Tablets** (`html.tablet`, `fitLayout`: a touch screen wider than 500px, not in the sideways layout, narrower than
   `TABLET_MAX_W` 1264px, where the side panels fit, so an iPad Pro 13" sideways keeps the column with them): the app takes the
@@ -18,8 +18,8 @@ Part of the notes in CLAUDE.md (read that first). Covers layout.js, side.js, mod
   (Units: its two values just above the keys). Held sideways (`html.sci-side`, also on every phone sideways) Scientific's six
   columns sit beside the basic four, five rows, like the iPad's. An iPad mini sideways in Safari (under 720px high) gets the
   phones' sideways layout. `PHONES` in the tests has iPads (mini, Pro 11, Pro 13, upright and sideways) and a Galaxy Tab.
-- **Phones sideways look like upright:** a big result (`clamp(40px,16vh,76px)`), digits sized by the key (`--k`), and with
-  round keys no card frame (look.md).
+- **Phones sideways look like upright:** a big result (`clamp(40px,16vh,76px)`), digits sized by the key (`--k`), and no card
+  frame (look.md).
 - **Fitting the screen:** `fitLayout()` sizes keys (`--k`) and the display (`--disp`) to the screen in every
   mode, and switches the tools to their compact layout when needed; only if nothing fits does the page scroll
   (`html.page-scroll`). Small phones upright (320×568, 360×640, an iPhone SE in Safari 375×553): when the normal limits

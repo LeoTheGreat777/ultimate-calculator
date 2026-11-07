@@ -991,7 +991,7 @@ html.landscape .calculator-card.fit-tight .prog-grid .tool-field span{white-spac
 .mode-tab-icon:has(.eq-icon){font-size:inherit;line-height:inherit;height:auto;font-weight:800;letter-spacing:-.02em}
 /* Phones held upright: bigger keys (html.big-keys, set by fitLayout) with bigger digits */
 html.big-keys .calculator-card:not(.graph-mode) .keypad:not(.sci) .key{font-size:clamp(25px,calc(var(--k) * .36),34px)}
-/* Round keys (html.keys-round, the theme menu): circles where a key is as tall as wide, pills elsewhere; on a touch
+/* Round keys (html.keys-round, always set by fitLayout): circles where a key is as tall as wide, pills elsewhere; on a touch
    screen (phone or tablet, upright or sideways: html.frameless, layout.js) also no card frame, and upright a wider gap and
    lighter, bigger digits, like the iPhone's calculator */
 html.keys-round .calculator-card .key,html.keys-round .calculator-card .tool-keypad button{border-radius:999px}
@@ -999,15 +999,6 @@ html.frameless,html.frameless body{background:var(--card)}/* the page is the car
 html.frameless .calculator-card{background:transparent;border-color:transparent;box-shadow:none;padding-left:0;padding-right:0}
 html.big-keys.keys-round .calculator-card:not(.graph-mode) .keypad:not(.sci){column-gap:14px}
 html.big-keys.keys-round .calculator-card:not(.graph-mode) .keypad:not(.sci) .key{font-size:clamp(25px,calc(var(--k) * .42),36px);font-weight:400}
-/* The keys' shape in the theme menu */
-.key-shape{display:flex;align-items:center;gap:4px;padding:2px 4px 2px 10px}
-.key-shape-label{flex:1;font-size:14px;font-weight:650;color:var(--text)}
-.key-shape-opt{width:42px;height:38px;display:grid;place-items:center;padding:0;border:0;border-radius:11px;background:transparent;color:var(--muted);cursor:pointer}
-.key-shape-opt:hover{background:var(--key);color:var(--text)}
-.key-shape-opt[aria-checked="true"]{background:var(--card2);color:var(--accent)}
-.key-shape-opt:focus{outline:none}
-.key-shape-opt:focus-visible{outline:2px solid var(--accent2);outline-offset:-2px}
-html.landscape .key-shape-opt{height:34px}
 /* Copy and Paste: the menu over a held number (clip.js) */
 .clip-menu{position:fixed;z-index:120;display:flex;padding:4px;gap:2px;background:var(--card2);border:1px solid var(--border);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.3)}
 .clip-menu.hidden{display:none}

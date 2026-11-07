@@ -95,7 +95,7 @@ made for that part, so don't skip it.
 | `docs/claude/calculator.md` | the Calculator: exact maths, limits, errors, carry, brackets, C/AC, ± and holding keys, Scientific, complex numbers, Memory, the working (?), copy and paste (numbers.js, calculator.js, complex.js, explain.js, memory.js, funcs.js, clip.js) |
 | `docs/claude/tools.md` | the tools (VAT, Percent, Interest, Dates, Fuel, Energy, Subnet, Numbers, Equations), Units, Currency, tool fields, switches, History per mode, tool charts (tools.js, units.js, currency.js, dates.js, numtools.js, net.js, history.js, charts.js) |
 | `docs/claude/screen.md` | layout and sizes: fitting the screen, long text, sideways phones, foldables, big screens (zoom), side panels, the tabs and All modes, pressing keys, dropdowns, the iPhone home-screen app (layout.js, side.js, modes.js, ui.js, styles.css) |
-| `docs/claude/look.md` | themes and own themes, square or round keys, the logo and icons, colours (theme.js, styles.css theme blocks, tools/make-icons.py) |
+| `docs/claude/look.md` | themes and own themes, round keys, the logo and icons, colours (theme.js, styles.css theme blocks, tools/make-icons.py) |
 | `docs/claude/app.md` | start-up and offline (sw.js, updates), home-screen shortcuts, the keyboard, Tips, screen readers (main.js, sw.js, help.js) |
 | `docs/claude/preview.md` | the `preview` branch |
 
@@ -127,7 +127,7 @@ When you change how something works, update its topic file (not this one, unless
   Greek and English, the English name also in `index.html` (footer and `<meta name="author">`) and both in the README.
   Don't add other names anywhere (footer, README, changelog). Change them in all places together.
 - **Storage:** all in the browser (`uc-history`, `uc-history-modes`, `uc-tools`, `uc-rates`, `uc-lang`, `uc-pins`, `uc-memory`,
-  `uc-theme`, `uc-theme-pair`, `uc-custom-themes`, `uc-theme-recent`, `uc-keys`). Use `store.get/set` – localStorage can throw.
+  `uc-theme`, `uc-theme-pair`, `uc-custom-themes`, `uc-theme-recent`). Use `store.get/set` – localStorage can throw.
 
 ## Testing before every push
 

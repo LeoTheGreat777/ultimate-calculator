@@ -1450,8 +1450,9 @@ async def more_decimals(browser, url):
         await p.evaluate("copyResult()")
         await p.wait_for_timeout(150)
         clip = await p.evaluate("navigator.clipboard.readText()")
-        mid = '17.636.684,142857' if touch else '17.636.684,14285714'
-        check(f'[decimals {w}x{h}] up to 10 decimals when they fit, else fewer', got == ['0,1428571429', mid, '0,5'], got)
+        # a phone: 6 decimals, or 8 where the frameless card leaves room for them (the font decides)
+        mid = ('17.636.684,142857', '17.636.684,14285714') if touch else ('17.636.684,14285714',)
+        check(f'[decimals {w}x{h}] up to 10 decimals when they fit, else fewer', got[0] == '0,1428571429' and got[1] in mid and got[2] == '0,5', got)
         check(f'[decimals {w}x{h}] copying the result copies what is shown', clip == '0,1428571429', clip)
         await ctx.close()
 
@@ -3018,13 +3019,12 @@ async def tablets(browser, url):
         D = L + f'{w}x{h} '
         ctx = await browser.new_context(viewport={'width': w, 'height': h}, is_mobile=touch, has_touch=touch)
         await ctx.add_init_script(SEED % ('en', 'dark'))
-        await ctx.add_init_script("localStorage.setItem('uc-keys','round')")
         p = await ctx.new_page()
         await p.goto(url)
         await p.wait_for_timeout(400)
         st = await p.evaluate(state)
         if w in (834, 1194):
-            check(D + 'a tablet: the whole width, no card frame with round keys', st['tablet'] and st['frameless'] and st['w'] > min(w, 1100) - 100, st)
+            check(D + 'a tablet: the whole width, no card frame', st['tablet'] and st['frameless'] and st['w'] > min(w, 1100) - 100, st)
             check(D + 'big keys at the bottom of the screen', st['keyH'] >= 85 and st['gap'] < 40, st)
             await p.evaluate("if(!sciMode)toggleSci()")
             await p.wait_for_timeout(300)
@@ -3043,7 +3043,7 @@ async def tablets(browser, url):
 
 
 async def keys_and_clipboard(browser, url):
-    """Square or round keys from the theme menu; no Copy result button; holding (or right-clicking) a number gives Copy and
+    """Round keys; no Copy result button; holding (or right-clicking) a number gives Copy and
     Paste; Ctrl+C / Ctrl+V; pasted numbers in any common form."""
     L = '[keys, copy, paste] '
     clip = "navigator.clipboard.readText()"
@@ -3059,25 +3059,13 @@ async def keys_and_clipboard(browser, url):
         await p.goto(url)
         await p.wait_for_timeout(300)
         check(D + 'no Copy result button', await p.evaluate("!document.querySelector('#copyButton,.bottom-actions')"))
-        if touch:
-            k = await p.evaluate("(()=>{const b=$('.key[data-value=\"7\"]').getBoundingClientRect();return [b.width,b.height]})()")
-            check(D + 'upright, the keys grow into the room (square keys taller than 68px)', k[1] > 80, k)
-        # the theme menu: Keys, square or round
-        await p.evaluate("openThemeMenu()")
-        check(D + 'the theme menu has Keys: square (chosen) and round', await p.evaluate(
-            "[...document.querySelectorAll('#themeMenu [data-key-shape]')].map(b=>b.dataset.keyShape+':'+b.getAttribute('aria-checked')).join()") == 'square:true,round:false')
-        await p.click('#themeMenu [data-key-shape="round"]')
-        await p.wait_for_timeout(150)
-        check(D + 'round keys: chosen, kept and on screen', await p.evaluate(
-            "[keyShape,store.get('uc-keys'),document.documentElement.classList.contains('keys-round'),$('#themeMenu [data-key-shape=\"round\"]').getAttribute('aria-checked'),getComputedStyle($('.key[data-value=\"7\"]')).borderTopLeftRadius]")
-              == ['round', 'round', True, 'true', '999px'])
-        if touch:
-            k = await p.evaluate("(()=>{const b=$('.key[data-value=\"7\"]').getBoundingClientRect();return [b.width,b.height]})()")
-            check(D + 'round keys on a phone are circles', abs(k[0] - k[1]) <= 2 and k[1] > 75, k)
+        check(D + 'the keys are round and the theme menu has no key shape choice', await p.evaluate(
+            "[document.documentElement.classList.contains('keys-round'),getComputedStyle($('.key[data-value=\"7\"]')).borderTopLeftRadius,(openThemeMenu(),!document.querySelector('#themeMenu [data-key-shape]'))]")
+              == [True, '999px', True])
         await p.evaluate("closeThemeMenu()")
-        await p.reload()
-        await p.wait_for_timeout(300)
-        check(D + 'round keys stay after a reload', await p.evaluate("document.documentElement.classList.contains('keys-round')"))
+        if touch:
+            k = await p.evaluate("(()=>{const b=$('.key[data-value=\"7\"]').getBoundingClientRect();return [b.width,b.height]})()")
+            check(D + 'upright, the keys grow into the room as circles', abs(k[0] - k[1]) <= 2 and k[1] > 75, k)
         # holding the result: Copy and Paste
         await p.keyboard.type('125*8')
         await p.keyboard.press('Enter')
@@ -3170,12 +3158,11 @@ async def keys_and_clipboard(browser, url):
     await ctx.close()
 
 
-async def phone_size(browser, url, name, w, h, wide, scroll, lang, shape='square'):
-    """One phone in one language and key shape: every tab (PHONE_TABS) and every sheet (PHONE_SHEETS) through LAYOUT_PROBE."""
-    L = f'[phones {name} {w}×{h} {lang}{" round" if shape == "round" else ""}] '
+async def phone_size(browser, url, name, w, h, wide, scroll, lang):
+    """One phone in one language: every tab (PHONE_TABS) and every sheet (PHONE_SHEETS) through LAYOUT_PROBE."""
+    L = f'[phones {name} {w}×{h} {lang}] '
     ctx = await browser.new_context(viewport={'width': w, 'height': h}, is_mobile=True, has_touch=True)
     await ctx.add_init_script(SEED % (lang, 'dark'))
-    await ctx.add_init_script("localStorage.setItem('uc-keys','%s')" % shape)
     if wide:
         await ctx.add_init_script("new MutationObserver((m,o)=>{if(document.head){const s=document.createElement('style');"
                                   "s.textContent='*{font-family:\"DejaVu Sans\",sans-serif!important}';document.head.prepend(s);o.disconnect()}})"
@@ -3214,15 +3201,14 @@ async def phone_size(browser, url, name, w, h, wide, scroll, lang, shape='square
 
 
 async def phone_sizes(browser, url):
-    """Popular phone sizes (PHONES), both languages with square keys and English with round ones, six at a time: every
+    """Popular phone sizes (PHONES), both languages, six at a time: every
     tab and sheet, see phone_size and tests/layout_probe.js. `python3 tests/test_app.py --phones` runs only this."""
     limit = asyncio.Semaphore(6)
 
     async def one(*a):
         async with limit:
             await phone_size(browser, url, *a)
-    await asyncio.gather(*[one(name, w, h, wide, scroll, lang, shape) for name, w, h, wide, scroll in PHONES
-                           for lang, shape in [('en', 'square'), ('el', 'square'), ('en', 'round')]])
+    await asyncio.gather(*[one(name, w, h, wide, scroll, lang) for name, w, h, wide, scroll in PHONES for lang in ['en', 'el']])
 
 
 def built_site():

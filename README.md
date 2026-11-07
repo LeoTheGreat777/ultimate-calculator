@@ -61,7 +61,7 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 
 ### Interface
 - Responsive desktop, tablet and mobile layouts, in portrait and landscape (the whole screen on tablets like the iPad's calculator; keypad beside the display when a phone is turned sideways)
-- Themes: Light, Paper, Dark, Black (true black for OLED screens), your own light and dark themes, or Match device; square or round keys
+- Themes: Light, Paper, Dark, Black (true black for OLED screens), your own light and dark themes, or Match device; round keys like the iPhone's calculator
 - English and Greek language support
 - Installable on phones: an install button opens the install dialog on Android, and shows a short Add to Home Screen guide on iPhone
 - Mobile-friendly calculator controls

@@ -140,10 +140,10 @@ function fitFooter(){const f=$('.app-footer'),r=document.documentElement;if(!f)r
  if(!r.classList.contains('fit-small')&&!r.classList.contains('landscape'))return;
  const a=f.firstElementChild,b=f.lastElementChild;if(a&&b&&b.getBoundingClientRect().top>a.getBoundingClientRect().top+2)r.classList.add('fit-footer')}
 // Phones held upright and tablets: the keys grow into the room the screen leaves (html.big-keys), up to 100px tall (tools 76px,
-// Scientific stays 62; on a tablet 110, Scientific 72, sideways 90); round keys (keyShape, theme menu) in the Calculator and Units are at
+// Scientific stays 62; on a tablet 110, Scientific 72, sideways 90); the round keys in the Calculator and Units are at
 // most as tall as they are wide (circles on a phone, pills on a tablet).
 function bigSpec(spec,big,tablet){if(!big)return spec;const w=$('#keypad .key')?.getBoundingClientRect().width/(window.__uiZoom||1)||86;
- const top=tablet?110:100,max=spec===FIT.calc||spec===FIT.units?(keyShape==='round'?Math.min(top,Math.floor(w)):top):spec===FIT.sci?(tablet?(innerWidth>innerHeight?90:72):62):76;
+ const top=tablet?110:100,max=spec===FIT.calc||spec===FIT.units?Math.min(top,Math.floor(w)):spec===FIT.sci?(tablet?(innerWidth>innerHeight?90:72):62):76;
  return {...spec,k:[Math.max(spec.k[1],max),spec.k[1]],roomy:spec.roomy&&Math.min(spec.roomy,150)}}
 // A tablet (a touch screen wider than a phone, not in the sideways layout): the app takes the whole width (html.tablet), up to
 // the width where the side panels fit (TABLET_MAX_W; an iPad Pro 13" held sideways keeps the column with History and the working)
@@ -167,10 +167,10 @@ function fitLayout(){refreshSide();fitBrand();
  const land=matchMedia(LANDSCAPE).matches||hinge!==null;root.classList.toggle('landscape',land);if(!land)root.classList.remove('land-fill');
  if(tool)fitShortLabels();
  const touch=isMobileDevice(),wide=innerWidth/Z,tablet=!land&&touch&&wide>500&&wide<TABLET_MAX_W;root.classList.toggle('tablet',tablet);
- const big=!land&&touch&&mode!=='graph'&&(wide<=500||tablet);root.classList.toggle('big-keys',big);root.classList.toggle('keys-round',keyShape==='round');
- // round keys on a touch screen: no card frame, upright and sideways, phone and tablet (styles.css, html.frameless)
+ const big=!land&&touch&&mode!=='graph'&&(wide<=500||tablet);root.classList.toggle('big-keys',big);root.classList.add('keys-round');
+ // on a touch screen: no card frame, upright and sideways, phone and tablet (styles.css, html.frameless)
  root.classList.toggle('sci-side',land||(tablet&&innerWidth>innerHeight));// Scientific's keys beside the basic ones (styles.css)
- root.classList.toggle('frameless',keyShape==='round'&&touch&&mode!=='graph'&&(big||land));
+ root.classList.toggle('frameless',touch&&mode!=='graph'&&(big||land));
  if(big&&!tablet){root.classList.add('fit-small');fitFooter()}
  if(land){fitFooter();fitLandscape(card,root,avail,need,tool,setToolLayout);if(tool)fitShortLabels();return}
  card.style.removeProperty('--gk');// back in portrait, Graph keys size themselves again (styles.css)

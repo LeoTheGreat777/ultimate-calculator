@@ -166,7 +166,6 @@ function renderThemeMenu(){
   m.addEventListener('click',e=>{
    const ed=e.target.closest('[data-theme-edit]');if(ed){closeThemeMenu();openThemeEditor(ed.dataset.themeEdit);return}
    if(e.target.closest('[data-theme-auto]')){toggleMatchDevice();return}
-   const ks=e.target.closest('[data-key-shape]');if(ks){setKeyShape(ks.dataset.keyShape);return}
    const b=e.target.closest('[data-theme-pick]');if(b)pickTheme(b.dataset.themePick);
   });
  }
@@ -185,18 +184,12 @@ function renderThemeMenu(){
   return '<div class="theme-row">'+pick+'<button type="button" class="theme-edit" role="menuitem" data-theme-edit="'+g+'" data-mi="edit-'+g+'" aria-label="'+esc(t('themeEdit'))+'" title="'+esc(t('themeEdit'))+'">'+EDIT_ICON+'</button></div>';
  };
  const group=g=>'<div class="theme-group'+(auto&&themeGroup(shown)===g?' now':'')+'" role="presentation">'+esc(t(g==='light'?'themeLightGroup':'themeDarkGroup'))+'</div>'+THEME_GROUPS[g].map(option).join('');
- // the keys' shape: two drawn keys, the chosen one lit
- const shape=k=>'<button type="button" class="key-shape-opt" role="menuitemradio" aria-checked="'+(keyShape===k)+'" data-key-shape="'+k+'" data-mi="ks-'+k+'" aria-label="'+esc(t('keyShape')+': '+t(k==='round'?'keyRound':'keySquare'))+'" title="'+esc(t(k==='round'?'keyRound':'keySquare'))+'">'+
-  (k==='round'?'<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="currentColor"/></svg>':'<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" fill="currentColor"/></svg>')+'</button>';
- const shapes='<div class="key-shape" role="group" aria-label="'+esc(t('keyShape'))+'"><span class="key-shape-label">'+esc(t('keyShape'))+'</span>'+shape('square')+shape('round')+'</div>';
  m.innerHTML='<button type="button" class="theme-option theme-auto" role="menuitemcheckbox" aria-checked="'+auto+'" data-theme-auto data-mi="auto">'+
   '<span class="theme-swatch theme-swatch-auto" aria-hidden="true"><span data-theme-preview="'+preview(themePair.light)+'"><i></i></span><span data-theme-preview="'+preview(themePair.dark)+'"><i></i></span></span>'+
   '<span class="theme-option-text">'+esc(t('themeAuto'))+(auto?'<small>'+esc(t('themeMatchHint'))+'</small>':'')+'</span><span class="theme-switch" aria-hidden="true"><i></i></span></button>'+
-  '<hr>'+group('light')+'<hr>'+group('dark')+'<hr>'+shapes;
+  '<hr>'+group('light')+'<hr>'+group('dark');
  if(focused)m.querySelector('[data-mi="'+focused+'"]')?.focus({preventScroll:true});
 }
-// Square or round keys (uc-keys): the whole app at once, fitted again (round keys in the Calculator are as tall as wide).
-function setKeyShape(k){keyShape=k==='round'?'round':'square';store.set('uc-keys',keyShape);store.del('uc-keys-preview');if(themeMenuOpen())renderThemeMenu();fitLayout()}
 function openThemeMenu(){
  if(themeEditorOpen())closeThemeEditor();
  renderThemeMenu();$('#themeMenu').classList.remove('hidden');$('.topbar').classList.add('menu-open');$('#themeButton').setAttribute('aria-expanded','true');
@@ -211,7 +204,7 @@ function toggleThemeMenu(){if(themeMenuOpen())closeThemeMenu();else openThemeMen
 // Keys while the menu is open: ↑ ↓ move, Enter/Space choose (the buttons do that themselves), Esc or Tab close it.
 function themeMenuKeydown(e){
  if(!themeMenuOpen())return false;
- const items=[...$('#themeMenu').querySelectorAll('.theme-option,.theme-edit,.key-shape-opt')],i=items.indexOf(document.activeElement);
+ const items=[...$('#themeMenu').querySelectorAll('.theme-option,.theme-edit')],i=items.indexOf(document.activeElement);
  if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();items[(i+(e.key==='ArrowDown'?1:-1)+items.length)%items.length].focus();return true}
  if(e.key==='Home'||e.key==='End'){e.preventDefault();items[e.key==='Home'?0:items.length-1].focus();return true}
  if(e.key==='Escape'){e.preventDefault();closeThemeMenu(true);return true}

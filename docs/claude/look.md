@@ -34,8 +34,8 @@ Part of the notes in CLAUDE.md (read that first). Covers theme.js, the theme blo
   `--series1..3`). Check a new theme's contrast (text on card and keys, text on the accent) and look at it in every
   mode. Changing theme: circle reveal from the theme button (View Transitions, `transitionTheme`), fade fallback,
   instant with reduced motion.
-- **The keys' shape** (`keyShape`, `uc-keys`: `square` by default or `round`; `setKeyShape` in theme.js): the last row of
-  the theme menu (Keys, two drawn keys). Round (`html.keys-round`) makes every key a pill (`border-radius:999px`), a circle
-  where it is as tall as wide (phones upright, screen.md). On a touch screen round keys also lose the card's frame
+- **The keys are round** everywhere (`html.keys-round`, always set by `fitLayout`; there is no choice in the theme menu):
+  every key is a pill (`border-radius:999px`), a circle where it is as tall as wide (phones upright, screen.md). On a touch
+  screen the card also has no frame
   (`html.frameless`, set by `fitLayout`: a phone upright or sideways, a tablet; not Graph, not a computer): the page takes the
   card's colour (`--card`), the keys get a wider gap and lighter, bigger digits.
