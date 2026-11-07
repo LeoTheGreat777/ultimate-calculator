@@ -13,7 +13,7 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 - Decimal and negative number support
 - Calculation history, grouped by day and month
 - Results show up to 10 decimals when the screen has room (6 on a narrow phone); copying copies what you see
-- Copy results
+- Copy and paste: press and hold a number (right-click, or Ctrl+C / Ctrl+V on a computer) to copy it or paste a number from another app
 - Keyboard support
 - Works offline once opened: the app keeps a copy on the device and updates it when online
 - Step-by-step explanations of how a result was worked out (How was this calculated?): the full result, and what each symbol such as e, π or a constant is worth
@@ -61,7 +61,7 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 
 ### Interface
 - Responsive desktop and mobile layouts, in portrait and landscape (keypad beside the display when a phone is turned sideways)
-- Themes: Light, Paper, Dark, Black (true black for OLED screens), your own light and dark themes, or Match device
+- Themes: Light, Paper, Dark, Black (true black for OLED screens), your own light and dark themes, or Match device; square or round keys
 - English and Greek language support
 - Installable on phones: an install button opens the install dialog on Android, and shows a short Add to Home Screen guide on iPhone
 - Mobile-friendly calculator controls

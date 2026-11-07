@@ -23,8 +23,8 @@ $('#keypad').addEventListener('click',e=>{
  if(a==='clear')clearButtonAction();else if(a==='backspace')backspace();else if(a==='equals')equals();else if(a==='paren')smartParen();else if(a==='negate')negate();else if(v==='%')percent();else if(/[+\-*/]/.test(v||''))operator(v==='*'?'×':v==='/'?'÷':v);else if(v)digit(v)
 });
 $('#howButton').addEventListener('click',showHow);$('#closeHow').addEventListener('click',closeHow);$('#howModal').addEventListener('click',e=>{if(e.target.id==='howModal')closeHow()});
-$('#historyButton').addEventListener('click',openHistory);$('#closeHistory').addEventListener('click',closeHistory);$('#historyBackdrop').addEventListener('click',historyBackdropClick);$('#historyList').addEventListener('click',historyClick);$('#copyButton').addEventListener('click',copyResult);
-// Tapping a result copies it too (on short screens the copy button is hidden to make room for the keypad).
+$('#historyButton').addEventListener('click',openHistory);$('#closeHistory').addEventListener('click',closeHistory);$('#historyBackdrop').addEventListener('click',historyBackdropClick);$('#historyList').addEventListener('click',historyClick);
+// Tapping a finished result copies it (holding it gives Copy and Paste, clip.js).
 // While a calculation is typed, a tap on it puts the cursor there (calculator.js, caretFromPoint).
 $('#calculatorDisplay').addEventListener('click',e=>{if(mode==='units'||mode==='graph'||!e.target.closest('#result'))return;if(mode==='calc'&&!justCalculated&&!calcError){caretFromPoint(e.clientX);return}if(mode==='calc'?!justCalculated:!toolResult?.main)return;copyResult();const r=$('#result');r.classList.add('copied');setTimeout(()=>r.classList.remove('copied'),700)});
 $('#langButton').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();setLanguage(lang==='el'?'en':'el')});
@@ -94,7 +94,6 @@ window.addEventListener('keydown',e=>{
 window.__UC_VERSION=VERSION;$('#footerVersion').textContent=`v${VERSION}`;
 // The test version (the preview branch, published at /preview/): a mark beside the version so it can't be mistaken for the app.
 if(location.pathname.startsWith('/preview/')){const b=document.createElement('span');b.className='preview-badge';b.textContent=lang==='el'?'Δοκιμαστική':'Preview';$('#footerVersion').after(b);document.title+=' (preview)'}
-renderKeyStyleSwitch();// preview: B | C, the two key styles to compare
 loadTools();lang=readLanguage();bindTools();renderHistory();renderTool();renderModeTabs();syncModeTabs();setupModes();setupHistorySheet();setupToggleSlide();bindHistoryChart();$('#chartButton')?.addEventListener('click',showToolChart);applyLanguage();applyTheme();window.addEventListener('pageshow',e=>{if(e.persisted&&mode!=='calc')setMode('calc')});
 // A home-screen shortcut (manifest "shortcuts", tools/make-shortcut-icons.py) opens the app in a mode: ./?mode=vat.
 // The address then goes back to plain ./, so a reload or a bookmark opens the Calculator as usual.

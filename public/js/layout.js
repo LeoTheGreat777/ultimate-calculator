@@ -52,17 +52,17 @@ function refuseKey(el=$('#result')){
  try{navigator.vibrate?.(10)}catch{}
 }
 // Fit the app to the screen, the same way in every mode and on every device. Step by step, only as far as needed:
-// a shorter display, smaller keys, the most compact display, the tools' compact layout (the one phones use),
-// no copy button (tapping the result copies). Only if even that does not fit (a phone held sideways)
+// a shorter display, smaller keys, the most compact display, the tools' compact layout (the one phones use).
+// Only if even that does not fit (a phone held sideways)
 // does the page scroll; nothing is ever cut off.
 // k = key height [max,min], d = display height [max,min], roomy = smallest display that keeps the ? above the result,
 // comfy = key height kept as long as the display can still give way.
 const FIT={
- calc:{k:[68,40],d:[205,128],roomy:172,comfy:48,copy:true},
- units:{k:[68,40],d:[205,165],comfy:48,copy:false},
- sci:{k:[62,31],d:[180,116],roomy:150,comfy:42,copy:true},// Scientific: 10 rows of keys (memory, 4 scientific, 5 basic)
- tool:{k:[56,36],d:[205,128],roomy:172,comfy:44,copy:true},
- mobileTool:{k:[56,36],d:[108,98],comfy:44,copy:true},
+ calc:{k:[68,40],d:[205,128],roomy:172,comfy:48},
+ units:{k:[68,40],d:[205,165],comfy:48},
+ sci:{k:[62,31],d:[180,116],roomy:150,comfy:42},// Scientific: 10 rows of keys (memory, 4 scientific, 5 basic)
+ tool:{k:[56,36],d:[205,128],roomy:172,comfy:44},
+ mobileTool:{k:[56,36],d:[108,98],comfy:44},
  graphMin:520,
  // small phones (320×568, 360×640): when even the sizes above don't fit, tighter limits before the page scrolls
  tight:{calc:{k:[68,36],d:[205,110],comfy:48,compact:172},units:{k:[68,32],d:[205,160],comfy:48},sci:{k:[62,28],d:[180,94],comfy:42,compact:150},
@@ -116,7 +116,6 @@ function fitLandscape(card,root,avail,need,tool,setToolLayout){
   return need()-avail;
  };
  let over=grow();
- if(over>0){card.classList.add('fit-no-copy');over=grow()}
  if(over>0&&tool){card.classList.add('fit-tight');over=grow()}
  if(over>0&&$('#eqForm')){card.classList.add('fit-no-form');over=grow()}// Equations: the form line goes (the switch still names the kind)
  if(over>0&&$('#netDetails,#statDetails')){card.classList.add('fit-no-details');over=grow()}// Subnet, Statistics on a very short screen: the details stay under ?
@@ -140,17 +139,10 @@ function fitBrand(){const n=$('.brand-name'),h=n&&n.parentElement;if(!h)return;h
 function fitFooter(){const f=$('.app-footer'),r=document.documentElement;if(!f)return;r.classList.remove('fit-footer');
  if(!r.classList.contains('fit-small')&&!r.classList.contains('landscape'))return;
  const a=f.firstElementChild,b=f.lastElementChild;if(a&&b&&b.getBoundingClientRect().top>a.getBoundingClientRect().top+2)r.classList.add('fit-footer')}
-// Preview: bigger keys on phones held upright. B: taller keys, no Copy button in the Calculator (tap the result to copy),
-// the footer on one line. C: the same with round keys and no card frame. ?keys=b or ?keys=c picks one (remembered).
-let keyStyle=(()=>{const q=new URLSearchParams(location.search).get('keys');if(q==='b'||q==='c'){store.set('uc-keys-preview',q);return q}return store.get('uc-keys-preview')==='c'?'c':'b'})();
-function setKeyStyle(s){keyStyle=s;store.set('uc-keys-preview',s);history.replaceState(null,'','?keys='+s);fitLayout();renderKeyStyleSwitch()}
-function renderKeyStyleSwitch(){const f=$('.app-footer');if(!f||!location.pathname.startsWith('/preview/')&&!new URLSearchParams(location.search).has('keys'))return;
- let w=$('#keyStyleSwitch');if(!w){w=document.createElement('span');w.id='keyStyleSwitch';w.className='key-style-switch';f.firstElementChild.append(w);
-  w.addEventListener('click',e=>{const b=e.target.closest('button[data-k]');if(b)setKeyStyle(b.dataset.k)})}
- w.innerHTML=['b','c'].map(k=>`<button type="button" data-k="${k}" class="${k===keyStyle?'on':''}">${k.toUpperCase()}</button>`).join('')}
-// the most a key may grow to on a phone upright (B, C); C keeps the Calculator's keys round (as tall as they are wide)
+// Phones held upright: the keys grow into the room the screen leaves (html.big-keys), up to 100px tall (tools 76px,
+// Scientific stays 62); round keys (keyShape, theme menu) in the Calculator and Units are at most as tall as they are wide.
 function bigSpec(spec,big){if(!big)return spec;const w=$('#keypad .key')?.getBoundingClientRect().width/(window.__uiZoom||1)||86;
- const max=spec===FIT.calc||spec===FIT.units?(keyStyle==='c'?Math.floor(w):100):spec===FIT.sci?62:76;
+ const max=spec===FIT.calc||spec===FIT.units?(keyShape==='round'?Math.min(100,Math.floor(w)):100):spec===FIT.sci?62:76;
  return {...spec,k:[Math.max(spec.k[1],max),spec.k[1]],roomy:spec.roomy&&Math.min(spec.roomy,150)}}
 function fitLayout(){refreshSide();fitBrand();
  const card=$('#calculatorCard'),shell=$('.app-shell'),footer=$('.app-footer'),root=document.documentElement;if(!card||!shell||!footer)return;
@@ -160,7 +152,7 @@ function fitLayout(){refreshSide();fitBrand();
  // everything below is in CSS pixels (screen pixels / zoom)
  const avail=fitAvailHeight()/Z;
  const need=()=>Math.ceil((footer.getBoundingClientRect().bottom+window.scrollY)/Z+(parseFloat(getComputedStyle(shell).paddingBottom)||0));
- root.classList.remove('page-scroll','fit-small','fit-footer');shell.style.height='';card.classList.remove('compact-display','fit-no-copy','fit-no-details','fit-tight','fit-no-form','fit-row','fit-list');$('#keypad')?.style.removeProperty('max-height');
+ root.classList.remove('page-scroll','fit-small','fit-footer');shell.style.height='';card.classList.remove('compact-display','fit-no-details','fit-tight','fit-no-form','fit-row','fit-list');$('#keypad')?.style.removeProperty('max-height');
  const tool=TOOL_MODES.includes(mode),touchTool=tool&&isMobileDevice();
  const setToolLayout=compact=>{card.classList.toggle('mobile-tool',compact);document.body.classList.toggle('mobile-tool-on',compact)};
  if(tool)setToolLayout(touchTool);
@@ -170,7 +162,7 @@ function fitLayout(){refreshSide();fitBrand();
  root.classList.toggle('hinge-v',hinge!==null);if(hinge!==null)root.style.setProperty('--hinge-w',hinge+'px');
  const land=matchMedia(LANDSCAPE).matches||hinge!==null;root.classList.toggle('landscape',land);if(!land)root.classList.remove('land-fill');
  if(tool)fitShortLabels();
- const big=!land&&isMobileDevice()&&mode!=='graph'&&innerWidth/Z<=500;root.classList.toggle('big-keys',big);root.classList.toggle('keys-b',big&&keyStyle==='b');root.classList.toggle('keys-c',big&&keyStyle==='c');
+ const big=!land&&isMobileDevice()&&mode!=='graph'&&innerWidth/Z<=500;root.classList.toggle('big-keys',big);root.classList.toggle('keys-round',keyShape==='round');
  if(big){root.classList.add('fit-small');fitFooter()}
  if(land){fitFooter();fitLandscape(card,root,avail,need,tool,setToolLayout);if(tool)fitShortLabels();return}
  card.style.removeProperty('--gk');// back in portrait, Graph keys size themselves again (styles.css)
@@ -197,7 +189,6 @@ function fitLayout(){refreshSide();fitBrand();
  let over=attempt(bigSpec(mode==='calc'?(sciMode?FIT.sci:FIT.calc):mode==='units'?FIT.units:touchTool?FIT.mobileTool:FIT.tool,big));
  if(over>0&&tool&&!touchTool){setToolLayout(true);over=attempt(bigSpec(FIT.mobileTool,big))}
  const spec=mode==='calc'?(sciMode?FIT.sci:FIT.calc):mode==='units'?FIT.units:FIT.tool;
- if(over>0&&spec.copy){card.classList.add('fit-no-copy');over=need()-avail}
  // still too tall (a small phone): the tools get less padding (fit-tight) and the display and keys may get smaller, then
  // a kind's fields share one row (fit-row, short labels), last Equations' form line and the details (Subnet, Statistics; Dates' note) go (? shows them)
  if(over>0){

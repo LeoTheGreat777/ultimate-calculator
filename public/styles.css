@@ -88,9 +88,6 @@ input[type=checkbox],input[type=radio],input[type=color],input[readonly],.key-ti
 .key.utility,.key.operator{color:var(--accent2)}
 .key.equals{background:var(--accent);color:var(--on-accent);font-weight:800}
 .key.wide{grid-column:span 2}
-.bottom-actions{display:flex;gap:8px;margin-top:9px}
-.secondary-button{width:100%;border:1px solid var(--border);border-radius:12px;padding:9px;background:transparent;color:var(--muted);cursor:pointer}
-.secondary-button:hover{background:var(--card2);color:var(--text)}
 .tool-panel{background:var(--card2);border:1px solid var(--border);border-radius:17px;padding:13px;margin:0 0 8px;height:auto;overflow:visible}
 .calculator-card.tool-mode .display-wrap{display:flex}
 .calculator-card.tool-mode .tool-panel{margin-top:0}
@@ -244,10 +241,9 @@ html.landscape .tool-grid.kind-grid .tool-field span{white-space:nowrap;overflow
 .unit-unit{min-width:70px;font-size:15px;transform:translateY(7px)}
 @media (hover:hover) and (pointer:fine){
   .key:hover,.tool-keypad button:hover{background:var(--key-hover)}
-  .secondary-button:hover{background:var(--card2);color:var(--text)}
 }
 @media (hover:none) and (pointer:coarse){
-  .key,.tool-keypad button,.secondary-button{-webkit-tap-highlight-color:transparent}
+  .key,.tool-keypad button{-webkit-tap-highlight-color:transparent}
 }
 .seg-toggle{display:grid;grid-template-columns:repeat(var(--n,2),minmax(0,1fr));gap:5px;margin-top:10px;padding:4px;background:var(--card);border:1px solid var(--border);border-radius:13px}
 .seg-toggle button{min-width:0;min-height:38px;border:0;border-radius:9px;background:transparent;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;padding-left:2px;padding-right:2px}
@@ -355,7 +351,6 @@ html.landscape .tool-grid.kind-grid .tool-field span{white-space:nowrap;overflow
 .help kbd{min-width:26px;height:26px;padding:0 8px;display:inline-grid;place-items:center;border-radius:7px;background:var(--key);border:1px solid var(--border);border-bottom-width:2px;color:var(--accent2);font:650 12px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
 /* ---------- Graph mode, tool charts and history chart (s8) ---------- */
 body.graph-on .app-shell{height:calc(100dvh / var(--z,1))}
-body.graph-on .bottom-actions{display:none}
 .calculator-card.graph-mode{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;--gk:clamp(30px,calc((calc(100dvh / var(--z,1)) - 470px) / 6),50px)}
 .calculator-card.graph-mode #calculatorDisplay{height:auto;flex:1 1 auto;min-height:150px;padding:2px 0 8px;display:flex;flex-direction:column;justify-content:flex-start;gap:7px;text-align:left}
 .graph-box{position:relative;flex:1 1 auto;min-height:120px}
@@ -457,7 +452,6 @@ body.mobile-tool-on .app-shell{height:calc(100dvh / var(--z,1))}
 }
 /* On short phones the copy button would not fit; tapping the result copies it instead */
 @media (max-height:720px){
-  .calculator-card.mobile-tool .bottom-actions{display:none}
 }
 .calculator-card.tool-mode .display-wrap.tool-display .result{cursor:copy}
 .display-wrap .result.copied{color:var(--accent2);transition:color .15s}
@@ -481,7 +475,6 @@ body.fit .calculator-card:not(.graph-mode) .keypad .key{height:var(--k)!importan
 body.fit .calculator-card .tool-keypad{height:auto!important;grid-template-rows:none!important;grid-auto-rows:var(--k)!important}
 body.fit .calculator-card .tool-keypad button{height:var(--k)!important;min-height:0!important}
 body.fit .calculator-card:not(.graph-mode) #calculatorDisplay:not(.unit-display){height:var(--disp)!important}
-.calculator-card.fit-no-copy .bottom-actions{display:none}
 /* A short display: the ? and chart buttons sit in the line above the result, not above it */
 .calculator-card.compact-display .how-button{position:static;flex:0 0 30px;width:30px;height:30px;font-size:15px}
 .calculator-card.compact-display .how-button.chart-button{order:0}
@@ -682,7 +675,6 @@ html.landscape.hinge-v .calculator-card,html.landscape.hinge-v .calculator-card.
 html.landscape .calculator-toolbar{grid-column:1;grid-row:1}
 html.landscape #calculatorDisplay{grid-column:1;grid-row:2;height:auto!important;min-height:0!important}
 html.landscape #toolPanel{grid-column:1;grid-row:3;margin:6px 0 0}
-html.landscape .bottom-actions{grid-column:1;grid-row:4;margin-top:6px}
 html.landscape #keypad{grid-column:2;grid-row:1 / -1;align-self:center;gap:6px}
 html.landscape .calculator-card .tool-keypad{margin:0;padding:0;border-top:0}
 html.landscape .calculator-card .key{font-size:20px}
@@ -795,8 +787,6 @@ html.landscape .keypad.sci .basic-pad{flex:4}/* six columns beside four: all key
 html.landscape .key.sci-key{padding:0;font-size:min(18px,calc(var(--k,48px) * .36),5.5cqw)}
 html.landscape .key.sci-key.long{font-size:min(15px,calc(var(--k,48px) * .28),4cqw)}
 html.landscape .key.sci-key.mem-key{font-size:min(15px,calc(var(--k,48px) * .3))}
-html.landscape .calculator-card.sci-on .bottom-actions{display:none}
-.bottom-actions .secondary-button{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* Dates on a computer: the date is a button that opens the app's calendar (dates.js) */
 .date-pick{width:100%;min-height:44px;display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--border);border-radius:11px;background:var(--card);color:var(--text);padding:0 12px;font:inherit;font-size:16px;cursor:pointer;text-align:left}
@@ -999,14 +989,31 @@ html.landscape .calculator-card.fit-tight .prog-grid .tool-field span{white-spac
 @media (prefers-reduced-motion:reduce){.top-actions .icon-button,.top-actions .language-button{transition:none}.top-actions .pressed{transform:none}}
 /* The Equations icon is the text x= (ICONS.equation): the same font, size and line as the tab's name, so they share a baseline */
 .mode-tab-icon:has(.eq-icon){font-size:inherit;line-height:inherit;height:auto;font-weight:800;letter-spacing:-.02em}
-/* Preview: bigger keys on phones held upright (html.big-keys, fitLayout). B: taller keys; C: round keys, no card frame */
-html.big-keys .calculator-card:not(.tool-mode) .bottom-actions{display:none}
+/* Phones held upright: bigger keys (html.big-keys, set by fitLayout) with bigger digits */
 html.big-keys .calculator-card:not(.graph-mode) .keypad:not(.sci) .key{font-size:clamp(25px,calc(var(--k) * .36),34px)}
-html.keys-c .calculator-card{background:transparent;border-color:transparent;box-shadow:none;padding-left:0;padding-right:0}
-html.keys-c .calculator-card:not(.graph-mode) .keypad:not(.sci){column-gap:14px}
-html.keys-c .calculator-card .key,html.keys-c .calculator-card .tool-keypad button{border-radius:999px}
-html.keys-c .calculator-card:not(.graph-mode) .keypad:not(.sci) .key{font-size:clamp(25px,calc(var(--k) * .42),36px);font-weight:400}
-.key-style-switch{display:inline-flex;gap:2px;margin-left:6px}
-.key-style-switch button{border:1px solid var(--border);background:transparent;color:var(--muted);font:inherit;font-weight:700;padding:0 8px;border-radius:999px;cursor:pointer;position:relative}
-.key-style-switch button.on{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
-.key-style-switch button::after{content:"";position:absolute;inset:-8px -2px}
+/* Round keys (html.keys-round, the theme menu): circles where a key is as tall as wide, pills elsewhere; on a phone
+   upright also no card frame, a wider gap and lighter, bigger digits, like the iPhone's calculator */
+html.keys-round .calculator-card .key,html.keys-round .calculator-card .tool-keypad button{border-radius:999px}
+html.big-keys.keys-round,html.big-keys.keys-round body{background:var(--card)}/* the page is the card's colour, so the keys stand out as on the card */
+html.big-keys.keys-round .calculator-card{background:transparent;border-color:transparent;box-shadow:none;padding-left:0;padding-right:0}
+html.big-keys.keys-round .calculator-card:not(.graph-mode) .keypad:not(.sci){column-gap:14px}
+html.big-keys.keys-round .calculator-card:not(.graph-mode) .keypad:not(.sci) .key{font-size:clamp(25px,calc(var(--k) * .42),36px);font-weight:400}
+/* The keys' shape in the theme menu */
+.key-shape{display:flex;align-items:center;gap:4px;padding:2px 4px 2px 10px}
+.key-shape-label{flex:1;font-size:14px;font-weight:650;color:var(--text)}
+.key-shape-opt{width:42px;height:38px;display:grid;place-items:center;padding:0;border:0;border-radius:11px;background:transparent;color:var(--muted);cursor:pointer}
+.key-shape-opt:hover{background:var(--key);color:var(--text)}
+.key-shape-opt[aria-checked="true"]{background:var(--card2);color:var(--accent)}
+.key-shape-opt:focus{outline:none}
+.key-shape-opt:focus-visible{outline:2px solid var(--accent2);outline-offset:-2px}
+html.landscape .key-shape-opt{height:34px}
+/* Copy and Paste: the menu over a held number (clip.js) */
+.clip-menu{position:fixed;z-index:120;display:flex;padding:4px;gap:2px;background:var(--card2);border:1px solid var(--border);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.clip-menu.hidden{display:none}
+.clip-menu button{min-width:72px;min-height:38px;padding:0 14px;border:0;border-radius:10px;background:transparent;color:var(--text);font:inherit;font-size:15px;font-weight:600;white-space:nowrap;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.clip-menu button+button{box-shadow:-1px 0 0 var(--border)}
+.clip-menu button:hover,.clip-menu button:active{background:var(--key)}
+.clip-menu button:disabled{color:var(--muted);opacity:.5;cursor:default;background:transparent}
+.clip-menu button:focus{outline:none}
+.clip-menu button:focus-visible{outline:2px solid var(--accent2);outline-offset:-2px}
+.unit-value.copied,#toolPanel input.copied{color:var(--accent2);transition:color .15s}

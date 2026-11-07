@@ -100,5 +100,17 @@ Part of the notes in CLAUDE.md (read that first). Covers numbers.js, calculator.
   Scientific only, like the iPhone): the basic keypad has none, sideways they are the first column. The M chip
   sits in `#sciBar` beside f(x) whenever something is kept, and the keyboard works either way: Ctrl+M MS, Ctrl+P M+,
   Ctrl+Q M−, Ctrl+R MR, Ctrl+L MC (`memKeydown`).
-- **Copying:** tapping a finished result copies it (calculator and tools), so the copy button can be hidden
-  on short screens.
+- **Copy and Paste** (clip.js; there is no copy button): pressing and holding a number (480 ms, `CLIP_HOLD`) or
+  right-clicking it opens a small menu with Copy and Paste (`openClipMenu`, `#clipMenu`, above the finger; a press
+  outside or Esc closes it, and the click that ends the hold does nothing else, so it never moves the cursor). Where:
+  the Calculator's display, Units' two values, a tool's result, and tool fields that are read-only (touch screens; on a
+  computer a field is a text box and keeps the browser's own menu) (`clipTarget`). Copy takes what the screen shows
+  (`copyValue`: the result, the calculation being typed, Units' converted value, a tool's result); a tap on a finished
+  result still copies it. Paste (`navigator.clipboard.readText`; hidden where the browser has none) reads one number
+  written in any common way (`readPastedNumber` in numbers.js: 1.234,56, 1,234.56, € 12, −3,5, (1.000) negative; one
+  comma is a decimal comma, one dot a thousands dot only in 1.234) and types it through the keys, so every limit holds
+  (15 digits, a field's top): in the Calculator it replaces the number being typed or starts the next one
+  (`pasteCalc`), in Units it becomes the value converted from (`pasteUnits`), in a field it replaces the value as a
+  keyboard paste would (`pasteIntoField`; Programmer and IP fields take the text as it is, Statistics several numbers).
+  Text that isn't a number is refused (`refuseKey`). Ctrl+C / Ctrl+V do the same when no text box is in use (the
+  `copy`/`paste` events). Without the Clipboard API (http) Copy uses a hidden text box.

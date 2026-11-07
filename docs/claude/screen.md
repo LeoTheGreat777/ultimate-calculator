@@ -7,6 +7,10 @@ Part of the notes in CLAUDE.md (read that first). Covers layout.js, side.js, mod
   expression lines, Units values, tool fields and Subnet's details. A fitted element is watched (`fitWatch`, a
   ResizeObserver): when its own width changes it is fitted again, so turning the phone never leaves a number sized for
   the old width (iOS reports the new width late, after the resize event).
+- **Bigger keys on phones held upright** (`html.big-keys`: touch, upright, at most 500px wide, not Graph): the keys grow into
+  the room the screen leaves (`bigSpec`: up to 100px tall, tools 76px, Scientific 62px), the display giving way down to
+  150px first; digits grow with them; the footer is on one line (`fit-small`). Round keys (look.md) there are at most as
+  tall as they are wide, so the Calculator's and Units' keys are circles.
 - **Fitting the screen:** `fitLayout()` sizes keys (`--k`) and the display (`--disp`) to the screen in every
   mode, and switches the tools to their compact layout when needed; only if nothing fits does the page scroll
   (`html.page-scroll`). Small phones upright (320×568, 360×640, an iPhone SE in Safari 375×553): when the normal limits
@@ -39,8 +43,7 @@ Part of the notes in CLAUDE.md (read that first). Covers layout.js, side.js, mod
   at most 500px high, or a foldable's wide inner screen: Foldables below) get the landscape layout: keypad on the right, the rest on the left (`fitLandscape`,
   `html.landscape` in styles.css). Sideways the keys are the biggest that fit (a halving search, tools up to 84px), so every
   tab's keys are the same size even when the left side is the taller one, and once everything fits the card is stretched
-  to the bottom (`html.land-fill`), so there is no empty strip below. On a very short screen (an iPhone SE in Safari, 667×330) `fitLandscape` first hides the copy
-  button, then tightens the tools (`fit-tight`: less padding, a smaller ? row) before letting the page scroll. Fuel and Energy
+  to the bottom (`html.land-fill`), so there is no empty strip below. On a very short screen (an iPhone SE in Safari, 667×330) `fitLandscape` first tightens the tools (`fit-tight`: less padding, a smaller ? row) before letting the page scroll. Fuel and Energy
   share one row sideways like the kinds (`kind-grid`, `--f:3/4`); a label that doesn't fit its one line switches to its short
   form (`FIELD_SHORT`, `fitShortLabels`, run by `fitLayout`). `sideways_every_tab` in the tests checks every tab at 667×330
   and 814×409: no scrolling, nothing off screen, no cut label, the same key size. iOS reports a turned phone's new size late, after
