@@ -3,7 +3,7 @@
 // Tips are [Greek, English]; keyboard rows are [[keys], Greek, English]. The keyboard part shows only on devices with a keyboard and mouse.
 const HELP={
  calc:{tips:[
-  ['Κράτα πατημένο έναν αριθμό (δεξί κλικ σε υπολογιστή) για Αντιγραφή ή Επικόλληση: ένας αριθμός από άλλη εφαρμογή μπαίνει κατευθείαν. Ένα απλό πάτημα σε αποτέλεσμα το αντιγράφει.','Press and hold a number (right-click on a computer) to Copy or Paste: a number from another app goes straight in. A tap on a result copies it.'],
+  ['Κράτα έναν αριθμό: αντιγραφή, επικόλληση.','Hold a number (or right-click it) to copy or paste.'],
   ['Το ( ) ανοίγει ή κλείνει παρένθεση μόνο του, και μετά από πράξη χωρίς ανοιχτή τη βάζει όλη σε παρένθεση: 5 + 5 γίνεται (5 + 5). Όσες μείνουν ανοιχτές, τις κλείνει το =.','( ) opens or closes a parenthesis on its own, and after a calculation with none open puts all of it in brackets: 5 + 5 becomes (5 + 5). Any left open are closed by =.'],
   ['Πάτα πάνω στην πράξη για να βάλεις εκεί τον δρομέα: τα πλήκτρα και το ⌫ δουλεύουν σε εκείνο το σημείο, και το = υπολογίζει όλη την πράξη.','Tap the calculation to put the cursor there: keys and ⌫ work at that place, and = works out all of it.'],
   ['Κράτα πατημένο το − για να αλλάξεις πρόσημο (±), στον αριθμό που γράφεις ή στο αποτέλεσμα.','Hold − to change the sign (±) of the number you are typing, or of the result.'],
