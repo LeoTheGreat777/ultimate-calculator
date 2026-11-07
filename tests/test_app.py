@@ -1806,6 +1806,9 @@ async def history_drag(browser, url):
     mid, after = await drag(700, 450)
     check(L + 'dragging up from an entry moves the sheet with the finger', 225 <= top0 - mid[0] <= 250 and mid[3] == 0, [top0, mid])
     check(L + 'let go high: fully open', after[1] and after[0] == 0, after)
+    # only the position moves (transform): the height never animates, and once still the sheet has its own height again
+    check(L + 'it moves by its position only, then rests at its own height', await p.evaluate(
+        "[getComputedStyle(historyPanel).transitionProperty,historyPanel.classList.contains('moving'),Math.round(historyPanel.getBoundingClientRect().height)===innerHeight]") == ['transform', False, True])
     mid, after = await drag(700, 300)
     check(L + 'fully open: the list scrolls', after[3] > 300 and after[0] == 0, after)
     before = await p.evaluate(state)
@@ -1814,6 +1817,8 @@ async def history_drag(browser, url):
     await p.evaluate("historyList.scrollTop=0")
     mid, after = await drag(300, 600, ms=30)
     check(L + 'at the list\'s top, dragging down shrinks the sheet to half', mid[0] > 250 and not after[1] and after[0] == top0, [mid, after])
+    check(L + 'half open again: resting at half height, nothing left pushed down', await p.evaluate(
+        "[historyPanel.classList.contains('moving'),historyPanel.style.transform,Math.round(innerHeight-historyPanel.getBoundingClientRect().height)]") == [False, '', top0])
     mid, after = await drag(600, 800, steps=4, ms=10)
     check(L + 'a flick down closes it, the page behind did not move', after[2] and after[4] == 0, after)
     await p.evaluate("openHistory()")

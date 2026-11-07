@@ -6,6 +6,11 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.36.3 – 2026-11-07
+
+### Changed
+- History slides smoother: opening it fully, shrinking it back and following your finger now only move it, without redrawing the list each frame, so phones with fast screens (120 Hz) can show every frame.
+
 ## 0.36.2 – 2026-11-07
 
 ### Fixed

@@ -92,6 +92,10 @@ Part of the notes in CLAUDE.md (read that first). Covers tools.js, units.js, cur
   On letting go: `speed` (last 100 ms) projects where it would go: half, full (`snap`) or closed. The mouse drags the bar
   (pointer events). Touch moves on the sheet and backdrop are `preventDefault`ed, and a page that fits is scrolled back to the
   top (layout.js): iPhone otherwise moved the page up under the status bar blur. Animation: .42s `cubic-bezier(.22,1,.36,1)`.
+  Only `transform` animates, never the height (a height change lays the page out every frame, which held it at 60 Hz): while
+  dragged or snapping the sheet has `.moving` (fully open's height, pushed down by `translate`, `startMoving`/`place`), and on
+  `transitionend` (`settle`) it gets its resting height back (half or `.expanded`) with no visible jump. `currentHeight` is the
+  height less the transform's y, so a drag can catch it mid-animation. The scroll handler measures titles once a frame (rAF).
 - **Number fields** (every tool field but dates and IP/mask, `groupedField`) show thousands as they are typed: 10000 ->
   10.000 (`groupDigits` in the `input` handler, the cursor kept in place). In them a dot is always a thousands dot and the
   comma the decimal, so read a field with `fieldValue(id)` (the text without dots), never `.value`; `liveToolNumber` and

@@ -53,7 +53,7 @@ function historyGroupTitle(k,now=new Date()){
  return y===now.getFullYear()?name:name+' '+y;
 }
 
-function openHistory(){const p=$('#historyPanel'),b=$('#historyBackdrop');renderHistory();p.style.height='';p.style.transform='';p.classList.remove('hidden');b.classList.remove('hidden');requestAnimationFrame(()=>{p.classList.add('open');b.classList.add('open')});p.classList.remove('expanded');$('#historyList').scrollTop=0}
+function openHistory(){const p=$('#historyPanel'),b=$('#historyBackdrop');renderHistory();p.style.height='';p.style.transform='';p.classList.remove('hidden','moving','dragging');b.classList.remove('hidden');requestAnimationFrame(()=>{p.classList.add('open');b.classList.add('open')});p.classList.remove('expanded');$('#historyList').scrollTop=0}
 // A press outside the sheet while it asks "Delete all?" only takes the question back (as a press inside would); the next one closes it
 function historyBackdropClick(){if(historyClearConfirm)clearHistoryConfirm();else closeHistory()}
 // It slides down at the height it has (dragged or fully open) and goes; the page behind is put back where it was (iPhone can
@@ -63,7 +63,7 @@ function closeHistory(){
  if(!p.classList.contains('hidden'))p.style.height=p.getBoundingClientRect().height/(window.__uiZoom||1)+'px';
  p.style.transform='';p.classList.remove('open','dragging');b.classList.remove('open');
  if(!document.documentElement.classList.contains('page-scroll')&&(scrollX||scrollY))scrollTo(0,0);
- setTimeout(()=>{if(!p.classList.contains('open')){p.classList.add('hidden');b.classList.add('hidden');p.classList.remove('expanded');p.style.height='';$('#historyList').scrollTop=0}},450);
+ setTimeout(()=>{if(!p.classList.contains('open')){p.classList.add('hidden');b.classList.add('hidden');p.classList.remove('expanded','moving');p.style.height='';$('#historyList').scrollTop=0}},450);
 }
 // The frosted bar and the group title stuck under it get a little more colour once something scrolls under them (styles.css)
 function markHistoryStuck(){
@@ -76,7 +76,8 @@ function setupHistorySheet(){
  const p=$('#historyPanel'),list=$('#historyList');// the drag: setupHistoryGestures
  // The list starts under the bar on top of it (styles.css): it needs the bar's height, which the language and screen width change
  const bar=p.querySelector('.history-bar');if(bar&&window.ResizeObserver)new ResizeObserver(()=>p.style.setProperty('--hbar',bar.offsetHeight+'px')).observe(bar);
- let timer;list.addEventListener('scroll',()=>{markHistoryStuck();list.classList.add('is-scrolling');clearTimeout(timer);timer=setTimeout(()=>list.classList.remove('is-scrolling'),650)},{passive:true})
+ // once a frame at most: it measures the titles, which would hold up the scrolling if done for every scroll event
+ let timer,stuckFrame=0;list.addEventListener('scroll',()=>{if(!stuckFrame)stuckFrame=requestAnimationFrame(()=>{stuckFrame=0;markHistoryStuck()});list.classList.add('is-scrolling');clearTimeout(timer);timer=setTimeout(()=>list.classList.remove('is-scrolling'),650)},{passive:true})
 }
 // Clear all asks first without moving anything: the button itself turns into a red "Delete all?" (the same height, right
 // aligned); a second press deletes, a press elsewhere or 4 seconds put it back. Screen readers hear the full question.
@@ -112,22 +113,49 @@ function setupHistoryGestures() {
   const Z = () => window.__uiZoom || 1;
   const collapsedHeight = () => Math.min(window.innerHeight * 0.42 / Z(), 470);
   const expandedHeight = () => window.innerWidth <= 480 ? window.innerHeight / Z() : Math.min(window.innerHeight * 0.92 / Z(), 780);
-  const currentHeight = () => panel.getBoundingClientRect().height / Z();
+  // How much of the sheet shows: its height less how far it is pushed down (read from the transform, so it is right mid-animation too)
+  const sheetY = () => new DOMMatrix(getComputedStyle(panel).transform).m42;
+  const currentHeight = () => parseFloat(getComputedStyle(panel).height) - sheetY();
   const canScroll = () => list.scrollHeight > list.clientHeight + 1;
   const isOpen = () => panel.classList.contains('open') && !panel.classList.contains('hidden');
   const SLOP = 6;// a touch that moves less than this is a tap
 
-  function snap(expanded) {
-    panel.classList.toggle('expanded', expanded);
+  // Moving (styles.css): the sheet is fully open's height and only slides (transform), so every frame is drawn without
+  // laying the page out again. Pushed down y px from fully open.
+  let settleTimer = 0;
+  function startMoving() {
+    if (panel.classList.contains('moving')) return sheetY();
+    const y = Math.max(0, expandedHeight() - currentHeight());
+    panel.classList.add('dragging', 'moving');
+    panel.style.transform = `translate(-50%, ${y}px)`;
+    return y;
+  }
+  const place = y => { panel.style.transform = `translate(-50%, ${y}px)`; };
+  // Back to its resting height once it stops (looks the same, so nothing jumps)
+  function settle() {
+    clearTimeout(settleTimer);
+    if (!panel.classList.contains('moving') || panel.classList.contains('dragging') || !isOpen()) return;
+    panel.classList.add('dragging');
+    panel.classList.remove('moving');
     panel.style.transform = '';
-    panel.style.height = `${expanded ? expandedHeight() : collapsedHeight()}px`;// animates from where the finger left it
-    requestAnimationFrame(() => { panel.style.height = ''; });
+    void panel.offsetHeight;
+    panel.classList.remove('dragging');
+  }
+  panel.addEventListener('transitionend', e => { if (e.target === panel && e.propertyName === 'transform') settle(); });
+  // Slides from where it is (or where the finger left it) to half or fully open
+  function snap(expanded) {
+    startMoving();
+    panel.classList.toggle('expanded', expanded);
+    void panel.offsetHeight;
+    panel.classList.remove('dragging');
+    place(expanded ? 0 : Math.max(0, expandedHeight() - collapsedHeight()));
+    clearTimeout(settleTimer); settleTimer = setTimeout(settle, 500);
   }
 
   let drag = null;// {y0, h0, scroll0, fromList, mode: null | 'sheet' | 'scroll', moved, down, samples}
   let dragEndedAt = 0;
   function begin(y, fromList) {
-    drag = { y0: y, h0: currentHeight(), scroll0: list.scrollTop, fromList, mode: null, moved: false, down: 0, samples: [[performance.now(), y]] };
+    drag = { y0: y, top0: 0, scroll0: list.scrollTop, fromList, mode: null, moved: false, down: 0, top: 0, samples: [[performance.now(), y]] };
   }
   // The first move decides (iPhone browsers decide then whether the page may scroll): sheet or list
   function decide(dy) {
@@ -143,17 +171,18 @@ function setupHistoryGestures() {
     if (drag.mode !== 'sheet') return false;
     if (!drag.moved) {
       if (Math.abs(y - drag.y0) < SLOP) return true;
-      drag.moved = true; drag.y0 = y; drag.h0 = currentHeight(); drag.scroll0 = list.scrollTop;
+      drag.moved = true; drag.y0 = y; drag.scroll0 = list.scrollTop;
+      clearTimeout(settleTimer);
+      drag.top0 = startMoving();// caught mid-animation, it stays where it is
       panel.classList.add('dragging');
     }
     const min = collapsedHeight(), max = expandedHeight();
-    let h = drag.h0 - (y - drag.y0);
+    let top = drag.top0 + (y - drag.y0);
     // Pulled past fully open from the list: the list scrolls on, and back again before the sheet shrinks
-    if (drag.fromList) list.scrollTop = drag.scroll0 + Math.max(0, h - max);
-    h = Math.min(h, max);
-    drag.down = Math.max(0, min - h);// below half open the sheet slides down instead (to close)
-    panel.style.height = `${Math.max(h, min)}px`;
-    panel.style.transform = `translate(-50%, ${drag.down}px)`;
+    if (drag.fromList) list.scrollTop = drag.scroll0 + Math.max(0, -top);
+    drag.top = top = Math.max(0, top);
+    drag.down = Math.max(0, top - (max - min));// how far below half open (to close)
+    place(top);
     return true;
   }
   // The finger's speed over its last ~100 ms, in CSS pixels per ms (down is positive)
@@ -167,7 +196,7 @@ function setupHistoryGestures() {
     if (!d || d.mode !== 'sheet' || !d.moved) return;
     dragEndedAt = performance.now();
     panel.classList.remove('dragging');
-    const v = speed(d.samples), min = collapsedHeight(), max = expandedHeight(), h = currentHeight() - d.down;
+    const v = speed(d.samples), min = collapsedHeight(), max = expandedHeight(), h = max - d.top;// how much shows
     const aim = h - v * 200;// where the flick would carry it
     if (d.down > 90 || (d.down > 0 && v > 0.35) || aim < min - 120) { closeHistory(); return; }
     snap(aim > (min + max) / 2);
