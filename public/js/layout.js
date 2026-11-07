@@ -139,11 +139,14 @@ function fitBrand(){const n=$('.brand-name'),h=n&&n.parentElement;if(!h)return;h
 function fitFooter(){const f=$('.app-footer'),r=document.documentElement;if(!f)return;r.classList.remove('fit-footer');
  if(!r.classList.contains('fit-small')&&!r.classList.contains('landscape'))return;
  const a=f.firstElementChild,b=f.lastElementChild;if(a&&b&&b.getBoundingClientRect().top>a.getBoundingClientRect().top+2)r.classList.add('fit-footer')}
-// Phones held upright and tablets: the keys grow into the room the screen leaves (html.big-keys), up to 100px tall (tools 76px,
-// Scientific stays 62; on a tablet 110, Scientific 72, sideways 90); the round keys in the Calculator and Units are at
-// most as tall as they are wide (circles on a phone, pills on a tablet).
-function bigSpec(spec,big,tablet){if(!big)return spec;const w=$('#keypad .key')?.getBoundingClientRect().width/(window.__uiZoom||1)||86;
- const top=tablet?110:100,max=spec===FIT.calc||spec===FIT.units?Math.min(top,Math.floor(w)):spec===FIT.sci?(tablet?(innerWidth>innerHeight?90:72):62):76;
+// Phones held upright and tablets: the keys grow into the room the screen leaves (html.big-keys), up to 100px tall (on a
+// tablet 110; Scientific stays 62, on a tablet 72, sideways 90). Every keypad's keys may grow as tall as the Calculator's
+// (a quarter of the keypad's width), and no key is taller than it is wide, so the round keys are circles where they can be
+// (a phone) and pills where they are wider (a tablet, the tools' three columns): the keypads look the same in every mode.
+function bigSpec(spec,big,tablet){if(!big)return spec;
+ const kp=$('#keypad'),Z=window.__uiZoom||1,widths=[...(kp?.querySelectorAll('button')||[])].map(b=>b.getBoundingClientRect().width/Z).filter(x=>x>0);
+ const calcW=kp?(kp.clientWidth-3*(tablet?18:14))/4:86,w=Math.min(calcW,...widths)||86;// the column gap of the Calculator's round keys (styles.css)
+ const top=tablet?110:100,max=spec===FIT.sci?(tablet?(innerWidth>innerHeight?90:72):62):Math.min(top,Math.floor(w));
  return {...spec,k:[Math.max(spec.k[1],max),spec.k[1]],roomy:spec.roomy&&Math.min(spec.roomy,150)}}
 // A tablet (a touch screen wider than a phone, not in the sideways layout): the app takes the whole width (html.tablet), up to
 // the width where the side panels fit (TABLET_MAX_W; an iPad Pro 13" held sideways keeps the column with History and the working)
@@ -156,7 +159,7 @@ function fitLayout(){refreshSide();fitBrand();
  // everything below is in CSS pixels (screen pixels / zoom)
  const avail=fitAvailHeight()/Z;
  const need=()=>Math.ceil((footer.getBoundingClientRect().bottom+window.scrollY)/Z+(parseFloat(getComputedStyle(shell).paddingBottom)||0));
- root.classList.remove('page-scroll','fit-small','fit-footer');shell.style.height='';card.classList.remove('compact-display','fit-no-details','fit-tight','fit-no-form','fit-row','fit-list');$('#keypad')?.style.removeProperty('max-height');
+ root.classList.remove('page-scroll','fit-small','fit-footer');shell.style.height='';card.classList.remove('compact-display','fit-no-details','fit-tight','fit-no-form','fit-row','fit-list');$('#keypad')?.style.removeProperty('max-height');$('#keypad')?.style.removeProperty('min-height');
  const tool=TOOL_MODES.includes(mode),touchTool=tool&&isMobileDevice();
  const setToolLayout=compact=>{card.classList.toggle('mobile-tool',compact);document.body.classList.toggle('mobile-tool-on',compact)};
  if(tool)setToolLayout(touchTool);
@@ -214,8 +217,13 @@ function fitLayout(){refreshSide();fitBrand();
   if(over>0){card.classList.remove('fit-tight','fit-row','fit-no-form','fit-no-details','fit-list');$('#keypad')?.style.removeProperty('max-height');root.classList.remove('fit-small','fit-footer');if(tool)fitShortLabels();over=attempt(card.classList.contains('mobile-tool')?FIT.mobileTool:spec)}
  }
  if(tool)fitShortLabels();// the fields' final widths
- // a tablet: the display takes the height left over, so the keys sit at the bottom of the screen like the iPad's calculator
- if(tablet&&over<=0){const d=parseFloat(card.style.getPropertyValue('--disp'))||0,free=Math.floor(avail-need());if(d&&free>0){card.style.setProperty('--disp',(d+free)+'px');over=need()-avail}}
+ // a phone upright or a tablet: the display takes the height left over, so the keys sit at the bottom of the screen in every
+ // mode, like the iPhone's and the iPad's calculator; Dates (a list, no keys) keeps its display and its list reaches the bottom,
+ // so the date fields don't move when the list appears
+ if(big&&over<=0){const free=Math.floor(avail-need());if(free>0){
+  const list=$('#keypad.date-details'),d=parseFloat(card.style.getPropertyValue('--disp'))||0;
+  if(list){list.style.minHeight=Math.floor(list.getBoundingClientRect().height/Z+free)+'px';over=need()-avail}
+  else if(d){card.style.setProperty('--disp',(d+free)+'px');over=need()-avail}}}
  if(over>0)root.classList.add('page-scroll');
  root.dataset.fitOver=Math.max(0,over);// how many px did not fit (used by tests)
 }

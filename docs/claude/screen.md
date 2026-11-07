@@ -8,13 +8,18 @@ Part of the notes in CLAUDE.md (read that first). Covers layout.js, side.js, mod
   ResizeObserver): when its own width changes it is fitted again, so turning the phone never leaves a number sized for
   the old width (iOS reports the new width late, after the resize event).
 - **Bigger keys on phones held upright** (`html.big-keys`: touch, upright, at most 500px wide, or a tablet; not Graph): the keys grow into
-  the room the screen leaves (`bigSpec`: up to 100px tall, tools 76px, Scientific 62px), the display giving way down to
-  150px first; digits grow with them; the footer is on one line (`fit-small`). The round keys (look.md) there are at most as
-  tall as they are wide, so the Calculator's and Units' keys are circles.
+  the room the screen leaves (`bigSpec`: up to 100px tall, Scientific 62px), the display giving way down to
+  150px first; digits grow with them (the tools' keys too); the footer is on one line (`fit-small`). Every keypad's keys may be as tall as
+  the Calculator's (a quarter of the keypad's width) and never taller than they are wide, so the round keys (look.md) are circles
+  where they can be and pills where they are wider (the tools' three columns, tablets): the keypads look the same in every mode.
+  **The keys sit at the bottom in every mode:** once everything fits, the display takes the height left over (`--disp` grows), so
+  nothing is left empty under the keypad; extra room shows above the result. Dates (a list, no keys) keeps its display and its
+  list reaches the bottom instead (`min-height` on `#keypad.date-details`), so the date fields don't move when the list appears.
+  `keys_fill_the_bottom` in the tests checks every mode on phones and an iPad.
 - **Tablets** (`html.tablet`, `fitLayout`: a touch screen wider than 500px, not in the sideways layout, narrower than
   `TABLET_MAX_W` 1264px, where the side panels fit, so an iPad Pro 13" sideways keeps the column with them): the app takes the
-  whole width (up to 1100px) like the iPad's calculator, gets `big-keys` (up to 110px; Scientific 72, sideways 90; tools 76),
-  bigger digits and result, and the display takes the height left over (`--disp` grows), so the keys sit at the bottom
+  whole width (up to 1100px) like the iPad's calculator, gets `big-keys` (up to 110px; Scientific 72, sideways 90),
+  bigger digits and result, and like phones the display takes the height left over, so the keys sit at the bottom
   (Units: its two values just above the keys). Held sideways (`html.sci-side`, also on every phone sideways) Scientific's six
   columns sit beside the basic four, five rows, like the iPad's. An iPad mini sideways in Safari (under 720px high) gets the
   phones' sideways layout. `PHONES` in the tests has iPads (mini, Pro 11, Pro 13, upright and sideways) and a Galaxy Tab.

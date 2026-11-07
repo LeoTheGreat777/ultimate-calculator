@@ -1003,6 +1003,7 @@ html.frameless,html.frameless body{background:var(--card)}/* the page is the car
 html.frameless .calculator-card{background:transparent;border-color:transparent;box-shadow:none;padding-left:0;padding-right:0}
 html.big-keys.keys-round .calculator-card:not(.graph-mode) .keypad:not(.sci){column-gap:14px}
 html.big-keys.keys-round .calculator-card:not(.graph-mode) .keypad:not(.sci) .key{font-size:clamp(25px,calc(var(--k) * .42),36px);font-weight:400}
+html.big-keys .calculator-card .tool-keypad button{font-size:clamp(20px,calc(var(--k) * .34),28px)}/* the tools' keys grow as tall as the Calculator's (layout.js), their digits with them */
 /* Copy and Paste: the menu over a held number (clip.js) */
 .clip-menu{position:fixed;z-index:120;display:flex;padding:4px;gap:2px;background:var(--card2);border:1px solid var(--border);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.3)}
 .clip-menu.hidden{display:none}

@@ -6,6 +6,13 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.37.0 – 2026-11-07
+
+### Changed
+- On phones and tablets the keypad now sits at the bottom of the screen in every mode, as in Calculator; any extra room goes above the result.
+- The tools' keys (VAT, Percent, Programmer, Statistics and the others) grow as big as the Calculator's when there is room, with bigger digits.
+- Dates: its list reaches the bottom of the screen.
+
 ## 0.36.3 – 2026-11-07
 
 ### Changed

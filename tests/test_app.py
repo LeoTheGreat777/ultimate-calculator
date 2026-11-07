@@ -3050,6 +3050,33 @@ async def tablets(browser, url):
         await ctx.close()
 
 
+async def keys_fill_the_bottom(browser, url):
+    """Phones upright and tablets: in every mode the keypad reaches the bottom of the screen (the display takes the room
+    left over), and the tools' keys are as tall as the Calculator's when there is room, never taller than wide."""
+    L = '[keys fill the bottom] '
+    state = """(()=>{const f=$('.app-footer').getBoundingClientRect(),keys=[...$$('#keypad button')].map(b=>b.getBoundingClientRect());
+      return {gap:Math.round(innerHeight-f.bottom),keyH:keys.length?Math.round(keys[0].height):0,
+        tall:keys.some(r=>r.height<=keys[0].height+1&&r.height>r.width+1),scroll:document.documentElement.classList.contains('page-scroll')}})()"""
+    modes = ['calc', 'units', 'currency', 'vat', 'pct', 'loan', 'dates', 'fuel', 'energy', 'net', 'numbers', 'equation', 'stats', 'prog']
+    for w, h in [(440, 956), (390, 844), (412, 780), (834, 1194)]:
+        D = L + f'{w}x{h} '
+        ctx = await browser.new_context(viewport={'width': w, 'height': h}, is_mobile=True, has_touch=True)
+        await ctx.add_init_script(SEED % ('en', 'dark'))
+        p = await ctx.new_page()
+        await p.goto(url)
+        await p.wait_for_timeout(400)
+        calcH = (await p.evaluate(state))['keyH']
+        for m in modes:
+            await p.evaluate("m=>switchMode(m)", m)
+            await p.wait_for_timeout(150)
+            st = await p.evaluate(state)
+            check(D + m + ': nothing left empty under the keypad', st['gap'] <= 14 and not st['scroll'], st)
+            check(D + m + ": no key taller than it is wide (Statistics' Add spans rows)", not st['tall'], st)
+            if w == 440 and m in ('vat', 'pct', 'numbers', 'stats'):
+                check(D + m + ": keys as tall as the Calculator's", abs(st['keyH'] - calcH) <= 2, (st, calcH))
+        await ctx.close()
+
+
 async def keys_and_clipboard(browser, url):
     """Round keys; no Copy result button; holding (or right-clicking) a number gives Copy and
     Paste; Ctrl+C / Ctrl+V; pasted numbers in any common form."""
@@ -3275,6 +3302,7 @@ async def main():
         await more_decimals(browser, url)
         await keys_and_clipboard(browser, url)
         await tablets(browser, url)
+        await keys_fill_the_bottom(browser, url)
         await how_buttons_in_place(browser, url)
         await all_modes(browser, url)
         await esc_everywhere(browser, url)
