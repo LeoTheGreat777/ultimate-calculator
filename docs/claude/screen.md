@@ -15,9 +15,13 @@ Part of the notes in CLAUDE.md (read that first). Covers layout.js, side.js, mod
   **The keys sit at the bottom in every mode:** once everything fits, the display takes the height left over (`--disp` grows), so
   nothing is left empty under the keypad; extra room shows above the result. Dates (a list, no keys) keeps its display and its
   list reaches the bottom instead (`min-height` on `#keypad.date-details`), so the date fields don't move when the list appears.
-  **Computers too** (mouse, not touch, not Graph or the sideways layout: `desk` in `fitLayout`): keys may grow to
-  `DESK_KEY_MAX` 80px (Scientific keeps 62; the display shrinks to its `roomy` height before the keys get smaller) and the
-  display takes the height left over, so the keys sit at the bottom of the window as on phones; no card frame (look.md).
+  **Computers too** (mouse, not touch, not the sideways layout: `html.desk`; not Graph for the keys): one key height for
+  the window in every mode (`deskKey()`: (height − `DESK.reserve` 570) / 5, at least 56; what Interest, two rows of fields,
+  has room for, so Subnet gets a few px less and Scientific keeps its own 62 at most). The tools' display gives way to its
+  smallest before their keys do (`dispFirst`), and the display takes the height left over, so the keys sit at the bottom.
+  The column's width follows the keys (`--desk-w`: keys about 1.2 times as wide as tall, the card 520–652px), so tall
+  windows get near-round keys; digits grow with the keys. Units and Currency: their two values sit just above the keys,
+  where the Calculator's result is, the category or rate bar stays at the top. No card frame (look.md).
   `keys_fill_the_bottom` in the tests checks every mode on phones, an iPad and computers (1024×768 to 1920×1080).
 - **Tablets** (`html.tablet`, `fitLayout`: a touch screen wider than 500px, not in the sideways layout, narrower than
   `TABLET_MAX_W` 1264px, where the side panels fit, so an iPad Pro 13" sideways keeps the column with them): the app takes the
@@ -103,7 +107,7 @@ Part of the notes in CLAUDE.md (read that first). Covers layout.js, side.js, mod
   `drawToolChart(box)`: the dialog's chart parts keep their ids, the panel's have classes only). They are `position:fixed`
   level with the card (`--side-l/r/top/h/w`) and as tall as it (`height:var(--side-h)`, the list scrolls inside): no
   boxes, the page's colour, a thin line (`--border`) on the calculator's side, like the frameless keypad. The title bar
-  then runs across all three (`html.side-panels .topbar`, negative margins of `--side-w` + 20px; `.app-shell` overflow visible). Anything that changes the screen calls `refreshSide()` (once per frame; the
+  stays over the calculator's column. Anything that changes the screen calls `refreshSide()` (once per frame; the
   calculator's `render`, `renderToolDisplay`, `updateUnitsDisplay`, Graph's points, History, `fitLayout`, language, theme).
   With the panels showing, the History, ? and chart buttons are hidden (`html.side-panels #historyButton…`
   in styles.css) and the History sheet's `#historyClearWrap` (chart button, Clear all) and `#historyChartWrap` move into the

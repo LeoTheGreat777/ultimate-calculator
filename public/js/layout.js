@@ -146,15 +146,20 @@ function fitFooter(){const f=$('.app-footer'),r=document.documentElement;if(!f)r
 function bigSpec(spec,big,tablet,desk){if(!big&&!desk)return spec;
  const kp=$('#keypad'),Z=window.__uiZoom||1,widths=[...(kp?.querySelectorAll('button')||[])].map(b=>b.getBoundingClientRect().width/Z).filter(x=>x>0);
  const calcW=kp?(kp.clientWidth-3*(tablet?18:14))/4:86,w=Math.min(calcW,...widths)||86;// the column gap of the Calculator's round keys (styles.css)
- const top=desk?DESK_KEY_MAX:tablet?110:100,max=spec===FIT.sci?(desk?spec.k[0]:tablet?(innerWidth>innerHeight?90:72):62):Math.min(top,Math.floor(w));
- return {...spec,k:[Math.max(spec.k[1],max),spec.k[1]],roomy:spec.roomy&&(desk?spec.roomy:Math.min(spec.roomy,150))}}
+ const top=desk?deskKey():tablet?110:100,max=spec===FIT.sci?(desk?spec.k[0]:tablet?(innerWidth>innerHeight?90:72):62):Math.min(top,Math.floor(w));
+ return {...spec,k:[Math.max(spec.k[1],max),spec.k[1]],roomy:spec.roomy&&(desk?spec.roomy:Math.min(spec.roomy,150)),dispFirst:desk}}
 // A tablet (a touch screen wider than a phone, not in the sideways layout): the app takes the whole width (html.tablet), up to
 // the width where the side panels fit (TABLET_MAX_W; an iPad Pro 13" held sideways keeps the column with History and the working)
 const TABLET_MAX_W=1264;
-// A computer (mouse, not touch): the keys may grow to 80px and the display takes the height left over, so the keys sit at the
-// bottom of the window as on phones and tablets; no card frame (html.frameless), and with the side panels the three parts
-// share the window, split by thin lines (styles.css).
-const DESK_KEY_MAX=80;
+// A computer (mouse, not touch, html.desk): one key height for the window, the same in every mode (deskKey: what a tool with one
+// or two rows of fields, like Interest, has room for; Subnet, with more above the keys, gets a little less, Scientific keeps its
+// own). The tools' display gives way to its smallest before their keys do (dispFirst), and the display takes the height left
+// over, so the keys sit at the bottom of the window as on phones and tablets. The column is as wide as keys about 1.2 times
+// as wide as tall (--desk-w, 520-652px for the keys' card), so tall windows get near-round keys. No card frame (html.frameless);
+// with the side panels the three parts share the window, split by thin lines (styles.css).
+const DESK={reserve:570,min:56,ratio:1.2,gap:8,minW:548,maxW:680,pad:28};
+let deskAvail=0;
+function deskKey(){return Math.max(DESK.min,Math.floor((deskAvail-DESK.reserve)/5))}
 function fitLayout(){refreshSide();fitBrand();
  const card=$('#calculatorCard'),shell=$('.app-shell'),footer=$('.app-footer'),root=document.documentElement;if(!card||!shell||!footer)return;
  document.body.classList.add('fit');
@@ -177,7 +182,8 @@ function fitLayout(){refreshSide();fitBrand();
  const big=!land&&touch&&mode!=='graph'&&(wide<=500||tablet);root.classList.toggle('big-keys',big);root.classList.add('keys-round');
  // no card frame (styles.css, html.frameless): on a computer, and on a touch screen upright and sideways, phone and tablet
  root.classList.toggle('sci-side',land||(tablet&&innerWidth>innerHeight));// Scientific's keys beside the basic ones (styles.css)
- const desk=!touch&&!land&&mode!=='graph';
+ const deskCol=!touch&&!land,desk=deskCol&&mode!=='graph';root.classList.toggle('desk',deskCol);
+ if(deskCol){deskAvail=avail;const K=deskKey();root.style.setProperty('--desk-w',Math.max(DESK.minW,Math.min(DESK.maxW,4*Math.round(K*DESK.ratio)+3*DESK.gap+DESK.pad))+'px')}
  root.classList.toggle('frameless',touch?mode!=='graph'&&(big||land):true);
  if(big&&!tablet){root.classList.add('fit-small');fitFooter()}
  if(land){fitFooter();fitLandscape(card,root,avail,need,tool,setToolLayout);if(tool)fitShortLabels();return}
@@ -196,6 +202,7 @@ function fitLayout(){refreshSide();fitBrand();
   const shrinkDisplay=to=>{const step=Math.min(over,Math.max(0,d-to));d-=step;over-=step};
   const shrinkKeys=to=>{const dk=Math.min(Math.max(0,k-to),Math.ceil(over/rows));k-=dk;over-=dk*rows};
   if(spec.roomy)shrinkDisplay(spec.roomy);
+  if(over>0&&spec.dispFirst&&tool)shrinkDisplay(dMin);// a computer: the tools' keys stay as big as the Calculator's
   if(over>0)shrinkKeys(spec.comfy);
   if(over>0)shrinkDisplay(dMin);
   if(over>0)shrinkKeys(kMin);

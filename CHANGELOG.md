@@ -6,6 +6,13 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.38.1 – 2026-11-07
+
+### Changed
+- Computers: the keys are about the same size in every mode, and bigger and rounder when the window is tall enough; the calculator column narrows a little to keep them round.
+- Computers: in Units and Currency the two values sit just above the keys, where the result is in Calculator; the unit or rate bar stays at the top.
+- Computers: the title and the top buttons are over the calculator again.
+
 ## 0.38.0 – 2026-11-07
 
 ### Changed

@@ -3053,7 +3053,8 @@ async def tablets(browser, url):
 async def keys_fill_the_bottom(browser, url):
     """Phones upright, tablets and computers: in every mode the keypad reaches the bottom of the screen (the display takes the
     room left over), and the tools' keys are as tall as the Calculator's when there is room, never taller than wide. On a
-    computer the side panels are as tall as the calculator, with no boxes around them or the calculator."""
+    computer the keys are about the same size in every mode, Units' and Currency's values sit just above the keys, and the
+    side panels are as tall as the calculator, with no boxes around them or the calculator."""
     L = '[keys fill the bottom] '
     state = """(()=>{const f=$('.app-footer').getBoundingClientRect(),keys=[...$$('#keypad button')].map(b=>b.getBoundingClientRect());
       return {gap:Math.round(innerHeight-f.bottom),keyH:keys.length?Math.round(keys[0].height):0,
@@ -3062,7 +3063,7 @@ async def keys_fill_the_bottom(browser, url):
     side = """(()=>{const r=s=>$(s).getBoundingClientRect(),c=r('#calculatorCard'),a=r('#sideHistory'),b=r('#sideWork'),cs=getComputedStyle,
       t=r('.topbar');return {on:document.documentElement.classList.contains('side-panels'),frameless:document.documentElement.classList.contains('frameless'),
         h:[Math.round(a.height-c.height),Math.round(b.height-c.height)],box:[cs($('#sideHistory')).backgroundColor,cs($('#calculatorCard')).borderTopColor],
-        bar:[Math.round(t.left-a.left),Math.round(b.right-t.right)]}})()"""
+        bar:[Math.round(t.left-c.left),Math.round(c.right-t.right)]}})()"""
     for w, h, touch in [(440, 956, True), (390, 844, True), (412, 780, True), (834, 1194, True), (1024, 768, False), (1280, 860, False),
                         (1440, 900, False), (1920, 1080, False)]:
         D = L + f'{w}x{h} '
@@ -3080,9 +3081,15 @@ async def keys_fill_the_bottom(browser, url):
             check(D + m + ": no key taller than it is wide (Statistics' Add spans rows)", not st['tall'], st)
             if w == 440 and m in ('vat', 'pct', 'numbers', 'stats'):
                 check(D + m + ": keys as tall as the Calculator's", abs(st['keyH'] - calcH) <= 2, (st, calcH))
+            if not touch and h >= 900 and m != 'dates':
+                check(D + m + ": keys about as tall as the Calculator's (one size for every mode on a computer)",
+                      abs(st['keyH'] - calcH) <= calcH * .1, (st, calcH))
+            if not touch and m in ('units', 'currency'):
+                gap = await p.evaluate("Math.round($('#keypad').getBoundingClientRect().top-[...document.querySelectorAll('#calculatorDisplay .unit-row')].pop().getBoundingClientRect().bottom)")
+                check(D + m + ': the two values just above the keys, where the result is in Calculator', 0 <= gap <= 30, gap)
             if not touch and w >= 1280 and m in ('calc', 'vat', 'dates', 'stats'):
                 st = await p.evaluate(side)
-                check(D + m + ': History and the working as tall as the calculator, no boxes, the title bar across all three',
+                check(D + m + ': History and the working as tall as the calculator, no boxes, the title bar over the calculator',
                       st['on'] and st['frameless'] and max(map(abs, st['h'])) <= 2 and st['box'] == ['rgba(0, 0, 0, 0)'] * 2
                       and max(map(abs, st['bar'])) <= 2, st)
         await ctx.close()
