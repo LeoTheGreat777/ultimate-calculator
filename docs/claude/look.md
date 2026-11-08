@@ -34,7 +34,7 @@ Part of the notes in CLAUDE.md (read that first). Covers theme.js, the theme blo
   `--series1..3`). Check a new theme's contrast (text on card and keys, text on the accent) and look at it in every
   mode. Changing theme: circle reveal from the theme button (View Transitions, `transitionTheme`), fade fallback,
   instant with reduced motion.
-- **The ⌫ key** is a drawn icon (`BACK_ICON` in core.js, `.back-icon`, sized by the key's font), not the ⌫ character:
+- **The ⌫ key** is a drawn icon (`BACK_ICON` in core.js, `.back-icon`, sized by the key's font, nudged left by its viewBox so the × looks centred), not the ⌫ character:
   fonts draw ⌫ differently (Windows showed a cruder shape than the iPhone). Every keypad uses it (Calculator, Graph,
   tools, Programmer, and the first keypad in index.html); its name for screen readers stays in `aria-label`.
 - **The keys are round** everywhere (`html.keys-round`, always set by `fitLayout`; there is no choice in the theme menu):
