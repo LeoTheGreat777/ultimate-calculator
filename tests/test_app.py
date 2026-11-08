@@ -2872,7 +2872,8 @@ async def foldables(browser, url):
         check(L + 'keys bigger than on a phone held sideways', k > 70, k)
         await p.context.close()
     p = await new_page(browser, url, 'en', 'dark', phone=True, size=(1024, 768))
-    check('[foldables] a tablet sideways keeps its layout', not await p.evaluate("document.documentElement.classList.contains('landscape')"))
+    check('[foldables] a tablet sideways gets the sideways layout too, as a tablet', await p.evaluate(
+        "['landscape','land-tablet'].every(c=>document.documentElement.classList.contains(c))"))
     await p.context.close()
     for name, (w, h, off, mask) in {'iPhone Duo-like': (924, 693, 452, 20), 'Surface Duo': (1114, 720, 540, 34)}.items():
         L = f'[foldables {name}, half open] '
@@ -2956,7 +2957,7 @@ PHONES = [
     ('iPhone 17 Pro Max sideways', 956, 390, False, set()),
     ('Pixel 9a sideways', 850, 330, True, set()),
     ('Galaxy S25 sideways', 732, 290, True, {'*'}),
-    # tablets: the whole width, bigger keys (html.tablet); an iPad mini sideways in Safari is short enough for the sideways layout
+    # tablets: upright the whole width, bigger keys (html.tablet); sideways the phones' sideways layout (html.land-tablet)
     ('iPad Pro 11, home-screen app', 834, 1194, False, set()),
     ('iPad Pro 11, Safari', 834, 1112, False, set()),
     ('iPad Pro 11 sideways, home-screen app', 1194, 834, False, set()),
@@ -3018,13 +3019,13 @@ PHONE_SHEETS = [
 
 
 async def tablets(browser, url):
-    """Tablets use the whole width with big keys at the bottom; sideways Scientific sits beside the number keys; round keys
-    have no card frame on tablets and on phones sideways, but keep it on a computer."""
+    """Tablets upright use the whole width with big keys at the bottom and the footer on one line; held sideways they get the
+    phones' sideways layout (result on the left, keys on the right, Scientific beside the number keys). No card frame."""
     L = '[tablets] '
     state = """(()=>{const c=document.documentElement.classList,k=$('#keypad').getBoundingClientRect(),s=$('#keypad .key[data-value="7"]').getBoundingClientRect(),
       f=$('.app-footer').getBoundingClientRect();
-      return {tablet:c.contains('tablet'),frameless:c.contains('frameless'),side:c.contains('sci-side'),w:Math.round(k.width),keyH:Math.round(s.height),
-        gap:Math.round(innerHeight-f.bottom),rows:new Set([...$$('#keypad button')].map(b=>Math.round(b.getBoundingClientRect().top))).size}})()"""
+      return {tablet:c.contains('tablet'),land:c.contains('landscape')&&c.contains('land-tablet'),frameless:c.contains('frameless'),side:c.contains('sci-side'),w:Math.round(k.width),keyH:Math.round(s.height),
+        gap:Math.round(innerHeight-f.bottom),footH:Math.round(f.height),keyW:Math.round(s.width),rows:new Set([...$$('#keypad button')].map(b=>Math.round(b.getBoundingClientRect().top))).size}})()"""
     for w, h, touch in [(834, 1194, True), (1194, 834, True), (956, 440, True), (1280, 860, False)]:
         D = L + f'{w}x{h} '
         ctx = await browser.new_context(viewport={'width': w, 'height': h}, is_mobile=touch, has_touch=touch)
@@ -3033,14 +3034,19 @@ async def tablets(browser, url):
         await p.goto(url)
         await p.wait_for_timeout(400)
         st = await p.evaluate(state)
+        if w == 834:
+            check(D + 'a tablet upright: the whole width, no card frame', st['tablet'] and st['frameless'] and st['w'] > w - 100, st)
+            check(D + 'big keys at the bottom of the screen, the footer on one line', st['keyH'] >= 110 and st['gap'] < 40 and st['footH'] < 30, st)
+        if w == 1194:
+            check(D + 'a tablet sideways: the phones\' sideways layout, keys on the right, no card frame', st['land'] and not st['tablet'] and
+                  st['frameless'] and st['w'] < w * .6, st)
+            check(D + 'big round keys, never taller than wide', st['keyH'] >= 100 and st['keyH'] <= st['keyW'] + 1, st)
         if w in (834, 1194):
-            check(D + 'a tablet: the whole width, no card frame', st['tablet'] and st['frameless'] and st['w'] > min(w, 1100) - 100, st)
-            check(D + 'big keys at the bottom of the screen', st['keyH'] >= 85 and st['gap'] < 40, st)
             await p.evaluate("if(!sciMode)toggleSci()")
             await p.wait_for_timeout(300)
             st = await p.evaluate(state)
             if w > h:
-                check(D + 'sideways, Scientific beside the number keys: five rows', st['side'] and st['rows'] == 5 and st['keyH'] >= 70, st)
+                check(D + 'sideways, Scientific beside the number keys: five rows', st['side'] and st['rows'] == 5 and st['keyH'] >= 60, st)
             else:
                 check(D + 'upright, Scientific above the number keys', not st['side'] and st['rows'] == 10, st)
             check(D + 'Scientific fits without scrolling', await p.evaluate("!document.documentElement.classList.contains('page-scroll')"))

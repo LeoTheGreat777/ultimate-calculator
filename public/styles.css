@@ -665,7 +665,7 @@ html.theme-fade *,html.theme-fade *::before,html.theme-fade *::after{transition:
    html.landscape is set by fitLayout (layout.js, LANDSCAPE); it also sets the key height (--k, --gk) and the unit rows. */
 /* iPhone home-screen app held upright: iOS blurs a band under the status bar, so the page starts below it */
 html.ios-app:not(.landscape) .app-shell{padding-top:calc(env(safe-area-inset-top) + 28px)}
-html.landscape .app-shell{width:min(1000px,100%);padding-top:max(6px,env(safe-area-inset-top));padding-bottom:max(6px,env(safe-area-inset-bottom))}
+html.landscape .app-shell{width:min(1100px,100%);padding-top:max(6px,env(safe-area-inset-top));padding-bottom:max(6px,env(safe-area-inset-bottom))}
 html.landscape .topbar{margin-bottom:5px}
 html.landscape .topbar h1{font-size:18px;margin:0}
 html.landscape .brand-mark{width:24px;height:24px}
@@ -1039,9 +1039,15 @@ html.tablet .calculator-card .keypad.sci .key.sci-key:not(.mem-key):not(.long){f
 html.tablet .calculator-card .keypad.sci .key.sci-key.mem-key{font-size:min(19px,calc(var(--k) * .32))}
 html.tablet .display-wrap .result{font-size:clamp(46px,11vw,96px)}
 /* Phones sideways, like upright: a big result, bigger digits on the keys, and with round keys a wider gap and lighter digits */
-html.landscape .display-wrap:not(.tool-display):not(.has-alt) .result{font-size:clamp(40px,16vh,76px)}
+html.landscape .display-wrap:not(.tool-display):not(.has-alt) .result{font-size:clamp(40px,16vh,96px)}
 html.landscape .calculator-card:not(.graph-mode) .keypad:not(.sci) .key{font-size:clamp(20px,calc(var(--k) * .36),30px)}
+/* A tablet sideways (html.land-tablet, layout.js) has the phones' sideways layout with bigger keys: digits and gaps grow with them */
+html.land-tablet.landscape.frameless .calculator-card:not(.graph-mode) .keypad:not(.sci){column-gap:16px;row-gap:12px}
+html.land-tablet.landscape.frameless .calculator-card:not(.graph-mode) .keypad:not(.sci) .key{font-size:clamp(20px,calc(var(--k) * .42),44px)}
+html.land-tablet.landscape.frameless .calculator-card .tool-keypad button{font-size:clamp(20px,calc(var(--k) * .3),28px)}
+html.land-tablet.landscape.frameless .calculator-card .keypad.sci .key:not(.sci-key){font-size:clamp(20px,calc(var(--k) * .36),30px)}
 html.landscape.frameless .calculator-card:not(.graph-mode) .keypad:not(.sci){column-gap:10px}
 html.landscape.frameless .calculator-card:not(.graph-mode) .keypad:not(.sci) .key{font-size:clamp(20px,calc(var(--k) * .42),32px);font-weight:400}
-html.tablet #calculatorDisplay.unit-display .unit-rows{margin-top:auto}/* Units: the two values just above the keys, the category at the top */
+html.tablet #calculatorDisplay.unit-display .unit-rows,html.landscape #calculatorDisplay.unit-display .unit-rows{margin-top:auto}/* Units: the two values just above the keys, the category at the top */
 html.tablet .calculator-card .tool-keypad button{font-size:clamp(20px,calc(var(--k) * .34),28px)}
+html.land-tablet #keypad{align-self:end}/* a tablet sideways: the keys at the bottom, level with the result, when they don't fill the height (Scientific) */

@@ -100,7 +100,10 @@ function applyUiZoom(){
 const LANDSCAPE='(orientation: landscape) and (max-height: 500px), (pointer: coarse) and (min-aspect-ratio: 6/5) and (max-height: 720px)';
 function fitLandscape(card,root,avail,need,tool,setToolLayout){
  if(tool)setToolLayout(true);
- const graph=mode==='graph',v=graph?'--gk':'--k',tall=avail>520,[kMax,kMin]=graph?[tall?72:56,28]:tool?[tall?96:84,32]:[tall?96:68,34];// taller: a foldable's inner screen
+ const graph=mode==='graph',v=graph?'--gk':'--k',tall=avail>520,tab=root.classList.contains('land-tablet');
+ // taller: a foldable's inner screen; a tablet: up to 130px, but no taller than a key is wide (round keys stay circles or wider)
+ let [kMax,kMin]=graph?[tall?72:56,28]:tool?[tall?96:84,32]:[tall?96:68,34];
+ if(tab&&!graph){const kw=Math.min(...[...$('#keypad').querySelectorAll('button')].map(b=>b.getBoundingClientRect().width/(window.__uiZoom||1)).filter(x=>x>0));if(kw>0)kMax=Math.min(130,Math.floor(kw))}
  const rows=new Set([...$('#keypad').querySelectorAll('button')].map(b=>b.getBoundingClientRect().top|0)).size||5;
  root.classList.remove('land-fill');// measured at its natural height; filled to the bottom at the end
  card.style.setProperty('--disp','auto');// the display fills the height beside the keys
@@ -140,13 +143,13 @@ function fitFooter(){const f=$('.app-footer'),r=document.documentElement;if(!f)r
  if(!r.classList.contains('fit-small')&&!r.classList.contains('landscape'))return;
  const a=f.firstElementChild,b=f.lastElementChild;if(a&&b&&b.getBoundingClientRect().top>a.getBoundingClientRect().top+2)r.classList.add('fit-footer')}
 // Phones held upright and tablets: the keys grow into the room the screen leaves (html.big-keys), up to 100px tall (on a
-// tablet 110; Scientific stays 62, on a tablet 72, sideways 90). Every keypad's keys may grow as tall as the Calculator's
+// tablet 124; Scientific stays 62, on a tablet 80; a tablet held sideways has the sideways layout). Every keypad's keys may grow as tall as the Calculator's
 // (a quarter of the keypad's width), and no key is taller than it is wide, so the round keys are circles where they can be
 // (a phone) and pills where they are wider (a tablet, the tools' three columns): the keypads look the same in every mode.
 function bigSpec(spec,big,tablet,desk){if(!big&&!desk)return spec;
  const kp=$('#keypad'),Z=window.__uiZoom||1,widths=[...(kp?.querySelectorAll('button')||[])].map(b=>b.getBoundingClientRect().width/Z).filter(x=>x>0);
  const calcW=kp?(kp.clientWidth-3*(tablet?18:14))/4:86,w=Math.min(calcW,...widths)||86;// the column gap of the Calculator's round keys (styles.css)
- const top=desk?deskKey():tablet?110:100,max=spec===FIT.sci?(desk?spec.k[0]:tablet?(innerWidth>innerHeight?90:72):62):Math.min(top,Math.floor(w));
+ const top=desk?deskKey():tablet?124:100,max=spec===FIT.sci?(desk?spec.k[0]:tablet?80:62):Math.min(top,Math.floor(w));
  return {...spec,k:[Math.max(spec.k[1],max),spec.k[1]],roomy:spec.roomy&&(desk?spec.roomy:Math.min(spec.roomy,150)),dispFirst:desk}}
 // A tablet (a touch screen wider than a phone, not in the sideways layout): the app takes the whole width (html.tablet), up to
 // the width where the side panels fit (TABLET_MAX_W; an iPad Pro 13" held sideways keeps the column with History and the working)
@@ -176,7 +179,9 @@ function fitLayout(){refreshSide();fitBrand();
  // sideways layout then puts the display on one side of the fold and the keypad on the other, the gap over the fold.
  const segs=window.viewport?.segments,hinge=segs&&segs.length===2&&Math.abs(segs[0].top-segs[1].top)<1?Math.max(0,(segs[1].left-segs[0].right)/Z):null;
  root.classList.toggle('hinge-v',hinge!==null);if(hinge!==null)root.style.setProperty('--hinge-w',hinge+'px');
- const land=matchMedia(LANDSCAPE).matches||hinge!==null;root.classList.toggle('landscape',land);if(!land)root.classList.remove('land-fill');
+ // a tablet held sideways (touch, at least 6:5 wide, narrower than where the side panels fit) gets the phones' sideways layout too
+ const landTab=isMobileDevice()&&innerWidth>=innerHeight*1.2&&innerWidth/Z<TABLET_MAX_W&&innerHeight/Z>500;
+ const land=matchMedia(LANDSCAPE).matches||hinge!==null||landTab;root.classList.toggle('landscape',land);root.classList.toggle('land-tablet',land&&landTab);if(!land)root.classList.remove('land-fill');
  if(tool)fitShortLabels();
  const touch=isMobileDevice(),wide=innerWidth/Z,tablet=!land&&touch&&wide>500&&wide<TABLET_MAX_W;root.classList.toggle('tablet',tablet);
  const big=!land&&touch&&mode!=='graph'&&(wide<=500||tablet);root.classList.toggle('big-keys',big);root.classList.add('keys-round');
@@ -185,7 +190,7 @@ function fitLayout(){refreshSide();fitBrand();
  const deskCol=!touch&&!land,desk=deskCol&&mode!=='graph';root.classList.toggle('desk',deskCol);
  if(deskCol){deskAvail=avail;const K=deskKey();root.style.setProperty('--desk-w',Math.max(DESK.minW,Math.min(DESK.maxW,4*Math.round(K*DESK.ratio)+3*DESK.gap+DESK.pad))+'px')}
  root.classList.toggle('frameless',touch?mode!=='graph'&&(big||land):true);
- if(big&&!tablet){root.classList.add('fit-small');fitFooter()}
+ if(big){root.classList.add('fit-small');fitFooter()}// the footer on one line, phone or tablet
  if(land){fitFooter();fitLandscape(card,root,avail,need,tool,setToolLayout);if(tool)fitShortLabels();return}
  card.style.removeProperty('--gk');// back in portrait, Graph keys size themselves again (styles.css)
  if(mode==='graph'){if(avail<FIT.graphMin){root.classList.add('page-scroll');shell.style.height=FIT.graphMin+'px'}return}
