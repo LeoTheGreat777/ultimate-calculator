@@ -496,6 +496,7 @@ html.page-scroll body{touch-action:pan-y!important}
 /* Quick Calculator <-> Units button, left of the mode button */
 /* Hold ⌫ to clear everything: the key fills while held, then flashes */
 #keypad [data-action="backspace"],#keypad [data-g="back"]{-webkit-touch-callout:none}
+.back-icon{display:block;width:1.3em;height:1.3em;margin:auto;pointer-events:none}/* the drawn ⌫ (BACK_ICON), sized by the key's font */
 /* pressed, the same with a mouse and a finger (ui.js setupPressFeedback): lights up at once (a layer of the text colour,
    so it works on every key colour and theme) and, held a moment longer, grows a little over its neighbours; let go, it
    fades and settles back. A quick tap only lights up: the grow waits .09s (time for the key to get its own layer, so

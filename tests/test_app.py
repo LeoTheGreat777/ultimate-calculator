@@ -1321,7 +1321,8 @@ async def screen_reader(browser, url):
     names = "Object.fromEntries([...document.querySelectorAll('#keypad button')].map(b=>[b.textContent.trim(),b.getAttribute('aria-label')]))"
     got = await p.evaluate(names)
     check(L + 'calculator: + − × ÷ = % , have names', [got.get(k) for k in ['+', '−', '×', '÷', '=', '%', ',']] == ['Plus', 'Minus', 'Times', 'Divided by', 'Equals', 'Percent', 'Decimal comma'], got)
-    check(L + 'calculator: ⌫ keeps its own name', got.get('⌫') == 'Delete', got.get('⌫'))
+    back = await p.evaluate("document.querySelector('#keypad [data-action=backspace]').getAttribute('aria-label')")
+    check(L + 'calculator: ⌫ keeps its own name', back == 'Delete', back)
     check(L + 'language button says the language', await p.evaluate("langButton.getAttribute('aria-label')") == 'Language: English')
     await p.evaluate("setLanguage('el')")
     await p.wait_for_timeout(600)
