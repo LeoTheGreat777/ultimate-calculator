@@ -9,7 +9,7 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 ### Calculator
 - Standard arithmetic with operator precedence and brackets
 - Calculator-style percentages
-- Change sign (±): hold − on the keypad, or F9 on a keyboard
+- Change sign (±): hold − on the keypad, or F9 (or Shift + −) on a keyboard
 - Decimal and negative number support
 - Calculation history, grouped by day and month
 - Results show up to 10 decimals when the screen has room (6 on a narrow phone); copying copies what you see

@@ -49,8 +49,8 @@ window.addEventListener('keydown',e=>{
  const nothingOpen=$('#howModal').classList.contains('hidden')&&$('#historyPanel').classList.contains('hidden');
  // ? opens Tips (not while typing in a field)
  if(e.key==='?'&&nothingOpen&&!document.activeElement?.matches('input,textarea')){e.preventDefault();showHelp();return}
- // F9 = ± (as in Windows Calculator)
- if(e.key==='F9'&&(mode==='calc'||mode==='units')){e.preventDefault();if(nothingOpen){if(mode==='calc')negate();else toolKeyInput('negate')}return}
+ // F9 = ± (as in Windows Calculator); Shift + − (_) too, as laptops often need Fn for F9
+ if((e.key==='F9'||e.key==='_')&&(mode==='calc'||mode==='units')){e.preventDefault();if(nothingOpen){if(mode==='calc')negate();else toolKeyInput('negate')}return}
  if(mode==='units'&&nothingOpen&&(e.key==='('||e.key===')')){e.preventDefault();toolKeyInput(e.key);return}
  // ^ power and ! factorial (also a "dead" ^ key that waits for a letter, as on some layouts)
  if(mode==='calc'&&nothingOpen&&(e.key==='^'||e.key==='!'||(e.key==='Dead'&&G_DEAD_CARET.includes(e.code)))){e.preventDefault();sciKey(e.key==='!'?'fact':'pow');return}

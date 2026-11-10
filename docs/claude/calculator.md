@@ -40,7 +40,8 @@ Part of the notes in CLAUDE.md (read that first). Covers numbers.js, calculator.
   two meet, a × goes between two values (2 before (5+5) -> 2×(5+5)) and an operator typed before another replaces it;
   `caretTo` makes that real when the cursor moves. It never stands inside a function's name, a constant, a power's digits or
   a carried result; a digit right after a carried result edits it as shown (`carry.plain`). = works out everything and drops
-  the cursor, as do AC and a result. The display marks the cursor with `CARET` (U+0007), which `formatInputDisplay` keeps in
+  the cursor, as do AC and a result; it also hides when it goes back to the end (a tap at the end, End, → to the end:
+  `caretTo` sets `caretOn` only before the end). The display marks the cursor with `CARET` (U+0007), which `formatInputDisplay` keeps in
   place (grouping stays right: 1.2|34.567).
 - **Scientific:** a view of the Calculator, not a mode: the f(x) switch on the display (`sciMode`, `uc-sci`; the only chip
   there, the angle unit is the keypad's Deg/Rad key; at the display's top-left in line with History, styled like ?, and
@@ -65,7 +66,7 @@ Part of the notes in CLAUDE.md (read that first). Covers numbers.js, calculator.
   exact ones in `CONST_EXACT`) are `⟨id⟩` in the calculation and their symbol on screen (`constPretty`); ⌫ removes one whole.
 - **± and holding keys:** holding ⌫, C or AC clears everything while still held (`HOLD_KEYS`, `clearEverything`; C turns into AC
   while still held and big, like the iPhone's calculator; in the tools C stays C, AC is its own key; in Graph every function), holding − flips the sign (`negate`, Units: `unitKeyInput('negate')`);
-  F9 does ± on a keyboard. A tap on − is always minus. A minus made with ± is stored as `−` (U+2212), one typed with
+  F9 or Shift + − (`_`) does ± on a keyboard. A tap on − is always minus. A minus made with ± is stored as `−` (U+2212), one typed with
   the − key as `-`; the maths reads both the same (`tokenize`, `normalizeUnitExpression`). Display (`formatInputDisplay`):
   after an operator any negative number is in brackets, `5×(−25)`; at the start only a ± one is, `(−5)`, a typed one
   stays `-5`. A result turned negative with ± carries on as `(−84)+2` (`resultNegated`). Finished results stay plain.

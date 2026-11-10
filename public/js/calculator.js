@@ -20,7 +20,7 @@ function inputLength(){const s=typedText();return s.length-(carry&&carry.raw&&s.
 // before the cursor is expression + current as always, so every key works there as it does at the end; what is after
 // it waits in caretTail. Where the two meet, a × is added between two values ((5+5) after 2 → 2×(5+5)) and an operator
 // typed before another replaces it (5|+3, then × → 5×3); caretTo makes that real when the cursor moves. = works out
-// the whole calculation; =, AC, a result and leaving the mode drop the cursor.
+// the whole calculation; =, AC, a result and leaving the mode drop the cursor, and it hides when it goes back to the end.
 let caretTail='',caretOn=false;
 // a carried result (carry.raw) at the meeting point counts as a whole value, never as digits to join
 function carryAt(s,i){if(!carry?.raw)return false;const c=s.indexOf(carry.raw);return c>=0&&(c===i||c+carry.raw.length===i)}
@@ -49,7 +49,7 @@ function caretTo(k){
  else if(m){const before=head.slice(0,-m[0].length),own=m[1]==='−'||m[1]==='-'&&(before===''||/[×÷(^CPm∠]$/.test(before));current=(own?m[1]:'')+m[2];expression=head.slice(0,head.length-current.length);currentIsPercent=current.endsWith('%')}
  else if(/(?:^|[×÷(^CPm∠])-$/.test(head)){expression=head.slice(0,-1);current='-'}
  else{expression=head;current=''}
- caretOn=Boolean(s);
+ caretOn=k<s.length;// at the end there is nothing to edit around: the cursor hides (a tap at the end, End, → to the end)
 }
 function dropCaret(){if(caretTail||caretOn){if(caretTail)caretTo(Infinity);caretTail='';caretOn=false}}
 // ← → (and Home, End) move the cursor one place
@@ -72,7 +72,7 @@ function caretFromPoint(x){
   if(px==null)continue;const d=Math.abs(px-x);if(d<bestD){bestD=d;best=k}
  }
  if(best===null)return;
- resetHow();caretTo(best);caretOn=true;render();
+ resetHow();caretTo(best);render();
 }
 // ")" with nothing open, or ( ) after a calculation with nothing open: the brackets go around everything before the
 // cursor, 5+5 → (5+5), so a forgotten bracket needs no retyping. Only when they group something (an operator outside brackets).
@@ -240,7 +240,7 @@ function operator(op){
  if(OP_END.test(expression))expression=expression.slice(0,-1)+op;else expression+=op;
  render()
 }
-// ± (hold − on the keypad, F9 on a keyboard): flips the sign of the number being typed, or of the result.
+// ± (hold − on the keypad, F9 or Shift + − on a keyboard): flips the sign of the number being typed, or of the result.
 // With no number started yet it starts a negative one (the same as − after × or ÷).
 function negate(){
  resetHow();

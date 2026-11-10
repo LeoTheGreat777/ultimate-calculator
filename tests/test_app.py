@@ -123,6 +123,9 @@ async def desktop(browser, url, lang, theme):
     await p.keyboard.type('3')
     await p.keyboard.press('F9')
     check(L + 'F9 changes the sign: 5+(−3)', await p.evaluate(R) == '5+(−3)', await p.evaluate(R))
+    await p.keyboard.press('Shift+Minus')
+    check(L + 'Shift + − changes it back: 5+3', await p.evaluate(R) == '5+3', await p.evaluate(R))
+    await p.keyboard.press('F9')
     await p.keyboard.press('Escape')
     labels = []
     for k in '5+5':
@@ -160,6 +163,12 @@ async def desktop(browser, url, lang, theme):
         await p.keyboard.press('ArrowRight')
     await p.keyboard.type(')')
     check(L + 'a bracket added at the start and one in the middle: (5+5)×2', await p.evaluate(R) == '(5+5)×2', await p.evaluate(R))
+    await p.keyboard.press('End')
+    check(L + 'End hides the cursor again', await p.evaluate(caret) == ['(5+5)×2', False], await p.evaluate(caret))
+    await p.keyboard.press('ArrowLeft')
+    await p.keyboard.press('ArrowRight')
+    check(L + '→ back to the end hides the cursor', await p.evaluate(caret) == ['(5+5)×2', False], await p.evaluate(caret))
+    await p.keyboard.press('ArrowLeft')
     await p.keyboard.press('Enter')
     check(L + 'with the cursor in the middle = works out everything: 20', await p.evaluate(R) == '20' and await p.evaluate(X) == '(5+5)×2'
           and not await p.evaluate("!!document.querySelector('#result .caret')"), [await p.evaluate(R), await p.evaluate(X)])
@@ -181,6 +190,12 @@ async def desktop(browser, url, lang, theme):
     await p.mouse.click(x[0] + 1, x[1])
     await p.keyboard.type('9')
     check(L + 'a tap puts the cursor there: 1.234|+567, then 9 → 12.349+567', await p.evaluate(R) == '12.349+567', await p.evaluate(R))
+    x2 = await p.evaluate("(()=>{const b=document.querySelector('#result').getBoundingClientRect();return [b.right-2,b.top+b.height/2]})()")
+    await p.mouse.click(x2[0], x2[1])
+    check(L + 'a tap at the end hides the cursor', await p.evaluate(caret) == ['12.349+567', False], await p.evaluate(caret))
+    x = await p.evaluate("""(()=>{const el=document.querySelector('#result'),n=el.firstChild,i=el.textContent.indexOf('+'),r=document.createRange();
+        r.setStart(n,i);r.setEnd(n,i+1);const b=r.getBoundingClientRect();return [b.left,b.top+b.height/2]})()""")
+    await p.mouse.click(x[0] + 1, x[1])
     await p.keyboard.press('Backspace')
     await p.keyboard.press('Backspace')
     check(L + '⌫ deletes before the cursor: 123+567', await p.evaluate(R) == '123+567', await p.evaluate(R))
