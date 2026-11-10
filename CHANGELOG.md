@@ -6,6 +6,13 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.39.4 – 2026-11-10
+
+### Fixed
+- Pressing = on a number alone (no calculation) no longer adds it to History.
+- Pressing = again after a result with nothing to repeat (like 2 × (3 + 4) or 5 %) no longer saves it again.
+- Holding Enter or = on a keyboard no longer fills History; it calculates once.
+
 ## 0.39.3 – 2026-11-10
 
 ### Changed

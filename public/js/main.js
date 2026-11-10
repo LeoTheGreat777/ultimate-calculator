@@ -60,7 +60,7 @@ window.addEventListener('keydown',e=>{
  if(mode==='calc'&&nothingOpen&&e.key==='i'){e.preventDefault();sciKey('i');return}// the imaginary unit
  if(mode==='calc'&&e.key.length===1&&!/^[0-9+\-*/%.,()=]$/.test(e.key)){e.preventDefault();e.stopImmediatePropagation();return}
  if(mode==='graph'&&e.key!=='Escape'){if($('#howModal').classList.contains('hidden')&&$('#historyPanel').classList.contains('hidden')&&graphKeydown(e))e.preventDefault();return}
- if(mode==='stats'&&e.key==='Enter'&&nothingOpen&&!document.activeElement?.matches('button,select')){e.preventDefault();statAdd();return}// Statistics: Enter adds the number
+ if(mode==='stats'&&e.key==='Enter'&&nothingOpen&&!document.activeElement?.matches('button,select')){e.preventDefault();if(!e.repeat)statAdd();return}// Statistics: Enter adds the number
  // In a tool field that has the focus, Backspace is the browser's own: it deletes the selection, or the character before the cursor.
  const toolFieldFocused=document.activeElement?.matches('#toolPanel input[data-tool-input]');
  if((e.key==='Backspace'||e.code==='Backspace')&&toolFieldFocused)return;
@@ -83,7 +83,7 @@ window.addEventListener('keydown',e=>{
  }
  if(mode==='units'&&!document.activeElement?.matches('select')){
    if(/^[0-9]$/.test(e.key)||['+','-','*','/'].includes(e.key)){e.preventDefault();toolKeyInput(e.key);return}
-   if(e.key==='Enter'||e.key==='='){e.preventDefault();window._equalsUnits?.();return}
+   if(e.key==='Enter'||e.key==='='){e.preventDefault();if(!e.repeat)window._equalsUnits?.();return}
  }
  // In the tools, typing without clicking a field first goes to the highlighted field (Backspace and the decimal key already do).
  if(TOOL_MODES.includes(mode)&&(/^[0-9-]$/.test(e.key)||mode==='prog'&&/^[a-fA-F]$/.test(e.key))&&!document.activeElement?.matches('input,select,textarea')&&$('#howModal').classList.contains('hidden')&&$('#historyPanel').classList.contains('hidden')){e.preventDefault();toolKeyInput(e.key);return}
@@ -91,7 +91,7 @@ window.addEventListener('keydown',e=>{
  if(/^[0-9]$/.test(e.key))digit(e.key);
  else if(['+','-','*','/'].includes(e.key))operator(e.key==='*'?'×':e.key==='/'?'÷':e.key);
  else if(e.key==='%')percent();
- else if(e.key==='Enter'||e.key==='='){e.preventDefault();equals()}
+ else if(e.key==='Enter'||e.key==='='){e.preventDefault();if(!e.repeat)equals()}// holding Enter doesn't repeat it
  else if(e.key==='Backspace'){e.preventDefault();backspace()}
 });
 window.__UC_VERSION=VERSION;$('#footerVersion').textContent=`v${VERSION}`;

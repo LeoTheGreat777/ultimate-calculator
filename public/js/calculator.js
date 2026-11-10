@@ -275,14 +275,17 @@ function repeatEquals(){
  resetHow();
  try{const rhs=lastOperation.rhs,base=isCx(lastResult)?(carryCx=lastResult,carry=null,'⟪⟫'):carryText(lastResult,24),full=base+lastOperation.op+rhs,value=evalExpr(full);lastExpression=full;lastShown=formatExpressionDisplay(full);lastResult=value;justCalculated=true;resultNegated=false;howData=explanationForExpression(full,value)||{formula:formatExpressionDisplay(full),steps:[`${formatExpressionDisplay(full)} = ${fmt(value)}`],result:howResult(value)};calcHowData=howData;saveHistory({expression:full,result:value,how:howData});render();return true}catch(e){calcError=calcErrorKind(e);render();return true}
 }
+const PLAIN_NUMBER=/^[-−]?\d*\.?\d*$/;
 function equals(){
- if(justCalculated&&repeatEquals())return;
- resetHow();
+ // = again repeats the last operation (2+3 = 5, = 8); with none to repeat (2×(3+4), 5%) it does nothing: no second History entry
+ if(justCalculated){repeatEquals();return}
  const was=[expression,current,currentIsPercent,caretTail,caretOn],back=()=>{if(was[3]){[expression,current,currentIsPercent,caretTail,caretOn]=was;refuseKey();render()}};
  dropCaret();// the whole calculation, also what is after the cursor
  let full=expression+current;if(!full||OP_END.test(full)){back();return}
  if(/[()]/.test(full)){full=tidyParens(full);expression=full;current=''}// close what is open, drop brackets that change nothing
  if(!full||OP_OPEN_END.test(full)){back();return}
+ if(PLAIN_NUMBER.test(full)){if(full!==was[0]+was[1]+was[3]){expression='';current=full;currentIsPercent=false}else[expression,current,currentIsPercent,caretTail,caretOn]=was;render();return}// a number alone is no calculation: nothing to save (brackets round it still go)
+ resetHow();
  try{const value=evalExpr(full);lastExpression=full;lastShown=formatExpressionDisplay(full);lastResult=value;lastOperation=parseLastOperation(full);justCalculated=true;resultNegated=false;currentIsPercent=false;howData=explanationForExpression(full,value)||{formula:formatExpressionDisplay(full),steps:[`${formatExpressionDisplay(full)} = ${fmt(value)}`],result:howResult(value)};saveHistory({expression:full,result:value,how:howData});render()}
  catch(e){calcError=calcErrorKind(e);render()}
 }

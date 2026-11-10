@@ -100,6 +100,22 @@ async def desktop(browser, url, lang, theme):
     await calc(p, '2+3')
     await p.keyboard.press('Enter')
     check(L + '2+3== gives 8', await p.evaluate(R) == '8')
+    # = with no calculation saves nothing: a number alone, = again with nothing to repeat, Enter held down
+    hist = "historyItems().map(x=>x.expression)"
+    await p.evaluate("store.set('uc-history','[]');clearAll()")
+    for keys in ['455', '(455)', '-7']:
+        await calc(p, keys)
+        await p.keyboard.press('Enter')
+    check(L + '= on a number alone saves no History', await p.evaluate(hist) == [] and await p.evaluate(R) == '-7', await p.evaluate(hist))
+    await calc(p, '2*(3+4)')
+    await p.keyboard.press('Enter')
+    await calc(p, '5%')
+    await p.keyboard.press('Enter')
+    check(L + '= again with nothing to repeat saves it once', await p.evaluate(hist) == ['5%', '2×(3+4)'], await p.evaluate(hist))
+    await p.evaluate("store.set('uc-history','[]');clearAll()")
+    await p.keyboard.type('2+3')
+    await p.evaluate("for(let i=0;i<8;i++)document.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',repeat:i>0,bubbles:true,cancelable:true}))")
+    check(L + 'holding Enter calculates once', await p.evaluate(hist) == ['2+3'], await p.evaluate(hist))
     await calc(p, '1/3')
     await p.keyboard.type('*3')
     await p.keyboard.press('Enter')

@@ -25,6 +25,10 @@ Part of the notes in CLAUDE.md (read that first). Covers numbers.js, calculator.
   Units shows the reason on the other value (`unitError`). Never put "Error" into `current`.
 - **Carry:** continuing after a result uses its full-precision value (`carryText`, `carry`), but the
   screen shows it rounded via `formatExpressionDisplay`. Use that function to display expressions.
+- **= with no calculation** (`equals`): a number alone (`PLAIN_NUMBER`, also `(455)` once its brackets go) saves
+  nothing to History and changes nothing. = again after a result repeats the last operation (2 + 3 = 5, = 8,
+  `repeatEquals`); with none to repeat (2 × (3 + 4), 5 %, a result after ±) it does nothing. A held Enter or = key
+  (`e.repeat`) runs once, in the Calculator, Units and Statistics.
 - **Brackets:** useless ones are dropped (`tidyParens`, `closeParen`): `((5))` -> `5`, open ones at the end
   are dropped on =. A number or `(` after `)`, and a number after `%`, adds `×` first. Same in Units.
   With no bracket open, `)` (Scientific, keyboard) and the basic pad's ( ) after a calculation put brackets around
