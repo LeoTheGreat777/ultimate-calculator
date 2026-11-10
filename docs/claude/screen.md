@@ -21,7 +21,8 @@ Part of the notes in CLAUDE.md (read that first). Covers layout.js, side.js, mod
   smallest before their keys do (`dispFirst`), and the display takes the height left over, so the keys sit at the bottom.
   The column's width follows the keys (`--desk-w`: keys about 1.2 times as wide as tall, the card 520–652px), so tall
   windows get near-round keys; digits grow with the keys. Units and Currency: their two values sit just above the keys,
-  where the Calculator's result is, the category or rate bar stays at the top. No card frame (look.md).
+  where the Calculator's result is, the category or rate bar stays at the top. No card frame (look.md). The footer is
+  on one line in every mode, Graph too (`fit-small`, as on phones and tablets), also when the page scrolls.
   `keys_fill_the_bottom` in the tests checks every mode on phones, an iPad and computers (1024×768 to 1920×1080).
 - **Tablets upright** (`html.tablet`, `fitLayout`: a touch screen wider than 500px, not in the sideways layout, narrower than
   `TABLET_MAX_W` 1264px, where the side panels fit): the app takes the whole width (up to 1100px) like the iPad's calculator,

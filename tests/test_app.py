@@ -3092,6 +3092,9 @@ async def keys_fill_the_bottom(browser, url):
             if not touch and h >= 900 and m != 'dates':
                 check(D + m + ": keys about as tall as the Calculator's (one size for every mode on a computer)",
                       abs(st['keyH'] - calcH) <= calcH * .1, (st, calcH))
+            if not touch and m in ('calc', 'vat', 'dates'):
+                ft = await p.evaluate("(()=>{const f=document.querySelector('.app-footer');return [Math.round(f.getBoundingClientRect().height),!!document.querySelector('.footer-name').offsetWidth]})()")
+                check(D + m + ': the footer on one line, with the app name', ft[0] < 30 and ft[1], ft)
             if not touch and m in ('units', 'currency'):
                 gap = await p.evaluate("Math.round($('#keypad').getBoundingClientRect().top-[...document.querySelectorAll('#calculatorDisplay .unit-row')].pop().getBoundingClientRect().bottom)")
                 check(D + m + ': the two values just above the keys, where the result is in Calculator', 0 <= gap <= 30, gap)

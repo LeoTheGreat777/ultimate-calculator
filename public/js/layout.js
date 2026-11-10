@@ -137,11 +137,11 @@ function fitBrand(){const n=$('.brand-name'),h=n&&n.parentElement;if(!h)return;h
  let s=base;while(cut()&&s>14){s-=.5;h.style.fontSize=s+'px'}
  if(!cut())return;
  h.classList.add('no-mark');h.style.fontSize='';s=base;while(cut()&&s>12){s-=.5;h.style.fontSize=s+'px'}}
-// The footer on one line (small phones, sideways: fit-small, landscape): when it still takes two (Greek on an iPhone SE),
+// The footer on one line (phones, tablets, computers, sideways: fit-small, landscape): when it still takes two (Greek on an iPhone SE),
 // the app's name in it goes (.fit-footer; the title at the top has it), so the version, Tips and the author stay.
 function fitFooter(){const f=$('.app-footer'),r=document.documentElement;if(!f)return;r.classList.remove('fit-footer');
  if(!r.classList.contains('fit-small')&&!r.classList.contains('landscape'))return;
- const a=f.firstElementChild,b=f.lastElementChild;if(a&&b&&b.getBoundingClientRect().top>a.getBoundingClientRect().top+2)r.classList.add('fit-footer')}
+ const a=f.firstElementChild,b=f.lastElementChild;if(a&&b&&b.getBoundingClientRect().top>=a.getBoundingClientRect().bottom-2)r.classList.add('fit-footer')}// b below a, not only a little lower (a is taller)
 // Phones held upright and tablets: the keys grow into the room the screen leaves (html.big-keys), up to 100px tall (on a
 // tablet 124; Scientific stays 62, on a tablet 80; a tablet held sideways has the sideways layout). Every keypad's keys may grow as tall as the Calculator's
 // (a quarter of the keypad's width), and no key is taller than it is wide, so the round keys are circles where they can be
@@ -190,7 +190,7 @@ function fitLayout(){refreshSide();fitBrand();
  const deskCol=!touch&&!land,desk=deskCol&&mode!=='graph';root.classList.toggle('desk',deskCol);
  if(deskCol){deskAvail=avail;const K=deskKey();root.style.setProperty('--desk-w',Math.max(DESK.minW,Math.min(DESK.maxW,4*Math.round(K*DESK.ratio)+3*DESK.gap+DESK.pad))+'px')}
  root.classList.toggle('frameless',touch?mode!=='graph'&&(big||land):true);
- if(big){root.classList.add('fit-small');fitFooter()}// the footer on one line, phone or tablet
+ if(big||deskCol){root.classList.add('fit-small');fitFooter()}// the footer on one line: phone, tablet or computer
  if(land){fitFooter();fitLandscape(card,root,avail,need,tool,setToolLayout);if(tool)fitShortLabels();return}
  card.style.removeProperty('--gk');// back in portrait, Graph keys size themselves again (styles.css)
  if(mode==='graph'){if(avail<FIT.graphMin){root.classList.add('page-scroll');shell.style.height=FIT.graphMin+'px'}return}
@@ -231,7 +231,7 @@ function fitLayout(){refreshSide();fitBrand();
   const list=$('#keypad.date-details');
   if(over>0&&list&&$('#keypad .date-rows')){const h=Math.floor(list.getBoundingClientRect().height-over);if(h>=150){list.style.maxHeight=h+'px';card.classList.add('fit-list');over=need()-avail}}
   // even that doesn't fit (Scientific on the smallest phones): back to the normal sizes, and the page scrolls
-  if(over>0){card.classList.remove('fit-tight','fit-row','fit-no-form','fit-no-details','fit-list');$('#keypad')?.style.removeProperty('max-height');root.classList.remove('fit-small','fit-footer');if(tool)fitShortLabels();over=attempt(card.classList.contains('mobile-tool')?FIT.mobileTool:spec)}
+  if(over>0){card.classList.remove('fit-tight','fit-row','fit-no-form','fit-no-details','fit-list');$('#keypad')?.style.removeProperty('max-height');if(!deskCol)root.classList.remove('fit-small','fit-footer');if(tool)fitShortLabels();over=attempt(card.classList.contains('mobile-tool')?FIT.mobileTool:spec)}
  }
  if(tool)fitShortLabels();// the fields' final widths
  // a phone upright, a tablet or a computer: the display takes the height left over, so the keys sit at the bottom of the screen in every
