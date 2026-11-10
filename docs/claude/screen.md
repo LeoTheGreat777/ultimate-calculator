@@ -68,7 +68,7 @@ Part of the notes in CLAUDE.md (read that first). Covers layout.js, side.js, mod
   `html.landscape` in styles.css). Sideways the keys are the biggest that fit (a halving search, tools up to 84px), so every
   tab's keys are the same size even when the left side is the taller one, and once everything fits the card is stretched
   to the bottom (`html.land-fill`), so there is no empty strip below. On a very short screen (an iPhone SE in Safari, 667×330) `fitLandscape` first tightens the tools (`fit-tight`: less padding, a smaller ? row) before letting the page scroll. Fuel and Energy
-  share one row sideways like the kinds (`kind-grid`, `--f:3/4`); a label that doesn't fit its one line switches to its short
+  share one row sideways like the kinds (`kind-grid`, `--f:3/4`; Transfer's row gives Size, Speed and Time more room than Overhead %, `.xf-grid`); a label that doesn't fit its one line switches to its short
   form (`FIELD_SHORT`, `fitShortLabels`, run by `fitLayout`). `sideways_every_tab` in the tests checks every tab at 667×330
   and 814×409: no scrolling, nothing off screen, no cut label, the same key size. iOS reports a turned phone's new size late, after
   'resize': a ResizeObserver on the page fires 'resize' again when the width really changes (layout.js), and one on the
@@ -128,8 +128,10 @@ Part of the notes in CLAUDE.md (read that first). Covers layout.js, side.js, mod
   `window.__uiZoom`, CSS var `--z`). Viewport units must be written `calc(100dvh / var(--z,1))`, and any code that
   turns screen coordinates (clientX/Y, getBoundingClientRect, innerHeight) into CSS sizes must divide by
   `window.__uiZoom` (see `chZoom` in charts.js, `Z` in history.js).
-- **Dropdowns:** on desktop Chrome/Edge the unit menus use `appearance: base-select`, styled like the app; phones keep
-  native pickers. While a dropdown has focus the global keydown handler leaves keys to it.
+- **Dropdowns:** on desktop Chrome/Edge the unit menus (Units, Currency, Transfer's units) use `appearance: base-select`,
+  styled like the app; phones keep native pickers. While a dropdown has focus the global keydown handler leaves keys to it.
+  Transfer's selects have clear text and lie over the unit shown (tools.md): their general rule sets `appearance:none`, so
+  the base-select rule for them needs the higher specificity it has; their menus have group titles (`optgroup`).
 - **Pressing keys** (`setupPressFeedback`, ui.js), the same with a mouse and a finger, like the iPhone's calculator:
   every key in `#keypad` lights up the moment it's pressed (`.pressed`, a `::after` layer of `--text`, so it suits every
   key colour and theme), held a moment longer it grows (after .09s, easing out over .3s, to scale 1.12, over its neighbours, `will-change`

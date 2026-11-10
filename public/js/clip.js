@@ -60,7 +60,9 @@ function pasteIntoField(input,text){
  }
  if(!v){refuseKey(input);return false}
  input.value=v;
- input.dispatchEvent(new InputEvent('input',{bubbles:true,inputType:'insertFromPaste',data:v}));
+ const ev=new InputEvent('input',{bubbles:true,inputType:'insertFromPaste',data:v});
+ ev.pastedText=String(text??'');// as it was copied: Transfer reads the unit in it ("200 GB", tools.js)
+ input.dispatchEvent(ev);
  return true;
 }
 const firstToolField=()=>toolActiveInput?.matches?.('#toolPanel input[data-tool-input]')?toolActiveInput:$('#toolPanel input[data-tool-input]');

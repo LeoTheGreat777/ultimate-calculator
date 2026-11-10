@@ -1,6 +1,6 @@
 # Tools, Units and Currency
 
-Part of the notes in CLAUDE.md (read that first). Covers tools.js, units.js, currency.js, dates.js, numtools.js, stats.js, prog.js, net.js, history.js, the tool charts in charts.js.
+Part of the notes in CLAUDE.md (read that first). Covers tools.js, units.js, currency.js, dates.js, numtools.js, stats.js, prog.js, net.js, transfer.js, history.js, the tool charts in charts.js.
 
 - **Tool modes** are `TOOL_MODES` (core.js): use it rather than listing them. Defaults (VAT rate 24, Subnet /24, Dates today)
   are `TOOL_DEFAULTS`, filled in on entering the mode and after AC. Percent (`of`: % of a number, the first kind since 0.29.0, a plain exact number with X ± % under it and "X is % of what?" in the working; discount, change, tip), Interest (`loan`:
@@ -55,6 +55,31 @@ Part of the notes in CLAUDE.md (read that first). Covers tools.js, units.js, cur
   (`progDimKeys`). Having 4 rows, its keys are taller sideways than other tabs' (the sideways test leaves it out, like Graph);
   on a very short sideways screen (`fit-tight`) the four fields share one row with their short labels DEC HEX BIN OCT. The working: place values to decimal; repeated division for the other bases (rows joined with \n:
   explain.js gives such text `.how-rows`, white-space: pre-line). ⌫ to the last digit of a field empties all four (`progInput`), it doesn't fill back from another field.
+- **Transfer** (transfer.js, mode `transfer`, Greek name "Μεταφορά"; kinds `time`: size ÷ speed, `size`: speed × time,
+  `speed`: size ÷ time). Size, Speed and Time (`xfSize`, `xfSpeed`, `xfTime`, the keys of `XF_KIND`) are a number with its unit
+  in one box (`xfFieldHtml`: the input that `field()` makes, then the unit). Overhead % (`xfLoss`, a plain field, 0–99, empty
+  = none) is the share of the speed that carries no data: time = size ÷ (speed × (1 − %)), size = speed × (1 − %) × time,
+  speed = size ÷ time ÷ (1 − %) (the line's speed; the line under it gives the net one). Units (`XF_UNITS`: whole BigInt
+  factors in bits, bits per second and seconds): kB MB GB TB (×1000) and KiB MiB GiB TiB (×1024); kbps Mbps Gbps, kB/s MB/s
+  GB/s, KiB/s MiB/s GiB/s; s min h day. The units picked are `xfUnit` (GB, Mbps, h at first): saved in `uc-tools` (`xf`),
+  kept when the kind changes or AC clears the numbers, stored with a History entry (`choices.xf`: the units of that kind's
+  fields, `xfChoices`) and brought back with it (`xfSetUnits`, which checks them). Picking a unit (`xfPickUnit`) keeps the
+  number, works the result out again and changes the field's grey example (`xfExample`: 1 for Gbps, 100 for Mbps).
+  The unit on screen is text (`.xf-unit b`, not a span: `fitShortLabels` and the label styles take every span in a field)
+  with a drawn arrow, as wide as its text; the menu is a `<select>` with clear text lying over it, since a select by itself is
+  as wide as its longest choice and three fields then don't fit one row sideways. The select stays `opacity:1`, so the tests'
+  tap-size checks see it. Its choices are grouped with titles (`XF_GROUPS`, optgroup). After a pick the select is blurred
+  (as in Units), so digits typed go to that field. The maths is exact (`rat`); only what is shown is rounded: a time reads
+  `26 min 40 s` (`xfDuration`: milliseconds under a second, seconds with two decimals under a minute, whole seconds under a
+  day, whole minutes under a year of 365 days, then years and days; h, min, s are symbols in both languages, days and years
+  are words), a size or speed is in the unit it reaches with two decimals (`xfScaled`; 999,996 MB shows as 1 GB). Size's
+  result is in GB with GiB beside it (the other way round when the speed is in KiB/s, MiB/s or GiB/s); Speed's is in bits per
+  second with bytes under it (MiB/s when the size is binary). The working converts in steps titled like Units' ("1 GB = 8
+  Gbit", `xfStep`, `xfOtherSpeed`), marks a rounded time with ≈ and has 10 decimals like every working. A paste with a unit
+  ("200 GB", "1gbps", "12.5 MiB/s", "90 min") picks the unit too (`xfPastedUnit`; b is bits, B bytes): the fields' input
+  handler (tools.js) calls it once the number has been taken, with the text as it was pasted (`pasteIntoField` hands it over
+  as `pastedText` on its input event; a paste typed into the field is read from the field), so a paste that is refused
+  leaves the unit alone. No chart, no details grid.
 - **Switches** (VAT add/remove, the kinds of Percent, Interest and Dates) are one generic segmented control: `TOGGLES`, `toggleHtml`
   (a button that doesn't fit even at 9,5px uses its `SWITCH_SHORT` text: Greek «Φιλοδ.», «Μεταβ.», «Έκπτ.» on a 320px phone; GitHub's wider font needs both),
   `renderToggles`, `setupToggleSlide` (tap, drag, swipe, ← →), `.seg-toggle` in styles.css (`--n` options, `--i` chosen).

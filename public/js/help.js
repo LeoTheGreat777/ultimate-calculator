@@ -73,6 +73,12 @@ const HELP={
   ['Οι τελείες μπαίνουν μόνες τους μετά από τρία ψηφία ή όταν το επόμενο ψηφίο δεν χωράει (19216811 γίνεται 192.168.1.1). Το πλήκτρο . γράφει τελεία για μικρότερα μέρη. Στο πληκτρολόγιο, το / μετά τη διεύθυνση πάει στο πρόθεμα, και μια επικόλληση όπως 10.0.0.5/16 γεμίζει και τα δύο.','The dots appear by themselves after three digits, or when the next digit can’t fit (19216811 becomes 192.168.1.1). The . key types one for shorter parts. On a keyboard, / after the address goes to the prefix, and pasting something like 10.0.0.5/16 fills in both.'],
   ['«Συσκευές»: πόσες συσκευές χρειάζεσαι, και βγαίνει το μικρότερο υποδίκτυο που τις χωράει, με τη μάσκα του.','“Hosts”: how many hosts you need, and you get the smallest subnet that fits them, with its mask.'],
   ['Το ? δείχνει τη διεύθυνση, τη μάσκα, το δίκτυο και το broadcast σε δυαδικό. Το /31 έχει 2 διευθύνσεις (σύνδεση σημείου προς σημείο) και το /32 μία.','? shows the address, mask, network and broadcast in binary. /31 has 2 addresses (a point-to-point link) and /32 one.']]},
+ transfer:{tips:[
+  ['«Χρόνος»: βάλε το μέγεθος και την ταχύτητα και βγαίνει πόση ώρα παίρνει, π.χ. 200 GB με 1 Gbps: 26 min 40 s.','“Time”: enter the size and the speed to see how long it takes, e.g. 200 GB at 1 Gbps: 26 min 40 s.'],
+  ['«Μέγεθος»: πόσα δεδομένα περνούν σε έναν χρόνο με μια ταχύτητα. «Ταχύτητα»: τι ταχύτητα χρειάζεται για να περάσει ένα μέγεθος σε έναν χρόνο.','“Size”: how much data gets through in a time at a speed. “Speed”: the speed it takes to move a size in a time.'],
+  ['Πάτα τη μονάδα δίπλα στον αριθμό για να την αλλάξεις. Οι πάροχοι μετρούν σε bit (Mbps, Gbps) και οι λήψεις σε byte (MB/s): 8 bit είναι 1 byte, άρα 1 Gbps = 125 MB/s.','Tap the unit beside a number to change it. Providers count in bits (Mbps, Gbps) and downloads in bytes (MB/s): 8 bits are 1 byte, so 1 Gbps = 125 MB/s.'],
+  ['GB ή GiB; Οι δίσκοι και οι πάροχοι μετρούν με 1000 (GB). Τα Windows μετρούν με 1024 (GiB) αλλά γράφουν GB: ένας δίσκος 500 GB φαίνεται 465.','GB or GiB? Drives and providers count in 1000s (GB). Windows counts in 1024s (GiB) but writes GB: a 500 GB drive shows as 465.'],
+  ['«Απώλειες %»: το μέρος της ταχύτητας που δεν μεταφέρει το αρχείο σου (πρωτόκολλα, Wi-Fi, άλλες συσκευές στη γραμμή). Άδειο σημαίνει καθόλου. Το ? δείχνει τον υπολογισμό βήμα βήμα.','“Overhead %”: the share of the speed that doesn’t carry your file (protocols, Wi-Fi, other devices on the line). Empty means none. ? shows the calculation step by step.']]},
  fuel:{tips:[
   ['Συμπλήρωσε απόσταση, κατανάλωση και τιμή. Το κόστος βγαίνει αμέσως.','Fill in distance, consumption and price. The cost shows up right away.'],
   ['Την κατανάλωση σε L/100 km τη δείχνει ο υπολογιστής ταξιδιού του αυτοκινήτου. Για ταξίδι με επιστροφή, βάλε διπλή απόσταση.','The car’s trip computer shows consumption in L/100 km. For a round trip, enter double the distance.'],
@@ -103,12 +109,20 @@ const HELP={
 };
 HELP.currency.keys=HELP.units.keys;
 const HELP_TOOL_KEYS=[[['Ctrl','K'],'Όλες οι λειτουργίες','All modes'],[['Ctrl','C','V'],'Αντιγραφή, επικόλληση','Copy, paste'],[['Tab'],'Επόμενο πεδίο','Next field'],[['Shift','Tab'],'Προηγούμενο πεδίο','Previous field'],[['0–9'],'Αριθμοί στο πεδίο','Type in the field'],[[',','.'],'Υποδιαστολή','Decimal point'],[['Backspace'],'Σβήνει την επιλογή ή το ψηφίο πριν από τον δρομέα','Delete the selection, or the digit before the cursor'],[['−'],'Αλλάζει το πρόσημο','Change the sign'],[['Esc'],'Καθαρίζει τα πεδία (AC)','Clear the fields (AC)'],[['Alt','1–9'],'Αλλαγή λειτουργίας','Switch mode'],[['?'],'Αυτές οι συμβουλές','These tips']];
-HELP.prog.keys=[[['A–F'],'Ψηφία του δεκαεξαδικού','Hexadecimal digits'],...HELP_TOOL_KEYS.filter(k=>k[0][0]!==','&&k[0][0]!=='−')];
+HELP.prog.keys=[[['A–F'],'Ψηφία του δεκαεξαδικού','Hexadecimal digits'],...HELP_TOOL_KEYS];
 HELP.stats.keys=[[['Enter'],'Προσθήκη στη λίστα','Add to the list'],...HELP_TOOL_KEYS];
 const hasKeyboard=()=>matchMedia('(hover:hover) and (pointer:fine)').matches;
 function syncHelpButton(){const l=$('#helpLabel');if(l)l.textContent=t('tips')}
+// A tool's keyboard list leaves out the keys none of the fields on screen takes: − (Fuel, Interest, Transfer…) and the
+// decimal point (Numbers, Programmer)
+function helpKeys(tab,keys){
+ const ids=TOOL_MODES.includes(tab)?[...document.querySelectorAll('#toolPanel input[data-tool-input]')].map(x=>x.id):[];
+ if(!ids.length)return keys;
+ const sign=ids.some(id=>!noSignField(id)),point=ids.some(id=>!noDecimalField(id));
+ return keys.filter(k=>(sign||k[0][0]!=='−')&&(point||k[0][0]!==','));
+}
 function showHelp(){
- const tab=currentTab(),h=HELP[tab]||HELP.calc,i=lang==='el'?0:1,keys=h.keys||HELP_TOOL_KEYS;
+ const tab=currentTab(),h=HELP[tab]||HELP.calc,i=lang==='el'?0:1,keys=helpKeys(tab,h.keys||HELP_TOOL_KEYS);
  $('#howTitle').textContent=t('tips')+' · '+modeText(tab);
  // every mode but the Calculator: a word on its own History
  const tips=tab==='calc'?h.tips:[...h.tips,['Το Ιστορικό εδώ κρατά τα αποτελέσματα αυτής της λειτουργίας, όταν φεύγεις, πατάς AC ή αντιγράφεις. Πάτα ένα για να ξαναφέρεις τους αριθμούς του.','History here keeps this mode\'s results, when you leave, press AC or copy. Tap one to bring its numbers back.']];

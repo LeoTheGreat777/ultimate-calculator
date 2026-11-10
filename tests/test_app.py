@@ -840,7 +840,7 @@ async def phone(browser, url, lang, theme, size):
         await p.tap(f'.key[data-value="{key}"]')
     await p.tap('.key[data-action="equals"]')
     check(L + 'keypad works', await p.evaluate(R) == '8')
-    for m in ['calc', 'sci', 'units', 'currency', 'graph', 'vat', 'pct', 'tip', 'loan', 'savings', 'dates', 'fuel', 'energy', 'kwh', 'net', 'prog', 'numbers', 'factors', 'equation', 'sys2', 'stats']:
+    for m in ['calc', 'sci', 'units', 'currency', 'graph', 'vat', 'pct', 'tip', 'loan', 'savings', 'dates', 'fuel', 'energy', 'kwh', 'net', 'transfer', 'prog', 'numbers', 'factors', 'equation', 'sys2', 'stats']:
         # 'sci' is the Calculator with the scientific keys on
         # 'tip' is Percent's tip, the kind with the most fields
         await p.evaluate("switchMode('calc');if(!sciMode)toggleSci()" if m == 'sci' else "switchMode('pct');setToolKind('pct','tip')" if m == 'tip'
@@ -850,7 +850,8 @@ async def phone(browser, url, lang, theme, size):
                          else "switchMode('equation');setToolKind('equation','sys2')" if m == 'sys2'
                          else "switchMode('prog');progHex.value='DEADBEEFCAFE';progHex.dispatchEvent(new Event('input',{bubbles:true}))" if m == 'prog'
                          else "switchMode('stats');for(const v of ['12','1234,75','-3','15,5','9']){statX.value=v;statX.dispatchEvent(new Event('input',{bubbles:true}));statAdd()}" if m == 'stats'
-                         else "switchMode('net');setToolKind('net','subnet');for(const[k,v] of [['netIp','10.0.0.5'],['netPrefix','16']]){const i=document.getElementById(k);i.value=v;i.dispatchEvent(new Event('input',{bubbles:true}))}" if m == 'net' else f"switchMode('{m}')")
+                         else "switchMode('net');setToolKind('net','subnet');for(const[k,v] of [['netIp','10.0.0.5'],['netPrefix','16']]){const i=document.getElementById(k);i.value=v;i.dispatchEvent(new Event('input',{bubbles:true}))}" if m == 'net'
+                         else "switchMode('transfer');setToolKind('transfer','time');for(const[k,v] of [['xfSize','1250'],['xfSpeed','1000'],['xfLoss','10']]){const i=document.getElementById(k);i.value=v;i.dispatchEvent(new Event('input',{bubbles:true}))}" if m == 'transfer' else f"switchMode('{m}')")
         await p.wait_for_timeout(200)
         # compared with the real screen size: a phone browser widens the page to fit content that is too wide
         fits = await p.evaluate("""([vw,vh])=>{const scroll=document.documentElement.classList.contains('page-scroll');
@@ -1431,6 +1432,7 @@ async def upright_small_phones(browser, url):
     fill = {'vat': [['amount', '1234567,89']], 'pct': [['pctOfRate', '12,5'], ['pctOfNum', '1234567,89'], ['pctPrice', '1250'], ['pctOff', '25']], 'fuel': [['fuelD', '1250'], ['fuelC', '6,5'], ['fuelP', '1,85']],
             'energy': [['energyP', '2000'], ['energyH', '3'], ['energyD', '30'], ['energyR', '0,15'], ['energyK', '1234567,89']], 'loan': [['loanAmount', '250000'], ['loanRate', '4'], ['loanYears', '30']],
             'net': [['netIp', '192.168.100.100'], ['netPrefix', '26']], 'dates': [['dateTo', '2027-03-15']],
+            'transfer': [['xfSize', '1250'], ['xfSpeed', '1000'], ['xfTime', '90'], ['xfLoss', '10']],
             'numbers': [['numA', '123456789012'], ['numB', '987654321'], ['numC', '360'], ['numN', '600851475143']],
             'prog': [['progHex', 'DEADBEEFCAFE']],
             'equation': [['eqA', '1'], ['eqB', '2'], ['eqC', '5'], ['sxA1', '2'], ['sxB1', '1'], ['sxC1', '5'], ['sxA2', '1'], ['sxB2', '-1'], ['sxC2', '1']]}
@@ -1448,7 +1450,7 @@ async def upright_small_phones(browser, url):
             bad = []
             tabs = [('calc', None), ('units', None), ('currency', None), ('vat', None), ('pct', 'of'), ('pct', 'discount'), ('pct', 'tip'), ('loan', 'loan'),
                     ('loan', 'payoff'), ('loan', 'savings'), ('dates', 'between'), ('dates', 'add'), ('fuel', None), ('energy', 'device'), ('energy', 'kwh'), ('net', 'subnet'),
-                    ('net', 'hosts'), ('numbers', 'gcd'), ('numbers', 'factors'), ('equation', 'quad'), ('equation', 'sys2'), ('stats', None), ('prog', None)]
+                    ('net', 'hosts'), ('transfer', 'time'), ('transfer', 'size'), ('transfer', 'speed'), ('numbers', 'gcd'), ('numbers', 'factors'), ('equation', 'quad'), ('equation', 'sys2'), ('stats', None), ('prog', None)]
             if w >= 360:
                 tabs.append(('sci', None))
             for m, kind in tabs:
@@ -1568,6 +1570,7 @@ async def sideways_every_tab(browser, url):
     fill = {'vat': [['amount', '1234567,89']], 'pct': [['pctOfRate', '12,5'], ['pctOfNum', '1234567,89'], ['pctPrice', '1250'], ['pctOff', '25']], 'fuel': [['fuelD', '1250'], ['fuelC', '6,5'], ['fuelP', '1,85']],
             'energy': [['energyP', '2000'], ['energyH', '3'], ['energyD', '30'], ['energyR', '0,15'], ['energyK', '1234567,89']], 'loan': [['loanAmount', '250000'], ['loanRate', '4'], ['loanYears', '30']],
             'net': [['netIp', '192.168.100.100'], ['netPrefix', '26']], 'dates': [['dateTo', '2027-03-15']],
+            'transfer': [['xfSize', '1250'], ['xfSpeed', '1000'], ['xfTime', '90'], ['xfLoss', '10']],
             'numbers': [['numA', '123456789012'], ['numB', '987654321'], ['numC', '360'], ['numN', '600851475143']],
             'prog': [['progHex', 'DEADBEEFCAFE']],
             'equation': [['eqA', '1'], ['eqB', '2'], ['eqC', '5'], ['sxA1', '2'], ['sxB1', '1'], ['sxC1', '5'], ['sxA2', '1'], ['sxB2', '-1'], ['sxC2', '1']]}
@@ -1584,7 +1587,7 @@ async def sideways_every_tab(browser, url):
             bad, keys = [], {}
             for m, kind in [('calc', None), ('units', None), ('currency', None), ('vat', None), ('pct', 'of'), ('pct', 'discount'), ('pct', 'tip'), ('loan', 'loan'),
                             ('loan', 'payoff'), ('loan', 'savings'), ('dates', 'between'), ('dates', 'add'), ('fuel', None), ('energy', 'device'), ('energy', 'kwh'), ('net', 'subnet'),
-                            ('numbers', 'gcd'), ('numbers', 'factors'), ('equation', 'quad'), ('equation', 'sys2'), ('stats', None), ('prog', None)]:
+                            ('transfer', 'time'), ('transfer', 'size'), ('transfer', 'speed'), ('numbers', 'gcd'), ('numbers', 'factors'), ('equation', 'quad'), ('equation', 'sys2'), ('stats', None), ('prog', None)]:
                 await p.evaluate(f"switchMode('{m}')")
                 if kind:
                     await p.evaluate(f"setToolKind('{m}','{kind}')")
@@ -1618,8 +1621,8 @@ async def all_modes(browser, url):
     await p.click('#modesButton')
     await p.wait_for_timeout(100)
     got = await p.evaluate("[!modesModal.classList.contains('hidden'),document.querySelectorAll('#modesList .mode-group').length,[...document.querySelectorAll('#modesList .mode-pick')].map(b=>b.dataset.mode),document.activeElement.id]")
-    check(L + 'the sheet has every mode in 3 groups, the search has the focus', got[0] and got[1] == 3 and sorted(got[2]) == sorted(['calc', 'units', 'currency', 'graph', 'vat', 'pct', 'loan', 'dates', 'fuel', 'energy', 'net', 'prog', 'numbers', 'equation', 'stats']) and got[3] == 'modesSearch', got)
-    for q, want in [('tip', ['pct']), ('loan', ['loan']), ('ip', ['net']), ('καυσ', ['fuel']), ('ΦΠΑ', ['vat']), ('zzz', [])]:
+    check(L + 'the sheet has every mode in 3 groups, the search has the focus', got[0] and got[1] == 3 and sorted(got[2]) == sorted(['calc', 'units', 'currency', 'graph', 'vat', 'pct', 'loan', 'dates', 'fuel', 'energy', 'net', 'transfer', 'prog', 'numbers', 'equation', 'stats']) and got[3] == 'modesSearch', got)
+    for q, want in [('tip', ['pct']), ('loan', ['loan']), ('ip', ['net']), ('καυσ', ['fuel']), ('ΦΠΑ', ['vat']), ('download', ['transfer']), ('λήψη', ['transfer']), ('zzz', [])]:
         await p.fill('#modesSearch', q)
         got = await p.evaluate("[...document.querySelectorAll('#modesList .mode-pick')].map(b=>b.dataset.mode)")
         check(L + f'search "{q}"', got == want, got)
@@ -1646,7 +1649,7 @@ async def all_modes(browser, url):
     check(L + 'the All | Default | None switch shows Default at first', await p.evaluate(lit) == ['default'], await p.evaluate(lit))
     await p.click('#modesPins [data-pins=all]')
     got = await p.evaluate(f"[{strip}.length,{lit},!modesModal.classList.contains('hidden'),document.querySelectorAll('#modesList .mode-pin.pinned').length]")
-    check(L + 'All pins every mode at once, the sheet stays open', got == [15, ['all'], True, 15], got)
+    check(L + 'All pins every mode at once, the sheet stays open', got == [16, ['all'], True, 16], got)
     await p.click('#modesPins [data-pins=nopins]')
     got = await p.evaluate(f"[{strip},{lit},JSON.parse(localStorage.getItem('uc-pins'))]")
     check(L + 'None unpins them all (the mode on screen still shows)', got == [['calc'], ['nopins'], []], got)
@@ -1697,7 +1700,7 @@ async def esc_everywhere(browser, url):
     L = '[esc] '
     p = await new_page(browser, url, 'en', 'dark')
     bad = []
-    for m, fid, v in [('vat', 'amount', '100'), ('pct', 'pctOfNum', '540'), ('loan', 'loanAmount', '1000'), ('fuel', 'fuelD', '250'), ('energy', 'energyP', '100'), ('net', 'netIp', '10.0.0.1'), ('dates', 'dateDays', '5')]:
+    for m, fid, v in [('vat', 'amount', '100'), ('pct', 'pctOfNum', '540'), ('loan', 'loanAmount', '1000'), ('fuel', 'fuelD', '250'), ('energy', 'energyP', '100'), ('net', 'netIp', '10.0.0.1'), ('transfer', 'xfSize', '200'), ('dates', 'dateDays', '5')]:
         await p.evaluate(f"switchMode('{m}')")
         if m == 'dates':
             await p.evaluate("setToolKind('dates','add')")
@@ -2926,11 +2929,175 @@ async def programmer(browser, url):
     await p.context.close()
 
 
+async def transfer(browser, url):
+    """Transfer: how long a size takes at a speed (200 GB at 1 Gbps: 26 min 40 s), the size that gets through in a time, the
+    speed a transfer needs; a unit beside each number (bits or bytes, 1000s or 1024s), kept and saved; overhead; the working;
+    a paste with its unit; Greek; History; AC; the menus on a computer; a phone's keypad."""
+    L = '[transfer] '
+    p = await new_page(browser, url, 'en', 'dark')
+    put = """([kind,units,vals])=>{if(mode!=='transfer')switchMode('transfer');if(kind)setToolKind('transfer',kind);
+      for(const [id,u] of Object.entries(units||{})){const s=document.querySelector('select[data-xf="'+id+'"]');s.value=u;s.dispatchEvent(new Event('change',{bubbles:true}))}
+      for(const [id,v] of Object.entries(vals||{})){const e=document.getElementById(id);e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}))}
+      return [document.querySelector('#result').textContent,document.querySelector('#expression').textContent]}"""
+    shown = "[...document.querySelectorAll('#toolPanel .xf-unit b')].map(b=>b.textContent)"
+    working = "howData.steps.map(s=>s.title+': '+s.text).join(' | ')"
+    await p.evaluate("switchMode('transfer')")
+    st = await p.evaluate(f"[toolKind.transfer,[...document.querySelectorAll('#toolPanel input[data-tool-input]')].map(i=>i.id),{shown},document.querySelector('#result').textContent,document.querySelector('select[data-xf=xfSpeed]').getAttribute('aria-label')]")
+    check(L + 'opens on Time: size, speed and overhead, in GB and Mbps', st == ['time', ['xfSize', 'xfSpeed', 'xfLoss'], ['GB', 'Mbps'], '0', 'Speed: unit'], st)
+    got = await p.evaluate(put, ['time', {'xfSpeed': 'Gbps'}, {'xfSize': '200', 'xfSpeed': '1'}])
+    check(L + '200 GB at 1 Gbps takes 26 min 40 s', got == ['26 min 40 s', '1 Gbps = 125 MB/s'], got)
+    st = await p.evaluate(f"[howData.formula,{working},howData.result]")
+    check(L + 'the working: the size in bits, the time, in minutes, the speed in bytes',
+          st == ['200 GB ÷ 1 Gbps', '1 GB = 8 Gbit: 200 GB × 8 = 1.600 Gbit | Time = size ÷ speed: 1.600 Gbit ÷ 1 Gbps = 1.600 s | In minutes and seconds: 1.600 s = 26 min 40 s | 1 MB/s = 8 Mbps: 1.000 Mbps ÷ 8 = 125 MB/s', '26 min 40 s'], st)
+    got = await p.evaluate(put, [None, None, {'xfLoss': '10'}])
+    check(L + '10% overhead leaves 900 Mbps', got == ['29 min 38 s', '1 Gbps − 10% = 112,5 MB/s'], got)
+    st = await p.evaluate("[howData.formula,howData.steps[1].title+': '+howData.steps[1].text,howData.steps[3].text,howData.steps[4].text]")
+    check(L + 'the working takes the overhead off the speed and says when the time is rounded',
+          st == ['200 GB ÷ (1 Gbps − 10%)', '10% overhead: the speed that is left: 1 Gbps × (1 − 10 ÷ 100) = 0,9 Gbps', '1.777,7777777778 s ≈ 29 min 38 s', '900 Mbps ÷ 8 = 112,5 MB/s'], st)
+    got = await p.evaluate(put, [None, {'xfSpeed': 'Mbps'}, {'xfSpeed': '100', 'xfLoss': ''}])
+    check(L + 'a speed in Mbps', got == ['4 h 26 min 40 s', '100 Mbps = 12,5 MB/s'], got)
+    got = await p.evaluate(put, [None, {'xfSize': 'GiB'}, None])
+    check(L + 'another unit works the result out again: GiB counts in 1024s, the speed shows in MiB/s', got == ['4 h 46 min 20 s', '100 Mbps = 11,92 MiB/s'], got)
+    got = await p.evaluate(put, [None, {'xfSize': 'GB', 'xfSpeed': 'MB/s'}, {'xfSpeed': '125'}])
+    st = await p.evaluate(working)
+    check(L + 'a speed in bytes shows in bits', got == ['26 min 40 s', '125 MB/s = 1 Gbps'] and
+          st == '1 GB = 1.000 MB: 200 GB × 1.000 = 200.000 MB | Time = size ÷ speed: 200.000 MB ÷ 125 MB/s = 1.600 s | In minutes and seconds: 1.600 s = 26 min 40 s | 1 MB/s = 8 Mbps: 125 MB/s × 8 = 1.000 Mbps = 1 Gbps', [got, st])
+    times = []
+    for units, vals in [({'xfSize': 'MB', 'xfSpeed': 'Gbps'}, {'xfSize': '1', 'xfSpeed': '1'}), ({'xfSpeed': 'Mbps'}, {'xfSize': '30', 'xfSpeed': '100'}), ({'xfSize': 'GB'}, {'xfSize': '45'}),
+                        ({}, {'xfSize': '1080'}), ({'xfSize': 'TB'}, {'xfSize': '2', 'xfSpeed': '10'}), ({}, {'xfSize': '1000', 'xfSpeed': '1'})]:
+        times.append((await p.evaluate(put, [None, units, vals]))[0])
+    check(L + 'short and long times: milliseconds, seconds, whole hours and days, days, years', times == ['8 ms', '2,4 s', '1 h', '1 day', '18 days 12 h 27 min', '253 years 248 days'], times)
+    st = await p.evaluate("[howData.steps.at(-2).title,howData.steps.at(-2).text]")
+    check(L + 'the working says a year is 365 days', st == ['In years and days (1 year = 365 days)', '8.000.000.000 s ≈ 253 years 248 days'], st)
+    got = await p.evaluate(put, [None, None, {'xfSize': '0'}])
+    check(L + 'nothing to show for a size of 0', got == ['0', ''] and await p.evaluate("howData===null"), got)
+
+    # Size: speed × time. Changing kind starts the numbers over; the units stay
+    await p.evaluate("setToolKind('transfer','size')")
+    st = await p.evaluate(f"[[...document.querySelectorAll('#toolPanel input[data-tool-input]')].map(i=>i.id+'='+i.value),{shown}]")
+    check(L + 'Size asks for speed, time and overhead; the speed keeps its unit', st == [['xfSpeed=', 'xfTime=', 'xfLoss='], ['Mbps', 'h']], st)
+    got = await p.evaluate(put, [None, {'xfSpeed': 'Gbps'}, {'xfSpeed': '1', 'xfTime': '1'}])
+    check(L + 'Size: 1 Gbps for 1 h moves 450 GB', got == ['450 GB', '419,1 GiB · 1 Gbps = 125 MB/s'], got)
+    st = await p.evaluate(f"[howData.formula,{working}]")
+    check(L + 'its working', st == ['1 Gbps × 1 h', '1 h = 3.600 s: 1 h × 3.600 = 3.600 s | Size = speed × time: 1 Gbps × 3.600 s = 3.600 Gbit | 1 GB = 8 Gbit: 3.600 Gbit ÷ 8 = 450 GB | '
+          '1 GiB = 1,073741824 GB: 450 GB ÷ 1,073741824 = 419,095158577 GiB | 1 MB/s = 8 Mbps: 1.000 Mbps ÷ 8 = 125 MB/s'], st)
+    got = await p.evaluate(put, [None, {'xfSpeed': 'Mbps', 'xfTime': 'min'}, {'xfSpeed': '100', 'xfTime': '30', 'xfLoss': '10'}])
+    check(L + 'Size with minutes and an overhead', got == ['20,25 GB', '18,86 GiB · 100 Mbps − 10% = 11,25 MB/s'] and await p.evaluate("howData.formula") == '(100 Mbps − 10%) × 30 min', got)
+    got = await p.evaluate(put, [None, {'xfTime': 'day'}, {'xfTime': '2', 'xfLoss': ''}])
+    one = await p.evaluate(put, [None, None, {'xfTime': '1'}])
+    check(L + 'days: 2 days, 1 day', got == ['2,16 TB', '1,96 TiB · 100 Mbps = 12,5 MB/s'] and one == ['1,08 TB', '1.005,83 GiB · 100 Mbps = 12,5 MB/s'] and await p.evaluate("howData.formula") == '100 Mbps × 1 day', [got, one])
+    got = await p.evaluate(put, [None, {'xfSpeed': 'MiB/s', 'xfTime': 'h'}, {'xfSpeed': '10'}])
+    check(L + 'a speed in MiB/s gives GiB first', got == ['35,16 GiB', '37,75 GB · 10 MiB/s = 83,89 Mbps'], got)
+
+    # Speed: size ÷ time, in bits per second
+    got = await p.evaluate(put, ['speed', {'xfSize': 'GB', 'xfTime': 'h'}, {'xfSize': '200', 'xfTime': '1'}])
+    st = await p.evaluate(f"[howData.formula,{working}]")
+    check(L + 'Speed: 200 GB in 1 h needs 444,44 Mbps', got == ['444,44 Mbps', '= 55,56 MB/s'] and st == ['200 GB ÷ 1 h', '1 h = 3.600 s: 1 h × 3.600 = 3.600 s | 1 GB = 8.000 Mbit: 200 GB × 8.000 = 1.600.000 Mbit | '
+          'Speed = size ÷ time: 1.600.000 Mbit ÷ 3.600 s = 444,4444444444 Mbps | 1 MB/s = 8 Mbps: 444,4444444444 Mbps ÷ 8 = 55,5555555556 MB/s'], [got, st])
+    got = await p.evaluate(put, [None, None, {'xfLoss': '10'}])
+    st = await p.evaluate("[howData.formula,howData.steps[3].title+': '+howData.steps[3].text]")
+    check(L + 'with an overhead the line has to be faster', got == ['493,83 Mbps', 'net 444,44 Mbps = 55,56 MB/s'] and
+          st == ['200 GB ÷ 1 h ÷ (1 − 10%)', '10% overhead: the line has to be faster: 444,4444444444 Mbps ÷ (1 − 10 ÷ 100) = 493,8271604938 Mbps'], [got, st])
+    got = await p.evaluate(put, [None, {'xfSize': 'TB', 'xfTime': 'min'}, {'xfSize': '1', 'xfTime': '10', 'xfLoss': ''}])
+    check(L + 'a big speed is in Gbps', got == ['13,33 Gbps', '= 1,67 GB/s'], got)
+
+    # the overhead stops at 99%, and no field takes a minus
+    await p.evaluate(put, ['time', None, None])
+    await p.focus('#xfLoss')
+    await p.keyboard.type('100')
+    await p.keyboard.press('-')
+    st = await p.evaluate("[xfLoss.value,document.querySelector('#xfLoss').closest('.tool-field').querySelector('span').textContent]")
+    check(L + 'the overhead stops at 99%; − is refused', st == ['10', 'Up to 99%'], st)
+
+    # pasted with its unit: the unit is picked too
+    await p.evaluate(put, [None, None, {'xfLoss': ''}])
+    st = await p.evaluate(f"""(()=>{{pasteIntoField(xfSize,'1,5 TB');pasteIntoField(xfSpeed,'1gbps');
+      const a=[xfSize.value,xfSpeed.value,{shown}.join(' '),document.querySelector('#result').textContent];
+      pasteIntoField(xfSpeed,'12.5 MiB/s');a.push(xfSpeed.value+' '+xfUnit.xfSpeed);pasteIntoField(xfSpeed,'300');a.push(xfSpeed.value+' '+xfUnit.xfSpeed);
+      pasteIntoField(xfSpeed,'100 Mbit/s');a.push(xfSpeed.value+' '+xfUnit.xfSpeed);pasteIntoField(xfSize,'700 mb');a.push(xfSize.value+' '+xfUnit.xfSize);return a}})()""")
+    check(L + 'a paste with a unit picks the unit: 1,5 TB, 1gbps, 12.5 MiB/s, 100 Mbit/s, 700 mb; a plain number keeps it',
+          st == ['1,5', '1', 'TB Gbps', '3 h 20 min', '12,5 MiB/s', '300 MiB/s', '100 Mbps', '700 MB'], st)
+    st = await p.evaluate("(()=>{pasteIntoField(xfSize,'1234567890123456 TB');return [xfSize.value,xfUnit.xfSize,document.querySelector('select[data-xf=xfSize]').value]})()")
+    check(L + 'a paste the field refuses (16 digits) leaves its unit alone', st == ['700', 'MB', 'MB'], st)
+    await p.evaluate("setToolKind('transfer','size')")
+    st = await p.evaluate("(()=>{xfTime.value='90 min';xfTime.dispatchEvent(new InputEvent('input',{bubbles:true,inputType:'insertFromPaste'}));return [xfTime.value,xfUnit.xfTime,document.querySelector('select[data-xf=xfTime]').value]})()")
+    check(L + 'Ctrl+V into a field on a keyboard does the same: 90 min', st == ['90', 'min', 'min'], st)
+
+    # the kind and the units are kept for the next visit; the numbers are not
+    await p.evaluate(put, [None, {'xfSpeed': 'Gbps'}, {'xfSpeed': '1'}])
+    await p.reload()
+    await p.wait_for_timeout(300)
+    st = await p.evaluate(f"(()=>{{switchMode('transfer');return [toolKind.transfer,{shown},[...document.querySelectorAll('#toolPanel select[data-xf]')].map(s=>s.value),xfSpeed.value,xfSpeed.placeholder]}})()")
+    check(L + 'the kind and the units are remembered, the numbers are not', st == ['size', ['Gbps', 'min'], ['Gbps', 'min'], '', '1'], st)
+
+    # Greek, switched live
+    await p.evaluate(put, ['time', {'xfSize': 'TB', 'xfSpeed': 'Mbps'}, {'xfSize': '2', 'xfSpeed': '10', 'xfLoss': '5'}])
+    await p.evaluate("setLanguage('el')")
+    await p.wait_for_timeout(300)
+    st = await p.evaluate(f"""[document.querySelector('#result').textContent,document.querySelector('#expression').textContent,[...document.querySelectorAll('#toolPanel .tool-field>span')].map(s=>s.textContent),
+      [...document.querySelectorAll('#toolPanel .seg-toggle button')].map(b=>b.textContent),xfSize.value,{shown},howData.steps.map(s=>s.title).join(' | '),document.querySelector('.mode-tab.active').textContent.trim()]""")
+    check(L + 'Greek after a live switch', st == ['19 ημέρες 11 h 50 min', '10 Mbps − 5% = 1,19 MB/s', ['Μέγεθος', 'Ταχύτητα', 'Απώλειες %'], ['Χρόνος', 'Μέγεθος', 'Ταχύτητα'], '2', ['TB', 'Mbps'],
+          '1 TB = 8.000.000 Mbit | Απώλειες 5%: η ταχύτητα που μένει | Χρόνος = μέγεθος ÷ ταχύτητα | Σε ημέρες, ώρες και λεπτά | 1 MB/s = 8 Mbps', 'Μεταφορά'], st)
+    got = await p.evaluate(put, ['size', {'xfTime': 'day'}, {'xfSpeed': '10', 'xfTime': '2'}])
+    st = await p.evaluate(f"[howData.formula,{shown},document.querySelector('select[data-xf=xfTime] option[value=day]').textContent,document.querySelector('select[data-xf=xfSpeed] optgroup').label,howData.steps[0].title]")
+    check(L + 'Greek days and menu titles', got == ['216 GB', '201,17 GiB · 10 Mbps = 1,25 MB/s'] and st == ['10 Mbps × 2 ημέρες', ['Mbps', 'ημέρες'], 'ημέρες', 'Bit το δευτερόλεπτο', '1 ημέρα = 86.400 s'], [got, st])
+    await p.evaluate("setLanguage('en')")
+    await p.wait_for_timeout(300)
+
+    # History keeps the kind, the numbers and the units, in both languages
+    await p.evaluate(put, ['time', {'xfSize': 'GB', 'xfSpeed': 'Gbps'}, {'xfSize': '200', 'xfSpeed': '1'}])
+    await p.evaluate("switchMode('calc')")
+    st = await p.evaluate("(()=>{const e=JSON.parse(localStorage.getItem('uc-history-modes')).transfer[0];return [e.kind,e.choices,e.inputs,e.text.en,e.text.el]})()")
+    check(L + 'leaving the mode keeps the result in its History, with the units', st == ['time', {'xf': {'xfSize': 'GB', 'xfSpeed': 'Gbps'}}, {'xfSize': '200', 'xfSpeed': '1'},
+          {'f': '200 GB ÷ 1 Gbps', 'r': '26 min 40 s'}, {'f': '200 GB ÷ 1 Gbps', 'r': '26 min 40 s'}], st)
+    await p.evaluate("""(()=>{switchMode('transfer');setToolKind('transfer','speed');xfPickUnit('xfSize','MiB');switchMode('calc');
+      restoreModeEntry(JSON.parse(localStorage.getItem('uc-history-modes')).transfer.find(e=>e.kind==='time'&&e.inputs.xfSize==='200'&&!e.inputs.xfLoss))})()""")
+    st = await p.evaluate(f"[mode,toolKind.transfer,{shown},xfSize.value,xfSpeed.value,document.querySelector('#result').textContent]")
+    check(L + 'History brings it back with its units', st == ['transfer', 'time', ['GB', 'Gbps'], '200', '1', '26 min 40 s'], st)
+    await p.click('.tool-key[data-action="clear-all"]')
+    st = await p.evaluate(f"[xfSize.value,xfSpeed.value,document.querySelector('#result').textContent,{shown}]")
+    check(L + 'AC empties the fields; the units stay', st == ['', '', '0', ['GB', 'Gbps']], st)
+
+    # a computer: a click reaches the menu (it lies over the unit); after a unit is picked the keyboard types into its field
+    await p.click('select[data-xf="xfSpeed"]')
+    await p.wait_for_timeout(200)
+    st = await p.evaluate("document.activeElement?.closest('select')?.dataset.xf")  # the menu itself, or the unit in it that is picked
+    await p.keyboard.press('Escape')
+    await p.select_option('select[data-xf="xfSpeed"]', 'MB/s')
+    await p.wait_for_timeout(150)
+    await p.keyboard.type('125')
+    await p.keyboard.press('Tab')
+    got = await p.evaluate(f"[xfSpeed.value,{shown},document.activeElement?.tagName+' '+document.activeElement?.dataset?.xf]")
+    check(L + 'the menu opens on a click; a unit picked, the keyboard types into its field; Tab goes on to its menu', st == 'xfSpeed' and got == ['125', ['GB', 'MB/s'], 'SELECT xfSpeed'], [st, got])
+    check(L + 'no JavaScript errors', not p.errors, p.errors)
+    await p.context.close()
+
+    # a phone: the app's keypad types, no native keyboard; the menus are big enough for a finger
+    p = await new_page(browser, url, 'en', 'dark', phone=True)
+    await p.evaluate("switchMode('transfer')")
+    await p.tap('#xfSize')
+    for k in '200':
+        await p.tap(f'#keypad [data-value="{k}"]')
+    await p.tap('#xfSpeed')
+    await p.tap('#keypad [data-value="1"]')
+    await p.select_option('select[data-xf="xfSpeed"]', 'Gbps')
+    await p.wait_for_timeout(150)
+    st = await p.evaluate("[document.querySelector('#result').textContent,xfSize.readOnly,xfSize.getAttribute('inputmode'),xfSpeed.classList.contains('tool-active')]")
+    check(L + 'phone: typed on the app keypad, no native keyboard', st == ['26 min 40 s', True, 'none', True], st)
+    await p.tap('#xfLoss')
+    for k in ['2', ',', '5']:
+        await p.tap(f'#keypad [data-value="{k}"]')
+    st = await p.evaluate("[xfLoss.value,document.querySelector('#result').textContent,[...document.querySelectorAll('#toolPanel select[data-xf]')].every(s=>{const r=s.getBoundingClientRect();return r.width>=44&&r.height>=30})]")
+    check(L + 'phone: 2,5% on the keypad; the unit menus are at least 44×30 px', st == ['2,5', '27 min 21 s', True], st)
+    check(L + 'phone: no JavaScript errors', not p.errors, p.errors)
+    await p.context.close()
+
+
 async def foldables(browser, url):
     """Foldables: an inner screen held sideways (iPhone Duo, Galaxy Fold: wide, not phone-short) gets the sideways layout
     with big keys and nothing scrolls; half open like a book (two screen segments), the fold falls between the display
     and the keypad."""
-    tabs = ['calc', 'units', 'currency', 'graph', 'vat', 'pct', 'loan', 'dates', 'fuel', 'energy', 'net', 'prog', 'numbers', 'equation', 'stats']
+    tabs = ['calc', 'units', 'currency', 'graph', 'vat', 'pct', 'loan', 'dates', 'fuel', 'energy', 'net', 'transfer', 'prog', 'numbers', 'equation', 'stats']
     for size in [(924, 693), (832, 620)]:
         L = f'[foldables {size[0]}x{size[1]}] '
         p = await new_page(browser, url, 'el', 'dark', phone=True, size=size)
@@ -2976,7 +3143,7 @@ async def big_screen_dialogs(browser, url):
         L = f'[big screen dialogs {lang}] '
         p = await new_page(browser, url, lang, 'dark', size=(1920, 1080))
         bad = []
-        for m in ['calc', 'units', 'currency', 'graph', 'vat', 'pct', 'loan', 'dates', 'fuel', 'energy', 'net', 'prog', 'numbers', 'equation', 'stats']:
+        for m in ['calc', 'units', 'currency', 'graph', 'vat', 'pct', 'loan', 'dates', 'fuel', 'energy', 'net', 'transfer', 'prog', 'numbers', 'equation', 'stats']:
             await p.evaluate(f"closeHow();switchMode('{m}');showHelp()")
             if await p.evaluate(scrolls):
                 bad.append(m)
@@ -2993,6 +3160,14 @@ async def big_screen_dialogs(browser, url):
         await p.evaluate("closeHow();switchMode('net')")
         await p.evaluate("(()=>{for(const [f,v] of [['netIp','192.168.10.77'],['netPrefix','26']]){const e=document.getElementById(f);e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}))}})();showHow()")
         check(L + "Subnet's ? fits without scrolling at 1280×860", not await p.evaluate(scrolls))
+        rows = await p.evaluate("""(()=>{const out={};
+          for(const [m,k] of [['vat',''],['fuel',''],['loan','loan'],['pct','of'],['pct','discount'],['net','hosts'],['numbers','gcd'],['dates','add'],['transfer','time'],['prog',''],['stats','']]){
+            closeHow();switchMode(m);if(k)setToolKind(m,k);showHelp();
+            const caps=[...document.querySelectorAll('#howContent .help-keys .help-caps')].map(e=>e.textContent);
+            out[m+(k?':'+k:'')]=(caps.includes('−')?'−':'')+(caps.includes(',.')?',':'')}
+          closeHow();return out})()""")
+        check(L + 'Tips list − and the decimal point only where a field on screen takes them',
+              rows == {'vat': '−,', 'fuel': ',', 'loan:loan': ',', 'pct:of': '−,', 'pct:discount': ',', 'net:hosts': '', 'numbers:gcd': '', 'dates:add': '−', 'transfer:time': ',', 'prog': '', 'stats': '−,'}, rows)
         await p.context.close()
     p = await new_page(browser, url, 'en', 'dark', phone=True)
     await p.evaluate("showHelp()")
@@ -3073,6 +3248,9 @@ PHONE_TABS = [
     ('energy:kwh', _tool('energy', 'kwh') + _fill(('energyK', '1234567,89'), ('energyR', '0,15'))),
     ('net:subnet', _tool('net', 'subnet') + _fill(('netIp', '192.168.100.100'), ('netPrefix', '26'))),
     ('net:hosts', _tool('net', 'hosts') + _fill(('netHosts', '500'))),
+    ('transfer:time', _tool('transfer', 'time') + _fill(('xfSize', '1250'), ('xfSpeed', '1000'), ('xfLoss', '10'))),
+    ('transfer:size', _tool('transfer', 'size') + _fill(('xfSpeed', '1000'), ('xfTime', '90'), ('xfLoss', '10'))),
+    ('transfer:speed', _tool('transfer', 'speed') + _fill(('xfSize', '1250'), ('xfTime', '90'), ('xfLoss', '10'))),
     ('prog', _tool('prog') + _fill(('progHex', 'DEADBEEFCAFE'))),
     ('numbers:gcd', _tool('numbers', 'gcd') + _fill(('numA', '123456789012'), ('numB', '987654321'), ('numC', '360'))),
     ('numbers:factors', _tool('numbers', 'factors') + _fill(('numN', '600851475143'))),
@@ -3087,6 +3265,7 @@ PHONE_SHEETS = [
     ('Functions (⋯)', "switchMode('calc');openFunctions()", '#howModal .modal-card', "closeHow()"),
     ('the working (?) of a complex result', "switchMode('calc');expression='(9+9×i)×5';current='';equals();showHow()", '#howModal .modal-card', "closeHow()"),
     ('the working (?) of VAT', "switchMode('vat');showHow()", '#howModal .modal-card', "closeHow()"),
+    ('the working (?) of Transfer', _tool('transfer', 'speed') + _fill(('xfSize', '1250'), ('xfTime', '90'), ('xfLoss', '10')) + ";showHow()", '#howModal .modal-card', "closeHow()"),
     ('Tips', "switchMode('calc');showHelp()", '#howModal .modal-card', "closeHow()"),
     ('theme menu', "openThemeMenu()", '#themeMenu', "closeThemeMenu()"),
     ('own theme editor', "openThemeEditor('dark')", '#themeEditor', "closeThemeEditor()"),
@@ -3143,7 +3322,7 @@ async def keys_fill_the_bottom(browser, url):
     state = """(()=>{const f=$('.app-footer').getBoundingClientRect(),keys=[...$$('#keypad button')].map(b=>b.getBoundingClientRect());
       return {gap:Math.round(innerHeight-f.bottom),keyH:keys.length?Math.round(keys[0].height):0,
         tall:keys.some(r=>r.height<=keys[0].height+1&&r.height>r.width+1),scroll:document.documentElement.classList.contains('page-scroll')}})()"""
-    modes = ['calc', 'units', 'currency', 'vat', 'pct', 'loan', 'dates', 'fuel', 'energy', 'net', 'numbers', 'equation', 'stats', 'prog']
+    modes = ['calc', 'units', 'currency', 'vat', 'pct', 'loan', 'dates', 'fuel', 'energy', 'net', 'transfer', 'numbers', 'equation', 'stats', 'prog']
     side = """(()=>{const r=s=>$(s).getBoundingClientRect(),c=r('#calculatorCard'),a=r('#sideHistory'),b=r('#sideWork'),cs=getComputedStyle,
       t=r('.topbar');return {on:document.documentElement.classList.contains('side-panels'),frameless:document.documentElement.classList.contains('frameless'),
         h:[Math.round(a.height-c.height),Math.round(b.height-c.height)],box:[cs($('#sideHistory')).backgroundColor,cs($('#calculatorCard')).borderTopColor],
@@ -3431,6 +3610,7 @@ async def main():
         await numbers_equations(browser, url)
         await statistics(browser, url)
         await programmer(browser, url)
+        await transfer(browser, url)
         await offline(browser)
         await cloudflare_check(browser)
         await preview_site(browser)

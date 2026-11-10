@@ -288,7 +288,7 @@ function modeSnapshot(){
   const text={},shown=lang;
   try{for(const l of ['el','en']){lang=l;runActiveTool();text[l]={f:toolResult?.how?.formula||'',r:toolResult?.main||''}}}finally{lang=shown;runActiveTool()}
   if(!text.en.r)return null;
-  const choices=mode==='vat'?{vat:vatAction}:mode==='dates'?{dates:dateCount}:{};
+  const choices=mode==='vat'?{vat:vatAction}:mode==='dates'?{dates:dateCount}:mode==='transfer'?{xf:xfChoices()}:{};
   return {tab,kind:toolKind[mode]||null,choices,inputs,text};
  }
  if(mode==='units'){
@@ -335,6 +335,7 @@ function restoreModeEntry(x){
   else if(!x.kind&&KIND_FIELDS[m])toolKind[m]=Object.keys(KIND_FIELDS[m])[0];// saved before the mode had kinds (Energy): its first kind
   if(m==='vat'&&TOGGLES.vat.options.includes(x.choices?.vat))vatAction=x.choices.vat;
   if(m==='dates'&&['all','work'].includes(x.choices?.dates))dateCount=x.choices.dates;
+  if(m==='transfer')xfSetUnits(x.choices?.xf);
   toolState[m]={inputs:{...x.inputs},result:null};
   renderTool();runActiveTool();saveTools();fitLayout();
  }else if(x.expr){

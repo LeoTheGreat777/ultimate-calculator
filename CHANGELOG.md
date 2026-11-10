@@ -6,6 +6,20 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.40.0 – 2026-11-10
+
+### Added
+- Transfer mode (under ⊞, More; in Greek «Μεταφορά»): how long a download, an upload or a copy takes, e.g. 200 GB at
+  1 Gbps: 26 min 40 s. Its switch also gives the size that gets through in a time, or the speed a transfer needs.
+- Transfer: each number has its unit beside it; tap the unit to change it: GB or GiB (and kB to TB), Mbps, Gbps or MB/s,
+  seconds to days. The result also shows the speed in bytes (1 Gbps = 125 MB/s). Overhead % takes off the part of the
+  speed that carries no data. ? shows the working step by step.
+- Transfer: pasting a number with its unit (200 GB, 1 Gbps, 90 min) picks the unit too.
+
+### Fixed
+- Tips: the keyboard list no longer shows − (change the sign) or the decimal point where no field on screen takes them
+  (− in Fuel, Energy, Interest and Subnet; both in Numbers).
+
 ## 0.39.5 – 2026-11-10
 
 ### Changed

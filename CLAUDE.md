@@ -1,6 +1,6 @@
 # Ultimate Calculator – notes for Claude
 
-An all-in-one calculator web app: calculator (scientific, complex numbers, memory), graph, unit converter, currency converter, VAT, percent/discount/tip, interest (loan/savings), dates, fuel, energy, subnet (IPv4), numbers (GCD/LCM, prime factors), equations, statistics and programmer (hex/binary) tools.
+An all-in-one calculator web app: calculator (scientific, complex numbers, memory), graph, unit converter, currency converter, VAT, percent/discount/tip, interest (loan/savings), dates, fuel, energy, subnet (IPv4), transfer (download time, size, speed), numbers (GCD/LCM, prime factors), equations, statistics and programmer (hex/binary) tools.
 Plain HTML/CSS/vanilla JS, no framework, no backend, and nothing to build while editing: `public/` runs as it is
 (the deploy minifies it, see Git and deploying). English and Greek; new users start
 in English and dark theme (people who used the app before keep Greek / their theme, see the script in the
@@ -67,6 +67,7 @@ Everything the app serves is in `public/` (the web root for both GitHub Pages an
 | `stats.js` | Statistics: the list of numbers (`statList` in the tool's inputs, chips in one box with the field: `statAdd`, `statRemove`, `statTakeBack`, pasting several), `statsCalculate` (exact average, median, s and σ) |
 | `prog.js` | Programmer: one number in four fields (`PROG_BASES`: decimal, hex, binary, octal; `progInput` checks and groups a field, `progCalculate` fills the others), its A–F keypad, `progDimKeys` |
 | `net.js` | Subnet: IPv4 parsing (`parseIp`, `parsePrefix` takes /24 or a mask), `dottedKey`, the details grid, the Subnet calculations |
+| `transfer.js` | Transfer: time, size or speed of a download or copy; a number with its unit in one box (`xfFieldHtml`, `xfUnit`, `XF_UNITS`: bits and bytes, 1000s and 1024s), `transferCalculate`, times to read (`xfDuration`), `xfPastedUnit` |
 | `layout.js` | `fitLayout` (fits every mode to the screen), long text (`fitDisplayText`, `refuseKey`), zoom on big screens |
 | `theme.js` | themes: the ready-made ones, own themes (`deriveTheme`), Match device (`themePair`), the theme menu and the own theme editor |
 | `ui.js` | `setLanguage`/`applyLanguage`, modes and tabs (`switchMode`, `renderTool`), dialogs, hold keys, install |
@@ -93,7 +94,7 @@ made for that part, so don't skip it.
 | File | Read it before changing |
 |---|---|
 | `docs/claude/calculator.md` | the Calculator: exact maths, limits, errors, carry, brackets, C/AC, ± and holding keys, Scientific, complex numbers, Memory, the working (?), copy and paste (numbers.js, calculator.js, complex.js, explain.js, memory.js, funcs.js, clip.js) |
-| `docs/claude/tools.md` | the tools (VAT, Percent, Interest, Dates, Fuel, Energy, Subnet, Numbers, Equations), Units, Currency, tool fields, switches, History per mode, tool charts (tools.js, units.js, currency.js, dates.js, numtools.js, net.js, history.js, charts.js) |
+| `docs/claude/tools.md` | the tools (VAT, Percent, Interest, Dates, Fuel, Energy, Subnet, Transfer, Numbers, Equations, Statistics, Programmer), Units, Currency, tool fields, switches, History per mode, tool charts (tools.js, units.js, currency.js, dates.js, numtools.js, stats.js, prog.js, net.js, transfer.js, history.js, charts.js) |
 | `docs/claude/screen.md` | layout and sizes: fitting the screen, long text, sideways phones, foldables, big screens (zoom), side panels, the tabs and All modes, pressing keys, dropdowns, the iPhone home-screen app (layout.js, side.js, modes.js, ui.js, styles.css) |
 | `docs/claude/look.md` | themes and own themes, round keys, the logo and icons, colours (theme.js, styles.css theme blocks, tools/make-icons.py) |
 | `docs/claude/app.md` | start-up and offline (sw.js, updates), home-screen shortcuts, the keyboard, Tips, screen readers (main.js, sw.js, help.js) |

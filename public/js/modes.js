@@ -2,7 +2,7 @@
 // shows only the pinned modes (uc-pins; pin or unpin in the sheet), plus the mode on screen while it isn't pinned.
 // New modes go into MODE_LABELS (ui.js), a group here and MODE_WORDS (what the search finds them by).
 const DEFAULT_PINS=['calc','units','currency','vat'];
-const MODE_GROUPS=[['everyday',['calc','units','currency']],['money',['vat','pct','loan','fuel','energy']],['more',['graph','numbers','equation','stats','dates','net','prog']]];
+const MODE_GROUPS=[['everyday',['calc','units','currency']],['money',['vat','pct','loan','fuel','energy']],['more',['graph','numbers','equation','stats','dates','net','transfer','prog']]];
 // Extra words the search finds a mode by (besides its name in both languages), so "tip", "loan" or "ip" lead somewhere.
 const MODE_WORDS={
  calc:'calculator math scientific sin cos αριθμομηχανη πραξεις επιστημονικη',
@@ -19,7 +19,8 @@ const MODE_WORDS={
  prog:'programmer hex hexadecimal binary octal decimal bits bytes base convert προγραμματιστης δεκαεξαδικο δυαδικο οκταδικο δεκαδικο βαση μετατροπη',
  fuel:'fuel petrol gas diesel car trip καυσιμα βενζινη πετρελαιο αυτοκινητο ταξιδι',
  energy:'energy electricity kwh power watt cost bill ενεργεια ρευμα καταναλωση ισχυς κοστος λογαριασμος',
- net:'subnet ip network mask cidr ipv4 υποδικτυο δικτυο μασκα'
+ net:'subnet ip network mask cidr ipv4 υποδικτυο δικτυο μασκα',
+ transfer:'transfer download upload speed time internet network bandwidth file size data mbps gbps bits bytes copy backup nas μεταφορα ληψη κατεβασμα ανεβασμα ταχυτητα χρονος ιντερνετ δικτυο αρχειο μεγεθος δεδομενα αντιγραφη'
 };
 function mText(k){
  const el={title:'Όλες οι λειτουργίες',search:'Αναζήτηση',none:'Δεν βρέθηκε κάτι.',everyday:'Καθημερινά',money:'Χρήματα',more:'Άλλα',
