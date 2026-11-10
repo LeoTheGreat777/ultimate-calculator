@@ -44,6 +44,7 @@ function formatRat(a,max=6){
 // form already writes with a power of ten keeps that form (3,33715 × 10⁻¹⁰, not 0,0000000003).
 function formatRatLong(a,max=10){const short=formatRat(a,6);return short.includes('×')?short:formatRat(a,max)}
 const fmt=n=>isCx(n)?fmtCx(n):n&&typeof n==='object'&&'n'in n?formatRat(n,6):Number.isFinite(Number(n))?(Math.abs(Number(n))>=1e15?numScientific(Number(n)):new Intl.NumberFormat(NUMBER_LOCALE,{maximumFractionDigits:6}).format(Number(n))):'Error';
+const minusSign=s=>String(s).replace(/-/g,'−');// a minus as shown on the Calculator: −, not the short -
 const pretty=s=>String(s).replace(/\*/g,'×').replace(/\//g,'÷');
 function formatGroupedNumber(raw){
  const s=String(raw);

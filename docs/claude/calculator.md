@@ -71,15 +71,22 @@ Part of the notes in CLAUDE.md (read that first). Covers numbers.js, calculator.
 - **± and holding keys:** holding ⌫, C or AC clears everything while still held (`HOLD_KEYS`, `clearEverything`; C turns into AC
   while still held and big, like the iPhone's calculator; in the tools C stays C, AC is its own key; in Graph every function), holding − flips the sign (`negate`, Units: `unitKeyInput('negate')`);
   On a keyboard holding − does the same (`keyMinusDown` in ui.js: a − waits for its key-up, or the next key, before
-  typing a minus), as do F9 and Shift + − (`_`). A tap on − is always minus. A minus made with ± is stored as `−` (U+2212), one typed with
+  typing a minus), as do F9 and Shift + − (`_`). A tap on − is always minus. In the Calculator ± writes real brackets
+  (`negate`): 15 → `(−15)` in `expression`, so a digit after them is multiplied ((−15)×6), ⌫ takes them apart like typed ones
+  (after ⌫ the number left at the end is `current` again, `caretTo`), and a calculation can go inside; ± again on `(−15)`
+  gives 15. With nothing typed after an operator or at the start it opens `(−`; in a bracket just opened it only adds the
+  sign. A minus made with ± is stored as `−` (U+2212), one typed with
   the − key as `-`; the maths reads both the same (`tokenize`, `normalizeUnitExpression`). Display (`formatInputDisplay`):
   after an operator any negative number is in brackets, `5×(−25)`; at the start only a ± one is, `(−5)`, a typed one
   stays `-5`. A result turned negative with ± carries on as `(−84)+2` (`resultNegated`). Finished results stay plain.
+  Every minus the Calculator shows (display, result, History, the working) is the long `−` (`minusSign`, numbers.js;
+  `formatExpressionDisplay` also shows a − typed after an operator as `25−(−`); copying a result gives a plain `-`.
   Units has the same keypad as the calculator, including ( ).
 - **The working (?)** (explain.js): a tool's `how` is `{formula, steps:[{title, text, line?, bits?}], result, legend?, rule?}`, drawn by
   `howHtml`. The Calculator's comes from `explanationForExpression`, which recomputes every step with the same exact maths and
   returns null (no ?) rather than working that doesn't end in the result on screen, and with no steps (25 − 25i alone) ? is hidden; a rounded number in it ends in …
-  (`ratShown`). Worked-out numbers keep the plain - like results; powers are superscripts (`supText`); trig steps say
+  (`ratShown`). Every minus in it is the long − (`minusSign`). A step in brackets with work outside is titled "Brackets
+  first: …" the first time and "Inside the brackets: …" for the next steps in the same brackets (`bracketsTitle`); powers are superscripts (`supText`); trig steps say
   degrees or radians. Units/Currency compute theirs when ? is pressed (`unitsHow`, the `#unitHow` button in their toolbar).
   Arrows shown in text get U+FE0E (→\uFE0E), or iOS may draw them as emoji. On phones the dialog may use the whole height.
 - **Complex numbers** (complex.js): a value is a fraction when real, `{re, im}` (im ≠ 0) when not; `cx()` turns one with im 0

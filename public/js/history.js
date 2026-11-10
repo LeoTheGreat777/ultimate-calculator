@@ -33,7 +33,7 @@ function historyRowsHtml(tab=currentTab()){
  for(const x of items){
   const k=historyGroupKey(x.t||Math.floor(Number(x.id)),now)||key||'today';// newest first, so a group follows the one before
   if(k!==key){html+=(key?'</section>':'')+`<section class="history-group"><h3 class="history-group-title">${esc(historyGroupTitle(k,now))}</h3>`;key=k}
-  if(calc)html+=row(x.id,x.shown||formatInputDisplay(x.expression),fmt(x.result&&typeof x.result==='string'?vFromStore(x.result):x.result));
+  if(calc)html+=row(x.id,minusSign(x.shown||formatInputDisplay(x.expression)),minusSign(fmt(x.result&&typeof x.result==='string'?vFromStore(x.result):x.result)));
   else{const [a,b]=modeEntryLines(x);html+=row(x.id,a,b)}
  }
  return html+'</section>';

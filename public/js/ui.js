@@ -385,9 +385,9 @@ function keyMinusDown(e,minus){// minus: what a plain − does in this mode
 }
 window.addEventListener('keyup',e=>{if(e.key==='-')keyMinusEnd(true)});
 window.addEventListener('blur',()=>keyMinusEnd(true));
-// A key or top button pressed with a mouse or finger lets go of the focus, so typing on a keyboard afterwards doesn't
-// light up its keyboard ring (the browser shows the ring once keys are typed while a button has the focus).
-document.addEventListener('pointerup',e=>{const b=e.target.closest?.('.key,.toolbar-button,.sci-chip');if(b&&document.activeElement===b)b.blur()},true);
+// A button pressed with a mouse or finger lets go of the focus, so typing on a keyboard afterwards doesn't light up its
+// keyboard ring (the browser shows the ring once keys are typed while a button has the focus). Tabs keep it: ← → move along them.
+document.addEventListener('pointerup',e=>{const b=e.target.closest?.('button:not(.mode-tab)');if(b&&document.activeElement===b)b.blur()},true);
 // Install on a phone's home screen. Android browsers give us their install dialog (beforeinstallprompt);
 // iPhones have no such API, so there (and in Android browsers without it) the button shows a short guide.
 let installPrompt=null;

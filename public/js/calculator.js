@@ -1,6 +1,8 @@
 // Calculator mode: what each key does, the display, = and the step-by-step explanation.
 // After a result, the next calculation starts from its full-precision value (carry). On screen that value shows rounded, like the result did.
-function formatExpressionDisplay(s){
+// Every minus on the Calculator's display and in its working is the long one (−), the same size as + (minusSign).
+function formatExpressionDisplay(s){return minusSign(expressionShown(s)).replace(/([×÷+−])(\u0007?)−(\u0007?)$/,'$1$2(−$3')}// 25− then − : 25−(−
+function expressionShown(s){
  s=String(s??'');
  if(s.includes('⟪⟫'))return formatInputDisplay(s.replace(/⟪⟫/g,'\u0005')).replace(/\u0005/g,carryCx?'('+fmtCx(carryCx,'rect').replace(/\s+/g,'')+')':'');// a complex result carried on, written like a typed one: (5+5i)
  if(carry&&carry.raw){const i=s.indexOf(carry.raw);if(i===0)return carry.shown+formatInputDisplay(s.slice(carry.raw.length));if(i>0&&!/[0-9.]/.test(s[i-1])&&!/[0-9.]/.test(s[i+carry.raw.length]||''))return formatInputDisplay(s.slice(0,i))+carry.shown+formatInputDisplay(s.slice(i+carry.raw.length))}
@@ -47,7 +49,7 @@ function caretTo(k){
  const m=head.match(/([-−]?)(\d+(?:\.\d*)?%?)$/);
  if(carry?.raw&&head.endsWith(carry.raw)&&carryAt(s,k)){expression=head;current=''}
  else if(m){const before=head.slice(0,-m[0].length),own=m[1]==='−'||m[1]==='-'&&(before===''||/[×÷(^CPm∠]$/.test(before));current=(own?m[1]:'')+m[2];expression=head.slice(0,head.length-current.length);currentIsPercent=current.endsWith('%')}
- else if(/(?:^|[×÷(^CPm∠])-$/.test(head)){expression=head.slice(0,-1);current='-'}
+ else if(/(?:^|[×÷(^CPm∠])[-−]$/.test(head)){expression=head.slice(0,-1);current=head.slice(-1)}
  else{expression=head;current=''}
  caretOn=k<s.length;// at the end there is nothing to edit around: the cursor hides (a tap at the end, End, → to the end)
 }
@@ -84,7 +86,7 @@ function wrapAll(){
 }
 
 // the result as the screen shows it: with up to 10 decimals when the display had room for them, else as fmt
-function shownResult(r){const el=$('#result'),f=fmt(r);return el&&el.dataset.short===f&&el.textContent===el.dataset.long?el.dataset.long:f}
+function shownResult(r){const el=$('#result'),f=fmt(r);return el&&el.dataset.short===minusSign(f)&&el.textContent===el.dataset.long?el.dataset.long.replace(/−/g,'-'):f}
 function carryText(r,digits){const abs=r.n<0n?{n:-r.n,d:r.d}:r,places=digits+Math.max(0,r.d.toString().length-abs.n.toString().length),raw=ratToDecimal(r,places);/* tiny values keep their digits too */carry={text:ratToDecimal(abs,places),value:abs,raw,shown:shownResult(r)};carry.plain=/×/.test(carry.shown)?'':ratToRoundedDecimal(r,(carry.shown.split(',')[1]||'').length||6);/* what ⌫ edits; one shown as × 10ⁿ is deleted whole */return raw}
 // explanationForExpression (the working under ?) is in explain.js
 function resetHow(){memFresh=false;calcError='';howData=null;calcHowData=null;$('#howButton')?.classList.add('hidden')}
@@ -94,7 +96,7 @@ function render(){refreshSide();
  if(justCalculated){caretTail='';caretOn=false}
  const raw=typedText();if(!raw)caretOn=false;
  const withCaret=caretOn&&!justCalculated&&!calcError?formatExpressionDisplay(typedText(true)).split(CARET):null;
- const display=calcError?t(ERROR_TEXT[calcError]||'errMath'):justCalculated?fmt(lastResult):(raw?formatExpressionDisplay(raw):'0');
+ const display=calcError?t(ERROR_TEXT[calcError]||'errMath'):justCalculated?minusSign(fmt(lastResult)):(raw?formatExpressionDisplay(raw):'0');
  $('#calculatorDisplay').classList.remove('tool-display','tool-empty');
  $('#calculatorDisplay').classList.toggle('calculated',justCalculated);
  $('#calculatorDisplay').classList.toggle('error',Boolean(calcError));
@@ -106,7 +108,7 @@ function render(){refreshSide();
  $('#result').classList.remove('long-value','near-limit');
  // a result with more decimals than shown: up to 10 when the display has room (fitDisplayText picks)
  const longer=justCalculated&&!calcError&&!isCx(lastResult)&&lastResult?.n!==undefined?formatRatLong(lastResult):'';
- if(longer&&longer!==display&&!longer.includes('×')){$('#result').dataset.long=longer;$('#result').dataset.short=display}
+ if(longer&&minusSign(longer)!==display&&!longer.includes('×')){$('#result').dataset.long=minusSign(longer);$('#result').dataset.short=display}
  else{delete $('#result').dataset.long;delete $('#result').dataset.short}
  $('#clearButton').textContent=raw&&!justCalculated&&!calcError?'C':'AC';// C while anything is typed (it clears the number being typed, else everything); AC after a result, an error or with nothing
  $('#howButton').classList.toggle('hidden',!howData?.steps?.length);// nothing to explain: no ?
@@ -154,7 +156,7 @@ function clearButtonAction(){
  if(justCalculated||calcError){clearAll();return}// the key shows AC then
  clearCurrent();
 }
-function backspace(){resetHow();if(justCalculated){clearAll();return}if(!expression&&!current&&caretTail){refuseKey();return}/* the cursor is at the start */if(!current&&carry&&expression===carry.raw){expression=carry.plain;carry=null}if(current){current=current.slice(0,-1);if(current==='−')current='-';currentIsPercent=false}else if(expression){const f=expression.match(FN_OPEN_END)||expression.match(/⟨\w+⟩$|⟪⟫$/);expression=expression.slice(0,-(f?f[0].length:1))}render()}
+function backspace(){resetHow();if(justCalculated){clearAll();return}if(!expression&&!current&&caretTail){refuseKey();return}/* the cursor is at the start */if(!current&&carry&&expression===carry.raw){expression=carry.plain;carry=null}if(current){current=current.slice(0,-1);if(current==='−')current='-';currentIsPercent=false}else if(expression){const f=expression.match(FN_OPEN_END)||expression.match(/⟨\w+⟩$|⟪⟫$/);expression=expression.slice(0,-(f?f[0].length:1))}if(!current&&expression&&!(carry?.raw&&expression.endsWith(carry.raw)))caretTo(expression.length);render()}
 function digit(v){
  if(v===',')v='.';
  if(memFresh&&current&&!justCalculated){current='';currentIsPercent=false}// after MR, M+ …: a new number
@@ -252,10 +254,19 @@ function negate(){
   if(howData&&!howData.spaced)howData.formula=lastShown;calcHowData=howData;
   render();return;
  }
- // a minus made here is "−", so the display shows the number in brackets: 5 -> (−5) (formatInputDisplay)
- if(current==='-'||current==='−')current='';
- else if(current)current=/^[-−]/.test(current)?current.slice(1):'−'+current;
- else if(!expression||OP_OPEN_END.test(expression))current='-';
+ // ± writes real brackets, which edit like typed ones: 15 → (−15), a digit after them is multiplied, ⌫ takes them apart;
+ // ± again on (−15) takes them off. Inside a bracket just opened it only adds the sign: ( 5 → (−5. The minus is "−".
+ const room=n=>{if(inputLength()+n>MAX_INPUT){refuseKey();return false}return true};
+ const wrapped=!current&&expression.match(/\(([-−])(\d+(?:\.\d*)?%?)\)$/);
+ if(wrapped){expression=expression.slice(0,-wrapped[0].length);current=wrapped[2];currentIsPercent=current.endsWith('%')}
+ else if(current==='-'||current==='−'){if(current==='−'&&expression.endsWith('('))expression=expression.slice(0,-1);current=''}
+ else if(/^[-−]/.test(current))current=current.slice(1);
+ else if(current){
+  if(expression.endsWith('('))current='−'+current;
+  else{const rest=carryAt(typedText(),(expression+current).length)?'':(caretTail.match(/^[\d.]+%?/)||[''])[0];// the whole number, also what is after the cursor
+   if(!room(3))return;expression+='(−'+current+rest+')';current='';currentIsPercent=false;caretTail=caretTail.slice(rest.length)}
+ }
+ else if(!expression||OP_OPEN_END.test(expression)){if(expression.endsWith('('))current='−';else{if(!room(2))return;expression+='(';current='−'}}
  else return;
  render();
 }

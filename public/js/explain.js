@@ -133,6 +133,7 @@ function explanationForExpression(input,result){
  // a single percentage, 10% = 0,1
  if(tree.k==='num'&&tree.pct)steps.push({title:L('Ποσοστό','Percent'),text:exprText(tree,true,{plain:true})+' = '+V(ratMul(tree.v,rat(100n)))+' ÷ 100 = '+V(tree.v)});
  try{
+  let lastGroup=null;
   for(let guard=0;tree.k!=='num'&&guard<400;guard++){
    tidy(tree);if(tree.k==='num')break;
    // the steps that can be done now (everything under them is a number), with how deep in brackets they are
@@ -149,7 +150,10 @@ function explanationForExpression(input,result){
    const outside=depth>0&&(anc.some(a=>a.k==='bin'||a.k==='pow'||a.k==='fact')||pending.some(p=>p.depth<depth&&!anc.includes(p.n)));
    const jumped=!outside&&pending.some(p=>p.depth===depth&&p.n!==n&&p.n.k==='bin'&&cls(p.n)>cls(n)&&p.n.at<n.at);
    const name=k=>{const tt=OP_TITLE[k];return tt?tt:null};
-   const titled=(gr,en,grArticle)=>outside?L('Πρώτα η παρένθεση: '+gr.toLowerCase(),'Brackets first: '+en.toLowerCase()):jumped?L('Πρώτα '+(grArticle||gr.toLowerCase()),en+' first'):L(gr,en);
+   // "Brackets first" once; the next steps in the same brackets say "Inside the brackets"
+   const group=outside?[...anc].reverse().find(a=>a.k==='group'||a.k==='fn'):null,again=Boolean(group)&&group===lastGroup;lastGroup=group;
+   const bracketsTitle=t=>again?L('Μέσα στην παρένθεση: ','Inside the brackets: ')+t:L('Πρώτα η παρένθεση: ','Brackets first: ')+t;
+   const titled=(gr,en,grArticle)=>outside?bracketsTitle(L(gr,en).toLowerCase()):jumped?L('Πρώτα '+(grArticle||gr.toLowerCase()),en+' first'):L(gr,en);
    const T=k=>{const tt=name(k);return titled(tt[0][0],tt[1],tt[0][1])};
    let v,title,text;
    if(n.k==='bin'){
@@ -181,7 +185,7 @@ function explanationForExpression(input,result){
    }else if(n.k==='fn'){
     const a=(n.c.k==='group'?n.c.c:n.c).v;v=lim(sciFunctionV(n.name,a));
     const ft=FN_TITLE[n.name];title=L(ft[0],ft[1])+(isTrig(n.name)||isArc(n.name)?(deg?L(' (μοίρες)',' (degrees)'):L(' (ακτίνια)',' (radians)')):'');
-    if(outside)title=L('Πρώτα η παρένθεση: ','Brackets first: ')+title.charAt(0).toLowerCase()+title.slice(1);
+    if(outside)title=bracketsTitle(title.charAt(0).toLowerCase()+title.slice(1));
     text=exprText(n,true,{plain:true,deg})+' = '+V(v)+(isArc(n.name)&&deg?'°':'');
     // a whole answer can be checked by hand: √9 = 3 because 3 × 3 = 9
     const whole=!isCx(v)&&!isCx(a)&&v.d===1n&&(v.n<0n?-v.n:v.n)<=1000000n;
@@ -213,7 +217,9 @@ function explanationForExpression(input,result){
  // a complex result: its size and angle too (the polar form shown under the result)
  if(isCx(result)){const V=x=>ratShown(x,6),a=result.re,b=result.im,sq=x=>(x.n<0n?'('+V(x)+')':V(x))+'²',u=deg?'°':'';// 6 decimals, like the polar line on the display
   steps.push({title:L('Πολική μορφή: μέτρο ∠ γωνία','Polar form: size ∠ angle'),text:'r = √('+sq(a)+' + '+sq(b)+') = '+V(vAbs(result))+' · θ = atan2('+V(b)+'; '+V(a)+') = '+V(vArg(result))+u+(deg?'':' rad')});}
- return{formula,rule,steps,result:howResult(result),spaced:true};
+ // every minus the long one (−), as on the display
+ for(const st of steps)for(const k of ['title','text','line'])if(st[k])st[k]=minusSign(st[k]);
+ return{formula:minusSign(formula),rule,steps,result:minusSign(howResult(result)),spaced:true};
 }
 
 // Units and Currency: the factor (or the formula, for temperatures) and the working, from the value typed in.

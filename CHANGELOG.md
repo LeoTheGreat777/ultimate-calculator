@@ -6,6 +6,17 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.39.5 – 2026-11-10
+
+### Changed
+- Calculator: ± makes real brackets you can edit: 15 ± 6 gives (−15)×6, ⌫ takes them apart, and you can type a calculation inside them. ± again takes them off.
+- Calculator: every minus sign has the same size (the display, results, History and the working).
+- The working says "Brackets first" once, then "Inside the brackets" for the next steps in the same brackets.
+
+### Fixed
+- A − typed after an operator shows as 25−(− instead of 25--.
+- No button keeps a highlighted ring after you press it with the mouse and then type on the keyboard.
+
 ## 0.39.4 – 2026-11-10
 
 ### Fixed

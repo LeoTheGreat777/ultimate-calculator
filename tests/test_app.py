@@ -93,7 +93,7 @@ async def desktop(browser, url, lang, theme):
     check(L + 'footer shows v' + VERSION, ('v' + VERSION) in await p.inner_text('.app-footer'))
 
     # calculator basics
-    for keys, want in [('0.1+0.2', '0,3'), ('1/3', '0,3333333333'), ('50+10%', '55'), ('50*10%', '5'), ('2*-3', '-6'),
+    for keys, want in [('0.1+0.2', '0,3'), ('1/3', '0,3333333333'), ('50+10%', '55'), ('50*10%', '5'), ('2*-3', '−6'),
                        ('(2+3)*4', '20'), ('1234.5*2', '2.469'), ('200-15%', '170')]:
         got = await calc(p, keys)
         check(L + f'{keys} = {want}', got == want, got)
@@ -106,7 +106,7 @@ async def desktop(browser, url, lang, theme):
     for keys in ['455', '(455)', '-7']:
         await calc(p, keys)
         await p.keyboard.press('Enter')
-    check(L + '= on a number alone saves no History', await p.evaluate(hist) == [] and await p.evaluate(R) == '-7', await p.evaluate(hist))
+    check(L + '= on a number alone saves no History', await p.evaluate(hist) == [] and await p.evaluate(R) == '−7', await p.evaluate(hist))
     await calc(p, '2*(3+4)')
     await p.keyboard.press('Enter')
     await calc(p, '5%')
@@ -247,16 +247,16 @@ async def desktop(browser, url, lang, theme):
     check(L + '5 then ± shows (−5)', await p.evaluate(R) == '(−5)', await p.evaluate(R))
     await p.keyboard.type('*3')
     await p.keyboard.press('Enter')
-    check(L + '(−5)×3 = -15, shown with brackets above', await p.evaluate(R) == '-15' and await p.evaluate(X) == '(−5)×3',
+    check(L + '(−5)×3 = -15, shown with brackets above', await p.evaluate(R) == '−15' and await p.evaluate(X) == '(−5)×3',
           [await p.evaluate(R), await p.evaluate(X)])
     await p.keyboard.type('+2')
-    check(L + 'a computed negative result carries on plain: -15+2', await p.evaluate(R) == '-15+2', await p.evaluate(R))
+    check(L + 'a computed negative result carries on plain: -15+2', await p.evaluate(R) == '−15+2', await p.evaluate(R))
     await p.keyboard.press('Enter')
     steps = await p.evaluate("howData.steps.map(s=>s.text||s).join(' | ')")
-    check(L + 'explanation step: -15 + 2 = -13', '-15 + 2 = -13' in steps, steps)
+    check(L + 'explanation step: -15 + 2 = -13', '−15 + 2 = −13' in steps, steps)
     await p.keyboard.press('Escape')
     await p.keyboard.type('-5*-3')
-    check(L + 'typed − first: -5×(−3)', await p.evaluate(R) == '-5×(−3)', await p.evaluate(R))
+    check(L + 'typed − first: -5×(−3)', await p.evaluate(R) == '−5×(−3)', await p.evaluate(R))
     await p.keyboard.press('Escape')
     await p.keyboard.type('12*7=')
     await p.keyboard.press('F9')
@@ -267,6 +267,35 @@ async def desktop(browser, url, lang, theme):
     await p.keyboard.press('F9')
     await p.keyboard.type(')')
     check(L + '( 5 ± ) keeps the ± number together', await p.evaluate('[expression,current]') == ['', '−5'], await p.evaluate('[expression,current]'))
+    # ± writes real brackets: a digit after them is multiplied, ± again takes them off, ⌫ takes them apart, a calculation fits inside
+    await p.keyboard.press('Escape')
+    await p.keyboard.type('15')
+    await p.keyboard.press('F9')
+    await p.keyboard.type('6')
+    check(L + '15 ± 6 → (−15)×6', await p.evaluate(R) == '(−15)×6', await p.evaluate(R))
+    await p.keyboard.press('Backspace')
+    await p.keyboard.press('Backspace')
+    await p.keyboard.press('Backspace')
+    check(L + '⌫ takes the ± brackets apart: (−15', await p.evaluate(R) == '(−15', await p.evaluate(R))
+    await p.keyboard.type('+5)')
+    check(L + 'a calculation inside the ± brackets: (−15+5)', await p.evaluate(R) == '(−15+5)', await p.evaluate(R))
+    await p.keyboard.press('Escape')
+    await p.keyboard.type('15')
+    await p.keyboard.press('F9')
+    await p.keyboard.press('F9')
+    check(L + '± twice gives back 15', await p.evaluate('[expression,current]') == ['', '15'], await p.evaluate('[expression,current]'))
+    await p.keyboard.press('Escape')
+    await p.keyboard.type('25-')
+    await p.keyboard.press('F9')
+    check(L + '± after − opens a bracket: 25−(−', await p.evaluate(R) == '25−(−', await p.evaluate(R))
+    await p.keyboard.type('98')
+    await p.keyboard.press('Delete')
+    check(L + 'C then leaves 25−( (never 25--)', await p.evaluate(R) == '25−(', await p.evaluate(R))
+    await p.keyboard.press('Escape')
+    await p.click('#langButton')
+    await p.click('#langButton')
+    await p.keyboard.press('Delete')
+    check(L + 'a top button pressed with the mouse keeps no focus ring', await p.evaluate("!document.activeElement.closest('button')"), await p.evaluate("document.activeElement.id"))
 
     # history
     await calc(p, '7*6')
@@ -655,11 +684,11 @@ async def scientific(browser, url, lang, theme):
         (('1', ',', '5', 'sci:ee', '3', '='), ['1,5×10³', '1.500']),
         (('1', '0', '0', '0', 'sci:log', '='), ['log(1.000)', '3']),
         (('2', 'sci:pi', '='), ['2×π', '6,283185']),
-        (('3', '0', '±', 'sci:sin', '='), ['sin(−30)', '-0,5']),
+        (('3', '0', '±', 'sci:sin', '='), ['sin(−30)', '−0,5']),
         (('2', 'sci:sq', '+', '1', '='), ['2²+1', '5']),
         (('8', 'sci:log2', '='), ['log₂(8)', '3']),
         (('sci:open', '2', '+', '3', 'sci:close', '*', '4', '='), ['(2+3)×4', '20']),
-        (('5', '±key', '+', '2', '='), ['(−5)+2', '-3']),
+        (('5', '±key', '+', '2', '='), ['(−5)+2', '−3']),
     ]
     for seq, want in cases:
         got = await keys(*seq)
@@ -2302,11 +2331,13 @@ async def explanations(browser, url):
     check(L + 'the order rule and a spaced formula', h['f'] == '12 + 7 × 3 − 4 ÷ 8' and h['rule'].replace('\ufe0e', '').startswith('Order: × ÷ → + −'), h)
     h = await how('(2+3)×4')
     check(L + 'brackets first', h['t'][0] == 'Brackets first: add' and h['l'][0] == '[5] × 4', h)
+    h = await how('(25-(-69)+(-34)×17)×7')
+    check(L + '"Brackets first" once, then "Inside the brackets"', h['t'][:3] == ['Brackets first: multiply', 'Inside the brackets: subtract', 'Inside the brackets: add'], h['t'])
     h = await how('sin(30)+2^3+15%')
     check(L + 'functions in degrees, powers written out, percent of the number before',
           h['x'][:2] == ['sin(30°) = 0,5', '2³ = 2 × 2 × 2 = 8'] and h['t'][3] == '15% of 8,5' and h['x'][3] == '8,5 × 15 ÷ 100 = 1,275' and h['r'] == '9,775', h)
     h = await how('-2^2')
-    check(L + 'a minus in front comes last', h['t'] == ['Power', 'The minus in front'] and h['r'] == '-4', h)
+    check(L + 'a minus in front comes last', h['t'] == ['Power', 'The minus in front'] and h['r'] == '−4', h)
     h = await how('1÷3×3')
     check(L + 'a rounded number gets …', h['x'] == ['1 ÷ 3 = 0,3333333333…', '0,3333333333… × 3 = 1'], h)
     h = await how('√(9)+5!')
@@ -2653,14 +2684,14 @@ async def complex_numbers(browser, url):
     await p.keyboard.type(')*(1-')
     await p.click('[data-sci="i"]')
     await p.keyboard.type(')')
-    check(L + 'typed with the i key and the keyboard, shown as 2i', await p.evaluate(R) == '(3+2i)×(1-i)', await p.evaluate(R))
+    check(L + 'typed with the i key and the keyboard, shown as 2i', await p.evaluate(R) == '(3+2i)×(1−i)', await p.evaluate(R))
     check(L + 'while typing, the line under it shows the value in both forms', await p.evaluate("document.querySelector('#resultAlt')?.textContent") == '= 5 − i  ·  5,09902 ∠ -11,309932°')
     await p.keyboard.press('Enter')
     check(L + '(3 + 2i)(1 − i) = 5 − i, with r ∠ θ under it, no button to press', await p.evaluate("[document.querySelector('#result').textContent,document.querySelector('#resultAlt')?.textContent,document.querySelectorAll('.cx-chip').length]") == ['5 − i', '5,09902 ∠ -11,309932°', 0])
     st = await p.evaluate("[howData.formula,howData.steps.map(s=>s.title)]")
     check(L + 'the working multiplies them out (i² = −1), then gives size and angle', st == ['(3 + 2i) × (1 − i)', ['Multiply (i² = −1)', 'Polar form: size ∠ angle']], st)
     st = await p.evaluate("howData.steps[1].text")
-    check(L + 'r = √(5² + (-1)²), θ = atan2(-1; 5)', st == 'r = √(5² + (-1)²) = 5,09902… · θ = atan2(-1; 5) = -11,309932…°', st)
+    check(L + 'r = √(5² + (-1)²), θ = atan2(-1; 5)', st == 'r = √(5² + (−1)²) = 5,09902… · θ = atan2(−1; 5) = −11,309932…°', st)
     await p.keyboard.type('*2')
     check(L + 'carried on whole: (5−i)×2', await p.evaluate(R) == '(5−i)×2', await p.evaluate(R))
     await p.keyboard.press('Enter')
