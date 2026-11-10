@@ -66,7 +66,8 @@ Part of the notes in CLAUDE.md (read that first). Covers numbers.js, calculator.
   exact ones in `CONST_EXACT`) are `⟨id⟩` in the calculation and their symbol on screen (`constPretty`); ⌫ removes one whole.
 - **± and holding keys:** holding ⌫, C or AC clears everything while still held (`HOLD_KEYS`, `clearEverything`; C turns into AC
   while still held and big, like the iPhone's calculator; in the tools C stays C, AC is its own key; in Graph every function), holding − flips the sign (`negate`, Units: `unitKeyInput('negate')`);
-  F9 or Shift + − (`_`) does ± on a keyboard. A tap on − is always minus. A minus made with ± is stored as `−` (U+2212), one typed with
+  On a keyboard holding − does the same (`keyMinusDown` in ui.js: a − waits for its key-up, or the next key, before
+  typing a minus), as do F9 and Shift + − (`_`). A tap on − is always minus. A minus made with ± is stored as `−` (U+2212), one typed with
   the − key as `-`; the maths reads both the same (`tokenize`, `normalizeUnitExpression`). Display (`formatInputDisplay`):
   after an operator any negative number is in brackets, `5×(−25)`; at the start only a ± one is, `(−5)`, a typed one
   stays `-5`. A result turned negative with ± carries on as `(−84)+2` (`resultNegated`). Finished results stay plain.

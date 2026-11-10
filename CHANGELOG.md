@@ -6,6 +6,14 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.39.3 – 2026-11-10
+
+### Changed
+- Holding − on a keyboard changes the sign (±), like holding the − key on screen.
+
+### Fixed
+- A key pressed with the mouse no longer keeps a highlighted ring when you type on the keyboard afterwards.
+
 ## 0.39.2 – 2026-11-10
 
 ### Changed

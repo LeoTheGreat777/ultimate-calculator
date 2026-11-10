@@ -36,6 +36,7 @@ setupHoldKeys();setupPressFeedback();setupTopPress();setupSide();setupFunctions(
  document.addEventListener('click',e=>{if(themeMenuOpen()&&!eventInside(e,'#themeMenu,#themeButton'))closeThemeMenu();if(historyClearConfirm&&!eventInside(e,'#historyClearWrap'))clearHistoryConfirm()});
 $('#clearHistory').addEventListener('click',clearHistoryPress);
 window.addEventListener('keydown',e=>{
+ if(e.key!=='-')keyMinusEnd(true);// a minus still waiting (held − , ui.js) goes in before the next key
  if(themeEditorKeydown(e)||themeMenuKeydown(e)||modesKeydown(e))return;
  if(e.target.closest?.('.fn-search')&&e.key!=='Escape')return;// typing in the functions sheet's search
  // Alt+1…9 jumps to a mode (Alt+← / → are left alone: browsers use them for Back / Forward)
@@ -49,6 +50,8 @@ window.addEventListener('keydown',e=>{
  const nothingOpen=$('#howModal').classList.contains('hidden')&&$('#historyPanel').classList.contains('hidden');
  // ? opens Tips (not while typing in a field)
  if(e.key==='?'&&nothingOpen&&!document.activeElement?.matches('input,textarea')){e.preventDefault();showHelp();return}
+ // − waits: held for half a second it is ± (as holding the − key on screen), else a minus (keyMinusDown, ui.js)
+ if(e.key==='-'&&nothingOpen&&(mode==='calc'||mode==='units'&&!document.activeElement?.matches('select'))){keyMinusDown(e,mode==='calc'?()=>operator('-'):()=>toolKeyInput('-'));return}
  // F9 = ± (as in Windows Calculator); Shift + − (_) too, as laptops often need Fn for F9
  if((e.key==='F9'||e.key==='_')&&(mode==='calc'||mode==='units')){e.preventDefault();if(nothingOpen){if(mode==='calc')negate();else toolKeyInput('negate')}return}
  if(mode==='units'&&nothingOpen&&(e.key==='('||e.key===')')){e.preventDefault();toolKeyInput(e.key);return}
