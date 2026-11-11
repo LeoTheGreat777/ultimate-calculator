@@ -127,26 +127,44 @@ function render(){refreshSide();
 // the a + bi part left out when it is just what was typed (98 + 25i shows only 101,138519 ∠ 14,31°). Real calculations
 // never get the line. #resultAlt sits under #result in the Calculator only (renderTool removes it in other modes).
 function complexTyped(raw){return /i|∠|⟪⟫/.test(String(raw).replace(new RegExp(FN_ALT,'g'),'').replace(/⟨\w+⟩/g,''))}
-function liveValue(raw){
- let s=raw.replace(new RegExp('(?:[+\\-−×÷^(CPm∠]|(?:'+FN_ALT+')\\()+$'),'');if(!s)return null;
+// what is typed, made ready to work out: operators and functions still open at the end left out, open brackets closed
+function liveText(raw){
+ let s=raw.replace(new RegExp('(?:[+\\-−×÷^(CPm∠]|(?:'+FN_ALT+')\\()+$'),'');if(!s)return '';
  const open=(s.match(/\(/g)||[]).length-(s.match(/\)/g)||[]).length;if(open>0)s+=')'.repeat(open);
- try{return evalExpr(tidyParens(s))}catch{return null}
+ return tidyParens(s);
+}
+function liveValue(raw){const s=liveText(raw);if(!s)return null;try{return evalExpr(s)}catch{return null}}
+// The live result: while a real calculation is typed, its value as it stands, without pressing = (like Pixel's
+// calculator). None for a number alone, an error (5 ÷ 0 shows nothing until =) or one too large.
+// PROTOTYPE: ?live=a (a small line under it), b (bigger, Pixel-like, grows into the result on =), c (above it).
+const LIVE_LOOK=(()=>{try{const v=new URLSearchParams(location.search).get('live');return /^[abc]$/.test(v||'')?v:'b'}catch{return 'b'}})();
+function livePreviewText(raw){
+ if(!raw||complexTyped(raw))return '';
+ const s=liveText(raw);if(!s||PLAIN_NUMBER.test(s))return '';
+ let v;try{v=evalExpr(s)}catch{return ''}
+ if(v==null||isCx(v))return '';
+ const f=minusSign(fmt(v));
+ return LIVE_LOOK==='b'?f:'= '+f;
 }
 const plainCx=s=>String(s).replace(/\s/g,'').replace(/−/g,'-');
 function renderResultAlt(raw){
- const r=$('#result');if(!r)return null;
+ const r=$('#result'),d=$('#calculatorDisplay');if(!r)return null;
  let alt=$('#resultAlt');
- let text='';
+ let text='',live=false;
  if(!calcError){
   if(justCalculated){if(isCx(lastResult))text=fmtCx(lastResult,'polar')}
   else if(raw&&complexTyped(raw)){
    const v=liveValue(raw);
    if(v!==null){const rect=fmt(v);text=isCx(v)?(plainCx(rect)===plainCx(formatExpressionDisplay(raw))?'':'= '+rect+'  ·  ')+fmtCx(v,'polar'):'= '+rect}
   }
+  else if(raw&&!justCalculated){text=livePreviewText(raw);live=Boolean(text)}
  }
- if(!text){alt?.remove();$('#calculatorDisplay')?.classList.remove('has-alt');return null}
- if(!alt){alt=document.createElement('div');alt.id='resultAlt';alt.className='result-alt';r.after(alt)}
- alt.textContent=text;$('#calculatorDisplay')?.classList.add('has-alt');
+ d?.classList.remove('live-a','live-b','live-c');d?.classList.toggle('has-live',live);if(live)d?.classList.add('live-'+LIVE_LOOK);
+ if(!text){alt?.remove();d?.classList.remove('has-alt');return null}
+ if(!alt){alt=document.createElement('div');alt.id='resultAlt';alt.className='result-alt'}
+ if(live&&LIVE_LOOK==='c'){if(alt.nextElementSibling!==r)r.before(alt)}else if(r.nextElementSibling!==alt)r.after(alt);
+ alt.classList.toggle('live-result',live);
+ alt.textContent=text;d?.classList.toggle('has-alt',!live);
  return alt;
 }
 function clearAll(){caretTail='';caretOn=false;carry=null;resultNegated=false;expression='';current='';currentIsPercent=false;justCalculated=false;lastExpression='';lastResult=null;lastOperation=null;resetHow();render()}
@@ -296,9 +314,14 @@ function equals(){
  if(/[()]/.test(full)){full=tidyParens(full);expression=full;current=''}// close what is open, drop brackets that change nothing
  if(!full||OP_OPEN_END.test(full)){back();return}
  if(PLAIN_NUMBER.test(full)){if(full!==was[0]+was[1]+was[3]){expression='';current=full;currentIsPercent=false}else[expression,current,currentIsPercent,caretTail,caretOn]=was;render();return}// a number alone is no calculation: nothing to save (brackets round it still go)
- resetHow();
- try{const value=evalExpr(full);lastExpression=full;lastShown=formatExpressionDisplay(full);lastResult=value;lastOperation=parseLastOperation(full);justCalculated=true;resultNegated=false;currentIsPercent=false;howData=explanationForExpression(full,value)||{formula:formatExpressionDisplay(full),steps:[`${formatExpressionDisplay(full)} = ${fmt(value)}`],result:howResult(value)};saveHistory({expression:full,result:value,how:howData});render()}
+ resetHow();const hadLive=$('#calculatorDisplay')?.classList.contains('has-live');
+ try{const value=evalExpr(full);lastExpression=full;lastShown=formatExpressionDisplay(full);lastResult=value;lastOperation=parseLastOperation(full);justCalculated=true;resultNegated=false;currentIsPercent=false;howData=explanationForExpression(full,value)||{formula:formatExpressionDisplay(full),steps:[`${formatExpressionDisplay(full)} = ${fmt(value)}`],result:howResult(value)};saveHistory({expression:full,result:value,how:howData});render();if(hadLive)liveGrow()}
  catch(e){calcError=calcErrorKind(e);render()}
+}
+// on =, the live result grows into the result (look b)
+function liveGrow(){
+ const r=$('#result');if(LIVE_LOOK!=='b'||!r?.animate||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+ r.style.transformOrigin='100% 100%';r.animate([{transform:'scale(.55)',opacity:.55},{transform:'none',opacity:1}],{duration:200,easing:'cubic-bezier(.2,.7,.3,1)'});
 }
 // ---------- Scientific ----------
 // Basic or Scientific is a view of the same calculator (the switch on the display, saved as uc-sci): the same

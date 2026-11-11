@@ -2668,6 +2668,43 @@ async def more_functions(browser, url):
     await p.context.close()
 
 
+async def live_result(browser, url):
+    """While a calculation is typed its result shows under it, without =; = still does everything it did."""
+    for phone in (False, True):
+        L = 'live result ' + ('phone' if phone else 'desktop') + ': '
+        p = await new_page(browser, url, phone=phone)
+        live = "[document.querySelector('#result').textContent,document.querySelector('#resultAlt')?.textContent??null]"
+        await p.keyboard.type('125*8+36')
+        check(L + 'shows the result as it is typed', await p.evaluate(live) == ['125×8+36', '1.036'], await p.evaluate(live))
+        check(L + 'typing saves nothing to History', await p.evaluate("JSON.parse(store.get('uc-history')||'[]').length") == 0)
+        await p.keyboard.type('+')
+        check(L + 'an operator at the end keeps the last result', await p.evaluate(live) == ['125×8+36+', '1.036'])
+        await p.keyboard.press('Backspace')
+        await p.keyboard.press('Enter')
+        st = await p.evaluate("[document.querySelector('#expression').textContent,document.querySelector('#result').textContent,document.querySelector('#resultAlt')?.textContent??null,document.querySelector('#howButton').classList.contains('hidden'),JSON.parse(store.get('uc-history')||'[]').length]")
+        check(L + '= works as before: calculation above, result, ?, History', st == ['125×8+36', '1.036', None, False, 1], st)
+        await p.keyboard.type('+5')
+        check(L + 'carrying on from a result', await p.evaluate(live) == ['1.036+5', '1.041'], await p.evaluate(live))
+        for keys, why in (('7', 'a number alone'), ('5/0', 'an error (shown only on =)'), ('(5)', 'a number in brackets'), ('2*', 'one number and an operator'), ('9^99999', 'too large')):
+            await p.keyboard.press('Escape')
+            await p.keyboard.type(keys)
+            check(L + 'nothing for ' + why, await p.evaluate("document.querySelector('#resultAlt')") is None, await p.evaluate(live))
+        await p.keyboard.press('Escape')
+        await p.keyboard.type('(2+3')
+        check(L + 'open brackets count as closed', await p.evaluate(live) == ['(2+3', '5'])
+        await p.keyboard.type(')/3')
+        check(L + 'Greek number format, 6 decimals', await p.evaluate(live) == ['(2+3)÷3', '1,666667'])
+        await p.evaluate("setLanguage('el')")
+        check(L + 'stays after a language switch', await p.evaluate(live) == ['(2+3)÷3', '1,666667'])
+        await p.evaluate("switchMode('units')")
+        check(L + 'only in the Calculator', await p.evaluate("document.querySelector('#resultAlt')") is None)
+        await p.evaluate("switchMode('calc')")
+        await p.keyboard.type('1+1')
+        check(L + 'back in the Calculator it works again', await p.evaluate(live) == ['1+1', '2'], await p.evaluate(live))
+        check(L + 'no page errors', not p.errors, p.errors)
+        await p.context.close()
+
+
 async def complex_numbers(browser, url):
     """Complex numbers: i, r∠θ, exact arithmetic, functions, a+bi / r∠θ, carrying on, History, memory, the working."""
     L = '[complex] '
@@ -2679,7 +2716,7 @@ async def complex_numbers(browser, url):
     check(L + 'arithmetic exact, functions, √ and ln of negatives, polar entry', vals == want, list(zip(vals, want)))
     await p.evaluate("toggleSci()")
     await p.keyboard.type('98+25')
-    check(L + 'a real calculation has no second line', await p.evaluate("document.querySelector('#resultAlt')") is None)
+    check(L + 'a real calculation shows only its live result', await p.evaluate("[document.querySelector('#resultAlt')?.textContent,document.querySelector('#calculatorDisplay').classList.contains('has-alt')]") == ['123', False])
     await p.keyboard.type('i')
     check(L + 'pressing i shows the polar form at once', await p.evaluate("[document.querySelector('#result').textContent,document.querySelector('#resultAlt')?.textContent]") == ['98+25i', '101,138519 ∠ 14,311041°'])
     await p.keyboard.press('Enter')
@@ -3191,7 +3228,7 @@ async def big_screen_dialogs(browser, url):
 # only just fits there fits on the phone too. scroll: the tabs that may scroll there (the page scrolling is the last resort
 # of fitLayout; nothing may overlap or be cut even then); '*' every tab.
 PHONES = [
-    ('iPhone SE', 375, 553, False, {'sci', 'sci complex', 'sci 2nd'}),  # Scientific's ten rows of keys don't fit
+    ('iPhone SE', 375, 553, False, {'sci', 'sci complex', 'sci 2nd', 'sci live'}),  # Scientific's ten rows of keys don't fit
     ('iPhone 13 mini', 375, 629, False, set()),
     ('iPhone 16', 393, 659, False, set()),
     ('iPhone 17 Pro', 402, 681, False, set()),
@@ -3242,6 +3279,8 @@ PHONE_TABS = [
     ('sci', _sci + "expression='';current='';render()"),
     ('sci complex', _sci + "expression='(9+9×i)×5';current='';equals()"),
     ('sci 2nd', _sci + "sciKey('2nd')"),
+    ('calc live', "if(sciMode)toggleSci();switchMode('calc');clearAll();expression='1234567.89×12+';current='987654';render()"),
+    ('sci live', _sci + "clearAll();expression='1234567.89×12+';current='987654';render()"),
     ('units', _tool('units')), ('currency', _tool('currency')), ('graph', _tool('graph')),
     ('vat', _tool('vat') + _fill(('amount', '1234567,89'))),
     ('pct:of', _tool('pct', 'of') + _fill(('pctOfRate', '12,5'), ('pctOfNum', '1234567,89'))),
@@ -3616,6 +3655,7 @@ async def main():
         await memory_keys(browser, url)
         await no_magnifier(browser, url)
         await more_functions(browser, url)
+        await live_result(browser, url)
         await complex_numbers(browser, url)
         await numbers_equations(browser, url)
         await statistics(browser, url)

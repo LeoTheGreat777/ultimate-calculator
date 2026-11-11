@@ -81,6 +81,21 @@ input[type=checkbox],input[type=radio],input[type=color],input[readonly],.key-ti
 .calculator-card.compact-display .display-wrap.has-alt.calculated .expression-row,.calculator-card.compact-display .display-wrap.has-alt.calculated .expression{height:28px;line-height:28px;font-size:19px}
 .calculator-card.compact-display .display-wrap.has-alt .result{font-size:max(24px,min(clamp(34px,10vw,52px),calc((100cqh - 48px) / 1.05)))}
 .calculator-card.compact-display .result-alt{font-size:16px;line-height:18px}
+/* the live result while a calculation is typed (calculator.js livePreviewText); PROTOTYPE looks a, b, c */
+.result-alt.live-result{padding-right:3px}
+.display-wrap.live-b .result-alt{font-size:clamp(28px,8.5vw,42px);line-height:1.15;letter-spacing:-.035em;padding-top:2px}
+.display-wrap.live-c .result-alt{font-size:22px;line-height:30px}
+/* the calculation never rises into the f(x) chip at the display's top (30px under the padding): its size is capped by the room left */
+.display-wrap.has-live{container-type:size;--live-h:24px}
+.display-wrap.live-b{--live-h:calc(clamp(28px,8.5vw,42px) * 1.15 + 2px)}
+.display-wrap.live-c{--live-h:30px}
+.display-wrap.has-live .result{font-size:min(clamp(46px,14vw,76px),calc((100cqh - 32px - var(--live-h)) / 1.05))}
+.calculator-card.compact-display .display-wrap.has-live{--live-h:18px}
+.calculator-card.compact-display .display-wrap.live-b{--live-h:28px}
+.calculator-card.compact-display .display-wrap.live-c{--live-h:24px}
+.calculator-card.compact-display .display-wrap.live-b .result-alt{font-size:24px;line-height:28px}
+.calculator-card.compact-display .display-wrap.live-c .result-alt{font-size:19px;line-height:24px}
+.calculator-card.compact-display .display-wrap.has-live .result{font-size:max(24px,min(clamp(34px,10vw,52px),calc((100cqh - 26px - var(--live-h)) / 1.05)))}
 .keypad{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .key{border:0;border-radius:14px;height:68px;min-height:68px;background:var(--key);color:var(--text);font-size:22px;font-weight:450;cursor:pointer;transition:background .1s}
 .key:focus{outline:none;box-shadow:none}
@@ -1062,7 +1077,7 @@ html.tablet .calculator-card .keypad.sci .key.sci-key:not(.mem-key):not(.long){f
 html.tablet .calculator-card .keypad.sci .key.sci-key.mem-key{font-size:min(19px,calc(var(--k) * .32))}
 html.tablet .display-wrap .result{font-size:clamp(46px,11vw,96px)}
 /* Phones sideways, like upright: a big result, bigger digits on the keys, and with round keys a wider gap and lighter digits */
-html.landscape .display-wrap:not(.tool-display):not(.has-alt) .result{font-size:clamp(40px,16vh,96px)}
+html.landscape .display-wrap:not(.tool-display):not(.has-alt):not(.has-live) .result{font-size:clamp(40px,16vh,96px)}
 html.landscape .calculator-card:not(.graph-mode) .keypad:not(.sci) .key{font-size:clamp(20px,calc(var(--k) * .36),30px)}
 /* A tablet sideways (html.land-tablet, layout.js) has the phones' sideways layout with bigger keys: digits and gaps grow with them */
 html.land-tablet.landscape.frameless .calculator-card:not(.graph-mode) .keypad:not(.sci){column-gap:16px;row-gap:12px}
@@ -1074,3 +1089,4 @@ html.landscape.frameless .calculator-card:not(.graph-mode) .keypad:not(.sci) .ke
 html.tablet #calculatorDisplay.unit-display .unit-rows,html.landscape #calculatorDisplay.unit-display .unit-rows{margin-top:auto}/* Units: the two values just above the keys, the category at the top */
 html.tablet .calculator-card .tool-keypad button{font-size:clamp(20px,calc(var(--k) * .34),28px)}
 html.land-tablet #keypad{align-self:end}/* a tablet sideways: the keys at the bottom, level with the result, when they don't fill the height (Scientific) */
+html.tablet .display-wrap.has-live .result{font-size:min(clamp(46px,11vw,96px),calc((100cqh - 32px - var(--live-h)) / 1.05))}
