@@ -2676,6 +2676,8 @@ async def live_result(browser, url):
         live = "[document.querySelector('#result').textContent,document.querySelector('#resultAlt')?.textContent??null]"
         await p.keyboard.type('125*8+36')
         check(L + 'shows the result as it is typed', await p.evaluate(live) == ['125×8+36', '1.036'], await p.evaluate(live))
+        above = await p.evaluate("(()=>{const a=document.querySelector('#resultAlt').getBoundingClientRect(),r=document.querySelector('#result').getBoundingClientRect(),fa=parseFloat(getComputedStyle(document.querySelector('#resultAlt')).fontSize),fr=parseFloat(getComputedStyle(document.querySelector('#result')).fontSize);return a.bottom<=r.top+1&&fa<fr})()")
+        check(L + 'above the calculation and smaller', above)
         check(L + 'typing saves nothing to History', await p.evaluate("JSON.parse(store.get('uc-history')||'[]').length") == 0)
         await p.keyboard.type('+')
         check(L + 'an operator at the end keeps the last result', await p.evaluate(live) == ['125×8+36+', '1.036'])

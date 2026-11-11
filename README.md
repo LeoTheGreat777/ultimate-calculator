@@ -8,6 +8,7 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 
 ### Calculator
 - Standard arithmetic with operator precedence and brackets
+- The result shows while you type, before pressing =
 - Calculator-style percentages
 - Change sign (±): hold − on the keypad, or hold −, F9 or Shift + − on a keyboard
 - Decimal and negative number support
