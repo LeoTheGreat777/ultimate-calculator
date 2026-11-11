@@ -25,6 +25,15 @@ Part of the notes in CLAUDE.md (read that first). Covers numbers.js, calculator.
   Units shows the reason on the other value (`unitError`). Never put "Error" into `current`.
 - **Carry:** continuing after a result uses its full-precision value (`carryText`, `carry`), but the
   screen shows it rounded via `formatExpressionDisplay`. Use that function to display expressions.
+- **The live result** (`livePreviewText`, like Pixel's calculator): while a real calculation is typed, its value as it
+  stands shows in `#resultAlt` *above* the calculation, grey (`--muted`), about half its size, no = sign; `.has-live` on the
+  display. Worked out from `liveText` (operators and open functions at the end left out, open brackets closed, `tidyParens`)
+  on the whole calculation (`typedText`, also after the cursor). None for a number alone (`PLAIN_NUMBER`, also (5) and a
+  carried result with an operator), an error or a value too large/small (5 ÷ 0 shows nothing until =), and never in other
+  modes. Formatted with `fmt` (6 decimals). It saves nothing; = works as before (calculation above, ?, History) and the
+  result grows from where the live result stood (`liveGrow`, none with reduced motion). The calculation's size is capped by
+  the room left under the f(x) chip and the live line (`container-type:size`, `--live-h`; compact displays have their own
+  sizes). A calculation with i or ∠ keeps the complex line under it instead.
 - **= with no calculation** (`equals`): a number alone (`PLAIN_NUMBER`, also `(455)` once its brackets go) saves
   nothing to History and changes nothing. = again after a result repeats the last operation (2 + 3 = 5, = 8,
   `repeatEquals`); with none to repeat (2 × (3 + 4), 5 %, a result after ±) it does nothing. A held Enter or = key
@@ -101,7 +110,7 @@ Part of the notes in CLAUDE.md (read that first). Covers numbers.js, calculator.
   (`vToStore`/`vFromStore`). `fmt` shows complex values as a+bi; the Calculator shows r∠θ under it at the same time, no button
   (`renderResultAlt`, `#resultAlt`, `.has-alt` makes the result a little smaller): under a complex result, and while a
   calculation with i, ∠ or a carried complex is typed its value as it stands (`liveValue`; "= 5 − i  ·  5,09902 ∠ …", the
-  a+bi part left out when it is what was typed). Real calculations never get the line; other modes remove it (`renderTool`).
+  a+bi part left out when it is what was typed). A real calculation gets the live result above it instead (below); other modes remove the line (`renderTool`).
   Room for it on short phones (Pixel 9a in Scientific): Scientific's display never goes below 116px (94px on the smallest
   phones, `FIT.sci`/`FIT.tight.sci`; `compact` there turns on the compact sizes too), and in a compact display a finished
   complex result gets a lower calculation row (28px) and its size is capped by the display's height (`container-type:size`,

@@ -6,6 +6,13 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.41.0 – 2026-11-11
+
+### Added
+- Calculator: the result shows while you type, without pressing =, in grey above the calculation (125 × 8 + 36 shows
+  1.036 as you type it). Nothing is saved until =, which works as before; the result then grows into place. Not shown
+  for a number alone or a calculation that can't be worked out (5 ÷ 0 shows its message on =).
+
 ## 0.40.1 – 2026-11-11
 
 ### Fixed
