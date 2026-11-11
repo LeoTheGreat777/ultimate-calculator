@@ -93,13 +93,29 @@ async def desktop(browser, url, lang, theme):
     check(L + 'footer shows v' + VERSION, ('v' + VERSION) in await p.inner_text('.app-footer'))
 
     # calculator basics
-    for keys, want in [('0.1+0.2', '0,3'), ('1/3', '0,3333333333'), ('50+10%', '55'), ('50*10%', '5'), ('2*-3', '-6'),
+    for keys, want in [('0.1+0.2', '0,3'), ('1/3', '0,3333333333'), ('50+10%', '55'), ('50*10%', '5'), ('2*-3', '−6'),
                        ('(2+3)*4', '20'), ('1234.5*2', '2.469'), ('200-15%', '170')]:
         got = await calc(p, keys)
         check(L + f'{keys} = {want}', got == want, got)
     await calc(p, '2+3')
     await p.keyboard.press('Enter')
     check(L + '2+3== gives 8', await p.evaluate(R) == '8')
+    # = with no calculation saves nothing: a number alone, = again with nothing to repeat, Enter held down
+    hist = "historyItems().map(x=>x.expression)"
+    await p.evaluate("store.set('uc-history','[]');clearAll()")
+    for keys in ['455', '(455)', '-7']:
+        await calc(p, keys)
+        await p.keyboard.press('Enter')
+    check(L + '= on a number alone saves no History', await p.evaluate(hist) == [] and await p.evaluate(R) == '−7', await p.evaluate(hist))
+    await calc(p, '2*(3+4)')
+    await p.keyboard.press('Enter')
+    await calc(p, '5%')
+    await p.keyboard.press('Enter')
+    check(L + '= again with nothing to repeat saves it once', await p.evaluate(hist) == ['5%', '2×(3+4)'], await p.evaluate(hist))
+    await p.evaluate("store.set('uc-history','[]');clearAll()")
+    await p.keyboard.type('2+3')
+    await p.evaluate("for(let i=0;i<8;i++)document.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',repeat:i>0,bubbles:true,cancelable:true}))")
+    check(L + 'holding Enter calculates once', await p.evaluate(hist) == ['2+3'], await p.evaluate(hist))
     await calc(p, '1/3')
     await p.keyboard.type('*3')
     await p.keyboard.press('Enter')
@@ -123,6 +139,23 @@ async def desktop(browser, url, lang, theme):
     await p.keyboard.type('3')
     await p.keyboard.press('F9')
     check(L + 'F9 changes the sign: 5+(−3)', await p.evaluate(R) == '5+(−3)', await p.evaluate(R))
+    await p.keyboard.press('Shift+Minus')
+    check(L + 'Shift + − changes it back: 5+3', await p.evaluate(R) == '5+3', await p.evaluate(R))
+    await p.keyboard.down('-')
+    await p.wait_for_timeout(650)
+    await p.keyboard.up('-')
+    check(L + 'holding − on the keyboard changes the sign: 5+(−3)', await p.evaluate(R) == '5+(−3)', await p.evaluate(R))
+    await p.keyboard.down('-')
+    await p.keyboard.down('2')
+    await p.keyboard.up('-')
+    await p.keyboard.up('2')
+    check(L + 'a quick − then the next key types both in order: 5+(−3)−2', (await p.evaluate(R)).replace('-', '−') == '5+(−3)−2', await p.evaluate(R))
+    await p.keyboard.press('Escape')
+    await p.click('#clearButton')
+    await p.keyboard.type('7')
+    check(L + 'a key pressed with the mouse does not keep the focus (no ring when typing after)',
+          await p.evaluate("!document.activeElement.closest('.key')"), await p.evaluate("document.activeElement.className"))
+    await p.keyboard.press('F9')
     await p.keyboard.press('Escape')
     labels = []
     for k in '5+5':
@@ -160,6 +193,12 @@ async def desktop(browser, url, lang, theme):
         await p.keyboard.press('ArrowRight')
     await p.keyboard.type(')')
     check(L + 'a bracket added at the start and one in the middle: (5+5)×2', await p.evaluate(R) == '(5+5)×2', await p.evaluate(R))
+    await p.keyboard.press('End')
+    check(L + 'End hides the cursor again', await p.evaluate(caret) == ['(5+5)×2', False], await p.evaluate(caret))
+    await p.keyboard.press('ArrowLeft')
+    await p.keyboard.press('ArrowRight')
+    check(L + '→ back to the end hides the cursor', await p.evaluate(caret) == ['(5+5)×2', False], await p.evaluate(caret))
+    await p.keyboard.press('ArrowLeft')
     await p.keyboard.press('Enter')
     check(L + 'with the cursor in the middle = works out everything: 20', await p.evaluate(R) == '20' and await p.evaluate(X) == '(5+5)×2'
           and not await p.evaluate("!!document.querySelector('#result .caret')"), [await p.evaluate(R), await p.evaluate(X)])
@@ -181,6 +220,12 @@ async def desktop(browser, url, lang, theme):
     await p.mouse.click(x[0] + 1, x[1])
     await p.keyboard.type('9')
     check(L + 'a tap puts the cursor there: 1.234|+567, then 9 → 12.349+567', await p.evaluate(R) == '12.349+567', await p.evaluate(R))
+    x2 = await p.evaluate("(()=>{const b=document.querySelector('#result').getBoundingClientRect();return [b.right-2,b.top+b.height/2]})()")
+    await p.mouse.click(x2[0], x2[1])
+    check(L + 'a tap at the end hides the cursor', await p.evaluate(caret) == ['12.349+567', False], await p.evaluate(caret))
+    x = await p.evaluate("""(()=>{const el=document.querySelector('#result'),n=el.firstChild,i=el.textContent.indexOf('+'),r=document.createRange();
+        r.setStart(n,i);r.setEnd(n,i+1);const b=r.getBoundingClientRect();return [b.left,b.top+b.height/2]})()""")
+    await p.mouse.click(x[0] + 1, x[1])
     await p.keyboard.press('Backspace')
     await p.keyboard.press('Backspace')
     check(L + '⌫ deletes before the cursor: 123+567', await p.evaluate(R) == '123+567', await p.evaluate(R))
@@ -202,16 +247,16 @@ async def desktop(browser, url, lang, theme):
     check(L + '5 then ± shows (−5)', await p.evaluate(R) == '(−5)', await p.evaluate(R))
     await p.keyboard.type('*3')
     await p.keyboard.press('Enter')
-    check(L + '(−5)×3 = -15, shown with brackets above', await p.evaluate(R) == '-15' and await p.evaluate(X) == '(−5)×3',
+    check(L + '(−5)×3 = -15, shown with brackets above', await p.evaluate(R) == '−15' and await p.evaluate(X) == '(−5)×3',
           [await p.evaluate(R), await p.evaluate(X)])
     await p.keyboard.type('+2')
-    check(L + 'a computed negative result carries on plain: -15+2', await p.evaluate(R) == '-15+2', await p.evaluate(R))
+    check(L + 'a computed negative result carries on plain: -15+2', await p.evaluate(R) == '−15+2', await p.evaluate(R))
     await p.keyboard.press('Enter')
     steps = await p.evaluate("howData.steps.map(s=>s.text||s).join(' | ')")
-    check(L + 'explanation step: -15 + 2 = -13', '-15 + 2 = -13' in steps, steps)
+    check(L + 'explanation step: -15 + 2 = -13', '−15 + 2 = −13' in steps, steps)
     await p.keyboard.press('Escape')
     await p.keyboard.type('-5*-3')
-    check(L + 'typed − first: -5×(−3)', await p.evaluate(R) == '-5×(−3)', await p.evaluate(R))
+    check(L + 'typed − first: -5×(−3)', await p.evaluate(R) == '−5×(−3)', await p.evaluate(R))
     await p.keyboard.press('Escape')
     await p.keyboard.type('12*7=')
     await p.keyboard.press('F9')
@@ -222,6 +267,35 @@ async def desktop(browser, url, lang, theme):
     await p.keyboard.press('F9')
     await p.keyboard.type(')')
     check(L + '( 5 ± ) keeps the ± number together', await p.evaluate('[expression,current]') == ['', '−5'], await p.evaluate('[expression,current]'))
+    # ± writes real brackets: a digit after them is multiplied, ± again takes them off, ⌫ takes them apart, a calculation fits inside
+    await p.keyboard.press('Escape')
+    await p.keyboard.type('15')
+    await p.keyboard.press('F9')
+    await p.keyboard.type('6')
+    check(L + '15 ± 6 → (−15)×6', await p.evaluate(R) == '(−15)×6', await p.evaluate(R))
+    await p.keyboard.press('Backspace')
+    await p.keyboard.press('Backspace')
+    await p.keyboard.press('Backspace')
+    check(L + '⌫ takes the ± brackets apart: (−15', await p.evaluate(R) == '(−15', await p.evaluate(R))
+    await p.keyboard.type('+5)')
+    check(L + 'a calculation inside the ± brackets: (−15+5)', await p.evaluate(R) == '(−15+5)', await p.evaluate(R))
+    await p.keyboard.press('Escape')
+    await p.keyboard.type('15')
+    await p.keyboard.press('F9')
+    await p.keyboard.press('F9')
+    check(L + '± twice gives back 15', await p.evaluate('[expression,current]') == ['', '15'], await p.evaluate('[expression,current]'))
+    await p.keyboard.press('Escape')
+    await p.keyboard.type('25-')
+    await p.keyboard.press('F9')
+    check(L + '± after − opens a bracket: 25−(−', await p.evaluate(R) == '25−(−', await p.evaluate(R))
+    await p.keyboard.type('98')
+    await p.keyboard.press('Delete')
+    check(L + 'C then leaves 25−( (never 25--)', await p.evaluate(R) == '25−(', await p.evaluate(R))
+    await p.keyboard.press('Escape')
+    await p.click('#langButton')
+    await p.click('#langButton')
+    await p.keyboard.press('Delete')
+    check(L + 'a top button pressed with the mouse keeps no focus ring', await p.evaluate("!document.activeElement.closest('button')"), await p.evaluate("document.activeElement.id"))
 
     # history
     await calc(p, '7*6')
@@ -610,11 +684,11 @@ async def scientific(browser, url, lang, theme):
         (('1', ',', '5', 'sci:ee', '3', '='), ['1,5×10³', '1.500']),
         (('1', '0', '0', '0', 'sci:log', '='), ['log(1.000)', '3']),
         (('2', 'sci:pi', '='), ['2×π', '6,283185']),
-        (('3', '0', '±', 'sci:sin', '='), ['sin(−30)', '-0,5']),
+        (('3', '0', '±', 'sci:sin', '='), ['sin(−30)', '−0,5']),
         (('2', 'sci:sq', '+', '1', '='), ['2²+1', '5']),
         (('8', 'sci:log2', '='), ['log₂(8)', '3']),
         (('sci:open', '2', '+', '3', 'sci:close', '*', '4', '='), ['(2+3)×4', '20']),
-        (('5', '±key', '+', '2', '='), ['(−5)+2', '-3']),
+        (('5', '±key', '+', '2', '='), ['(−5)+2', '−3']),
     ]
     for seq, want in cases:
         got = await keys(*seq)
@@ -766,7 +840,7 @@ async def phone(browser, url, lang, theme, size):
         await p.tap(f'.key[data-value="{key}"]')
     await p.tap('.key[data-action="equals"]')
     check(L + 'keypad works', await p.evaluate(R) == '8')
-    for m in ['calc', 'sci', 'units', 'currency', 'graph', 'vat', 'pct', 'tip', 'loan', 'savings', 'dates', 'fuel', 'energy', 'kwh', 'net', 'prog', 'numbers', 'factors', 'equation', 'sys2', 'stats']:
+    for m in ['calc', 'sci', 'units', 'currency', 'graph', 'vat', 'pct', 'tip', 'loan', 'savings', 'dates', 'fuel', 'energy', 'kwh', 'net', 'transfer', 'prog', 'numbers', 'factors', 'equation', 'sys2', 'stats']:
         # 'sci' is the Calculator with the scientific keys on
         # 'tip' is Percent's tip, the kind with the most fields
         await p.evaluate("switchMode('calc');if(!sciMode)toggleSci()" if m == 'sci' else "switchMode('pct');setToolKind('pct','tip')" if m == 'tip'
@@ -776,7 +850,8 @@ async def phone(browser, url, lang, theme, size):
                          else "switchMode('equation');setToolKind('equation','sys2')" if m == 'sys2'
                          else "switchMode('prog');progHex.value='DEADBEEFCAFE';progHex.dispatchEvent(new Event('input',{bubbles:true}))" if m == 'prog'
                          else "switchMode('stats');for(const v of ['12','1234,75','-3','15,5','9']){statX.value=v;statX.dispatchEvent(new Event('input',{bubbles:true}));statAdd()}" if m == 'stats'
-                         else "switchMode('net');setToolKind('net','subnet');for(const[k,v] of [['netIp','10.0.0.5'],['netPrefix','16']]){const i=document.getElementById(k);i.value=v;i.dispatchEvent(new Event('input',{bubbles:true}))}" if m == 'net' else f"switchMode('{m}')")
+                         else "switchMode('net');setToolKind('net','subnet');for(const[k,v] of [['netIp','10.0.0.5'],['netPrefix','16']]){const i=document.getElementById(k);i.value=v;i.dispatchEvent(new Event('input',{bubbles:true}))}" if m == 'net'
+                         else "switchMode('transfer');setToolKind('transfer','time');for(const[k,v] of [['xfSize','1250'],['xfSpeed','1000'],['xfLoss','10']]){const i=document.getElementById(k);i.value=v;i.dispatchEvent(new Event('input',{bubbles:true}))}" if m == 'transfer' else f"switchMode('{m}')")
         await p.wait_for_timeout(200)
         # compared with the real screen size: a phone browser widens the page to fit content that is too wide
         fits = await p.evaluate("""([vw,vh])=>{const scroll=document.documentElement.classList.contains('page-scroll');
@@ -1045,7 +1120,7 @@ async def own_themes(browser, url):
     await p.click('[data-te-row="accent"] [data-te-colour="#a3e635"]')
     await p.mouse.click(400, 300)  # outside the panel
     st = await p.evaluate("[themeEditorOpen(),theme,localStorage.getItem('uc-theme'),document.documentElement.dataset.theme,getComputedStyle(document.body).backgroundColor]")
-    check(L + 'a tap outside closes it and keeps the own theme', st == [False, 'custom-dark', 'custom-dark', 'custom-dark', 'rgb(28, 16, 48)'], st)
+    check(L + 'a tap outside closes it and keeps the own theme', st == [False, 'custom-dark', 'custom-dark', 'custom-dark', 'rgb(36, 25, 54)'], st)  # the page is the card's colour (no card frame)
     check(L + 'Recent keeps at most 8, newest first', await p.evaluate("themeRecent.dark.length<=8&&themeRecent.dark[0].bg==='#1c1030'"))
     accent = await p.evaluate(var % '--accent')
     await p.reload()
@@ -1321,7 +1396,8 @@ async def screen_reader(browser, url):
     names = "Object.fromEntries([...document.querySelectorAll('#keypad button')].map(b=>[b.textContent.trim(),b.getAttribute('aria-label')]))"
     got = await p.evaluate(names)
     check(L + 'calculator: + − × ÷ = % , have names', [got.get(k) for k in ['+', '−', '×', '÷', '=', '%', ',']] == ['Plus', 'Minus', 'Times', 'Divided by', 'Equals', 'Percent', 'Decimal comma'], got)
-    check(L + 'calculator: ⌫ keeps its own name', got.get('⌫') == 'Delete', got.get('⌫'))
+    back = await p.evaluate("document.querySelector('#keypad [data-action=backspace]').getAttribute('aria-label')")
+    check(L + 'calculator: ⌫ keeps its own name', back == 'Delete', back)
     check(L + 'language button says the language', await p.evaluate("langButton.getAttribute('aria-label')") == 'Language: English')
     await p.evaluate("setLanguage('el')")
     await p.wait_for_timeout(600)
@@ -1356,6 +1432,7 @@ async def upright_small_phones(browser, url):
     fill = {'vat': [['amount', '1234567,89']], 'pct': [['pctOfRate', '12,5'], ['pctOfNum', '1234567,89'], ['pctPrice', '1250'], ['pctOff', '25']], 'fuel': [['fuelD', '1250'], ['fuelC', '6,5'], ['fuelP', '1,85']],
             'energy': [['energyP', '2000'], ['energyH', '3'], ['energyD', '30'], ['energyR', '0,15'], ['energyK', '1234567,89']], 'loan': [['loanAmount', '250000'], ['loanRate', '4'], ['loanYears', '30']],
             'net': [['netIp', '192.168.100.100'], ['netPrefix', '26']], 'dates': [['dateTo', '2027-03-15']],
+            'transfer': [['xfSize', '1250'], ['xfSpeed', '1000'], ['xfTime', '90'], ['xfLoss', '10']],
             'numbers': [['numA', '123456789012'], ['numB', '987654321'], ['numC', '360'], ['numN', '600851475143']],
             'prog': [['progHex', 'DEADBEEFCAFE']],
             'equation': [['eqA', '1'], ['eqB', '2'], ['eqC', '5'], ['sxA1', '2'], ['sxB1', '1'], ['sxC1', '5'], ['sxA2', '1'], ['sxB2', '-1'], ['sxC2', '1']]}
@@ -1373,7 +1450,7 @@ async def upright_small_phones(browser, url):
             bad = []
             tabs = [('calc', None), ('units', None), ('currency', None), ('vat', None), ('pct', 'of'), ('pct', 'discount'), ('pct', 'tip'), ('loan', 'loan'),
                     ('loan', 'payoff'), ('loan', 'savings'), ('dates', 'between'), ('dates', 'add'), ('fuel', None), ('energy', 'device'), ('energy', 'kwh'), ('net', 'subnet'),
-                    ('net', 'hosts'), ('numbers', 'gcd'), ('numbers', 'factors'), ('equation', 'quad'), ('equation', 'sys2'), ('stats', None), ('prog', None)]
+                    ('net', 'hosts'), ('transfer', 'time'), ('transfer', 'size'), ('transfer', 'speed'), ('numbers', 'gcd'), ('numbers', 'factors'), ('equation', 'quad'), ('equation', 'sys2'), ('stats', None), ('prog', None)]
             if w >= 360:
                 tabs.append(('sci', None))
             for m, kind in tabs:
@@ -1450,8 +1527,10 @@ async def more_decimals(browser, url):
         await p.evaluate("copyResult()")
         await p.wait_for_timeout(150)
         clip = await p.evaluate("navigator.clipboard.readText()")
-        mid = '17.636.684,142857' if touch else '17.636.684,14285714'
-        check(f'[decimals {w}x{h}] up to 10 decimals when they fit, else fewer', got == ['0,1428571429', mid, '0,5'], got)
+        # 6 decimals, or 8 where the column leaves room for them (the font decides: GitHub's runner has the wider DejaVu Sans;
+        # on a computer the column narrows with the keys, layout.js deskKey)
+        mid = ('17.636.684,142857', '17.636.684,14285714')
+        check(f'[decimals {w}x{h}] up to 10 decimals when they fit, else fewer', got[0] == '0,1428571429' and got[1] in mid and got[2] == '0,5', got)
         check(f'[decimals {w}x{h}] copying the result copies what is shown', clip == '0,1428571429', clip)
         await ctx.close()
 
@@ -1491,6 +1570,7 @@ async def sideways_every_tab(browser, url):
     fill = {'vat': [['amount', '1234567,89']], 'pct': [['pctOfRate', '12,5'], ['pctOfNum', '1234567,89'], ['pctPrice', '1250'], ['pctOff', '25']], 'fuel': [['fuelD', '1250'], ['fuelC', '6,5'], ['fuelP', '1,85']],
             'energy': [['energyP', '2000'], ['energyH', '3'], ['energyD', '30'], ['energyR', '0,15'], ['energyK', '1234567,89']], 'loan': [['loanAmount', '250000'], ['loanRate', '4'], ['loanYears', '30']],
             'net': [['netIp', '192.168.100.100'], ['netPrefix', '26']], 'dates': [['dateTo', '2027-03-15']],
+            'transfer': [['xfSize', '1250'], ['xfSpeed', '1000'], ['xfTime', '90'], ['xfLoss', '10']],
             'numbers': [['numA', '123456789012'], ['numB', '987654321'], ['numC', '360'], ['numN', '600851475143']],
             'prog': [['progHex', 'DEADBEEFCAFE']],
             'equation': [['eqA', '1'], ['eqB', '2'], ['eqC', '5'], ['sxA1', '2'], ['sxB1', '1'], ['sxC1', '5'], ['sxA2', '1'], ['sxB2', '-1'], ['sxC2', '1']]}
@@ -1507,7 +1587,7 @@ async def sideways_every_tab(browser, url):
             bad, keys = [], {}
             for m, kind in [('calc', None), ('units', None), ('currency', None), ('vat', None), ('pct', 'of'), ('pct', 'discount'), ('pct', 'tip'), ('loan', 'loan'),
                             ('loan', 'payoff'), ('loan', 'savings'), ('dates', 'between'), ('dates', 'add'), ('fuel', None), ('energy', 'device'), ('energy', 'kwh'), ('net', 'subnet'),
-                            ('numbers', 'gcd'), ('numbers', 'factors'), ('equation', 'quad'), ('equation', 'sys2'), ('stats', None), ('prog', None)]:
+                            ('transfer', 'time'), ('transfer', 'size'), ('transfer', 'speed'), ('numbers', 'gcd'), ('numbers', 'factors'), ('equation', 'quad'), ('equation', 'sys2'), ('stats', None), ('prog', None)]:
                 await p.evaluate(f"switchMode('{m}')")
                 if kind:
                     await p.evaluate(f"setToolKind('{m}','{kind}')")
@@ -1541,8 +1621,8 @@ async def all_modes(browser, url):
     await p.click('#modesButton')
     await p.wait_for_timeout(100)
     got = await p.evaluate("[!modesModal.classList.contains('hidden'),document.querySelectorAll('#modesList .mode-group').length,[...document.querySelectorAll('#modesList .mode-pick')].map(b=>b.dataset.mode),document.activeElement.id]")
-    check(L + 'the sheet has every mode in 3 groups, the search has the focus', got[0] and got[1] == 3 and sorted(got[2]) == sorted(['calc', 'units', 'currency', 'graph', 'vat', 'pct', 'loan', 'dates', 'fuel', 'energy', 'net', 'prog', 'numbers', 'equation', 'stats']) and got[3] == 'modesSearch', got)
-    for q, want in [('tip', ['pct']), ('loan', ['loan']), ('ip', ['net']), ('καυσ', ['fuel']), ('ΦΠΑ', ['vat']), ('zzz', [])]:
+    check(L + 'the sheet has every mode in 3 groups, the search has the focus', got[0] and got[1] == 3 and sorted(got[2]) == sorted(['calc', 'units', 'currency', 'graph', 'vat', 'pct', 'loan', 'dates', 'fuel', 'energy', 'net', 'transfer', 'prog', 'numbers', 'equation', 'stats']) and got[3] == 'modesSearch', got)
+    for q, want in [('tip', ['pct']), ('loan', ['loan']), ('ip', ['net']), ('καυσ', ['fuel']), ('ΦΠΑ', ['vat']), ('download', ['transfer']), ('λήψη', ['transfer']), ('zzz', [])]:
         await p.fill('#modesSearch', q)
         got = await p.evaluate("[...document.querySelectorAll('#modesList .mode-pick')].map(b=>b.dataset.mode)")
         check(L + f'search "{q}"', got == want, got)
@@ -1569,7 +1649,7 @@ async def all_modes(browser, url):
     check(L + 'the All | Default | None switch shows Default at first', await p.evaluate(lit) == ['default'], await p.evaluate(lit))
     await p.click('#modesPins [data-pins=all]')
     got = await p.evaluate(f"[{strip}.length,{lit},!modesModal.classList.contains('hidden'),document.querySelectorAll('#modesList .mode-pin.pinned').length]")
-    check(L + 'All pins every mode at once, the sheet stays open', got == [15, ['all'], True, 15], got)
+    check(L + 'All pins every mode at once, the sheet stays open', got == [16, ['all'], True, 16], got)
     await p.click('#modesPins [data-pins=nopins]')
     got = await p.evaluate(f"[{strip},{lit},JSON.parse(localStorage.getItem('uc-pins'))]")
     check(L + 'None unpins them all (the mode on screen still shows)', got == [['calc'], ['nopins'], []], got)
@@ -1620,7 +1700,7 @@ async def esc_everywhere(browser, url):
     L = '[esc] '
     p = await new_page(browser, url, 'en', 'dark')
     bad = []
-    for m, fid, v in [('vat', 'amount', '100'), ('pct', 'pctOfNum', '540'), ('loan', 'loanAmount', '1000'), ('fuel', 'fuelD', '250'), ('energy', 'energyP', '100'), ('net', 'netIp', '10.0.0.1'), ('dates', 'dateDays', '5')]:
+    for m, fid, v in [('vat', 'amount', '100'), ('pct', 'pctOfNum', '540'), ('loan', 'loanAmount', '1000'), ('fuel', 'fuelD', '250'), ('energy', 'energyP', '100'), ('net', 'netIp', '10.0.0.1'), ('transfer', 'xfSize', '200'), ('dates', 'dateDays', '5')]:
         await p.evaluate(f"switchMode('{m}')")
         if m == 'dates':
             await p.evaluate("setToolKind('dates','add')")
@@ -1805,6 +1885,9 @@ async def history_drag(browser, url):
     mid, after = await drag(700, 450)
     check(L + 'dragging up from an entry moves the sheet with the finger', 225 <= top0 - mid[0] <= 250 and mid[3] == 0, [top0, mid])
     check(L + 'let go high: fully open', after[1] and after[0] == 0, after)
+    # only the position moves (transform): the height never animates, and once still the sheet has its own height again
+    check(L + 'it moves by its position only, then rests at its own height', await p.evaluate(
+        "[getComputedStyle(historyPanel).transitionProperty,historyPanel.classList.contains('moving'),Math.round(historyPanel.getBoundingClientRect().height)===innerHeight]") == ['transform', False, True])
     mid, after = await drag(700, 300)
     check(L + 'fully open: the list scrolls', after[3] > 300 and after[0] == 0, after)
     before = await p.evaluate(state)
@@ -1813,6 +1896,8 @@ async def history_drag(browser, url):
     await p.evaluate("historyList.scrollTop=0")
     mid, after = await drag(300, 600, ms=30)
     check(L + 'at the list\'s top, dragging down shrinks the sheet to half', mid[0] > 250 and not after[1] and after[0] == top0, [mid, after])
+    check(L + 'half open again: resting at half height, nothing left pushed down', await p.evaluate(
+        "[historyPanel.classList.contains('moving'),historyPanel.style.transform,Math.round(innerHeight-historyPanel.getBoundingClientRect().height)]") == [False, '', top0])
     mid, after = await drag(600, 800, steps=4, ms=10)
     check(L + 'a flick down closes it, the page behind did not move', after[2] and after[4] == 0, after)
     await p.evaluate("openHistory()")
@@ -2189,6 +2274,7 @@ async def press_feedback(browser, url):
                 await cdp.send('Input.dispatchTouchEvent', {'type': 'touchEnd', 'touchPoints': []})
                 await p.wait_for_timeout(80)
                 return mid
+            await p.wait_for_timeout(150)  # never two ticks within 80 ms
             v0 = await p.evaluate("window.__vib.length")
             mid = await finger('[data-value="9"]', 900)
             st = await p.evaluate("[window.__vib.length,document.querySelector('#result').textContent]")
@@ -2200,6 +2286,8 @@ async def press_feedback(browser, url):
             await finger('[data-action="clear"]', 900)
             st = await p.evaluate("[window.__vib.length,document.querySelector('#result').textContent]")
             check(L + 'holding C: a tick on touch, one as it clears, none on letting go', st == [v0 + 4, '0'], st)
+            await p.evaluate("window.__vib=[];keyTick();keyTick()")
+            check(L + 'never two ticks at once', await p.evaluate("window.__vib") == [1])
         else:
             check(L + "a tap toggles the key's own switch (the tick), no vibrate", before[1] is False and after[1] is True and after[0] == before[0], [before, after])
             hit = await p.evaluate(f"document.elementFromPoint({x},{y}).className")
@@ -2246,11 +2334,23 @@ async def explanations(browser, url):
     check(L + 'the order rule and a spaced formula', h['f'] == '12 + 7 × 3 − 4 ÷ 8' and h['rule'].replace('\ufe0e', '').startswith('Order: × ÷ → + −'), h)
     h = await how('(2+3)×4')
     check(L + 'brackets first', h['t'][0] == 'Brackets first: add' and h['l'][0] == '[5] × 4', h)
+    h = await how('(25-(-69)+(-34)×17)×7')
+    check(L + '"Brackets first" once, then "Inside the brackets"', h['t'][:3] == ['Brackets first: multiply', 'Inside the brackets: subtract', 'Inside the brackets: add'], h['t'])
+    h = await how('(165+25)×(-45+36)')
+    check(L + 'a second pair of brackets says "Next brackets"', h['t'] == ['Brackets first: add', 'Next brackets: add', 'Multiply'], h['t'])
+    h = await how('((2+3)×4-1)×2')
+    check(L + 'the outer brackets after the inner ones: "Inside the brackets"', h['t'][:3] == ['Brackets first: add', 'Inside the brackets: multiply', 'Inside the brackets: subtract'], h['t'])
+    await p.evaluate("setLanguage('el')")
+    await p.wait_for_function("lang==='el'")
+    h = await how('(165+25)×(-45+36)')
+    check(L + 'Greek: "Επόμενη παρένθεση"', h['t'] == ['Πρώτα η παρένθεση: πρόσθεση', 'Επόμενη παρένθεση: πρόσθεση', 'Πολλαπλασιασμός'], h['t'])
+    await p.evaluate("setLanguage('en')")
+    await p.wait_for_function("lang==='en'")
     h = await how('sin(30)+2^3+15%')
     check(L + 'functions in degrees, powers written out, percent of the number before',
           h['x'][:2] == ['sin(30°) = 0,5', '2³ = 2 × 2 × 2 = 8'] and h['t'][3] == '15% of 8,5' and h['x'][3] == '8,5 × 15 ÷ 100 = 1,275' and h['r'] == '9,775', h)
     h = await how('-2^2')
-    check(L + 'a minus in front comes last', h['t'] == ['Power', 'The minus in front'] and h['r'] == '-4', h)
+    check(L + 'a minus in front comes last', h['t'] == ['Power', 'The minus in front'] and h['r'] == '−4', h)
     h = await how('1÷3×3')
     check(L + 'a rounded number gets …', h['x'] == ['1 ÷ 3 = 0,3333333333…', '0,3333333333… × 3 = 1'], h)
     h = await how('√(9)+5!')
@@ -2597,14 +2697,14 @@ async def complex_numbers(browser, url):
     await p.keyboard.type(')*(1-')
     await p.click('[data-sci="i"]')
     await p.keyboard.type(')')
-    check(L + 'typed with the i key and the keyboard, shown as 2i', await p.evaluate(R) == '(3+2i)×(1-i)', await p.evaluate(R))
+    check(L + 'typed with the i key and the keyboard, shown as 2i', await p.evaluate(R) == '(3+2i)×(1−i)', await p.evaluate(R))
     check(L + 'while typing, the line under it shows the value in both forms', await p.evaluate("document.querySelector('#resultAlt')?.textContent") == '= 5 − i  ·  5,09902 ∠ -11,309932°')
     await p.keyboard.press('Enter')
     check(L + '(3 + 2i)(1 − i) = 5 − i, with r ∠ θ under it, no button to press', await p.evaluate("[document.querySelector('#result').textContent,document.querySelector('#resultAlt')?.textContent,document.querySelectorAll('.cx-chip').length]") == ['5 − i', '5,09902 ∠ -11,309932°', 0])
     st = await p.evaluate("[howData.formula,howData.steps.map(s=>s.title)]")
     check(L + 'the working multiplies them out (i² = −1), then gives size and angle', st == ['(3 + 2i) × (1 − i)', ['Multiply (i² = −1)', 'Polar form: size ∠ angle']], st)
     st = await p.evaluate("howData.steps[1].text")
-    check(L + 'r = √(5² + (-1)²), θ = atan2(-1; 5)', st == 'r = √(5² + (-1)²) = 5,09902… · θ = atan2(-1; 5) = -11,309932…°', st)
+    check(L + 'r = √(5² + (-1)²), θ = atan2(-1; 5)', st == 'r = √(5² + (−1)²) = 5,09902… · θ = atan2(−1; 5) = −11,309932…°', st)
     await p.keyboard.type('*2')
     check(L + 'carried on whole: (5−i)×2', await p.evaluate(R) == '(5−i)×2', await p.evaluate(R))
     await p.keyboard.press('Enter')
@@ -2839,11 +2939,175 @@ async def programmer(browser, url):
     await p.context.close()
 
 
+async def transfer(browser, url):
+    """Transfer: how long a size takes at a speed (200 GB at 1 Gbps: 26 min 40 s), the size that gets through in a time, the
+    speed a transfer needs; a unit beside each number (bits or bytes, 1000s or 1024s), kept and saved; overhead; the working;
+    a paste with its unit; Greek; History; AC; the menus on a computer; a phone's keypad."""
+    L = '[transfer] '
+    p = await new_page(browser, url, 'en', 'dark')
+    put = """([kind,units,vals])=>{if(mode!=='transfer')switchMode('transfer');if(kind)setToolKind('transfer',kind);
+      for(const [id,u] of Object.entries(units||{})){const s=document.querySelector('select[data-xf="'+id+'"]');s.value=u;s.dispatchEvent(new Event('change',{bubbles:true}))}
+      for(const [id,v] of Object.entries(vals||{})){const e=document.getElementById(id);e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}))}
+      return [document.querySelector('#result').textContent,document.querySelector('#expression').textContent]}"""
+    shown = "[...document.querySelectorAll('#toolPanel .xf-unit b')].map(b=>b.textContent)"
+    working = "howData.steps.map(s=>s.title+': '+s.text).join(' | ')"
+    await p.evaluate("switchMode('transfer')")
+    st = await p.evaluate(f"[toolKind.transfer,[...document.querySelectorAll('#toolPanel input[data-tool-input]')].map(i=>i.id),{shown},document.querySelector('#result').textContent,document.querySelector('select[data-xf=xfSpeed]').getAttribute('aria-label')]")
+    check(L + 'opens on Time: size, speed and overhead, in GB and Mbps', st == ['time', ['xfSize', 'xfSpeed', 'xfLoss'], ['GB', 'Mbps'], '0', 'Speed: unit'], st)
+    got = await p.evaluate(put, ['time', {'xfSpeed': 'Gbps'}, {'xfSize': '200', 'xfSpeed': '1'}])
+    check(L + '200 GB at 1 Gbps takes 26 min 40 s', got == ['26 min 40 s', '1 Gbps = 125 MB/s'], got)
+    st = await p.evaluate(f"[howData.formula,{working},howData.result]")
+    check(L + 'the working: the size in bits, the time, in minutes, the speed in bytes',
+          st == ['200 GB ÷ 1 Gbps', '1 GB = 8 Gbit: 200 GB × 8 = 1.600 Gbit | Time = size ÷ speed: 1.600 Gbit ÷ 1 Gbps = 1.600 s | In minutes and seconds: 1.600 s = 26 min 40 s | 1 MB/s = 8 Mbps: 1.000 Mbps ÷ 8 = 125 MB/s', '26 min 40 s'], st)
+    got = await p.evaluate(put, [None, None, {'xfLoss': '10'}])
+    check(L + '10% overhead leaves 900 Mbps', got == ['29 min 38 s', '1 Gbps − 10% = 112,5 MB/s'], got)
+    st = await p.evaluate("[howData.formula,howData.steps[1].title+': '+howData.steps[1].text,howData.steps[3].text,howData.steps[4].text]")
+    check(L + 'the working takes the overhead off the speed and says when the time is rounded',
+          st == ['200 GB ÷ (1 Gbps − 10%)', '10% overhead: the speed that is left: 1 Gbps × (1 − 10 ÷ 100) = 0,9 Gbps', '1.777,7777777778 s ≈ 29 min 38 s', '900 Mbps ÷ 8 = 112,5 MB/s'], st)
+    got = await p.evaluate(put, [None, {'xfSpeed': 'Mbps'}, {'xfSpeed': '100', 'xfLoss': ''}])
+    check(L + 'a speed in Mbps', got == ['4 h 26 min 40 s', '100 Mbps = 12,5 MB/s'], got)
+    got = await p.evaluate(put, [None, {'xfSize': 'GiB'}, None])
+    check(L + 'another unit works the result out again: GiB counts in 1024s, the speed shows in MiB/s', got == ['4 h 46 min 20 s', '100 Mbps = 11,92 MiB/s'], got)
+    got = await p.evaluate(put, [None, {'xfSize': 'GB', 'xfSpeed': 'MB/s'}, {'xfSpeed': '125'}])
+    st = await p.evaluate(working)
+    check(L + 'a speed in bytes shows in bits', got == ['26 min 40 s', '125 MB/s = 1 Gbps'] and
+          st == '1 GB = 1.000 MB: 200 GB × 1.000 = 200.000 MB | Time = size ÷ speed: 200.000 MB ÷ 125 MB/s = 1.600 s | In minutes and seconds: 1.600 s = 26 min 40 s | 1 MB/s = 8 Mbps: 125 MB/s × 8 = 1.000 Mbps = 1 Gbps', [got, st])
+    times = []
+    for units, vals in [({'xfSize': 'MB', 'xfSpeed': 'Gbps'}, {'xfSize': '1', 'xfSpeed': '1'}), ({'xfSpeed': 'Mbps'}, {'xfSize': '30', 'xfSpeed': '100'}), ({'xfSize': 'GB'}, {'xfSize': '45'}),
+                        ({}, {'xfSize': '1080'}), ({'xfSize': 'TB'}, {'xfSize': '2', 'xfSpeed': '10'}), ({}, {'xfSize': '1000', 'xfSpeed': '1'})]:
+        times.append((await p.evaluate(put, [None, units, vals]))[0])
+    check(L + 'short and long times: milliseconds, seconds, whole hours and days, days, years', times == ['8 ms', '2,4 s', '1 h', '1 day', '18 days 12 h 27 min', '253 years 248 days'], times)
+    st = await p.evaluate("[howData.steps.at(-2).title,howData.steps.at(-2).text]")
+    check(L + 'the working says a year is 365 days', st == ['In years and days (1 year = 365 days)', '8.000.000.000 s ≈ 253 years 248 days'], st)
+    got = await p.evaluate(put, [None, None, {'xfSize': '0'}])
+    check(L + 'nothing to show for a size of 0', got == ['0', ''] and await p.evaluate("howData===null"), got)
+
+    # Size: speed × time. Changing kind starts the numbers over; the units stay
+    await p.evaluate("setToolKind('transfer','size')")
+    st = await p.evaluate(f"[[...document.querySelectorAll('#toolPanel input[data-tool-input]')].map(i=>i.id+'='+i.value),{shown}]")
+    check(L + 'Size asks for speed, time and overhead; the speed keeps its unit', st == [['xfSpeed=', 'xfTime=', 'xfLoss='], ['Mbps', 'h']], st)
+    got = await p.evaluate(put, [None, {'xfSpeed': 'Gbps'}, {'xfSpeed': '1', 'xfTime': '1'}])
+    check(L + 'Size: 1 Gbps for 1 h moves 450 GB', got == ['450 GB', '419,1 GiB · 1 Gbps = 125 MB/s'], got)
+    st = await p.evaluate(f"[howData.formula,{working}]")
+    check(L + 'its working', st == ['1 Gbps × 1 h', '1 h = 3.600 s: 1 h × 3.600 = 3.600 s | Size = speed × time: 1 Gbps × 3.600 s = 3.600 Gbit | 1 GB = 8 Gbit: 3.600 Gbit ÷ 8 = 450 GB | '
+          '1 GiB = 1,073741824 GB: 450 GB ÷ 1,073741824 = 419,095158577 GiB | 1 MB/s = 8 Mbps: 1.000 Mbps ÷ 8 = 125 MB/s'], st)
+    got = await p.evaluate(put, [None, {'xfSpeed': 'Mbps', 'xfTime': 'min'}, {'xfSpeed': '100', 'xfTime': '30', 'xfLoss': '10'}])
+    check(L + 'Size with minutes and an overhead', got == ['20,25 GB', '18,86 GiB · 100 Mbps − 10% = 11,25 MB/s'] and await p.evaluate("howData.formula") == '(100 Mbps − 10%) × 30 min', got)
+    got = await p.evaluate(put, [None, {'xfTime': 'day'}, {'xfTime': '2', 'xfLoss': ''}])
+    one = await p.evaluate(put, [None, None, {'xfTime': '1'}])
+    check(L + 'days: 2 days, 1 day', got == ['2,16 TB', '1,96 TiB · 100 Mbps = 12,5 MB/s'] and one == ['1,08 TB', '1.005,83 GiB · 100 Mbps = 12,5 MB/s'] and await p.evaluate("howData.formula") == '100 Mbps × 1 day', [got, one])
+    got = await p.evaluate(put, [None, {'xfSpeed': 'MiB/s', 'xfTime': 'h'}, {'xfSpeed': '10'}])
+    check(L + 'a speed in MiB/s gives GiB first', got == ['35,16 GiB', '37,75 GB · 10 MiB/s = 83,89 Mbps'], got)
+
+    # Speed: size ÷ time, in bits per second
+    got = await p.evaluate(put, ['speed', {'xfSize': 'GB', 'xfTime': 'h'}, {'xfSize': '200', 'xfTime': '1'}])
+    st = await p.evaluate(f"[howData.formula,{working}]")
+    check(L + 'Speed: 200 GB in 1 h needs 444,44 Mbps', got == ['444,44 Mbps', '= 55,56 MB/s'] and st == ['200 GB ÷ 1 h', '1 h = 3.600 s: 1 h × 3.600 = 3.600 s | 1 GB = 8.000 Mbit: 200 GB × 8.000 = 1.600.000 Mbit | '
+          'Speed = size ÷ time: 1.600.000 Mbit ÷ 3.600 s = 444,4444444444 Mbps | 1 MB/s = 8 Mbps: 444,4444444444 Mbps ÷ 8 = 55,5555555556 MB/s'], [got, st])
+    got = await p.evaluate(put, [None, None, {'xfLoss': '10'}])
+    st = await p.evaluate("[howData.formula,howData.steps[3].title+': '+howData.steps[3].text]")
+    check(L + 'with an overhead the line has to be faster', got == ['493,83 Mbps', 'net 444,44 Mbps = 55,56 MB/s'] and
+          st == ['200 GB ÷ 1 h ÷ (1 − 10%)', '10% overhead: the line has to be faster: 444,4444444444 Mbps ÷ (1 − 10 ÷ 100) = 493,8271604938 Mbps'], [got, st])
+    got = await p.evaluate(put, [None, {'xfSize': 'TB', 'xfTime': 'min'}, {'xfSize': '1', 'xfTime': '10', 'xfLoss': ''}])
+    check(L + 'a big speed is in Gbps', got == ['13,33 Gbps', '= 1,67 GB/s'], got)
+
+    # the overhead stops at 99%, and no field takes a minus
+    await p.evaluate(put, ['time', None, None])
+    await p.focus('#xfLoss')
+    await p.keyboard.type('100')
+    await p.keyboard.press('-')
+    st = await p.evaluate("[xfLoss.value,document.querySelector('#xfLoss').closest('.tool-field').querySelector('span').textContent]")
+    check(L + 'the overhead stops at 99%; − is refused', st == ['10', 'Up to 99%'], st)
+
+    # pasted with its unit: the unit is picked too
+    await p.evaluate(put, [None, None, {'xfLoss': ''}])
+    st = await p.evaluate(f"""(()=>{{pasteIntoField(xfSize,'1,5 TB');pasteIntoField(xfSpeed,'1gbps');
+      const a=[xfSize.value,xfSpeed.value,{shown}.join(' '),document.querySelector('#result').textContent];
+      pasteIntoField(xfSpeed,'12.5 MiB/s');a.push(xfSpeed.value+' '+xfUnit.xfSpeed);pasteIntoField(xfSpeed,'300');a.push(xfSpeed.value+' '+xfUnit.xfSpeed);
+      pasteIntoField(xfSpeed,'100 Mbit/s');a.push(xfSpeed.value+' '+xfUnit.xfSpeed);pasteIntoField(xfSize,'700 mb');a.push(xfSize.value+' '+xfUnit.xfSize);return a}})()""")
+    check(L + 'a paste with a unit picks the unit: 1,5 TB, 1gbps, 12.5 MiB/s, 100 Mbit/s, 700 mb; a plain number keeps it',
+          st == ['1,5', '1', 'TB Gbps', '3 h 20 min', '12,5 MiB/s', '300 MiB/s', '100 Mbps', '700 MB'], st)
+    st = await p.evaluate("(()=>{pasteIntoField(xfSize,'1234567890123456 TB');return [xfSize.value,xfUnit.xfSize,document.querySelector('select[data-xf=xfSize]').value]})()")
+    check(L + 'a paste the field refuses (16 digits) leaves its unit alone', st == ['700', 'MB', 'MB'], st)
+    await p.evaluate("setToolKind('transfer','size')")
+    st = await p.evaluate("(()=>{xfTime.value='90 min';xfTime.dispatchEvent(new InputEvent('input',{bubbles:true,inputType:'insertFromPaste'}));return [xfTime.value,xfUnit.xfTime,document.querySelector('select[data-xf=xfTime]').value]})()")
+    check(L + 'Ctrl+V into a field on a keyboard does the same: 90 min', st == ['90', 'min', 'min'], st)
+
+    # the kind and the units are kept for the next visit; the numbers are not
+    await p.evaluate(put, [None, {'xfSpeed': 'Gbps'}, {'xfSpeed': '1'}])
+    await p.reload()
+    await p.wait_for_timeout(300)
+    st = await p.evaluate(f"(()=>{{switchMode('transfer');return [toolKind.transfer,{shown},[...document.querySelectorAll('#toolPanel select[data-xf]')].map(s=>s.value),xfSpeed.value,xfSpeed.placeholder]}})()")
+    check(L + 'the kind and the units are remembered, the numbers are not', st == ['size', ['Gbps', 'min'], ['Gbps', 'min'], '', '1'], st)
+
+    # Greek, switched live
+    await p.evaluate(put, ['time', {'xfSize': 'TB', 'xfSpeed': 'Mbps'}, {'xfSize': '2', 'xfSpeed': '10', 'xfLoss': '5'}])
+    await p.evaluate("setLanguage('el')")
+    await p.wait_for_timeout(300)
+    st = await p.evaluate(f"""[document.querySelector('#result').textContent,document.querySelector('#expression').textContent,[...document.querySelectorAll('#toolPanel .tool-field>span')].map(s=>s.textContent),
+      [...document.querySelectorAll('#toolPanel .seg-toggle button')].map(b=>b.textContent),xfSize.value,{shown},howData.steps.map(s=>s.title).join(' | '),document.querySelector('.mode-tab.active').textContent.trim()]""")
+    check(L + 'Greek after a live switch', st == ['19 ημέρες 11 h 50 min', '10 Mbps − 5% = 1,19 MB/s', ['Μέγεθος', 'Ταχύτητα', 'Απώλειες %'], ['Χρόνος', 'Μέγεθος', 'Ταχύτητα'], '2', ['TB', 'Mbps'],
+          '1 TB = 8.000.000 Mbit | Απώλειες 5%: η ταχύτητα που μένει | Χρόνος = μέγεθος ÷ ταχύτητα | Σε ημέρες, ώρες και λεπτά | 1 MB/s = 8 Mbps', 'Μεταφορά'], st)
+    got = await p.evaluate(put, ['size', {'xfTime': 'day'}, {'xfSpeed': '10', 'xfTime': '2'}])
+    st = await p.evaluate(f"[howData.formula,{shown},document.querySelector('select[data-xf=xfTime] option[value=day]').textContent,document.querySelector('select[data-xf=xfSpeed] optgroup').label,howData.steps[0].title]")
+    check(L + 'Greek days and menu titles', got == ['216 GB', '201,17 GiB · 10 Mbps = 1,25 MB/s'] and st == ['10 Mbps × 2 ημέρες', ['Mbps', 'ημέρες'], 'ημέρες', 'Bit το δευτερόλεπτο', '1 ημέρα = 86.400 s'], [got, st])
+    await p.evaluate("setLanguage('en')")
+    await p.wait_for_timeout(300)
+
+    # History keeps the kind, the numbers and the units, in both languages
+    await p.evaluate(put, ['time', {'xfSize': 'GB', 'xfSpeed': 'Gbps'}, {'xfSize': '200', 'xfSpeed': '1'}])
+    await p.evaluate("switchMode('calc')")
+    st = await p.evaluate("(()=>{const e=JSON.parse(localStorage.getItem('uc-history-modes')).transfer[0];return [e.kind,e.choices,e.inputs,e.text.en,e.text.el]})()")
+    check(L + 'leaving the mode keeps the result in its History, with the units', st == ['time', {'xf': {'xfSize': 'GB', 'xfSpeed': 'Gbps'}}, {'xfSize': '200', 'xfSpeed': '1'},
+          {'f': '200 GB ÷ 1 Gbps', 'r': '26 min 40 s'}, {'f': '200 GB ÷ 1 Gbps', 'r': '26 min 40 s'}], st)
+    await p.evaluate("""(()=>{switchMode('transfer');setToolKind('transfer','speed');xfPickUnit('xfSize','MiB');switchMode('calc');
+      restoreModeEntry(JSON.parse(localStorage.getItem('uc-history-modes')).transfer.find(e=>e.kind==='time'&&e.inputs.xfSize==='200'&&!e.inputs.xfLoss))})()""")
+    st = await p.evaluate(f"[mode,toolKind.transfer,{shown},xfSize.value,xfSpeed.value,document.querySelector('#result').textContent]")
+    check(L + 'History brings it back with its units', st == ['transfer', 'time', ['GB', 'Gbps'], '200', '1', '26 min 40 s'], st)
+    await p.click('.tool-key[data-action="clear-all"]')
+    st = await p.evaluate(f"[xfSize.value,xfSpeed.value,document.querySelector('#result').textContent,{shown}]")
+    check(L + 'AC empties the fields; the units stay', st == ['', '', '0', ['GB', 'Gbps']], st)
+
+    # a computer: a click reaches the menu (it lies over the unit); after a unit is picked the keyboard types into its field
+    await p.click('select[data-xf="xfSpeed"]')
+    await p.wait_for_timeout(200)
+    st = await p.evaluate("document.activeElement?.closest('select')?.dataset.xf")  # the menu itself, or the unit in it that is picked
+    await p.keyboard.press('Escape')
+    await p.select_option('select[data-xf="xfSpeed"]', 'MB/s')
+    await p.wait_for_timeout(150)
+    await p.keyboard.type('125')
+    await p.keyboard.press('Tab')
+    got = await p.evaluate(f"[xfSpeed.value,{shown},document.activeElement?.tagName+' '+document.activeElement?.dataset?.xf]")
+    check(L + 'the menu opens on a click; a unit picked, the keyboard types into its field; Tab goes on to its menu', st == 'xfSpeed' and got == ['125', ['GB', 'MB/s'], 'SELECT xfSpeed'], [st, got])
+    check(L + 'no JavaScript errors', not p.errors, p.errors)
+    await p.context.close()
+
+    # a phone: the app's keypad types, no native keyboard; the menus are big enough for a finger
+    p = await new_page(browser, url, 'en', 'dark', phone=True)
+    await p.evaluate("switchMode('transfer')")
+    await p.tap('#xfSize')
+    for k in '200':
+        await p.tap(f'#keypad [data-value="{k}"]')
+    await p.tap('#xfSpeed')
+    await p.tap('#keypad [data-value="1"]')
+    await p.select_option('select[data-xf="xfSpeed"]', 'Gbps')
+    await p.wait_for_timeout(150)
+    st = await p.evaluate("[document.querySelector('#result').textContent,xfSize.readOnly,xfSize.getAttribute('inputmode'),xfSpeed.classList.contains('tool-active')]")
+    check(L + 'phone: typed on the app keypad, no native keyboard', st == ['26 min 40 s', True, 'none', True], st)
+    await p.tap('#xfLoss')
+    for k in ['2', ',', '5']:
+        await p.tap(f'#keypad [data-value="{k}"]')
+    st = await p.evaluate("[xfLoss.value,document.querySelector('#result').textContent,[...document.querySelectorAll('#toolPanel select[data-xf]')].every(s=>{const r=s.getBoundingClientRect();return r.width>=44&&r.height>=30})]")
+    check(L + 'phone: 2,5% on the keypad; the unit menus are at least 44×30 px', st == ['2,5', '27 min 21 s', True], st)
+    check(L + 'phone: no JavaScript errors', not p.errors, p.errors)
+    await p.context.close()
+
+
 async def foldables(browser, url):
     """Foldables: an inner screen held sideways (iPhone Duo, Galaxy Fold: wide, not phone-short) gets the sideways layout
     with big keys and nothing scrolls; half open like a book (two screen segments), the fold falls between the display
     and the keypad."""
-    tabs = ['calc', 'units', 'currency', 'graph', 'vat', 'pct', 'loan', 'dates', 'fuel', 'energy', 'net', 'prog', 'numbers', 'equation', 'stats']
+    tabs = ['calc', 'units', 'currency', 'graph', 'vat', 'pct', 'loan', 'dates', 'fuel', 'energy', 'net', 'transfer', 'prog', 'numbers', 'equation', 'stats']
     for size in [(924, 693), (832, 620)]:
         L = f'[foldables {size[0]}x{size[1]}] '
         p = await new_page(browser, url, 'el', 'dark', phone=True, size=size)
@@ -2861,7 +3125,8 @@ async def foldables(browser, url):
         check(L + 'keys bigger than on a phone held sideways', k > 70, k)
         await p.context.close()
     p = await new_page(browser, url, 'en', 'dark', phone=True, size=(1024, 768))
-    check('[foldables] a tablet sideways keeps its layout', not await p.evaluate("document.documentElement.classList.contains('landscape')"))
+    check('[foldables] a tablet sideways gets the sideways layout too, as a tablet', await p.evaluate(
+        "['landscape','land-tablet'].every(c=>document.documentElement.classList.contains(c))"))
     await p.context.close()
     for name, (w, h, off, mask) in {'iPhone Duo-like': (924, 693, 452, 20), 'Surface Duo': (1114, 720, 540, 34)}.items():
         L = f'[foldables {name}, half open] '
@@ -2888,7 +3153,7 @@ async def big_screen_dialogs(browser, url):
         L = f'[big screen dialogs {lang}] '
         p = await new_page(browser, url, lang, 'dark', size=(1920, 1080))
         bad = []
-        for m in ['calc', 'units', 'currency', 'graph', 'vat', 'pct', 'loan', 'dates', 'fuel', 'energy', 'net', 'prog', 'numbers', 'equation', 'stats']:
+        for m in ['calc', 'units', 'currency', 'graph', 'vat', 'pct', 'loan', 'dates', 'fuel', 'energy', 'net', 'transfer', 'prog', 'numbers', 'equation', 'stats']:
             await p.evaluate(f"closeHow();switchMode('{m}');showHelp()")
             if await p.evaluate(scrolls):
                 bad.append(m)
@@ -2905,6 +3170,14 @@ async def big_screen_dialogs(browser, url):
         await p.evaluate("closeHow();switchMode('net')")
         await p.evaluate("(()=>{for(const [f,v] of [['netIp','192.168.10.77'],['netPrefix','26']]){const e=document.getElementById(f);e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}))}})();showHow()")
         check(L + "Subnet's ? fits without scrolling at 1280×860", not await p.evaluate(scrolls))
+        rows = await p.evaluate("""(()=>{const out={};
+          for(const [m,k] of [['vat',''],['fuel',''],['loan','loan'],['pct','of'],['pct','discount'],['net','hosts'],['numbers','gcd'],['dates','add'],['transfer','time'],['prog',''],['stats','']]){
+            closeHow();switchMode(m);if(k)setToolKind(m,k);showHelp();
+            const caps=[...document.querySelectorAll('#howContent .help-keys .help-caps')].map(e=>e.textContent);
+            out[m+(k?':'+k:'')]=(caps.includes('−')?'−':'')+(caps.includes(',.')?',':'')}
+          closeHow();return out})()""")
+        check(L + 'Tips list − and the decimal point only where a field on screen takes them',
+              rows == {'vat': '−,', 'fuel': ',', 'loan:loan': ',', 'pct:of': '−,', 'pct:discount': ',', 'net:hosts': '', 'numbers:gcd': '', 'dates:add': '−', 'transfer:time': ',', 'prog': '', 'stats': '−,'}, rows)
         await p.context.close()
     p = await new_page(browser, url, 'en', 'dark', phone=True)
     await p.evaluate("showHelp()")
@@ -2945,6 +3218,16 @@ PHONES = [
     ('iPhone 17 Pro Max sideways', 956, 390, False, set()),
     ('Pixel 9a sideways', 850, 330, True, set()),
     ('Galaxy S25 sideways', 732, 290, True, {'*'}),
+    # tablets: upright the whole width, bigger keys (html.tablet); sideways the phones' sideways layout (html.land-tablet)
+    ('iPad Pro 11, home-screen app', 834, 1194, False, set()),
+    ('iPad Pro 11, Safari', 834, 1112, False, set()),
+    ('iPad Pro 11 sideways, home-screen app', 1194, 834, False, set()),
+    ('iPad Pro 11 sideways, Safari', 1194, 760, False, set()),
+    ('iPad mini, Safari', 744, 1062, False, set()),
+    ('iPad mini sideways, Safari', 1133, 690, False, set()),
+    ('iPad Pro 13, Safari', 1032, 1300, False, set()),
+    ('iPad Pro 13 sideways, Safari', 1376, 950, False, set()),
+    ('Galaxy Tab S10', 800, 1180, True, set()),
 ]
 LAYOUT_PROBE = (ROOT / 'tests/layout_probe.js').read_text()
 # waits until the box has stopped moving and no animation runs (a sheet sliding up, a switch sliding), at most 2 s
@@ -2975,6 +3258,9 @@ PHONE_TABS = [
     ('energy:kwh', _tool('energy', 'kwh') + _fill(('energyK', '1234567,89'), ('energyR', '0,15'))),
     ('net:subnet', _tool('net', 'subnet') + _fill(('netIp', '192.168.100.100'), ('netPrefix', '26'))),
     ('net:hosts', _tool('net', 'hosts') + _fill(('netHosts', '500'))),
+    ('transfer:time', _tool('transfer', 'time') + _fill(('xfSize', '1250'), ('xfSpeed', '1000'), ('xfLoss', '10'))),
+    ('transfer:size', _tool('transfer', 'size') + _fill(('xfSpeed', '1000'), ('xfTime', '90'), ('xfLoss', '10'))),
+    ('transfer:speed', _tool('transfer', 'speed') + _fill(('xfSize', '1250'), ('xfTime', '90'), ('xfLoss', '10'))),
     ('prog', _tool('prog') + _fill(('progHex', 'DEADBEEFCAFE'))),
     ('numbers:gcd', _tool('numbers', 'gcd') + _fill(('numA', '123456789012'), ('numB', '987654321'), ('numC', '360'))),
     ('numbers:factors', _tool('numbers', 'factors') + _fill(('numN', '600851475143'))),
@@ -2989,6 +3275,7 @@ PHONE_SHEETS = [
     ('Functions (⋯)', "switchMode('calc');openFunctions()", '#howModal .modal-card', "closeHow()"),
     ('the working (?) of a complex result', "switchMode('calc');expression='(9+9×i)×5';current='';equals();showHow()", '#howModal .modal-card', "closeHow()"),
     ('the working (?) of VAT', "switchMode('vat');showHow()", '#howModal .modal-card', "closeHow()"),
+    ('the working (?) of Transfer', _tool('transfer', 'speed') + _fill(('xfSize', '1250'), ('xfTime', '90'), ('xfLoss', '10')) + ";showHow()", '#howModal .modal-card', "closeHow()"),
     ('Tips', "switchMode('calc');showHelp()", '#howModal .modal-card', "closeHow()"),
     ('theme menu', "openThemeMenu()", '#themeMenu', "closeThemeMenu()"),
     ('own theme editor', "openThemeEditor('dark')", '#themeEditor', "closeThemeEditor()"),
@@ -2996,8 +3283,96 @@ PHONE_SHEETS = [
 ]
 
 
+async def tablets(browser, url):
+    """Tablets upright use the whole width with big keys at the bottom and the footer on one line; held sideways they get the
+    phones' sideways layout (result on the left, keys on the right, Scientific beside the number keys). No card frame."""
+    L = '[tablets] '
+    state = """(()=>{const c=document.documentElement.classList,k=$('#keypad').getBoundingClientRect(),s=$('#keypad .key[data-value="7"]').getBoundingClientRect(),
+      f=$('.app-footer').getBoundingClientRect();
+      return {tablet:c.contains('tablet'),land:c.contains('landscape')&&c.contains('land-tablet'),frameless:c.contains('frameless'),side:c.contains('sci-side'),w:Math.round(k.width),keyH:Math.round(s.height),
+        gap:Math.round(innerHeight-f.bottom),footH:Math.round(f.height),keyW:Math.round(s.width),rows:new Set([...$$('#keypad button')].map(b=>Math.round(b.getBoundingClientRect().top))).size}})()"""
+    for w, h, touch in [(834, 1194, True), (1194, 834, True), (956, 440, True), (1280, 860, False)]:
+        D = L + f'{w}x{h} '
+        ctx = await browser.new_context(viewport={'width': w, 'height': h}, is_mobile=touch, has_touch=touch)
+        await ctx.add_init_script(SEED % ('en', 'dark'))
+        p = await ctx.new_page()
+        await p.goto(url)
+        await p.wait_for_timeout(400)
+        st = await p.evaluate(state)
+        if w == 834:
+            check(D + 'a tablet upright: the whole width, no card frame', st['tablet'] and st['frameless'] and st['w'] > w - 100, st)
+            check(D + 'big keys at the bottom of the screen, the footer on one line', st['keyH'] >= 110 and st['gap'] < 40 and st['footH'] < 30, st)
+        if w == 1194:
+            check(D + 'a tablet sideways: the phones\' sideways layout, keys on the right, no card frame', st['land'] and not st['tablet'] and
+                  st['frameless'] and st['w'] < w * .6, st)
+            check(D + 'big round keys, never taller than wide', st['keyH'] >= 100 and st['keyH'] <= st['keyW'] + 1, st)
+        if w in (834, 1194):
+            await p.evaluate("if(!sciMode)toggleSci()")
+            await p.wait_for_timeout(300)
+            st = await p.evaluate(state)
+            if w > h:
+                check(D + 'sideways, Scientific beside the number keys: five rows', st['side'] and st['rows'] == 5 and st['keyH'] >= 60, st)
+            else:
+                check(D + 'upright, Scientific above the number keys', not st['side'] and st['rows'] == 10, st)
+            check(D + 'Scientific fits without scrolling', await p.evaluate("!document.documentElement.classList.contains('page-scroll')"))
+        elif touch:
+            check(D + 'a phone sideways: no card frame with round keys, a big result', not st['tablet'] and st['frameless'] and
+                  await p.evaluate("parseFloat(getComputedStyle($('#result')).fontSize)") >= 60, st)
+        else:
+            check(D + 'a computer keeps the column, no card frame (like phones and tablets)', not st['tablet'] and st['frameless'] and st['w'] < 700, st)
+        await ctx.close()
+
+
+async def keys_fill_the_bottom(browser, url):
+    """Phones upright, tablets and computers: in every mode the keypad reaches the bottom of the screen (the display takes the
+    room left over), and the tools' keys are as tall as the Calculator's when there is room, never taller than wide. On a
+    computer the keys are about the same size in every mode, Units' and Currency's values sit just above the keys, and the
+    side panels are as tall as the calculator, with no boxes around them or the calculator."""
+    L = '[keys fill the bottom] '
+    state = """(()=>{const f=$('.app-footer').getBoundingClientRect(),keys=[...$$('#keypad button')].map(b=>b.getBoundingClientRect());
+      return {gap:Math.round(innerHeight-f.bottom),keyH:keys.length?Math.round(keys[0].height):0,
+        tall:keys.some(r=>r.height<=keys[0].height+1&&r.height>r.width+1),scroll:document.documentElement.classList.contains('page-scroll')}})()"""
+    modes = ['calc', 'units', 'currency', 'vat', 'pct', 'loan', 'dates', 'fuel', 'energy', 'net', 'transfer', 'numbers', 'equation', 'stats', 'prog']
+    side = """(()=>{const r=s=>$(s).getBoundingClientRect(),c=r('#calculatorCard'),a=r('#sideHistory'),b=r('#sideWork'),cs=getComputedStyle,
+      t=r('.topbar');return {on:document.documentElement.classList.contains('side-panels'),frameless:document.documentElement.classList.contains('frameless'),
+        h:[Math.round(a.height-c.height),Math.round(b.height-c.height)],box:[cs($('#sideHistory')).backgroundColor,cs($('#calculatorCard')).borderTopColor],
+        bar:[Math.round(t.left-c.left),Math.round(c.right-t.right)]}})()"""
+    for w, h, touch in [(440, 956, True), (390, 844, True), (412, 780, True), (834, 1194, True), (1024, 768, False), (1280, 860, False),
+                        (1440, 900, False), (1920, 1080, False)]:
+        D = L + f'{w}x{h} '
+        ctx = await browser.new_context(viewport={'width': w, 'height': h}, is_mobile=touch, has_touch=touch)
+        await ctx.add_init_script(SEED % ('en', 'dark'))
+        p = await ctx.new_page()
+        await p.goto(url)
+        await p.wait_for_timeout(400)
+        calcH = (await p.evaluate(state))['keyH']
+        for m in modes:
+            await p.evaluate("m=>switchMode(m)", m)
+            await p.wait_for_timeout(150)
+            st = await p.evaluate(state)
+            check(D + m + ': nothing left empty under the keypad', st['gap'] <= 14 and not st['scroll'], st)
+            check(D + m + ": no key taller than it is wide (Statistics' Add spans rows)", not st['tall'], st)
+            if w == 440 and m in ('vat', 'pct', 'numbers', 'stats'):
+                check(D + m + ": keys as tall as the Calculator's", abs(st['keyH'] - calcH) <= 2, (st, calcH))
+            if not touch and h >= 900 and m != 'dates':
+                check(D + m + ": keys about as tall as the Calculator's (one size for every mode on a computer)",
+                      abs(st['keyH'] - calcH) <= calcH * .1, (st, calcH))
+            if not touch and m in ('calc', 'vat', 'dates'):
+                ft = await p.evaluate("(()=>{const f=document.querySelector('.app-footer');return [Math.round(f.getBoundingClientRect().height),!!document.querySelector('.footer-name').offsetWidth]})()")
+                check(D + m + ': the footer on one line, with the app name', ft[0] < 30 and ft[1], ft)
+            if not touch and m in ('units', 'currency'):
+                gap = await p.evaluate("Math.round($('#keypad').getBoundingClientRect().top-[...document.querySelectorAll('#calculatorDisplay .unit-row')].pop().getBoundingClientRect().bottom)")
+                check(D + m + ': the two values just above the keys, where the result is in Calculator', 0 <= gap <= 30, gap)
+            if not touch and w >= 1280 and m in ('calc', 'vat', 'dates', 'stats'):
+                st = await p.evaluate(side)
+                check(D + m + ': History and the working as tall as the calculator, no boxes, the title bar over the calculator',
+                      st['on'] and st['frameless'] and max(map(abs, st['h'])) <= 2 and st['box'] == ['rgba(0, 0, 0, 0)'] * 2
+                      and max(map(abs, st['bar'])) <= 2, st)
+        await ctx.close()
+
+
 async def keys_and_clipboard(browser, url):
-    """Square or round keys from the theme menu; no Copy result button; holding (or right-clicking) a number gives Copy and
+    """Round keys; no Copy result button; holding (or right-clicking) a number gives Copy and
     Paste; Ctrl+C / Ctrl+V; pasted numbers in any common form."""
     L = '[keys, copy, paste] '
     clip = "navigator.clipboard.readText()"
@@ -3013,25 +3388,13 @@ async def keys_and_clipboard(browser, url):
         await p.goto(url)
         await p.wait_for_timeout(300)
         check(D + 'no Copy result button', await p.evaluate("!document.querySelector('#copyButton,.bottom-actions')"))
-        if touch:
-            k = await p.evaluate("(()=>{const b=$('.key[data-value=\"7\"]').getBoundingClientRect();return [b.width,b.height]})()")
-            check(D + 'upright, the keys grow into the room (square keys taller than 68px)', k[1] > 80, k)
-        # the theme menu: Keys, square or round
-        await p.evaluate("openThemeMenu()")
-        check(D + 'the theme menu has Keys: square (chosen) and round', await p.evaluate(
-            "[...document.querySelectorAll('#themeMenu [data-key-shape]')].map(b=>b.dataset.keyShape+':'+b.getAttribute('aria-checked')).join()") == 'square:true,round:false')
-        await p.click('#themeMenu [data-key-shape="round"]')
-        await p.wait_for_timeout(150)
-        check(D + 'round keys: chosen, kept and on screen', await p.evaluate(
-            "[keyShape,store.get('uc-keys'),document.documentElement.classList.contains('keys-round'),$('#themeMenu [data-key-shape=\"round\"]').getAttribute('aria-checked'),getComputedStyle($('.key[data-value=\"7\"]')).borderTopLeftRadius]")
-              == ['round', 'round', True, 'true', '999px'])
-        if touch:
-            k = await p.evaluate("(()=>{const b=$('.key[data-value=\"7\"]').getBoundingClientRect();return [b.width,b.height]})()")
-            check(D + 'round keys on a phone are circles', abs(k[0] - k[1]) <= 2 and k[1] > 75, k)
+        check(D + 'the keys are round and the theme menu has no key shape choice', await p.evaluate(
+            "[document.documentElement.classList.contains('keys-round'),getComputedStyle($('.key[data-value=\"7\"]')).borderTopLeftRadius,(openThemeMenu(),!document.querySelector('#themeMenu [data-key-shape]'))]")
+              == [True, '999px', True])
         await p.evaluate("closeThemeMenu()")
-        await p.reload()
-        await p.wait_for_timeout(300)
-        check(D + 'round keys stay after a reload', await p.evaluate("document.documentElement.classList.contains('keys-round')"))
+        if touch:
+            k = await p.evaluate("(()=>{const b=$('.key[data-value=\"7\"]').getBoundingClientRect();return [b.width,b.height]})()")
+            check(D + 'upright, the keys grow into the room as circles', abs(k[0] - k[1]) <= 2 and k[1] > 75, k)
         # holding the result: Copy and Paste
         await p.keyboard.type('125*8')
         await p.keyboard.press('Enter')
@@ -3124,12 +3487,11 @@ async def keys_and_clipboard(browser, url):
     await ctx.close()
 
 
-async def phone_size(browser, url, name, w, h, wide, scroll, lang, shape='square'):
-    """One phone in one language and key shape: every tab (PHONE_TABS) and every sheet (PHONE_SHEETS) through LAYOUT_PROBE."""
-    L = f'[phones {name} {w}×{h} {lang}{" round" if shape == "round" else ""}] '
+async def phone_size(browser, url, name, w, h, wide, scroll, lang):
+    """One phone in one language: every tab (PHONE_TABS) and every sheet (PHONE_SHEETS) through LAYOUT_PROBE."""
+    L = f'[phones {name} {w}×{h} {lang}] '
     ctx = await browser.new_context(viewport={'width': w, 'height': h}, is_mobile=True, has_touch=True)
     await ctx.add_init_script(SEED % (lang, 'dark'))
-    await ctx.add_init_script("localStorage.setItem('uc-keys','%s')" % shape)
     if wide:
         await ctx.add_init_script("new MutationObserver((m,o)=>{if(document.head){const s=document.createElement('style');"
                                   "s.textContent='*{font-family:\"DejaVu Sans\",sans-serif!important}';document.head.prepend(s);o.disconnect()}})"
@@ -3168,15 +3530,14 @@ async def phone_size(browser, url, name, w, h, wide, scroll, lang, shape='square
 
 
 async def phone_sizes(browser, url):
-    """Popular phone sizes (PHONES), both languages with square keys and English with round ones, six at a time: every
+    """Popular phone sizes (PHONES), both languages, six at a time: every
     tab and sheet, see phone_size and tests/layout_probe.js. `python3 tests/test_app.py --phones` runs only this."""
     limit = asyncio.Semaphore(6)
 
     async def one(*a):
         async with limit:
             await phone_size(browser, url, *a)
-    await asyncio.gather(*[one(name, w, h, wide, scroll, lang, shape) for name, w, h, wide, scroll in PHONES
-                           for lang, shape in [('en', 'square'), ('el', 'square'), ('en', 'round')]])
+    await asyncio.gather(*[one(name, w, h, wide, scroll, lang) for name, w, h, wide, scroll in PHONES for lang in ['en', 'el']])
 
 
 def built_site():
@@ -3234,6 +3595,8 @@ async def main():
         await touch_areas(browser, url)
         await more_decimals(browser, url)
         await keys_and_clipboard(browser, url)
+        await tablets(browser, url)
+        await keys_fill_the_bottom(browser, url)
         await how_buttons_in_place(browser, url)
         await all_modes(browser, url)
         await esc_everywhere(browser, url)
@@ -3257,6 +3620,7 @@ async def main():
         await numbers_equations(browser, url)
         await statistics(browser, url)
         await programmer(browser, url)
+        await transfer(browser, url)
         await offline(browser)
         await cloudflare_check(browser)
         await preview_site(browser)

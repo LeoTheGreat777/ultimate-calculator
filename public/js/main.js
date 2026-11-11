@@ -36,6 +36,7 @@ setupHoldKeys();setupPressFeedback();setupTopPress();setupSide();setupFunctions(
  document.addEventListener('click',e=>{if(themeMenuOpen()&&!eventInside(e,'#themeMenu,#themeButton'))closeThemeMenu();if(historyClearConfirm&&!eventInside(e,'#historyClearWrap'))clearHistoryConfirm()});
 $('#clearHistory').addEventListener('click',clearHistoryPress);
 window.addEventListener('keydown',e=>{
+ if(e.key!=='-')keyMinusEnd(true);// a minus still waiting (held − , ui.js) goes in before the next key
  if(themeEditorKeydown(e)||themeMenuKeydown(e)||modesKeydown(e))return;
  if(e.target.closest?.('.fn-search')&&e.key!=='Escape')return;// typing in the functions sheet's search
  // Alt+1…9 jumps to a mode (Alt+← / → are left alone: browsers use them for Back / Forward)
@@ -49,15 +50,17 @@ window.addEventListener('keydown',e=>{
  const nothingOpen=$('#howModal').classList.contains('hidden')&&$('#historyPanel').classList.contains('hidden');
  // ? opens Tips (not while typing in a field)
  if(e.key==='?'&&nothingOpen&&!document.activeElement?.matches('input,textarea')){e.preventDefault();showHelp();return}
- // F9 = ± (as in Windows Calculator)
- if(e.key==='F9'&&(mode==='calc'||mode==='units')){e.preventDefault();if(nothingOpen){if(mode==='calc')negate();else toolKeyInput('negate')}return}
+ // − waits: held for half a second it is ± (as holding the − key on screen), else a minus (keyMinusDown, ui.js)
+ if(e.key==='-'&&nothingOpen&&(mode==='calc'||mode==='units'&&!document.activeElement?.matches('select'))){keyMinusDown(e,mode==='calc'?()=>operator('-'):()=>toolKeyInput('-'));return}
+ // F9 = ± (as in Windows Calculator); Shift + − (_) too, as laptops often need Fn for F9
+ if((e.key==='F9'||e.key==='_')&&(mode==='calc'||mode==='units')){e.preventDefault();if(nothingOpen){if(mode==='calc')negate();else toolKeyInput('negate')}return}
  if(mode==='units'&&nothingOpen&&(e.key==='('||e.key===')')){e.preventDefault();toolKeyInput(e.key);return}
  // ^ power and ! factorial (also a "dead" ^ key that waits for a letter, as on some layouts)
  if(mode==='calc'&&nothingOpen&&(e.key==='^'||e.key==='!'||(e.key==='Dead'&&G_DEAD_CARET.includes(e.code)))){e.preventDefault();sciKey(e.key==='!'?'fact':'pow');return}
  if(mode==='calc'&&nothingOpen&&e.key==='i'){e.preventDefault();sciKey('i');return}// the imaginary unit
  if(mode==='calc'&&e.key.length===1&&!/^[0-9+\-*/%.,()=]$/.test(e.key)){e.preventDefault();e.stopImmediatePropagation();return}
  if(mode==='graph'&&e.key!=='Escape'){if($('#howModal').classList.contains('hidden')&&$('#historyPanel').classList.contains('hidden')&&graphKeydown(e))e.preventDefault();return}
- if(mode==='stats'&&e.key==='Enter'&&nothingOpen&&!document.activeElement?.matches('button,select')){e.preventDefault();statAdd();return}// Statistics: Enter adds the number
+ if(mode==='stats'&&e.key==='Enter'&&nothingOpen&&!document.activeElement?.matches('button,select')){e.preventDefault();if(!e.repeat)statAdd();return}// Statistics: Enter adds the number
  // In a tool field that has the focus, Backspace is the browser's own: it deletes the selection, or the character before the cursor.
  const toolFieldFocused=document.activeElement?.matches('#toolPanel input[data-tool-input]');
  if((e.key==='Backspace'||e.code==='Backspace')&&toolFieldFocused)return;
@@ -80,7 +83,7 @@ window.addEventListener('keydown',e=>{
  }
  if(mode==='units'&&!document.activeElement?.matches('select')){
    if(/^[0-9]$/.test(e.key)||['+','-','*','/'].includes(e.key)){e.preventDefault();toolKeyInput(e.key);return}
-   if(e.key==='Enter'||e.key==='='){e.preventDefault();window._equalsUnits?.();return}
+   if(e.key==='Enter'||e.key==='='){e.preventDefault();if(!e.repeat)window._equalsUnits?.();return}
  }
  // In the tools, typing without clicking a field first goes to the highlighted field (Backspace and the decimal key already do).
  if(TOOL_MODES.includes(mode)&&(/^[0-9-]$/.test(e.key)||mode==='prog'&&/^[a-fA-F]$/.test(e.key))&&!document.activeElement?.matches('input,select,textarea')&&$('#howModal').classList.contains('hidden')&&$('#historyPanel').classList.contains('hidden')){e.preventDefault();toolKeyInput(e.key);return}
@@ -88,7 +91,7 @@ window.addEventListener('keydown',e=>{
  if(/^[0-9]$/.test(e.key))digit(e.key);
  else if(['+','-','*','/'].includes(e.key))operator(e.key==='*'?'×':e.key==='/'?'÷':e.key);
  else if(e.key==='%')percent();
- else if(e.key==='Enter'||e.key==='='){e.preventDefault();equals()}
+ else if(e.key==='Enter'||e.key==='='){e.preventDefault();if(!e.repeat)equals()}// holding Enter doesn't repeat it
  else if(e.key==='Backspace'){e.preventDefault();backspace()}
 });
 window.__UC_VERSION=VERSION;$('#footerVersion').textContent=`v${VERSION}`;

@@ -25,6 +25,10 @@ Part of the notes in CLAUDE.md (read that first). Covers numbers.js, calculator.
   Units shows the reason on the other value (`unitError`). Never put "Error" into `current`.
 - **Carry:** continuing after a result uses its full-precision value (`carryText`, `carry`), but the
   screen shows it rounded via `formatExpressionDisplay`. Use that function to display expressions.
+- **= with no calculation** (`equals`): a number alone (`PLAIN_NUMBER`, also `(455)` once its brackets go) saves
+  nothing to History and changes nothing. = again after a result repeats the last operation (2 + 3 = 5, = 8,
+  `repeatEquals`); with none to repeat (2 × (3 + 4), 5 %, a result after ±) it does nothing. A held Enter or = key
+  (`e.repeat`) runs once, in the Calculator, Units and Statistics.
 - **Brackets:** useless ones are dropped (`tidyParens`, `closeParen`): `((5))` -> `5`, open ones at the end
   are dropped on =. A number or `(` after `)`, and a number after `%`, adds `×` first. Same in Units.
   With no bracket open, `)` (Scientific, keyboard) and the basic pad's ( ) after a calculation put brackets around
@@ -40,7 +44,8 @@ Part of the notes in CLAUDE.md (read that first). Covers numbers.js, calculator.
   two meet, a × goes between two values (2 before (5+5) -> 2×(5+5)) and an operator typed before another replaces it;
   `caretTo` makes that real when the cursor moves. It never stands inside a function's name, a constant, a power's digits or
   a carried result; a digit right after a carried result edits it as shown (`carry.plain`). = works out everything and drops
-  the cursor, as do AC and a result. The display marks the cursor with `CARET` (U+0007), which `formatInputDisplay` keeps in
+  the cursor, as do AC and a result; it also hides when it goes back to the end (a tap at the end, End, → to the end:
+  `caretTo` sets `caretOn` only before the end). The display marks the cursor with `CARET` (U+0007), which `formatInputDisplay` keeps in
   place (grouping stays right: 1.2|34.567).
 - **Scientific:** a view of the Calculator, not a mode: the f(x) switch on the display (`sciMode`, `uc-sci`; the only chip
   there, the angle unit is the keypad's Deg/Rad key; at the display's top-left in line with History, styled like ?, and
@@ -65,15 +70,24 @@ Part of the notes in CLAUDE.md (read that first). Covers numbers.js, calculator.
   exact ones in `CONST_EXACT`) are `⟨id⟩` in the calculation and their symbol on screen (`constPretty`); ⌫ removes one whole.
 - **± and holding keys:** holding ⌫, C or AC clears everything while still held (`HOLD_KEYS`, `clearEverything`; C turns into AC
   while still held and big, like the iPhone's calculator; in the tools C stays C, AC is its own key; in Graph every function), holding − flips the sign (`negate`, Units: `unitKeyInput('negate')`);
-  F9 does ± on a keyboard. A tap on − is always minus. A minus made with ± is stored as `−` (U+2212), one typed with
+  On a keyboard holding − does the same (`keyMinusDown` in ui.js: a − waits for its key-up, or the next key, before
+  typing a minus), as do F9 and Shift + − (`_`). A tap on − is always minus. In the Calculator ± writes real brackets
+  (`negate`): 15 → `(−15)` in `expression`, so a digit after them is multiplied ((−15)×6), ⌫ takes them apart like typed ones
+  (after ⌫ the number left at the end is `current` again, `caretTo`), and a calculation can go inside; ± again on `(−15)`
+  gives 15. With nothing typed after an operator or at the start it opens `(−`; in a bracket just opened it only adds the
+  sign. A minus made with ± is stored as `−` (U+2212), one typed with
   the − key as `-`; the maths reads both the same (`tokenize`, `normalizeUnitExpression`). Display (`formatInputDisplay`):
   after an operator any negative number is in brackets, `5×(−25)`; at the start only a ± one is, `(−5)`, a typed one
   stays `-5`. A result turned negative with ± carries on as `(−84)+2` (`resultNegated`). Finished results stay plain.
+  Every minus the Calculator shows (display, result, History, the working) is the long `−` (`minusSign`, numbers.js;
+  `formatExpressionDisplay` also shows a − typed after an operator as `25−(−`); copying a result gives a plain `-`.
   Units has the same keypad as the calculator, including ( ).
 - **The working (?)** (explain.js): a tool's `how` is `{formula, steps:[{title, text, line?, bits?}], result, legend?, rule?}`, drawn by
   `howHtml`. The Calculator's comes from `explanationForExpression`, which recomputes every step with the same exact maths and
   returns null (no ?) rather than working that doesn't end in the result on screen, and with no steps (25 − 25i alone) ? is hidden; a rounded number in it ends in …
-  (`ratShown`). Worked-out numbers keep the plain - like results; powers are superscripts (`supText`); trig steps say
+  (`ratShown`). Every minus in it is the long − (`minusSign`). A step in brackets with work outside is titled "Brackets
+  first: …" the first time, "Inside the brackets: …" for the next steps in the same brackets or the brackets around them,
+  and "Next brackets: …" for another pair (`bracketsTitle`); powers are superscripts (`supText`); trig steps say
   degrees or radians. Units/Currency compute theirs when ? is pressed (`unitsHow`, the `#unitHow` button in their toolbar).
   Arrows shown in text get U+FE0E (→\uFE0E), or iOS may draw them as emoji. On phones the dialog may use the whole height.
 - **Complex numbers** (complex.js): a value is a fraction when real, `{re, im}` (im ≠ 0) when not; `cx()` turns one with im 0

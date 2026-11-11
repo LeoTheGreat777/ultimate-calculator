@@ -7,10 +7,34 @@ Part of the notes in CLAUDE.md (read that first). Covers layout.js, side.js, mod
   expression lines, Units values, tool fields and Subnet's details. A fitted element is watched (`fitWatch`, a
   ResizeObserver): when its own width changes it is fitted again, so turning the phone never leaves a number sized for
   the old width (iOS reports the new width late, after the resize event).
-- **Bigger keys on phones held upright** (`html.big-keys`: touch, upright, at most 500px wide, not Graph): the keys grow into
-  the room the screen leaves (`bigSpec`: up to 100px tall, tools 76px, Scientific 62px), the display giving way down to
-  150px first; digits grow with them; the footer is on one line (`fit-small`). Round keys (look.md) there are at most as
-  tall as they are wide, so the Calculator's and Units' keys are circles.
+- **Bigger keys on phones held upright** (`html.big-keys`: touch, upright, at most 500px wide, or a tablet; not Graph): the keys grow into
+  the room the screen leaves (`bigSpec`: up to 100px tall, Scientific 62px), the display giving way down to
+  150px first; digits grow with them (the tools' keys too); the footer is on one line (`fit-small`). Every keypad's keys may be as tall as
+  the Calculator's (a quarter of the keypad's width) and never taller than they are wide, so the round keys (look.md) are circles
+  where they can be and pills where they are wider (the tools' three columns, tablets): the keypads look the same in every mode.
+  **The keys sit at the bottom in every mode:** once everything fits, the display takes the height left over (`--disp` grows), so
+  nothing is left empty under the keypad; extra room shows above the result. Dates (a list, no keys) keeps its display and its
+  list reaches the bottom instead (`min-height` on `#keypad.date-details`), so the date fields don't move when the list appears.
+  **Computers too** (mouse, not touch, not the sideways layout: `html.desk`; not Graph for the keys): one key height for
+  the window in every mode (`deskKey()`: (height − `DESK.reserve` 570) / 5, at least 56; what Interest, two rows of fields,
+  has room for, so Subnet gets a few px less and Scientific keeps its own 62 at most). The tools' display gives way to its
+  smallest before their keys do (`dispFirst`), and the display takes the height left over, so the keys sit at the bottom.
+  The column's width follows the keys (`--desk-w`: keys about 1.2 times as wide as tall, the card 520–652px), so tall
+  windows get near-round keys; digits grow with the keys. Units and Currency: their two values sit just above the keys,
+  where the Calculator's result is, the category or rate bar stays at the top. No card frame (look.md). The footer is
+  on one line in every mode, Graph too (`fit-small`, as on phones and tablets), also when the page scrolls.
+  `keys_fill_the_bottom` in the tests checks every mode on phones, an iPad and computers (1024×768 to 1920×1080).
+- **Tablets upright** (`html.tablet`, `fitLayout`: a touch screen wider than 500px, not in the sideways layout, narrower than
+  `TABLET_MAX_W` 1264px, where the side panels fit): the app takes the whole width (up to 1100px) like the iPad's calculator,
+  gets `big-keys` (up to 124px; Scientific 80), bigger digits and result, the footer on one line (`fit-small`, as on phones),
+  and like phones the display takes the height left over, so the keys sit at the bottom (Units: its two values just above the keys).
+- **Tablets sideways** (`html.land-tablet`: touch, at least 6:5 wide, over 500px high, narrower than `TABLET_MAX_W`) get the
+  phones' sideways layout (`html.landscape`, `fitLandscape`): result and tabs on the left, keys on the right, Scientific's six
+  columns beside the basic four (`html.sci-side`). Keys up to 130px but never taller than wide (circles), at the bottom
+  (`align-self:end`) when they don't fill the height; bigger digits and gaps. An iPad Pro 13" sideways (1366px) keeps the
+  column with the side panels. `PHONES` in the tests has iPads (mini, Pro 11, Pro 13, upright and sideways) and a Galaxy Tab.
+- **Phones sideways look like upright:** a big result (`clamp(40px,16vh,96px)`), digits sized by the key (`--k`), and no card
+  frame (look.md).
 - **Fitting the screen:** `fitLayout()` sizes keys (`--k`) and the display (`--disp`) to the screen in every
   mode, and switches the tools to their compact layout when needed; only if nothing fits does the page scroll
   (`html.page-scroll`). Small phones upright (320×568, 360×640, an iPhone SE in Safari 375×553): when the normal limits
@@ -44,7 +68,7 @@ Part of the notes in CLAUDE.md (read that first). Covers layout.js, side.js, mod
   `html.landscape` in styles.css). Sideways the keys are the biggest that fit (a halving search, tools up to 84px), so every
   tab's keys are the same size even when the left side is the taller one, and once everything fits the card is stretched
   to the bottom (`html.land-fill`), so there is no empty strip below. On a very short screen (an iPhone SE in Safari, 667×330) `fitLandscape` first tightens the tools (`fit-tight`: less padding, a smaller ? row) before letting the page scroll. Fuel and Energy
-  share one row sideways like the kinds (`kind-grid`, `--f:3/4`); a label that doesn't fit its one line switches to its short
+  share one row sideways like the kinds (`kind-grid`, `--f:3/4`; Transfer's row gives Size, Speed and Time more room than Overhead %, `.xf-grid`); a label that doesn't fit its one line switches to its short
   form (`FIELD_SHORT`, `fitShortLabels`, run by `fitLayout`). `sideways_every_tab` in the tests checks every tab at 667×330
   and 814×409: no scrolling, nothing off screen, no cut label, the same key size. iOS reports a turned phone's new size late, after
   'resize': a ResizeObserver on the page fires 'resize' again when the width really changes (layout.js), and one on the
@@ -84,7 +108,9 @@ Part of the notes in CLAUDE.md (read that first). Covers layout.js, side.js, mod
   History on the left (`historyRowsHtml`, the same list and `historyClick` as the sheet) and on the right the working
   (`howHtml`; Units `unitsHow`; Graph `graphPointsHtml`) with a tool's chart under it (`toolChartHtml(false)`,
   `drawToolChart(box)`: the dialog's chart parts keep their ids, the panel's have classes only). They are `position:fixed`
-  level with the card (`--side-l/r/top/h/w`). Anything that changes the screen calls `refreshSide()` (once per frame; the
+  level with the card (`--side-l/r/top/h/w`) and as tall as it (`height:var(--side-h)`, the list scrolls inside): no
+  boxes, the page's colour, a thin line (`--border`) on the calculator's side, like the frameless keypad. The title bar
+  stays over the calculator's column. Anything that changes the screen calls `refreshSide()` (once per frame; the
   calculator's `render`, `renderToolDisplay`, `updateUnitsDisplay`, Graph's points, History, `fitLayout`, language, theme).
   With the panels showing, the History, ? and chart buttons are hidden (`html.side-panels #historyButton…`
   in styles.css) and the History sheet's `#historyClearWrap` (chart button, Clear all) and `#historyChartWrap` move into the
@@ -102,17 +128,20 @@ Part of the notes in CLAUDE.md (read that first). Covers layout.js, side.js, mod
   `window.__uiZoom`, CSS var `--z`). Viewport units must be written `calc(100dvh / var(--z,1))`, and any code that
   turns screen coordinates (clientX/Y, getBoundingClientRect, innerHeight) into CSS sizes must divide by
   `window.__uiZoom` (see `chZoom` in charts.js, `Z` in history.js).
-- **Dropdowns:** on desktop Chrome/Edge the unit menus use `appearance: base-select`, styled like the app; phones keep
-  native pickers. While a dropdown has focus the global keydown handler leaves keys to it.
+- **Dropdowns:** on desktop Chrome/Edge the unit menus (Units, Currency, Transfer's units) use `appearance: base-select`,
+  styled like the app; phones keep native pickers. While a dropdown has focus the global keydown handler leaves keys to it.
+  Transfer's selects have clear text and lie over the unit shown (tools.md): their general rule sets `appearance:none`, so
+  the base-select rule for them needs the higher specificity it has; their menus have group titles (`optgroup`).
 - **Pressing keys** (`setupPressFeedback`, ui.js), the same with a mouse and a finger, like the iPhone's calculator:
   every key in `#keypad` lights up the moment it's pressed (`.pressed`, a `::after` layer of `--text`, so it suits every
   key colour and theme), held a moment longer it grows (after .09s, easing out over .3s, to scale 1.12, over its neighbours, `will-change`
   set as it's pressed so the move starts smoothly; a quick tap only lights up), and let go it
   fades and settles back. No `:active` shrink anywhere on the keypad. On phones a tick: Android (any touch screen but iPhone)
-  one light `navigator.vibrate(KEY_TICK_MS)` (4 ms) on touchstart, once per press, and the key is pressed when the finger
+  one light `navigator.vibrate(KEY_TICK_MS)` (1 ms: the web can't set strength, a longer pulse buzzed hard and felt like two
+  knocks on a Pixel 9a; never two ticks within 80 ms) on touchstart, once per press, and the key is pressed when the finger
   lets go (`setupTouchRelease`): touchend is cancelled and the key gets its click from there if the finger is still on it
   (moved over 24 px or off the key: no press). Android sends no click after a long press, so a held key did nothing
-  otherwise; the long-press context menu (and its buzz) is blocked. A hold key that fired ticks once more (8 ms) and its
+  otherwise; the long-press context menu (and its buzz) is blocked. A hold key that fired ticks once more (2 ms) and its
   release does nothing. iPhone has no vibrate for websites; its own switch (`<input type="checkbox" switch>`, iOS 18+) ticks, but
   since iOS 26.5 only when a finger toggles it (a script's `label.click()` is silent). So on iPhone every key holds an
   invisible `<label class="key-tick">` over its face with a hidden switch inside (`addKeyTicks`, kept on re-drawn and

@@ -7,7 +7,7 @@ let unitPick={};// last chosen from/to units per unit category
 function saveTools(){
  const cat=$('#unitCategory')?.value,from=$('#unitFrom')?.value,to=$('#unitTo')?.value;
  if(cat&&units[cat]&&units[cat][from]!==undefined&&units[cat][to]!==undefined)unitPick[cat]={from,to};
- store.set(TOOLS_KEY,JSON.stringify({vatAction,kinds:toolKind,dateCount,units:{category:window._unitCategory||'length',pick:unitPick,source:unitSource}}));
+ store.set(TOOLS_KEY,JSON.stringify({vatAction,kinds:toolKind,dateCount,xf:xfUnit,units:{category:window._unitCategory||'length',pick:unitPick,source:unitSource}}));
 }
 function loadTools(){
  try{
@@ -16,6 +16,7 @@ function loadTools(){
   const kinds=s.kinds||{pct:s.pctAction};// pctAction: saved by 0.7.x
   Object.keys(KIND_FIELDS).forEach(m=>{if(KIND_FIELDS[m][kinds?.[m]])toolKind[m]=kinds[m]});
   if(s.dateCount==='work')dateCount='work';
+  xfSetUnits(s.xf);// Transfer's units (transfer.js)
   const u=s.units;if(!u||typeof u!=='object')return;
   if(units[u.category])window._unitCategory=u.category;
   if(u.pick&&typeof u.pick==='object')Object.entries(u.pick).forEach(([c,p])=>{if(units[c]&&units[c][p?.from]!==undefined&&units[c][p?.to]!==undefined)unitPick[c]={from:p.from,to:p.to}});
@@ -38,7 +39,8 @@ function renderToolDisplay(){refreshSide();
  fitDisplayText($('#result'),24);
 }
 const FIELD_EXAMPLES={fuelD:'250',fuelC:'7,2',fuelP:'1,85',energyP:'100',energyH:'8',energyD:'30',energyR:'0,20',energyK:'250',amount:'100',vatRate:'24%',pctOfRate:'12%',pctOfNum:'540',pctPrice:'80',pctOff:'25%',pctFrom:'80',pctTo:'100',tipBill:'60',tipRate:'10%',tipPeople:'1',loanAmount:'10.000',payAmount:'10.000',payRate:'4%',payMonthly:'300',loanRate:'4%',loanYears:'5',saveStart:'1.000',saveMonthly:'100',saveRate:'3%',saveYears:'10',dateDays:'30',netIp:'192.168.1.10',netPrefix:'24',netHosts:'50',value:'10',
- numA:'48',numB:'18',numC:'',numN:'360',eqA:'1',eqB:'-3',eqC:'2',sxA1:'2',sxB1:'1',sxC1:'5',sxA2:'1',sxB2:'-1',sxC2:'1',statX:'12,5',progDec:'255',progHex:'FF',progBin:'1111 1111',progOct:'377'};
+ numA:'48',numB:'18',numC:'',numN:'360',eqA:'1',eqB:'-3',eqC:'2',sxA1:'2',sxB1:'1',sxC1:'5',sxA2:'1',sxB2:'-1',sxC2:'1',statX:'12,5',progDec:'255',progHex:'FF',progBin:'1111 1111',progOct:'377',
+ xfSize:()=>xfExample('xfSize'),xfSpeed:()=>xfExample('xfSpeed'),xfTime:()=>xfExample('xfTime'),xfLoss:'0%'};// Transfer's follow the unit picked (transfer.js)
 let vatAction='add';
 const liveToolNumber=id=>{const raw=normalizeNumericInput(fieldValue(id));if(raw==='')return null;const n=Number(raw);return Number.isFinite(n)?n:null};
 // On phones the fields are filled only from the app's own keypad, so the native keyboard never opens.
@@ -59,11 +61,12 @@ const KIND_FIELDS={pct:{of:['pctOfRate','pctOfNum'],discount:['pctPrice','pctOff
  net:{subnet:['netIp','netPrefix'],hosts:['netHosts']},
  numbers:{gcd:['numA','numB','numC'],factors:['numN']},
  equation:{quad:['eqA','eqB','eqC'],sys2:['sxA1','sxB1','sxC1','sxA2','sxB2','sxC2']},
- energy:{device:['energyP','energyH','energyD','energyR'],kwh:['energyK','energyR']}};// Energy: a device's use, or kWh you already know (from the bill or a meter)
-const KIND_LABELS={pct:['pctOf','pctDiscount','pctChange','pctTip'],loan:['loanLoan','loanPayoff','loanSavings'],dates:['dateBetween','dateAdd'],net:['netKindSubnet','netKindHosts'],numbers:['numKindGcd','numKindFactors'],equation:['eqKindQuad','eqKindSys'],energy:['energyKindDevice','energyKindKwh']};
+ energy:{device:['energyP','energyH','energyD','energyR'],kwh:['energyK','energyR']},// Energy: a device's use, or kWh you already know (from the bill or a meter)
+ transfer:{time:['xfSize','xfSpeed','xfLoss'],size:['xfSpeed','xfTime','xfLoss'],speed:['xfSize','xfTime','xfLoss']}};// Transfer: the one of the three that is missing is worked out
+const KIND_LABELS={pct:['pctOf','pctDiscount','pctChange','pctTip'],loan:['loanLoan','loanPayoff','loanSavings'],dates:['dateBetween','dateAdd'],net:['netKindSubnet','netKindHosts'],numbers:['numKindGcd','numKindFactors'],equation:['eqKindQuad','eqKindSys'],energy:['energyKindDevice','energyKindKwh'],transfer:['xfKindTime','xfKindSize','xfKindSpeed']};
 const ONE_ROW_KINDS=new Set(['tip','gcd','quad','sys2']);// three fields to a row (sys2: two rows of a₁ b₁ c₁ / a₂ b₂ c₂)
 const KIND_COLS={};// fields to a row sideways, when not all of them (sys2 has all six in one row)
-let toolKind={pct:'of',loan:'loan',dates:'between',net:'subnet',numbers:'gcd',equation:'quad',energy:'device'};
+let toolKind={pct:'of',loan:'loan',dates:'between',net:'subnet',numbers:'gcd',equation:'quad',energy:'device',transfer:'time'};
 let dateCount='all';// Dates: count all days, or working days only
 const kindFields=(m=mode)=>KIND_FIELDS[m]?.[toolKind[m]]||[];
 const TOOL_DEFAULTS={net:{netPrefix:'24'},vat:{vatRate:'24'},dates:{dateFrom:()=>isoDate(todayNumber()),dateStart:()=>isoDate(todayNumber())}};
@@ -94,10 +97,10 @@ function labelCut(s){const r=document.createRange();r.selectNodeContents(s);cons
 // Besides the 15 digits, these fields have a sensible top: a key that would go past it is refused, and for a moment
 // the field's label says how far it goes (refuseLimit). [max, unit]
 const FIELD_MAX={vatRate:[50,'%'],pctOff:[100,'%'],tipRate:[100,'%'],loanRate:[50,'%'],payRate:[50,'%'],saveRate:[50,'%'],
- loanYears:[100,''],saveYears:[100,''],energyH:[24,''],energyD:[36500,''],fuelC:[100,'']};
+ loanYears:[100,''],saveYears:[100,''],energyH:[24,''],energyD:[36500,''],fuelC:[100,''],xfLoss:[99,'%']};
 // Fields where a negative number makes no sense: − is refused there (VAT's amount and % change's values may be negative).
 const POSITIVE_FIELDS=new Set(['fuelD','fuelC','fuelP','energyP','energyH','energyD','energyR','energyK','vatRate','pctPrice','pctOff','tipBill','tipRate',
- 'loanAmount','loanRate','loanYears','payAmount','payRate','payMonthly','saveStart','saveMonthly','saveRate','saveYears']);
+ 'loanAmount','loanRate','loanYears','payAmount','payRate','payMonthly','saveStart','saveMonthly','saveRate','saveYears','xfSize','xfSpeed','xfTime','xfLoss']);
 const noDecimalField=id=>!!FIELD_TYPE[id]&&!dottedField(id),noSignField=id=>(!!FIELD_TYPE[id]&&FIELD_TYPE[id]!=='int')||POSITIVE_FIELDS.has(id);
 // Number fields show thousands as they are typed, like the rest of the app: 10000 -> 10.000. In them a dot is always a
 // thousands dot and the comma the decimal; fieldValue is the text without the dots, for reading the number.
@@ -147,13 +150,13 @@ function setToolKind(m,next){
 }
 // The switch and the fields of a tool with kinds. Changing kind replaces only the fields, so the switch keeps its slide animation.
 // In landscape a kind's fields share one row (--f fields), so the switch above them still fits beside the keypad.
-const kindGridClass=()=>'tool-grid kind-grid'+(ONE_ROW_KINDS.has(toolKind[mode])?' cols-3':'');
+const kindGridClass=()=>'tool-grid kind-grid'+(ONE_ROW_KINDS.has(toolKind[mode])?' cols-3':'')+(mode==='transfer'?' xf-grid':'');
 // Equations: the form being solved, above its fields
 const EQ_FORMS={quad:'ax² + bx + c = 0',sys2:'a₁x + b₁y = c₁  ·  a₂x + b₂y = c₂'};
 const eqFormHtml=()=>mode==='equation'?'<p class="eq-form" id="eqForm">'+EQ_FORMS[toolKind.equation]+'</p>':'';
 const kindCols=()=>KIND_COLS[toolKind[mode]]||kindFields().length;
 function kindPanelHtml(){return toggleHtml(mode,true)+eqFormHtml()+'<div class="'+kindGridClass()+'" style="--f:'+kindCols()+'">'+kindFieldsHtml()+'</div>'+(mode==='net'?'<div id="netDetails" class="net-details"></div>':'')}
-function kindFieldsHtml(){return kindFields().map(id=>field(id,t(id))).join('')}
+function kindFieldsHtml(){return kindFields().map(id=>XF_KIND[id]?xfFieldHtml(id):field(id,t(id))).join('')}// Transfer: a number with its unit (transfer.js)
 function renderKindFields(){
  const grid=$('#toolPanel .tool-grid');if(!grid||!KIND_FIELDS[mode])return;
  grid.innerHTML=kindFieldsHtml();grid.className=kindGridClass();grid.style.setProperty('--f',String(kindCols()));
@@ -405,7 +408,7 @@ function renderToolKeypad(){
  $('#keypad').className='tool-keypad';
  if(mode==='prog'){$('#keypad').classList.add('prog-keypad');$('#keypad').innerHTML=progKeypadHtml();return}// A–F, no C (prog.js)
  $('#keypad').innerHTML=
-   '<button class="tool-key tool-utility" data-action="backspace" type="button" aria-label="'+esc(t('deleteKey'))+'">⌫</button><button class="tool-key tool-utility" data-action="clear-all" type="button">AC</button><button class="tool-key tool-utility" data-action="clear" type="button">C</button>'+
+   '<button class="tool-key tool-utility" data-action="backspace" type="button" aria-label="'+esc(t('deleteKey'))+'">'+BACK_ICON+'</button><button class="tool-key tool-utility" data-action="clear-all" type="button">AC</button><button class="tool-key tool-utility" data-action="clear" type="button">C</button>'+
    '<button class="tool-key" data-value="7" type="button">7</button><button class="tool-key" data-value="8" type="button">8</button><button class="tool-key" data-value="9" type="button">9</button>'+
    '<button class="tool-key" data-value="4" type="button">4</button><button class="tool-key" data-value="5" type="button">5</button><button class="tool-key" data-value="6" type="button">6</button>'+
    '<button class="tool-key" data-value="1" type="button">1</button><button class="tool-key" data-value="2" type="button">2</button><button class="tool-key" data-value="3" type="button">3</button>'+
@@ -465,6 +468,7 @@ function runActiveTool(){
  if(mode==='loan'){window._runLoan?.();return}
  if(mode==='dates'){window._runDates?.();return}
  if(mode==='net'){window._runNet?.();return}
+ if(mode==='transfer'){window._runTransfer?.();return}
  if(mode==='numbers'){window._runNumbers?.();return}
  if(mode==='equation'){window._runEquation?.();return}
  if(mode==='stats'){window._runStats?.();return}
@@ -533,7 +537,8 @@ $('#toolPanel').addEventListener('input',e=>{
   const prev=toolState[mode]?.inputs?.[key]??'';
  // the text without thousands dots (a paste may use dots either way); where the cursor is, counted without the dots
  const caret=document.activeElement===input&&input.selectionStart!=null?input.value.slice(0,input.selectionStart).replace(/\./g,'').length:null;
- if(groupedField(key))raw=e.inputType==='insertFromPaste'||e.inputType==='insertFromDrop'?pastedNumber(raw):raw.replace(/\./g,'');
+ const pasted=e.inputType==='insertFromPaste'||e.inputType==='insertFromDrop',withUnit=pasted&&XF_KIND[key]?e.pastedText??raw:'';// the text as it was pasted (the app's own Paste hands it over, clip.js)
+ if(groupedField(key))raw=pasted?pastedNumber(raw):raw.replace(/\./g,'');
  if(digitCount(raw)>MAX_DIGITS){input.value=prev;refuseKey(input);return}// typed or pasted on a keyboard: 15 digits at most
  if(/^0\d/.test(raw))raw=raw.replace(/^0+(?=\d)/,'');
  if(FIELD_MAX[key]&&Number(normalizeNumericInput(raw))>FIELD_MAX[key][0]){input.value=prev;refuseLimit(input,FIELD_MAX[key]);return}
@@ -544,6 +549,7 @@ $('#toolPanel').addEventListener('input',e=>{
  }
  toolState[mode]??={inputs:{},result:null};
  toolState[mode].inputs[key]=raw;
+ if(withUnit)xfPastedUnit(key,withUnit);// Transfer: "200 GB" picks the unit too (transfer.js)
  fitDisplayText(input,12,true);
  saveTools();
  runActiveTool();

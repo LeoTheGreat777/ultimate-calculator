@@ -9,7 +9,7 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 ### Calculator
 - Standard arithmetic with operator precedence and brackets
 - Calculator-style percentages
-- Change sign (±): hold − on the keypad, or F9 on a keyboard
+- Change sign (±): hold − on the keypad, or hold −, F9 or Shift + − on a keyboard
 - Decimal and negative number support
 - Calculation history, grouped by day and month
 - Results show up to 10 decimals when the screen has room (6 on a narrow phone); copying copies what you see
@@ -51,6 +51,7 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 - Dates: days between two dates and a date plus or minus days, picked with the device's own calendar; all days or working days only (Greek public holidays)
 - Currency: the European Central Bank's daily rates for about 30 currencies, with calculations inside the values; works offline with the last rates
 - Subnet (IPv4): network, broadcast, host range, mask and wildcard from an address and a prefix or mask, and the smallest subnet for a number of hosts
+- Transfer: how long a download, upload or copy takes (200 GB at 1 Gbps: 26 min 40 s), how much data gets through in a time, or the speed a transfer needs; bits or bytes per second, GB or GiB, with an optional overhead
 - Interest: a loan's monthly payment and total interest, how long a loan takes with the payment you can afford, and what savings grow to with monthly deposits, with charts
 - Numbers: GCD and LCM of two or three numbers, prime factors and divisors of numbers up to 15 digits
 - Equations: ax² + bx + c = 0 with real or complex roots (exact, x = −1 ± √2), and a system of two equations
@@ -60,12 +61,12 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 - Each mode keeps its own History; AC clears the values
 
 ### Interface
-- Responsive desktop and mobile layouts, in portrait and landscape (keypad beside the display when a phone is turned sideways)
-- Themes: Light, Paper, Dark, Black (true black for OLED screens), your own light and dark themes, or Match device; square or round keys
+- Responsive desktop, tablet and mobile layouts, in portrait and landscape (the whole screen on tablets like the iPad's calculator; keypad beside the display when a phone or tablet is turned sideways)
+- Themes: Light, Paper, Dark, Black (true black for OLED screens), your own light and dark themes, or Match device; round keys like the iPhone's calculator
 - English and Greek language support
 - Installable on phones: an install button opens the install dialog on Android, and shows a short Add to Home Screen guide on iPhone
 - Mobile-friendly calculator controls
-- One-tap mode tabs for the pinned modes; every mode (Calculator, Units, Currency, Graph, VAT, Percent, Interest, Dates, Fuel, Energy, Subnet, Programmer, Numbers, Equations, Statistics) is in All modes (⊞, at the top), with a search, pins, and an All | Default | None switch to pin every mode, the starting four or none at once; Alt+1–9 for the first nine on a keyboard
+- One-tap mode tabs for the pinned modes; every mode (Calculator, Units, Currency, Graph, VAT, Percent, Interest, Dates, Fuel, Energy, Subnet, Transfer, Programmer, Numbers, Equations, Statistics) is in All modes (⊞, at the top), with a search, pins, and an All | Default | None switch to pin every mode, the starting four or none at once; Alt+1–9 for the first nine on a keyboard
 - On big screens History sits on the left and the working on the right, beside the calculator, updating live
 - Calculation explanations presented in a readable step-by-step view
 - Tips for every mode, with keyboard shortcuts on computers, from the footer (or ? on a keyboard)
@@ -121,7 +122,7 @@ npm ci && node tools/build.mjs && python3 tests/test_app.py --site build
 python3 tests/test_app.py --phones
 ```
 
-The tests open the app in Chromium at desktop and phone sizes, in both languages and themes, and check the calculator, brackets, Units, the tools, History, the mode tabs, the language switch and that nothing is cut off on phones. Every mode, sheet and popup is also checked on about 25 popular phone sizes (small and big iPhones, Pixel, Galaxy S and A, foldables, upright and sideways) in both languages: no text over other text, nothing cut or off the screen, keys big enough to press.
+The tests open the app in Chromium at desktop and phone sizes, in both languages and themes, and check the calculator, brackets, Units, the tools, History, the mode tabs, the language switch and that nothing is cut off on phones. Every mode, sheet and popup is also checked on about 35 popular phone and tablet sizes (small and big iPhones, Pixel, Galaxy S and A, foldables, iPads, upright and sideways) in both languages: no text over other text, nothing cut or off the screen, keys big enough to press.
 
 ## Deployment
 

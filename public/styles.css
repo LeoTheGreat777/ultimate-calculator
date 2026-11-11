@@ -496,6 +496,7 @@ html.page-scroll body{touch-action:pan-y!important}
 /* Quick Calculator <-> Units button, left of the mode button */
 /* Hold ⌫ to clear everything: the key fills while held, then flashes */
 #keypad [data-action="backspace"],#keypad [data-g="back"]{-webkit-touch-callout:none}
+.back-icon{display:block;width:1.3em;height:1.3em;margin:auto;pointer-events:none}/* the drawn ⌫ (BACK_ICON), sized by the key's font */
 /* pressed, the same with a mouse and a finger (ui.js setupPressFeedback): lights up at once (a layer of the text colour,
    so it works on every key colour and theme) and, held a moment longer, grows a little over its neighbours; let go, it
    fades and settles back. A quick tap only lights up: the grow waits .09s (time for the key to get its own layer, so
@@ -527,23 +528,30 @@ html.theme-fade *,html.theme-fade *::before,html.theme-fade *::after{transition:
    like the mode menu. Phones and tablets keep their native pickers; other browsers keep the native menu. */
 @supports (appearance:base-select){
   @media (hover:hover) and (pointer:fine){
-    .unit-display select{appearance:base-select}
-    .unit-display select::picker(select){appearance:base-select;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:14px;padding:5px;margin:6px 0;box-shadow:0 18px 50px rgba(0,0,0,.35);max-height:min(340px,calc(60dvh / var(--z,1)));overflow-y:auto;scrollbar-width:thin;opacity:0;transform:translateY(-4px) scale(.98);transition:opacity .14s ease,transform .14s ease,display .14s allow-discrete,overlay .14s allow-discrete}
-    .unit-display select:open::picker(select){opacity:1;transform:none}
+    :is(.unit-display,.xf-box) select{appearance:base-select}
+    :is(.unit-display,.xf-box) select::picker(select){appearance:base-select;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:14px;padding:5px;margin:6px 0;box-shadow:0 18px 50px rgba(0,0,0,.35);max-height:min(340px,calc(60dvh / var(--z,1)));overflow-y:auto;scrollbar-width:thin;opacity:0;transform:translateY(-4px) scale(.98);transition:opacity .14s ease,transform .14s ease,display .14s allow-discrete,overlay .14s allow-discrete}
+    :is(.unit-display,.xf-box) select:open::picker(select){opacity:1;transform:none}
     @starting-style{
-      .unit-display select:open::picker(select){opacity:0;transform:translateY(-4px) scale(.98)}
+      :is(.unit-display,.xf-box) select:open::picker(select){opacity:0;transform:translateY(-4px) scale(.98)}
     }
-    .unit-display select option{background:transparent;color:var(--text);padding:8px 12px 8px 10px;border-radius:9px;font-size:14px;font-weight:500;cursor:pointer;gap:8px;min-height:36px;text-align:left}
-    .unit-display select option:hover,.unit-display select option:focus-visible{background:var(--card2);outline:none}
-    .unit-display select option:checked{color:var(--accent2);font-weight:700}
-    .unit-display select option::checkmark{color:var(--accent2);font-weight:800}
-    .unit-display select::picker-icon{color:var(--accent2);transition:rotate .15s ease}
-    .unit-display select:open::picker-icon{rotate:180deg}
+    :is(.unit-display,.xf-box) select option{background:transparent;color:var(--text);padding:8px 12px 8px 10px;border-radius:9px;font-size:14px;font-weight:500;cursor:pointer;gap:8px;min-height:36px;text-align:left}
+    :is(.unit-display,.xf-box) select option:hover,:is(.unit-display,.xf-box) select option:focus-visible{background:var(--card2);outline:none}
+    :is(.unit-display,.xf-box) select option:checked{color:var(--accent2);font-weight:700}
+    :is(.unit-display,.xf-box) select option::checkmark{color:var(--accent2);font-weight:800}
+    :is(.unit-display,.xf-box) select::picker-icon{color:var(--accent2);transition:rotate .15s ease}
+    :is(.unit-display,.xf-box) select:open::picker-icon{rotate:180deg}
     /* category: a menu as wide as the box; unit names: the menu opens from the right edge, where the name is */
     .unit-display .conversion-category{display:flex;align-items:center;justify-content:space-between}
     .unit-display .conversion-category::picker(select){width:anchor-size(width)}
     .unit-display .unit-unit{display:inline-flex;align-items:center;justify-content:flex-end;gap:4px;max-width:none;width:auto;min-width:0;padding:2px 2px 0!important}
     .unit-display .unit-unit::picker(select){position-area:bottom span-left;min-width:190px}
+    /* Transfer's unit menus: opening from the right edge, where the unit is; group titles small and muted */
+    .tool-field .xf-box .xf-unit select{appearance:base-select}
+    .xf-box select::picker-icon{display:none}
+    .xf-box select::picker(select){position-area:bottom span-left;min-width:210px;max-height:min(390px,calc(60dvh / var(--z,1)))}
+    .xf-box select optgroup{background:transparent;color:var(--muted);font-size:11.5px;font-weight:650;padding:6px 0 0 4px}
+    .xf-box select optgroup:first-child{padding-top:2px}
+    .xf-box select option{min-height:32px;padding-top:6px;padding-bottom:6px}
   }
 }
 /* the footer text is muted; the Tips link keeps its full colour */
@@ -627,15 +635,19 @@ html.theme-fade *,html.theme-fade *::before,html.theme-fade *::after{transition:
   .top-actions .icon-button,.top-actions .language-button{width:38px;height:38px}
 }
 /* ---------- History sheet: slides up from the bottom; dragged from anywhere on it, it follows the finger (history.js) ---------- */
-#historyPanel{will-change: height, transform;transform: translate(-50%, 100%);transition: transform .42s cubic-bezier(.22,1,.36,1), height .42s cubic-bezier(.22,1,.36,1);overscroll-behavior: contain;}/* the iPhone's soft stop */
-#historyPanel.open{transform: translate(-50%, 0);}
-#historyPanel.dragging{transition: none !important;}
+#historyPanel{will-change:transform;transform:translate(-50%,100%);transition:transform .42s cubic-bezier(.22,1,.36,1);overscroll-behavior:contain}/* the iPhone's soft stop */
+#historyPanel.open{transform:translate(-50%,0)}
+#historyPanel.dragging{transition:none !important}
 #historyPanel .history-bar, #historyPanel .sheet-handle, #historyPanel .section-heading{touch-action: none;cursor: grab;-webkit-user-select: none;user-select: none;}
 #historyPanel.dragging .history-bar, #historyPanel.dragging .sheet-handle, #historyPanel.dragging .section-heading{cursor: grabbing;}
 #historyPanel.dragging .history-list{pointer-events: none;}
-#historyPanel.expanded{height: min(calc(92dvh / var(--z,1)), 780px);}
+/* Only the sheet's position moves (transform, drawn by the graphics chip at the screen's own rate, 120 Hz on ProMotion), never
+   its height: while it is dragged or goes between half and fully open (.moving, history.js) it is fully open's height, pushed
+   down, and gets its resting height again once it stops */
+#historyPanel.expanded,#historyPanel.moving{height:min(calc(92dvh / var(--z,1)),780px)}
 @media (max-width: 480px){
-  #historyPanel.expanded{height: calc(100dvh / var(--z,1));border-radius: 20px 20px 0 0;}
+  #historyPanel.expanded,#historyPanel.moving{height:calc(100dvh / var(--z,1))}
+  #historyPanel.expanded{border-radius:20px 20px 0 0}
 }
 /* Frosted like the iPhone's: the sheet is glass (the app shows through it, blurred), and the list scrolls under its top bar
    (handle, title, buttons) and the title of the group on screen, which stay put and blur what passes under them. --hbar: the bar's height (history.js).
@@ -660,7 +672,7 @@ html.theme-fade *,html.theme-fade *::before,html.theme-fade *::after{transition:
    html.landscape is set by fitLayout (layout.js, LANDSCAPE); it also sets the key height (--k, --gk) and the unit rows. */
 /* iPhone home-screen app held upright: iOS blurs a band under the status bar, so the page starts below it */
 html.ios-app:not(.landscape) .app-shell{padding-top:calc(env(safe-area-inset-top) + 28px)}
-html.landscape .app-shell{width:min(1000px,100%);padding-top:max(6px,env(safe-area-inset-top));padding-bottom:max(6px,env(safe-area-inset-bottom))}
+html.landscape .app-shell{width:min(1100px,100%);padding-top:max(6px,env(safe-area-inset-top));padding-bottom:max(6px,env(safe-area-inset-bottom))}
 html.landscape .topbar{margin-bottom:5px}
 html.landscape .topbar h1{font-size:18px;margin:0}
 html.landscape .brand-mark{width:24px;height:24px}
@@ -769,24 +781,24 @@ html.landscape .theme-group{padding-top:3px;padding-bottom:1px}
 .keypad.sci .sci-pad{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
 /* six columns: the labels size with the pad's width (cqw), longer ones (sinh⁻¹) a little smaller, so none is cut on a small phone */
 .keypad.sci .sci-pad{container-type:inline-size}
-html:not(.landscape) .calculator-card .keypad.sci .key.sci-key:not(.mem-key){padding:0;font-size:min(18px,5cqw)}
-html:not(.landscape) .calculator-card .keypad.sci .key.sci-key.long{font-size:min(16px,4.2cqw)}
+html:not(.sci-side) .calculator-card .keypad.sci .key.sci-key:not(.mem-key){padding:0;font-size:min(18px,5cqw)}
+html:not(.sci-side) .calculator-card .keypad.sci .key.sci-key.long{font-size:min(16px,4.2cqw)}
 .keypad.sci .mem-row{grid-column:1/-1;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}/* the memory keys: five above the six columns */
 .keypad.sci .basic-pad{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .key.sci-key{background:var(--card2);box-shadow:inset 0 0 0 1px var(--border);color:var(--text);font-size:16px;font-weight:500;letter-spacing:0}
 .key.sci-key.on{background:var(--accent);box-shadow:none;color:var(--on-accent)}
 @media (hover:hover) and (pointer:fine){.key.sci-key:hover{background:var(--key-hover)}.key.sci-key.on:hover{background:var(--accent)}}/* hover like the other keys (.key:hover comes earlier, so it lost to the sci-key colour) */
 html.landscape .calculator-card.sci-on{grid-template-columns:minmax(0,.7fr) minmax(0,1.75fr)}
-html.landscape .keypad.sci{flex-direction:row}
-html.landscape .keypad.sci .sci-pad{flex:6;grid-template-columns:repeat(6,minmax(0,1fr));grid-template-rows:repeat(5,auto);grid-auto-flow:column}
-html.landscape .keypad.sci .mem-row{display:contents}/* sideways the memory keys are the first column */
-html.landscape .key.sci-key:not(.mem-key){grid-row:var(--lr);grid-column:var(--lc)}
-html.landscape .key.sci-key.land-wide{grid-column:var(--lc)/span 2}
-html.landscape .keypad.sci .basic-pad{flex:4}/* six columns beside four: all keys about as wide */
+html.sci-side .keypad.sci{flex-direction:row}
+html.sci-side .keypad.sci .sci-pad{flex:6;grid-template-columns:repeat(6,minmax(0,1fr));grid-template-rows:repeat(5,auto);grid-auto-flow:column}
+html.sci-side .keypad.sci .mem-row{display:contents}/* sideways (and on a tablet held sideways: html.sci-side) the memory keys are the first column */
+html.sci-side .key.sci-key:not(.mem-key){grid-row:var(--lr);grid-column:var(--lc)}
+html.sci-side .key.sci-key.land-wide{grid-column:var(--lc)/span 2}
+html.sci-side .keypad.sci .basic-pad{flex:4}/* six columns beside four: all keys about as wide */
 /* sideways six columns of scientific keys beside the basic ones: the labels follow the key size and never get cut */
-html.landscape .key.sci-key{padding:0;font-size:min(18px,calc(var(--k,48px) * .36),5.5cqw)}
-html.landscape .key.sci-key.long{font-size:min(15px,calc(var(--k,48px) * .28),4cqw)}
-html.landscape .key.sci-key.mem-key{font-size:min(15px,calc(var(--k,48px) * .3))}
+html.sci-side .key.sci-key{padding:0;font-size:min(18px,calc(var(--k,48px) * .36),5.5cqw)}
+html.sci-side .key.sci-key.long{font-size:min(15px,calc(var(--k,48px) * .28),4cqw)}
+html.sci-side .key.sci-key.mem-key{font-size:min(15px,calc(var(--k,48px) * .3))}
 
 /* Dates on a computer: the date is a button that opens the app's calendar (dates.js) */
 .date-pick{width:100%;min-height:44px;display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--border);border-radius:11px;background:var(--card);color:var(--text);padding:0 12px;font:inherit;font-size:16px;cursor:pointer;text-align:left}
@@ -904,6 +916,17 @@ html.side-panels .side-panel{display:flex;flex-direction:column;position:fixed;t
 .side-head .history-clear-wrap{margin-left:auto;min-height:30px}
 .side-head .history-close{display:none}
 .side-panel .history-chart{margin:4px 0 6px}
+/* the three parts share the window, like the frameless keypad (html.frameless): no boxes, a thin line between them, all as
+   tall as the calculator */
+html.side-panels .side-panel{height:var(--side-h);background:transparent;border:0;border-radius:0;box-shadow:none;padding-top:6px}
+html.side-panels .side-left{border-right:1px solid var(--border);padding-left:2px;padding-right:20px}
+html.side-panels .side-right{border-left:1px solid var(--border);padding-left:20px;padding-right:2px}
+/* a computer (html.desk, layout.js): the column's width follows the keys' height, so they are near round in tall windows;
+   Units and Currency: their two values just above the keys, where the Calculator's result is, the picker bar at the top */
+html.desk .app-shell{width:min(var(--desk-w,680px),100%)}
+html.desk #calculatorDisplay.unit-display .unit-rows{flex:0 0 auto!important;margin-top:auto}
+html.desk .calculator-card:not(.graph-mode) .keypad:not(.sci) .key{font-size:clamp(25px,calc(var(--k) * .3),36px)}
+html.desk .calculator-card .tool-keypad button{font-size:clamp(20px,calc(var(--k) * .28),30px)}
 html.side-panels #historyButton,html.side-panels #howButton,html.side-panels #unitHow,html.side-panels #chartButton{display:none!important}
 .side-panel .side-list{margin-top:4px;min-height:0;overflow-y:auto;scrollbar-width:thin}
 .side-panel .history-result{font-size:17px}
@@ -970,6 +993,22 @@ body.fit .calculator-card .tool-keypad.stat-keypad button.stat-add,.calculator-c
 html.landscape .calculator-card.fit-tight .tool-grid.prog-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.5fr) minmax(0,.9fr)}/* a very short screen sideways: the four fields in one row */
 html.landscape .calculator-card.fit-tight .prog-grid .tool-field{grid-column:auto}
 html.landscape .calculator-card.fit-tight .prog-grid .tool-field span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* ---------- Transfer (transfer.js): a number and its unit in one box. The unit is text in Units' colour with a drawn
+   arrow; the menu itself (a select with clear text) lies over it ---------- */
+.xf-box{display:flex;align-items:stretch;min-width:0;border:1px solid var(--border);border-radius:11px;background:var(--card)}
+.xf-box:has(input.tool-active),.xf-box:has(input:focus){border-color:var(--accent)}
+/* the input keeps its own border (clear) and sits over the box's, so the box is exactly as tall as the other fields */
+.tool-field .xf-box input,.tool-field .xf-box input:focus,.tool-field .xf-box input.tool-active{flex:1 1 0;min-width:0;width:auto;margin:-1px 0 -1px -1px;border-color:transparent;border-radius:11px 0 0 11px;background:transparent;padding-right:2px}
+.xf-unit{position:relative;flex:0 0 auto;display:flex;align-items:center;justify-content:flex-end;gap:6px;min-width:44px;margin:-1px -1px -1px 0;padding:0 11px 0 4px;border-radius:0 11px 11px 0;color:var(--accent2);font-size:14px;white-space:nowrap}
+.xf-unit b{font-weight:750}
+.xf-unit::after{content:'';flex:0 0 auto;width:6px;height:6px;margin-top:-4px;border:solid currentColor;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.tool-field .xf-unit select{position:absolute;inset:0;width:100%;height:100%;margin:0;padding:0;border:0;border-radius:inherit;background:transparent;color:transparent;-webkit-appearance:none;appearance:none;cursor:pointer}
+.xf-unit:has(select:focus-visible){outline:2px solid var(--accent2);outline-offset:-2px}
+.xf-unit option,.xf-unit optgroup{background:var(--card);color:var(--text)}
+/* Size and Speed get more of a shared row than Overhead % (sideways, and fit-row on a small phone) */
+html.landscape .tool-grid.kind-grid.xf-grid,.calculator-card.fit-row .tool-grid.kind-grid.xf-grid{grid-template-columns:minmax(0,1.25fr) minmax(0,1.25fr) minmax(0,.8fr)}
+html.landscape .xf-unit,.calculator-card.fit-row .xf-unit{gap:4px;min-width:36px;padding:0 8px 0 2px;font-size:13px}
+html.landscape .tool-field .xf-box input,.calculator-card.fit-row .tool-field .xf-box input{padding-left:8px;padding-right:1px}
 /* ---------- Bigger touch areas ----------
    Small buttons get an invisible hit area around them (::after), so a finger finds them easily; they look the same.
    A static ? button becomes relative (same place) so its hit area sits around it. */
@@ -991,22 +1030,15 @@ html.landscape .calculator-card.fit-tight .prog-grid .tool-field span{white-spac
 .mode-tab-icon:has(.eq-icon){font-size:inherit;line-height:inherit;height:auto;font-weight:800;letter-spacing:-.02em}
 /* Phones held upright: bigger keys (html.big-keys, set by fitLayout) with bigger digits */
 html.big-keys .calculator-card:not(.graph-mode) .keypad:not(.sci) .key{font-size:clamp(25px,calc(var(--k) * .36),34px)}
-/* Round keys (html.keys-round, the theme menu): circles where a key is as tall as wide, pills elsewhere; on a phone
-   upright also no card frame, a wider gap and lighter, bigger digits, like the iPhone's calculator */
+/* Round keys (html.keys-round, always set by fitLayout): circles where a key is as tall as wide, pills elsewhere; on a touch
+   screen (phone or tablet, upright or sideways: html.frameless, layout.js) also no card frame, and upright a wider gap and
+   lighter, bigger digits, like the iPhone's calculator */
 html.keys-round .calculator-card .key,html.keys-round .calculator-card .tool-keypad button{border-radius:999px}
-html.big-keys.keys-round,html.big-keys.keys-round body{background:var(--card)}/* the page is the card's colour, so the keys stand out as on the card */
-html.big-keys.keys-round .calculator-card{background:transparent;border-color:transparent;box-shadow:none;padding-left:0;padding-right:0}
+html.frameless,html.frameless body{background:var(--card)}/* the page is the card's colour, so the keys stand out as on the card */
+html.frameless .calculator-card{background:transparent;border-color:transparent;box-shadow:none;padding-left:0;padding-right:0}
 html.big-keys.keys-round .calculator-card:not(.graph-mode) .keypad:not(.sci){column-gap:14px}
 html.big-keys.keys-round .calculator-card:not(.graph-mode) .keypad:not(.sci) .key{font-size:clamp(25px,calc(var(--k) * .42),36px);font-weight:400}
-/* The keys' shape in the theme menu */
-.key-shape{display:flex;align-items:center;gap:4px;padding:2px 4px 2px 10px}
-.key-shape-label{flex:1;font-size:14px;font-weight:650;color:var(--text)}
-.key-shape-opt{width:42px;height:38px;display:grid;place-items:center;padding:0;border:0;border-radius:11px;background:transparent;color:var(--muted);cursor:pointer}
-.key-shape-opt:hover{background:var(--key);color:var(--text)}
-.key-shape-opt[aria-checked="true"]{background:var(--card2);color:var(--accent)}
-.key-shape-opt:focus{outline:none}
-.key-shape-opt:focus-visible{outline:2px solid var(--accent2);outline-offset:-2px}
-html.landscape .key-shape-opt{height:34px}
+html.big-keys .calculator-card .tool-keypad button{font-size:clamp(20px,calc(var(--k) * .34),28px)}/* the tools' keys grow as tall as the Calculator's (layout.js), their digits with them */
 /* Copy and Paste: the menu over a held number (clip.js) */
 .clip-menu{position:fixed;z-index:120;display:flex;padding:4px;gap:2px;background:var(--card2);border:1px solid var(--border);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.3)}
 .clip-menu.hidden{display:none}
@@ -1017,3 +1049,28 @@ html.landscape .key-shape-opt{height:34px}
 .clip-menu button:focus{outline:none}
 .clip-menu button:focus-visible{outline:2px solid var(--accent2);outline-offset:-2px}
 .unit-value.copied,#toolPanel input.copied{color:var(--accent2);transition:color .15s}
+/* Tablets (html.tablet, layout.js: a touch screen wider than a phone, upright or sideways, narrower than where the side
+   panels fit): the app takes the whole width like the iPad's calculator; the keys grow (big-keys) and the display takes the
+   height left over, so the keys sit at the bottom; bigger digits and result */
+html.tablet .app-shell{width:min(1100px,100%);padding-left:max(28px,env(safe-area-inset-left));padding-right:max(28px,env(safe-area-inset-right))}
+html.tablet .calculator-card:not(.graph-mode) .keypad:not(.sci){column-gap:18px;row-gap:14px}
+html.tablet .calculator-card:not(.graph-mode) .keypad:not(.sci) .key{font-size:clamp(25px,calc(var(--k) * .38),40px)}
+html.tablet.keys-round .calculator-card:not(.graph-mode) .keypad:not(.sci) .key{font-size:clamp(25px,calc(var(--k) * .42),44px)}
+html.tablet .calculator-card .keypad.sci,html.tablet .calculator-card .keypad.sci>div{gap:10px}
+html.tablet .calculator-card .keypad.sci .key:not(.sci-key){font-size:clamp(20px,calc(var(--k) * .36),30px)}
+html.tablet .calculator-card .keypad.sci .key.sci-key:not(.mem-key):not(.long){font-size:min(21px,calc(var(--k) * .36),5.5cqw)}
+html.tablet .calculator-card .keypad.sci .key.sci-key.mem-key{font-size:min(19px,calc(var(--k) * .32))}
+html.tablet .display-wrap .result{font-size:clamp(46px,11vw,96px)}
+/* Phones sideways, like upright: a big result, bigger digits on the keys, and with round keys a wider gap and lighter digits */
+html.landscape .display-wrap:not(.tool-display):not(.has-alt) .result{font-size:clamp(40px,16vh,96px)}
+html.landscape .calculator-card:not(.graph-mode) .keypad:not(.sci) .key{font-size:clamp(20px,calc(var(--k) * .36),30px)}
+/* A tablet sideways (html.land-tablet, layout.js) has the phones' sideways layout with bigger keys: digits and gaps grow with them */
+html.land-tablet.landscape.frameless .calculator-card:not(.graph-mode) .keypad:not(.sci){column-gap:16px;row-gap:12px}
+html.land-tablet.landscape.frameless .calculator-card:not(.graph-mode) .keypad:not(.sci) .key{font-size:clamp(20px,calc(var(--k) * .42),44px)}
+html.land-tablet.landscape.frameless .calculator-card .tool-keypad button{font-size:clamp(20px,calc(var(--k) * .3),28px)}
+html.land-tablet.landscape.frameless .calculator-card .keypad.sci .key:not(.sci-key){font-size:clamp(20px,calc(var(--k) * .36),30px)}
+html.landscape.frameless .calculator-card:not(.graph-mode) .keypad:not(.sci){column-gap:10px}
+html.landscape.frameless .calculator-card:not(.graph-mode) .keypad:not(.sci) .key{font-size:clamp(20px,calc(var(--k) * .42),32px);font-weight:400}
+html.tablet #calculatorDisplay.unit-display .unit-rows,html.landscape #calculatorDisplay.unit-display .unit-rows{margin-top:auto}/* Units: the two values just above the keys, the category at the top */
+html.tablet .calculator-card .tool-keypad button{font-size:clamp(20px,calc(var(--k) * .34),28px)}
+html.land-tablet #keypad{align-self:end}/* a tablet sideways: the keys at the bottom, level with the result, when they don't fill the height (Scientific) */

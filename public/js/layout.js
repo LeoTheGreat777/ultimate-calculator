@@ -100,7 +100,10 @@ function applyUiZoom(){
 const LANDSCAPE='(orientation: landscape) and (max-height: 500px), (pointer: coarse) and (min-aspect-ratio: 6/5) and (max-height: 720px)';
 function fitLandscape(card,root,avail,need,tool,setToolLayout){
  if(tool)setToolLayout(true);
- const graph=mode==='graph',v=graph?'--gk':'--k',tall=avail>520,[kMax,kMin]=graph?[tall?72:56,28]:tool?[tall?96:84,32]:[tall?96:68,34];// taller: a foldable's inner screen
+ const graph=mode==='graph',v=graph?'--gk':'--k',tall=avail>520,tab=root.classList.contains('land-tablet');
+ // taller: a foldable's inner screen; a tablet: up to 130px, but no taller than a key is wide (round keys stay circles or wider)
+ let [kMax,kMin]=graph?[tall?72:56,28]:tool?[tall?96:84,32]:[tall?96:68,34];
+ if(tab&&!graph){const kw=Math.min(...[...$('#keypad').querySelectorAll('button')].map(b=>b.getBoundingClientRect().width/(window.__uiZoom||1)).filter(x=>x>0));if(kw>0)kMax=Math.min(130,Math.floor(kw))}
  const rows=new Set([...$('#keypad').querySelectorAll('button')].map(b=>b.getBoundingClientRect().top|0)).size||5;
  root.classList.remove('land-fill');// measured at its natural height; filled to the bottom at the end
  card.style.setProperty('--disp','auto');// the display fills the height beside the keys
@@ -134,16 +137,32 @@ function fitBrand(){const n=$('.brand-name'),h=n&&n.parentElement;if(!h)return;h
  let s=base;while(cut()&&s>14){s-=.5;h.style.fontSize=s+'px'}
  if(!cut())return;
  h.classList.add('no-mark');h.style.fontSize='';s=base;while(cut()&&s>12){s-=.5;h.style.fontSize=s+'px'}}
-// The footer on one line (small phones, sideways: fit-small, landscape): when it still takes two (Greek on an iPhone SE),
+// The footer on one line (phones, tablets, computers, sideways: fit-small, landscape): when it still takes two (Greek on an iPhone SE),
 // the app's name in it goes (.fit-footer; the title at the top has it), so the version, Tips and the author stay.
 function fitFooter(){const f=$('.app-footer'),r=document.documentElement;if(!f)return;r.classList.remove('fit-footer');
  if(!r.classList.contains('fit-small')&&!r.classList.contains('landscape'))return;
- const a=f.firstElementChild,b=f.lastElementChild;if(a&&b&&b.getBoundingClientRect().top>a.getBoundingClientRect().top+2)r.classList.add('fit-footer')}
-// Phones held upright: the keys grow into the room the screen leaves (html.big-keys), up to 100px tall (tools 76px,
-// Scientific stays 62); round keys (keyShape, theme menu) in the Calculator and Units are at most as tall as they are wide.
-function bigSpec(spec,big){if(!big)return spec;const w=$('#keypad .key')?.getBoundingClientRect().width/(window.__uiZoom||1)||86;
- const max=spec===FIT.calc||spec===FIT.units?(keyShape==='round'?Math.min(100,Math.floor(w)):100):spec===FIT.sci?62:76;
- return {...spec,k:[Math.max(spec.k[1],max),spec.k[1]],roomy:spec.roomy&&Math.min(spec.roomy,150)}}
+ const a=f.firstElementChild,b=f.lastElementChild;if(a&&b&&b.getBoundingClientRect().top>=a.getBoundingClientRect().bottom-2)r.classList.add('fit-footer')}// b below a, not only a little lower (a is taller)
+// Phones held upright and tablets: the keys grow into the room the screen leaves (html.big-keys), up to 100px tall (on a
+// tablet 124; Scientific stays 62, on a tablet 80; a tablet held sideways has the sideways layout). Every keypad's keys may grow as tall as the Calculator's
+// (a quarter of the keypad's width), and no key is taller than it is wide, so the round keys are circles where they can be
+// (a phone) and pills where they are wider (a tablet, the tools' three columns): the keypads look the same in every mode.
+function bigSpec(spec,big,tablet,desk){if(!big&&!desk)return spec;
+ const kp=$('#keypad'),Z=window.__uiZoom||1,widths=[...(kp?.querySelectorAll('button')||[])].map(b=>b.getBoundingClientRect().width/Z).filter(x=>x>0);
+ const calcW=kp?(kp.clientWidth-3*(tablet?18:14))/4:86,w=Math.min(calcW,...widths)||86;// the column gap of the Calculator's round keys (styles.css)
+ const top=desk?deskKey():tablet?124:100,max=spec===FIT.sci?(desk?spec.k[0]:tablet?80:62):Math.min(top,Math.floor(w));
+ return {...spec,k:[Math.max(spec.k[1],max),spec.k[1]],roomy:spec.roomy&&(desk?spec.roomy:Math.min(spec.roomy,150)),dispFirst:desk}}
+// A tablet (a touch screen wider than a phone, not in the sideways layout): the app takes the whole width (html.tablet), up to
+// the width where the side panels fit (TABLET_MAX_W; an iPad Pro 13" held sideways keeps the column with History and the working)
+const TABLET_MAX_W=1264;
+// A computer (mouse, not touch, html.desk): one key height for the window, the same in every mode (deskKey: what a tool with one
+// or two rows of fields, like Interest, has room for; Subnet, with more above the keys, gets a little less, Scientific keeps its
+// own). The tools' display gives way to its smallest before their keys do (dispFirst), and the display takes the height left
+// over, so the keys sit at the bottom of the window as on phones and tablets. The column is as wide as keys about 1.2 times
+// as wide as tall (--desk-w, 520-652px for the keys' card), so tall windows get near-round keys. No card frame (html.frameless);
+// with the side panels the three parts share the window, split by thin lines (styles.css).
+const DESK={reserve:570,min:56,ratio:1.2,gap:8,minW:548,maxW:680,pad:28};
+let deskAvail=0;
+function deskKey(){return Math.max(DESK.min,Math.floor((deskAvail-DESK.reserve)/5))}
 function fitLayout(){refreshSide();fitBrand();
  const card=$('#calculatorCard'),shell=$('.app-shell'),footer=$('.app-footer'),root=document.documentElement;if(!card||!shell||!footer)return;
  document.body.classList.add('fit');
@@ -152,7 +171,7 @@ function fitLayout(){refreshSide();fitBrand();
  // everything below is in CSS pixels (screen pixels / zoom)
  const avail=fitAvailHeight()/Z;
  const need=()=>Math.ceil((footer.getBoundingClientRect().bottom+window.scrollY)/Z+(parseFloat(getComputedStyle(shell).paddingBottom)||0));
- root.classList.remove('page-scroll','fit-small','fit-footer');shell.style.height='';card.classList.remove('compact-display','fit-no-details','fit-tight','fit-no-form','fit-row','fit-list');$('#keypad')?.style.removeProperty('max-height');
+ root.classList.remove('page-scroll','fit-small','fit-footer');shell.style.height='';card.classList.remove('compact-display','fit-no-details','fit-tight','fit-no-form','fit-row','fit-list');$('#keypad')?.style.removeProperty('max-height');$('#keypad')?.style.removeProperty('min-height');
  const tool=TOOL_MODES.includes(mode),touchTool=tool&&isMobileDevice();
  const setToolLayout=compact=>{card.classList.toggle('mobile-tool',compact);document.body.classList.toggle('mobile-tool-on',compact)};
  if(tool)setToolLayout(touchTool);
@@ -160,10 +179,18 @@ function fitLayout(){refreshSide();fitBrand();
  // sideways layout then puts the display on one side of the fold and the keypad on the other, the gap over the fold.
  const segs=window.viewport?.segments,hinge=segs&&segs.length===2&&Math.abs(segs[0].top-segs[1].top)<1?Math.max(0,(segs[1].left-segs[0].right)/Z):null;
  root.classList.toggle('hinge-v',hinge!==null);if(hinge!==null)root.style.setProperty('--hinge-w',hinge+'px');
- const land=matchMedia(LANDSCAPE).matches||hinge!==null;root.classList.toggle('landscape',land);if(!land)root.classList.remove('land-fill');
+ // a tablet held sideways (touch, at least 6:5 wide, narrower than where the side panels fit) gets the phones' sideways layout too
+ const landTab=isMobileDevice()&&innerWidth>=innerHeight*1.2&&innerWidth/Z<TABLET_MAX_W&&innerHeight/Z>500;
+ const land=matchMedia(LANDSCAPE).matches||hinge!==null||landTab;root.classList.toggle('landscape',land);root.classList.toggle('land-tablet',land&&landTab);if(!land)root.classList.remove('land-fill');
  if(tool)fitShortLabels();
- const big=!land&&isMobileDevice()&&mode!=='graph'&&innerWidth/Z<=500;root.classList.toggle('big-keys',big);root.classList.toggle('keys-round',keyShape==='round');
- if(big){root.classList.add('fit-small');fitFooter()}
+ const touch=isMobileDevice(),wide=innerWidth/Z,tablet=!land&&touch&&wide>500&&wide<TABLET_MAX_W;root.classList.toggle('tablet',tablet);
+ const big=!land&&touch&&mode!=='graph'&&(wide<=500||tablet);root.classList.toggle('big-keys',big);root.classList.add('keys-round');
+ // no card frame (styles.css, html.frameless): on a computer, and on a touch screen upright and sideways, phone and tablet
+ root.classList.toggle('sci-side',land||(tablet&&innerWidth>innerHeight));// Scientific's keys beside the basic ones (styles.css)
+ const deskCol=!touch&&!land,desk=deskCol&&mode!=='graph';root.classList.toggle('desk',deskCol);
+ if(deskCol){deskAvail=avail;const K=deskKey();root.style.setProperty('--desk-w',Math.max(DESK.minW,Math.min(DESK.maxW,4*Math.round(K*DESK.ratio)+3*DESK.gap+DESK.pad))+'px')}
+ root.classList.toggle('frameless',touch?mode!=='graph'&&(big||land):true);
+ if(big||deskCol){root.classList.add('fit-small');fitFooter()}// the footer on one line: phone, tablet or computer
  if(land){fitFooter();fitLandscape(card,root,avail,need,tool,setToolLayout);if(tool)fitShortLabels();return}
  card.style.removeProperty('--gk');// back in portrait, Graph keys size themselves again (styles.css)
  if(mode==='graph'){if(avail<FIT.graphMin){root.classList.add('page-scroll');shell.style.height=FIT.graphMin+'px'}return}
@@ -180,14 +207,15 @@ function fitLayout(){refreshSide();fitBrand();
   const shrinkDisplay=to=>{const step=Math.min(over,Math.max(0,d-to));d-=step;over-=step};
   const shrinkKeys=to=>{const dk=Math.min(Math.max(0,k-to),Math.ceil(over/rows));k-=dk;over-=dk*rows};
   if(spec.roomy)shrinkDisplay(spec.roomy);
+  if(over>0&&spec.dispFirst&&tool)shrinkDisplay(dMin);// a computer: the tools' keys stay as big as the Calculator's
   if(over>0)shrinkKeys(spec.comfy);
   if(over>0)shrinkDisplay(dMin);
   if(over>0)shrinkKeys(kMin);
   apply();
   return need()-avail;
  };
- let over=attempt(bigSpec(mode==='calc'?(sciMode?FIT.sci:FIT.calc):mode==='units'?FIT.units:touchTool?FIT.mobileTool:FIT.tool,big));
- if(over>0&&tool&&!touchTool){setToolLayout(true);over=attempt(bigSpec(FIT.mobileTool,big))}
+ let over=attempt(bigSpec(mode==='calc'?(sciMode?FIT.sci:FIT.calc):mode==='units'?FIT.units:touchTool?FIT.mobileTool:FIT.tool,big,tablet,desk));
+ if(over>0&&tool&&!touchTool){setToolLayout(true);over=attempt(bigSpec(FIT.mobileTool,big,tablet,desk))}
  const spec=mode==='calc'?(sciMode?FIT.sci:FIT.calc):mode==='units'?FIT.units:FIT.tool;
  // still too tall (a small phone): the tools get less padding (fit-tight) and the display and keys may get smaller, then
  // a kind's fields share one row (fit-row, short labels), last Equations' form line and the details (Subnet, Statistics; Dates' note) go (? shows them)
@@ -203,9 +231,16 @@ function fitLayout(){refreshSide();fitBrand();
   const list=$('#keypad.date-details');
   if(over>0&&list&&$('#keypad .date-rows')){const h=Math.floor(list.getBoundingClientRect().height-over);if(h>=150){list.style.maxHeight=h+'px';card.classList.add('fit-list');over=need()-avail}}
   // even that doesn't fit (Scientific on the smallest phones): back to the normal sizes, and the page scrolls
-  if(over>0){card.classList.remove('fit-tight','fit-row','fit-no-form','fit-no-details','fit-list');$('#keypad')?.style.removeProperty('max-height');root.classList.remove('fit-small','fit-footer');if(tool)fitShortLabels();over=attempt(card.classList.contains('mobile-tool')?FIT.mobileTool:spec)}
+  if(over>0){card.classList.remove('fit-tight','fit-row','fit-no-form','fit-no-details','fit-list');$('#keypad')?.style.removeProperty('max-height');if(!deskCol)root.classList.remove('fit-small','fit-footer');if(tool)fitShortLabels();over=attempt(card.classList.contains('mobile-tool')?FIT.mobileTool:spec)}
  }
  if(tool)fitShortLabels();// the fields' final widths
+ // a phone upright, a tablet or a computer: the display takes the height left over, so the keys sit at the bottom of the screen in every
+ // mode, like the iPhone's and the iPad's calculator; Dates (a list, no keys) keeps its display and its list reaches the bottom,
+ // so the date fields don't move when the list appears
+ if((big||desk)&&over<=0){const free=Math.floor(avail-need());if(free>0){
+  const list=$('#keypad.date-details'),d=parseFloat(card.style.getPropertyValue('--disp'))||0;
+  if(list){list.style.minHeight=Math.floor(list.getBoundingClientRect().height/Z+free)+'px';over=need()-avail}
+  else if(d){card.style.setProperty('--disp',(d+free)+'px');over=need()-avail}}}
  if(over>0)root.classList.add('page-scroll');
  root.dataset.fitOver=Math.max(0,over);// how many px did not fit (used by tests)
 }

@@ -74,7 +74,7 @@ function setMode(next){
 }
 // The modes, one tap each: a strip of tabs at the top of the card (scrolls sideways when they don't all fit). It shows
 // the pinned modes and the one on screen (stripModes, modes.js); every mode is in the ⊞ sheet.
-const MODE_LABELS=['calc','units','currency','graph','vat','pct','loan','dates','fuel','energy','net','prog','numbers','equation','stats'];
+const MODE_LABELS=['calc','units','currency','graph','vat','pct','loan','dates','fuel','energy','net','transfer','prog','numbers','equation','stats'];
 function renderModeTabs(){
  const track=$('#modeTabs .mode-tabs-track');if(!track)return;
  const pins=typeof pinnedModes!=='undefined'?pinnedModes:MODE_LABELS;
@@ -314,8 +314,11 @@ function setupTopPress(){
 // is pressed when the finger lets go, like on the iPhone. The browser's own click is not used for a finger: after a long
 // press Android sends none (so a key held a moment did nothing), so touchend is stopped (no click of the browser's own)
 // and the key gets its click from here, if the finger is still on it. A long press's context menu (and its buzz) is blocked.
-const KEY_TICK_MS=4;
-function keyTick(ms=KEY_TICK_MS){try{navigator.vibrate?.(ms)}catch{}}
+// A website can only switch the phone's motor on for a time, at full strength (no light "click" like Android's own keys),
+// and a short pulse can feel like two knocks (the motor starting and braking), so the tick is the shortest there is: 1 ms.
+// Never two within 80 ms.
+const KEY_TICK_MS=1;let lastTick=-1e9;
+function keyTick(ms=KEY_TICK_MS){const now=performance.now();if(now-lastTick<80)return;lastTick=now;try{navigator.vibrate?.(ms)}catch{}}
 function setupTouchRelease(pad){
  let key=null,x0=0,y0=0;
  pad.addEventListener('touchstart',e=>{const t=e.touches[0];key=e.touches.length===1?e.target.closest?.('button'):null;if(key&&!key.disabled){x0=t.clientX;y0=t.clientY;keyTick()}},{passive:true});
@@ -365,6 +368,26 @@ function setupHoldKeys(){
  pad.addEventListener('click',e=>{if(fired&&holdKey(e.target)){fired=false;e.stopImmediatePropagation();e.preventDefault()}},true);
  pad.addEventListener('contextmenu',e=>{if(holdKey(e.target))e.preventDefault()});
 }
+// Holding − on a keyboard does what holding the − key on screen does: after half a second it changes the sign (±).
+// So a press of − waits for the key to come up (or for the next key, when typing fast) before it types a minus.
+const keyMinus={timer:0,fired:false,run:null};
+function keyMinusKey(){return $('#keypad .key[data-value="-"]')}
+function keyMinusEnd(type){// type: true types the waiting minus, false only stops waiting
+ if(!keyMinus.run)return;const run=keyMinus.run,minus=type&&!keyMinus.fired;
+ clearTimeout(keyMinus.timer);keyMinus.timer=0;keyMinus.run=null;keyMinusKey()?.classList.remove('holding');
+ if(minus)run();
+}
+function keyMinusDown(e,minus){// minus: what a plain − does in this mode
+ e.preventDefault();if(e.repeat||keyMinus.run)return;
+ keyMinus.fired=false;keyMinus.run=minus;keyMinusKey()?.classList.add('holding');
+ keyMinus.timer=setTimeout(()=>{keyMinus.timer=0;keyMinus.fired=true;const b=keyMinusKey();b?.classList.remove('holding');
+  if(mode==='calc')negate();else toolKeyInput('negate');if(b){b.classList.add('held');setTimeout(()=>b.classList.remove('held'),300)}},500);
+}
+window.addEventListener('keyup',e=>{if(e.key==='-')keyMinusEnd(true)});
+window.addEventListener('blur',()=>keyMinusEnd(true));
+// A button pressed with a mouse or finger lets go of the focus, so typing on a keyboard afterwards doesn't light up its
+// keyboard ring (the browser shows the ring once keys are typed while a button has the focus). Tabs keep it: ← → move along them.
+document.addEventListener('pointerup',e=>{const b=e.target.closest?.('button:not(.mode-tab)');if(b&&document.activeElement===b)b.blur()},true);
 // Install on a phone's home screen. Android browsers give us their install dialog (beforeinstallprompt);
 // iPhones have no such API, so there (and in Android browsers without it) the button shows a short guide.
 let installPrompt=null;

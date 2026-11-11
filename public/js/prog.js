@@ -79,5 +79,5 @@ function progDimKeys(input){
 function progKeypadHtml(){
  const k=v=>'<button class="tool-key" data-value="'+v+'" type="button">'+v+'</button>';
  return k('A')+k('B')+k('7')+k('8')+k('9')+k('C')+k('D')+k('4')+k('5')+k('6')+k('E')+k('F')+k('1')+k('2')+k('3')+
-  '<button class="tool-key tool-utility" data-action="backspace" type="button" aria-label="'+esc(t('deleteKey'))+'">⌫</button><button class="tool-key tool-utility" data-action="clear-all" type="button">AC</button><button class="tool-key prog-zero" data-value="0" type="button">0</button>';
+  '<button class="tool-key tool-utility" data-action="backspace" type="button" aria-label="'+esc(t('deleteKey'))+'">'+BACK_ICON+'</button><button class="tool-key tool-utility" data-action="clear-all" type="button">AC</button><button class="tool-key prog-zero" data-value="0" type="button">0</button>';
 }

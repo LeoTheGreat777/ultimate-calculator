@@ -6,6 +6,133 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.40.1 – 2026-11-11
+
+### Fixed
+- The working no longer says "Brackets first" for a second pair of brackets, as in (165 + 25) × (−45 + 36): the
+  second pair says "Next brackets" (in Greek «Επόμενη παρένθεση»).
+
+## 0.40.0 – 2026-11-10
+
+### Added
+- Transfer mode (under ⊞, More; in Greek «Μεταφορά»): how long a download, an upload or a copy takes, e.g. 200 GB at
+  1 Gbps: 26 min 40 s. Its switch also gives the size that gets through in a time, or the speed a transfer needs.
+- Transfer: each number has its unit beside it; tap the unit to change it: GB or GiB (and kB to TB), Mbps, Gbps or MB/s,
+  seconds to days. The result also shows the speed in bytes (1 Gbps = 125 MB/s). Overhead % takes off the part of the
+  speed that carries no data. ? shows the working step by step.
+- Transfer: pasting a number with its unit (200 GB, 1 Gbps, 90 min) picks the unit too.
+
+### Fixed
+- Tips: the keyboard list no longer shows − (change the sign) or the decimal point where no field on screen takes them
+  (− in Fuel, Energy, Interest and Subnet; both in Numbers).
+
+## 0.39.5 – 2026-11-10
+
+### Changed
+- Calculator: ± makes real brackets you can edit: 15 ± 6 gives (−15)×6, ⌫ takes them apart, and you can type a calculation inside them. ± again takes them off.
+- Calculator: every minus sign has the same size (the display, results, History and the working).
+- The working says "Brackets first" once, then "Inside the brackets" for the next steps in the same brackets.
+
+### Fixed
+- A − typed after an operator shows as 25−(− instead of 25--.
+- No button keeps a highlighted ring after you press it with the mouse and then type on the keyboard.
+
+## 0.39.4 – 2026-11-10
+
+### Fixed
+- Pressing = on a number alone (no calculation) no longer adds it to History.
+- Pressing = again after a result with nothing to repeat (like 2 × (3 + 4) or 5 %) no longer saves it again.
+- Holding Enter or = on a keyboard no longer fills History; it calculates once.
+
+## 0.39.3 – 2026-11-10
+
+### Changed
+- Holding − on a keyboard changes the sign (±), like holding the − key on screen.
+
+### Fixed
+- A key pressed with the mouse no longer keeps a highlighted ring when you type on the keyboard afterwards.
+
+## 0.39.2 – 2026-11-10
+
+### Changed
+- Calculator: the editing cursor hides once you go back to the end (a tap at the end, End or →), so it no longer stays on screen.
+
+### Added
+- Shift + − on a keyboard changes the sign (±), like F9.
+
+## 0.39.1 – 2026-11-10
+
+### Changed
+- Computers: the footer is on one line in every mode, as on phones and tablets.
+
+### Fixed
+- The app's name no longer drops out of a one-line footer that still had room for it.
+
+## 0.39.0 – 2026-11-08
+
+### Changed
+- Tablets held sideways (iPad and others) look like a phone held sideways: the result and tabs on the left, big round keys on the right.
+- Tablets held upright: the footer is on one line, as on phones, so the keys are bigger.
+
+## 0.38.3 – 2026-11-08
+
+### Fixed
+- The ⌫ key's icon sits in the middle of the key (it looked a little to the right).
+
+## 0.38.2 – 2026-11-08
+
+### Changed
+- The ⌫ key is drawn by the app, so it looks the same on computers as on phones (Windows showed a different symbol).
+
+## 0.38.1 – 2026-11-07
+
+### Changed
+- Computers: the keys are about the same size in every mode, and bigger and rounder when the window is tall enough; the calculator column narrows a little to keep them round.
+- Computers: in Units and Currency the two values sit just above the keys, where the result is in Calculator; the unit or rate bar stays at the top.
+- Computers: the title and the top buttons are over the calculator again.
+
+## 0.38.0 – 2026-11-07
+
+### Changed
+- On computers the app now looks like it does on phones and tablets: no box around the calculator, and the keypad reaches the bottom of the window in every mode (bigger keys, extra room above the result).
+- With History and "How was this calculated?" beside the calculator, all three are as tall as the calculator, without boxes, split by thin lines, and the title bar runs across all three.
+
+## 0.37.0 – 2026-11-07
+
+### Changed
+- On phones and tablets the keypad now sits at the bottom of the screen in every mode, as in Calculator; any extra room goes above the result.
+- The tools' keys (VAT, Percent, Programmer, Statistics and the others) grow as big as the Calculator's when there is room, with bigger digits.
+- Dates: its list reaches the bottom of the screen.
+
+## 0.36.3 – 2026-11-07
+
+### Changed
+- History slides smoother: opening it fully, shrinking it back and following your finger now only move it, without redrawing the list each frame, so phones with fast screens (120 Hz) can show every frame.
+
+## 0.36.2 – 2026-11-07
+
+### Fixed
+- Android: the key tick is now the shortest the phone allows, so it should feel lighter and as one tap instead of two.
+
+## 0.36.1 – 2026-11-07
+
+### Changed
+- The keys are always round. The Square option in the theme menu is gone.
+
+## 0.36.0 – 2026-11-07
+
+### Added
+- Tablets (iPad and others): the app uses the whole screen like the iPad's calculator, with bigger keys at the bottom and a bigger result. Held sideways, Scientific's keys sit beside the number keys.
+
+### Changed
+- Round keys have no frame around them on tablets and on phones held sideways too, as on a phone held upright.
+- Phones held sideways: a bigger result and bigger digits on the keys, closer to the upright look.
+
+## 0.35.1 – 2026-11-07
+
+### Fixed
+- Tips in Greek fit a big screen without scrolling again.
+
 ## 0.35.0 – 2026-11-07
 
 ### Added

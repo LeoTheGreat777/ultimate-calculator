@@ -6,7 +6,7 @@ const CLIP_HOLD=480;
 // What the screen shows, to copy: the result, the calculation being typed, in Units the converted value, a tool's result.
 function copyValue(){
  const unitResult=()=>{const side=unitSource==='to'?'from':'to';return formatUnitResult(unitExpressions[side]??'')};
- const value=mode==='calc'?(justCalculated?($('#result')?.dataset.long&&$('#result').textContent||fmt(lastResult)):(typedText()?formatExpressionDisplay(typedText()):'')):mode==='units'?unitResult():(toolResult?.main??'');
+ const value=mode==='calc'?(justCalculated?($('#result')?.dataset.long&&$('#result').textContent.replace(/−/g,'-')||fmt(lastResult)):(typedText()?formatExpressionDisplay(typedText()):'')):mode==='units'?unitResult():(toolResult?.main??'');
  return value===t('toolReady')?'':String(value??'');
 }
 // Text to the clipboard; without the Clipboard API (a page not on https) the old way, through a hidden text box.
@@ -60,7 +60,9 @@ function pasteIntoField(input,text){
  }
  if(!v){refuseKey(input);return false}
  input.value=v;
- input.dispatchEvent(new InputEvent('input',{bubbles:true,inputType:'insertFromPaste',data:v}));
+ const ev=new InputEvent('input',{bubbles:true,inputType:'insertFromPaste',data:v});
+ ev.pastedText=String(text??'');// as it was copied: Transfer reads the unit in it ("200 GB", tools.js)
+ input.dispatchEvent(ev);
  return true;
 }
 const firstToolField=()=>toolActiveInput?.matches?.('#toolPanel input[data-tool-input]')?toolActiveInput:$('#toolPanel input[data-tool-input]');

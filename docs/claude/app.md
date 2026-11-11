@@ -7,7 +7,9 @@ Part of the notes in CLAUDE.md (read that first). Covers main.js, sw.js, help.js
   (each the mode's tab icon on the dark background) come from `tools/make-shortcut-icons.py`; run it after changing
   them or a tab icon (the tests compare the manifest with it). iPhones don't offer shortcuts for web apps.
 - **Tips:** a sheet per mode (`HELP`, `showHelp`), opened from the footer "Tips" link or the ? key; its keyboard
-  shortcuts section only shows on devices with a keyboard. On big screens (≥ 900×600) the
+  shortcuts section only shows on devices with a keyboard. In a tool the list leaves out − and the decimal point when no
+  field on screen takes them (`helpKeys`, from `noSignField` / `noDecimalField`: no − in Fuel or Transfer, neither in
+  Numbers), so a new tool needs no list of its own for that. On big screens (≥ 900×600) the
   dialog uses the whole height, so ? and Tips don't scroll; Tips put the shortcuts beside the tips, and when that still doesn't
   fit the tips go into two columns in a wider sheet (`fitHelp`, `help-wide`). When behaviour changes, update the tips in both languages.
 - **Screen readers:** keys showing only a symbol get a spoken name in the language on screen (`KEY_NAMES`, `nameKeys` in
@@ -29,6 +31,8 @@ Part of the notes in CLAUDE.md (read that first). Covers main.js, sw.js, help.js
   open the old version until Ctrl+Shift+R), never saves it, and leaves `/cdn-cgi/` alone. Test: `cloudflare_check()`.
 - **Keyboard:** desktop typing is handled in the `window` `keydown` listener in `main.js`.
   Keys that do nothing in a mode are ignored.
+  A key, top button or chip pressed with a mouse or finger lets go of the focus on `pointerup` (ui.js), so typing
+  afterwards shows no keyboard focus ring on it (browsers show it once keys are typed while a button has the focus).
 - **Deploy build (`tools/build.mjs`):** GitHub Pages and the Docker image serve `public/` built by `node tools/build.mjs`
   (needs `npm ci` once; esbuild pinned in package-lock.json): every `<script src="js/…?v=">` in index.html, in order, is
   joined into one minified `js/app.js?v=VERSION` (one download instead of ~25), styles.css is minified, everything else is

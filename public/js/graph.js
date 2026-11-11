@@ -89,7 +89,7 @@ const GRAPH_KEYS=[['x','x'],['x²','^2'],['xʸ','^'],['√','√('],['⌫','back
 function renderGraphKeypad(){
  const k=$('#keypad');k.className='keypad graph-keypad';
  k.innerHTML=GRAPH_KEYS.map(([label,g])=>{const cls=/^\d$|^[.]$/.test(g)?'':['/','*','-','+'].includes(g)?' operator':['back','clear','paren'].includes(g)?' utility':' fn-key';
-  const aria=g==='back'?' aria-label="'+esc(t('deleteKey'))+'"':'';return '<button class="key'+cls+'" data-g="'+esc(g)+'" type="button"'+aria+'>'+esc(label)+'</button>'}).join('');
+  const aria=g==='back'?' aria-label="'+esc(t('deleteKey'))+'"':'';return '<button class="key'+cls+'" data-g="'+esc(g)+'" type="button"'+aria+'>'+(g==='back'?BACK_ICON:esc(label))+'</button>'}).join('');
 }
 function graphChanged(){graphTrace=null;renderGraphFns();drawGraphSoon()}
 function graphKey(k){
