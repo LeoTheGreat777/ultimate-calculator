@@ -86,7 +86,8 @@ Part of the notes in CLAUDE.md (read that first). Covers numbers.js, calculator.
   `howHtml`. The Calculator's comes from `explanationForExpression`, which recomputes every step with the same exact maths and
   returns null (no ?) rather than working that doesn't end in the result on screen, and with no steps (25 − 25i alone) ? is hidden; a rounded number in it ends in …
   (`ratShown`). Every minus in it is the long − (`minusSign`). A step in brackets with work outside is titled "Brackets
-  first: …" the first time and "Inside the brackets: …" for the next steps in the same brackets (`bracketsTitle`); powers are superscripts (`supText`); trig steps say
+  first: …" the first time, "Inside the brackets: …" for the next steps in the same brackets or the brackets around them,
+  and "Next brackets: …" for another pair (`bracketsTitle`); powers are superscripts (`supText`); trig steps say
   degrees or radians. Units/Currency compute theirs when ? is pressed (`unitsHow`, the `#unitHow` button in their toolbar).
   Arrows shown in text get U+FE0E (→\uFE0E), or iOS may draw them as emoji. On phones the dialog may use the whole height.
 - **Complex numbers** (complex.js): a value is a fraction when real, `{re, im}` (im ≠ 0) when not; `cx()` turns one with im 0

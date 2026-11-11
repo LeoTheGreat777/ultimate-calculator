@@ -6,6 +6,12 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.40.1 – 2026-11-11
+
+### Fixed
+- The working no longer says "Brackets first" for a second pair of brackets, as in (165 + 25) × (−45 + 36): the
+  second pair says "Next brackets" (in Greek «Επόμενη παρένθεση»).
+
 ## 0.40.0 – 2026-11-10
 
 ### Added

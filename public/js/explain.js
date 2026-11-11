@@ -133,7 +133,7 @@ function explanationForExpression(input,result){
  // a single percentage, 10% = 0,1
  if(tree.k==='num'&&tree.pct)steps.push({title:L('Ποσοστό','Percent'),text:exprText(tree,true,{plain:true})+' = '+V(ratMul(tree.v,rat(100n)))+' ÷ 100 = '+V(tree.v)});
  try{
-  let lastGroup=null;
+  let lastAnc=[],bracketsDone=false;
   for(let guard=0;tree.k!=='num'&&guard<400;guard++){
    tidy(tree);if(tree.k==='num')break;
    // the steps that can be done now (everything under them is a number), with how deep in brackets they are
@@ -150,9 +150,10 @@ function explanationForExpression(input,result){
    const outside=depth>0&&(anc.some(a=>a.k==='bin'||a.k==='pow'||a.k==='fact')||pending.some(p=>p.depth<depth&&!anc.includes(p.n)));
    const jumped=!outside&&pending.some(p=>p.depth===depth&&p.n!==n&&p.n.k==='bin'&&cls(p.n)>cls(n)&&p.n.at<n.at);
    const name=k=>{const tt=OP_TITLE[k];return tt?tt:null};
-   // "Brackets first" once; the next steps in the same brackets say "Inside the brackets"
-   const group=outside?[...anc].reverse().find(a=>a.k==='group'||a.k==='fn'):null,again=Boolean(group)&&group===lastGroup;lastGroup=group;
-   const bracketsTitle=t=>again?L('Μέσα στην παρένθεση: ','Inside the brackets: ')+t:L('Πρώτα η παρένθεση: ','Brackets first: ')+t;
+   // "Brackets first" once; the next steps in the same (or the outer) brackets say "Inside the brackets", another pair "Next brackets"
+   const group=outside?[...anc].reverse().find(a=>a.k==='group'||a.k==='fn'):null,again=Boolean(group)&&lastAnc.includes(group),later=bracketsDone;
+   lastAnc=group?anc:[];if(group)bracketsDone=true;
+   const bracketsTitle=t=>(again?L('Μέσα στην παρένθεση: ','Inside the brackets: '):later?L('Επόμενη παρένθεση: ','Next brackets: '):L('Πρώτα η παρένθεση: ','Brackets first: '))+t;
    const titled=(gr,en,grArticle)=>outside?bracketsTitle(L(gr,en).toLowerCase()):jumped?L('Πρώτα '+(grArticle||gr.toLowerCase()),en+' first'):L(gr,en);
    const T=k=>{const tt=name(k);return titled(tt[0][0],tt[1],tt[0][1])};
    let v,title,text;
