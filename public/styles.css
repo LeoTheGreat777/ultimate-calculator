@@ -58,6 +58,7 @@ input[type=checkbox],input[type=radio],input[type=color],input[readonly],.key-ti
 .how-button.hidden{display:none}
 .result{font-size:clamp(46px,14vw,76px);line-height:1.05;font-weight:400;letter-spacing:-.055em;overflow-x:auto;overflow-y:hidden;white-space:nowrap;scrollbar-width:none;padding:0 3px 2px 0}
 .display-wrap:not(.calculated):not(.tool-display):not(.unit-display):not(.error) .result{cursor:text}/* a tap places the cursor */
+#calculatorDisplay.calculated:not(.tool-display):not(.unit-display) .expression,#calculatorDisplay.error:not(.tool-display):not(.unit-display) .expression{cursor:pointer}/* a tap brings it back to edit (editCalculation) */
 .result .caret{display:inline-block;width:0;height:.82em;margin-right:calc(-1*max(2px,.035em));border-left:max(2px,.035em) solid var(--accent);vertical-align:-.04em;animation:gcaret 1s steps(1) infinite;pointer-events:none}
 .result .caret.flash{animation:caretflash 1.5s linear forwards}/* a tap at the end: the cursor shows for a moment (caretFlash) */
 @keyframes caretflash{0%,70%{opacity:1}100%{opacity:0}}

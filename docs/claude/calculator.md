@@ -62,6 +62,11 @@ Part of the notes in CLAUDE.md (read that first). Covers numbers.js, calculator.
   the end). A tap at the end, End or → to the end shows it there for a moment first (`flashCaret`, `CARET_FLASH_MS`
   1,5 s, `.caret.flash` fades out), so the tap is seen to have worked; any change to the calculation hides it at once. The display marks the cursor with `CARET` (U+0007), which `formatInputDisplay` keeps in
   place (grouping stays right: 1.2|34.567).
+- **Editing a finished calculation** (`editCalculation`, a tap on `#expression`): after = the calculation above the result
+  comes back down to edit, like the iPhone (`expression` = `lastExpression`, the result and `lastOperation` go, the cursor
+  flashes at the end, the live result shows); = saves it again as a new entry. Above an error it clears the error and
+  leaves the calculation to fix. Refused (`refuseKey`) when what is shown is not `formatExpressionDisplay(lastExpression)`
+  (a result loaded from History that went on from an older one keeps its long carried digits).
 - **Scientific:** a view of the Calculator, not a mode: the f(x) switch on the display (`sciMode`, `uc-sci`; the only chip
   there, the angle unit is the keypad's Deg/Rad key; at the display's top-left in line with History, styled like ?, and
   Dates' Working days chip sits in the same place) adds the

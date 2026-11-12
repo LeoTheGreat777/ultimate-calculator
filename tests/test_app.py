@@ -192,6 +192,22 @@ async def desktop(browser, url, lang, theme):
     check(L + 'one closed: one faded ) left', await p.evaluate(ghost) == ')', await p.evaluate(ghost))
     await p.keyboard.press('Enter')
     check(L + '= closes them and the faded ) go', await p.evaluate(R) == '14' and await p.evaluate(ghost) == '', [await p.evaluate(R), await p.evaluate(ghost)])
+    # a tap on the calculation above a result brings it back down to edit (like the iPhone); = works it out anew
+    await p.keyboard.press('Escape')
+    await p.keyboard.type('2+3*4=')
+    await p.click('#expression')
+    got = [await p.evaluate(R), await p.evaluate('justCalculated'), await p.evaluate("document.querySelector('#resultAlt')?.textContent||''")]
+    check(L + 'a tap on the calculation above 14 brings back 2+3×4 to edit', got == ['2+3×4', False, '14'], got)
+    await p.keyboard.type('+1=')
+    check(L + '... and = then gives 15', await p.evaluate(R) == '15' and await p.evaluate(X) == '2+3×4+1', [await p.evaluate(R), await p.evaluate(X)])
+    await p.keyboard.type('*2=')
+    await p.click('#expression')
+    check(L + 'a calculation that goes on from a result comes back as shown: 15×2', await p.evaluate(R) == '15×2', await p.evaluate(R))
+    await p.keyboard.press('Escape')
+    await p.keyboard.type('5/0=')
+    await p.click('#expression')
+    got = [await p.evaluate(R), await p.evaluate('calcError')]
+    check(L + 'a tap on the calculation above an error brings it back: 5÷0', got == ['5÷0', ''], got)
     # a tap in a long calculation that had to get smaller: it never shows at full size for a frame (it jumped at every tap)
     await p.keyboard.press('Escape')
     await p.keyboard.type('15+78*(144-34*16)+987654*321')

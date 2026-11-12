@@ -325,6 +325,20 @@ function equals(){
  try{const value=evalExpr(full);lastExpression=full;lastShown=formatExpressionDisplay(full);lastResult=value;lastOperation=parseLastOperation(full);justCalculated=true;resultNegated=false;currentIsPercent=false;howData=explanationForExpression(full,value)||{formula:formatExpressionDisplay(full),steps:[`${formatExpressionDisplay(full)} = ${fmt(value)}`],result:howResult(value)};saveHistory({expression:full,result:value,how:howData});render()}
  catch(e){calcError=calcErrorKind(e);render()}
 }
+// A tap on the calculation above a result (or above an error's reason) brings it back down to edit, like the iPhone:
+// the result goes (the live result shows its value again), the cursor shows at the end for a moment, = works it out
+// anew. Only when what is shown is the calculation itself (a result carried from an older one that is no longer at hand,
+// e.g. from History, is refused).
+function editCalculation(){
+ if(mode!=='calc')return false;
+ if(calcError){calcError='';resetHow();caretTo(typedText().length);flashCaret();render();return true}
+ if(!justCalculated||!lastExpression)return false;
+ if(formatExpressionDisplay(lastExpression)!==lastShown){refuseKey($('#expression'));return true}
+ const s=lastExpression;
+ resetHow();justCalculated=false;resultNegated=false;lastResult=null;lastOperation=null;lastExpression='';lastShown='';
+ expression=s;current='';currentIsPercent=false;caretTail='';caretOn=false;caretTo(s.length);flashCaret();render();
+ return true;
+}
 // ---------- Scientific ----------
 // Basic or Scientific is a view of the same calculator (the switch on the display, saved as uc-sci): the same
 // calculation, History and explanation. Scientific adds the memory keys and 24 more above the basic ones (on a phone held
