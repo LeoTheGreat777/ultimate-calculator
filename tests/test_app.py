@@ -2683,6 +2683,8 @@ async def live_result(browser, url):
         check(L + 'an operator at the end keeps the last result', await p.evaluate(live) == ['125×8+36+', '1.036'])
         await p.keyboard.press('Backspace')
         await p.keyboard.press('Enter')
+        await p.wait_for_timeout(60)  # an animation would still be running
+        check(L + '= shows the result at once, no animation', await p.evaluate("document.querySelector('#result').getAnimations().length") == 0)
         st = await p.evaluate("[document.querySelector('#expression').textContent,document.querySelector('#result').textContent,document.querySelector('#resultAlt')?.textContent??null,document.querySelector('#howButton').classList.contains('hidden'),JSON.parse(store.get('uc-history')||'[]').length]")
         check(L + '= works as before: calculation above, result, ?, History', st == ['125×8+36', '1.036', None, False, 1], st)
         await p.keyboard.type('+5')

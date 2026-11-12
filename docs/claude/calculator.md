@@ -31,7 +31,7 @@ Part of the notes in CLAUDE.md (read that first). Covers numbers.js, calculator.
   on the whole calculation (`typedText`, also after the cursor). None for a number alone (`PLAIN_NUMBER`, also (5) and a
   carried result with an operator), an error or a value too large/small (5 ÷ 0 shows nothing until =), and never in other
   modes. Formatted with `fmt` (6 decimals). It saves nothing; = works as before (calculation above, ?, History) and the
-  result grows from where the live result stood (`liveGrow`, none with reduced motion). The calculation's size is capped by
+  result shows at once, with no animation (a calculator answers instantly). The calculation's size is capped by
   the room left under the f(x) chip and the live line (`container-type:size`, `--live-h`; compact displays have their own
   sizes). A calculation with i or ∠ keeps the complex line under it instead.
 - **= with no calculation** (`equals`): a number alone (`PLAIN_NUMBER`, also `(455)` once its brackets go) saves
