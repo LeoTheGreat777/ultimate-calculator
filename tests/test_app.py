@@ -192,6 +192,18 @@ async def desktop(browser, url, lang, theme):
     check(L + 'one closed: one faded ) left', await p.evaluate(ghost) == ')', await p.evaluate(ghost))
     await p.keyboard.press('Enter')
     check(L + '= closes them and the faded ) go', await p.evaluate(R) == '14' and await p.evaluate(ghost) == '', [await p.evaluate(R), await p.evaluate(ghost)])
+    # a tap in a long calculation that had to get smaller: it never shows at full size for a frame (it jumped at every tap)
+    await p.keyboard.press('Escape')
+    await p.keyboard.type('15+78*(144-34*16)+987654*321')
+    await p.wait_for_timeout(150)
+    await p.evaluate("(()=>{window.__fs=new Set();const loop=()=>{window.__fs.add(getComputedStyle(document.querySelector('#result')).fontSize);if(!window.__fsStop)requestAnimationFrame(loop)};requestAnimationFrame(loop)})()")
+    box = await p.evaluate("(()=>{const b=document.querySelector('#result').getBoundingClientRect();return [b.left,b.top,b.width,b.height]})()")
+    for f in (0.3, 0.55, 0.8):
+        await p.mouse.click(box[0] + box[2] * f, box[1] + box[3] / 2)
+        await p.wait_for_timeout(120)
+    sizes = await p.evaluate("(()=>{window.__fsStop=true;return [...window.__fs]})()")
+    px = [float(x[:-2]) for x in sizes]
+    check(L + 'a tap in a long calculation keeps its size (no jump)', max(px) < min(px) * 1.03, sizes)  # the cursor may move it by a hair
     # the cursor: ← → move it, keys work where it is, = works out everything
     caret = "[document.querySelector('#result').textContent, !!document.querySelector('#result .caret')]"
     await p.keyboard.press('Escape')
