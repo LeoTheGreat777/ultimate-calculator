@@ -59,6 +59,9 @@ input[type=checkbox],input[type=radio],input[type=color],input[readonly],.key-ti
 .result{font-size:clamp(46px,14vw,76px);line-height:1.05;font-weight:400;letter-spacing:-.055em;overflow-x:auto;overflow-y:hidden;white-space:nowrap;scrollbar-width:none;padding:0 3px 2px 0}
 .display-wrap:not(.calculated):not(.tool-display):not(.unit-display):not(.error) .result{cursor:text}/* a tap places the cursor */
 .result .caret{display:inline-block;width:0;height:.82em;margin-right:calc(-1*max(2px,.035em));border-left:max(2px,.035em) solid var(--accent);vertical-align:-.04em;animation:gcaret 1s steps(1) infinite;pointer-events:none}
+.result .caret.flash{animation:caretflash 1.5s linear forwards}/* a tap at the end: the cursor shows for a moment (caretFlash) */
+@keyframes caretflash{0%,70%{opacity:1}100%{opacity:0}}
+.result[data-ghost]::after{content:attr(data-ghost);color:var(--muted);opacity:.5}/* a faded ) for each bracket still open */
 .result::-webkit-scrollbar{display:none}
 /* text too long for its line (fitDisplayText): the cut-off side fades out; the mask's colour only sets opacity */
 .fade-start{-webkit-mask-image:linear-gradient(to right,transparent,#000 28px);mask-image:linear-gradient(to right,transparent,#000 28px)}
@@ -69,6 +72,7 @@ input[type=checkbox],input[type=radio],input[type=color],input[readonly],.key-ti
 .refused{animation:refuse .16s ease-in-out 2}
 @media (prefers-reduced-motion:reduce){
   .refused{animation:none}
+  .result .caret.flash{animation:none}
 }
 .result.long-value{font-size:clamp(30px,8vw,54px);letter-spacing:-.035em}
 /* complex numbers: r ∠ θ under the result (or the value of a calculation with i as it is typed); the result gets a little smaller to make room */
@@ -380,6 +384,9 @@ body.graph-on .app-shell{height:calc(100dvh / var(--z,1))}
 .graph-fn.invalid .graph-fn-src{color:var(--danger)}
 .graph-fn.active .graph-fn-src::after{content:'';display:inline-block;width:2px;height:1em;margin-left:2px;vertical-align:-2px;background:var(--accent);animation:gcaret 1s steps(1) infinite}
 .graph-fn.active .graph-fn-src.empty::after{margin:0 0 0 4px}
+.graph-fn-ghost{color:var(--muted);opacity:.5}/* a faded ) for each bracket still open; the cursor stands before them */
+.graph-fn.active .graph-fn-src.has-ghost::after{content:none}
+.graph-fn.active .graph-fn-ghost::before{content:'';display:inline-block;width:2px;height:1em;margin:0 2px;vertical-align:-2px;background:var(--accent);animation:gcaret 1s steps(1) infinite}
 @keyframes gcaret{
   50%{opacity:0}
 }
@@ -389,7 +396,7 @@ body.graph-on .app-shell{height:calc(100dvh / var(--z,1))}
 .calculator-card.graph-mode .keypad .key{height:var(--gk);min-height:var(--gk);font-size:20px;border-radius:12px}
 .calculator-card.graph-mode .keypad .key.fn-key{font-size:15px;color:var(--accent2)}
 @media (prefers-reduced-motion:reduce){
-  .graph-fn.active .graph-fn-src::after{animation:none}
+  .graph-fn.active .graph-fn-src::after,.graph-fn.active .graph-fn-ghost::before{animation:none}
 }
 /* Chart button next to "?" in the tools */
 .how-button.chart-button{right:42px;display:grid;place-items:center;padding:0}

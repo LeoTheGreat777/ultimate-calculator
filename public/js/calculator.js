@@ -53,6 +53,11 @@ function caretTo(k){
  else{expression=head;current=''}
  caretOn=k<s.length;// at the end there is nothing to edit around: the cursor hides (a tap at the end, End, → to the end)
 }
+// A tap at the end of the calculation (or End, → to the end) shows the cursor there for a moment, so the tap is seen to
+// have worked, then it hides (caretFlash). Any change to the calculation hides it at once.
+const CARET_FLASH_MS=1500;
+let caretFlash=null;
+function flashCaret(){clearTimeout(caretFlash?.timer);caretFlash={text:typedText(),timer:setTimeout(()=>{caretFlash=null;if(mode==='calc')render()},CARET_FLASH_MS)}}
 function dropCaret(){if(caretTail||caretOn){if(caretTail)caretTo(Infinity);caretTail='';caretOn=false}}
 // ← → (and Home, End) move the cursor one place
 function moveCaret(dir){
@@ -61,7 +66,7 @@ function moveCaret(dir){
  const at=(expression+current).length,stops=caretStops(s);
  const k=dir==='home'?0:dir==='end'?s.length:dir<0?[...stops].reverse().find(x=>x<at):stops.find(x=>x>at);
  if(k===undefined){refuseKey();return true}
- resetHow();caretTo(k);render();return true;
+ resetHow();caretTo(k);if(!caretOn)flashCaret();render();return true;
 }
 // a tap on the calculation: the cursor goes to the place nearest the finger
 function caretFromPoint(x){
@@ -74,7 +79,7 @@ function caretFromPoint(x){
   if(px==null)continue;const d=Math.abs(px-x);if(d<bestD){bestD=d;best=k}
  }
  if(best===null)return;
- resetHow();caretTo(best);render();
+ resetHow();caretTo(best);if(!caretOn)flashCaret();render();
 }
 // ")" with nothing open, or ( ) after a calculation with nothing open: the brackets go around everything before the
 // cursor, 5+5 → (5+5), so a forgotten bracket needs no retyping. Only when they group something (an operator outside brackets).
@@ -95,15 +100,19 @@ function render(){refreshSide();
  renderSciBar();
  if(justCalculated){caretTail='';caretOn=false}
  const raw=typedText();if(!raw)caretOn=false;
- const withCaret=caretOn&&!justCalculated&&!calcError?formatExpressionDisplay(typedText(true)).split(CARET):null;
+ if(caretFlash&&(caretOn||justCalculated||calcError||caretFlash.text!==raw)){clearTimeout(caretFlash.timer);caretFlash=null}
+ const withCaret=caretOn&&!justCalculated&&!calcError?formatExpressionDisplay(typedText(true)).split(CARET):caretFlash?[formatExpressionDisplay(raw),'']:null;
  const display=calcError?t(ERROR_TEXT[calcError]||'errMath'):justCalculated?minusSign(fmt(lastResult)):(raw?formatExpressionDisplay(raw):'0');
  $('#calculatorDisplay').classList.remove('tool-display','tool-empty');
  $('#calculatorDisplay').classList.toggle('calculated',justCalculated);
  $('#calculatorDisplay').classList.toggle('error',Boolean(calcError));
  $('#expression').textContent=justCalculated?(lastShown||formatExpressionDisplay(lastExpression)):calcError?formatExpressionDisplay(raw):'';
  const exprEl=$('#expression');
- if(withCaret)$('#result').innerHTML=esc(withCaret[0])+'<span class="caret" aria-hidden="true"></span>'+esc(withCaret[1]);
+ if(withCaret)$('#result').innerHTML=esc(withCaret[0])+'<span class="caret'+(caretFlash?' flash':'')+'" aria-hidden="true"></span>'+esc(withCaret[1]);
  else $('#result').textContent=display;
+ // like the iPhone: a faded ) at the end for every bracket still open, so it is clear one needs closing (= closes them)
+ const ghost=raw&&!justCalculated&&!calcError?openParens(formatExpressionDisplay(raw)):0;
+ if(ghost)$('#result').dataset.ghost=')'.repeat(ghost);else delete $('#result').dataset.ghost;
  $('#calculatorDisplay').classList.toggle('editing',Boolean(withCaret));
  $('#result').classList.remove('long-value','near-limit');
  // a result with more decimals than shown: up to 10 when the display has room (fitDisplayText picks)

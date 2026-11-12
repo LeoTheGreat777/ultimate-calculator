@@ -182,6 +182,16 @@ async def desktop(browser, url, lang, theme):
     check(L + ') with nothing open puts the brackets around everything: (2+3)×4 = 20', got == '20' and await p.evaluate(X) == '(2+3)×4',
           [got, await p.evaluate(X)])
 
+    # a faded ) at the end for every bracket still open (data-ghost), like the iPhone; = closes them
+    ghost = "document.querySelector('#result').dataset.ghost||''"
+    await p.keyboard.press('Escape')
+    await p.keyboard.type('2*(3+(4')
+    check(L + 'two brackets open: two faded ) at the end', await p.evaluate(ghost) == '))' and await p.evaluate(R) == '2×(3+(4',
+          [await p.evaluate(R), await p.evaluate(ghost)])
+    await p.keyboard.type(')')
+    check(L + 'one closed: one faded ) left', await p.evaluate(ghost) == ')', await p.evaluate(ghost))
+    await p.keyboard.press('Enter')
+    check(L + '= closes them and the faded ) go', await p.evaluate(R) == '14' and await p.evaluate(ghost) == '', [await p.evaluate(R), await p.evaluate(ghost)])
     # the cursor: ← → move it, keys work where it is, = works out everything
     caret = "[document.querySelector('#result').textContent, !!document.querySelector('#result .caret')]"
     await p.keyboard.press('Escape')
@@ -193,11 +203,18 @@ async def desktop(browser, url, lang, theme):
         await p.keyboard.press('ArrowRight')
     await p.keyboard.type(')')
     check(L + 'a bracket added at the start and one in the middle: (5+5)×2', await p.evaluate(R) == '(5+5)×2', await p.evaluate(R))
+    flash = "(()=>{const c=document.querySelector('#result .caret.flash');return !!c&&!c.nextSibling})()"
     await p.keyboard.press('End')
-    check(L + 'End hides the cursor again', await p.evaluate(caret) == ['(5+5)×2', False], await p.evaluate(caret))
+    check(L + 'End shows the cursor at the end for a moment', await p.evaluate(caret) == ['(5+5)×2', True] and await p.evaluate(flash),
+          await p.evaluate(caret))
+    await p.wait_for_timeout(1700)
+    check(L + '... then hides it', await p.evaluate(caret) == ['(5+5)×2', False], await p.evaluate(caret))
     await p.keyboard.press('ArrowLeft')
     await p.keyboard.press('ArrowRight')
-    check(L + '→ back to the end hides the cursor', await p.evaluate(caret) == ['(5+5)×2', False], await p.evaluate(caret))
+    check(L + '→ back to the end shows the cursor for a moment', await p.evaluate(flash), await p.evaluate(caret))
+    await p.keyboard.type('+')
+    check(L + 'a key hides that cursor at once', await p.evaluate(caret) == ['(5+5)×2+', False], await p.evaluate(caret))
+    await p.keyboard.press('Backspace')
     await p.keyboard.press('ArrowLeft')
     await p.keyboard.press('Enter')
     check(L + 'with the cursor in the middle = works out everything: 20', await p.evaluate(R) == '20' and await p.evaluate(X) == '(5+5)×2'
@@ -222,7 +239,8 @@ async def desktop(browser, url, lang, theme):
     check(L + 'a tap puts the cursor there: 1.234|+567, then 9 → 12.349+567', await p.evaluate(R) == '12.349+567', await p.evaluate(R))
     x2 = await p.evaluate("(()=>{const b=document.querySelector('#result').getBoundingClientRect();return [b.right-2,b.top+b.height/2]})()")
     await p.mouse.click(x2[0], x2[1])
-    check(L + 'a tap at the end hides the cursor', await p.evaluate(caret) == ['12.349+567', False], await p.evaluate(caret))
+    check(L + 'a tap at the end moves the cursor there for a moment', await p.evaluate(caret) == ['12.349+567', True] and await p.evaluate(flash),
+          await p.evaluate(caret))
     x = await p.evaluate("""(()=>{const el=document.querySelector('#result'),n=el.firstChild,i=el.textContent.indexOf('+'),r=document.createRange();
         r.setStart(n,i);r.setEnd(n,i+1);const b=r.getBoundingClientRect();return [b.left,b.top+b.height/2]})()""")
     await p.mouse.click(x[0] + 1, x[1])
@@ -599,6 +617,8 @@ async def desktop(browser, url, lang, theme):
     for k in ['x', '^', 'e']:
         await p.click(f'.key[data-g="{k}"]')
     check(L + 'graph keypad: x^e', await p.evaluate('graph.fns[graph.active]') == 'x^e')
+    got = await p.evaluate("(()=>{graphKey('clear');graphKey('sin(');graphKey('x');graphKey('+');graphKey('√(');graphKey('x');const a=document.querySelector('.graph-fn.active .graph-fn-ghost')?.textContent;graphKey('paren');const b=document.querySelector('.graph-fn.active .graph-fn-ghost')?.textContent;graphKey('paren');const c=document.querySelector('.graph-fn.active .graph-fn-ghost');graphKey('clear');return [a,b,!!c]})()")
+    check(L + 'graph: a faded ) for each bracket still open', got == ['))', ')', False], got)
     send = "([k,c,sh])=>window.dispatchEvent(new KeyboardEvent('keydown',{key:k,code:c,shiftKey:!!sh,bubbles:true,cancelable:true}))"
     for layout, keys in [('US', [('x', 'KeyX', 0), ('^', 'Digit6', 1), ('e', 'KeyE', 0)]),
                          ('Greek', [('χ', 'KeyX', 0), ('^', 'Digit6', 1), ('ε', 'KeyE', 0)]),
