@@ -6,6 +6,11 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.44.1 – 2026-11-14
+
+### Changed
+- The tabs at the top are now one bar: the modes sit in it side by side and a highlight slides to the one you pick.
+
 ## 0.44.0 – 2026-11-14
 
 ### Changed

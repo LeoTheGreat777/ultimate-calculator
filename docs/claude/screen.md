@@ -89,13 +89,17 @@ Part of the notes in CLAUDE.md (read that first). Covers layout.js, side.js, mod
   pressed or dragged down (`setupModesDrag`: the handle and the row under it; over 90px or a quick flick closes, less springs back). On tablets and computers it is a popover under the ⊞ button
   (`placeModes` sets `--by`/`--br` in CSS pixels, so it is right on zoomed screens), nothing dimmed, no handle. It closes with a short slide or fade (`.closing`, 200 ms): `modesOpen()` is false at once, `hidden` comes after, so tests wait before checking `hidden`.
   The list scrolls inside the card when the screen is short. On phones the search isn't focused (no keyboard popping up); long names shrink a little (`fitModeNames`, to 10px, then a little tighter), never "…".
-  **Pins:** the strip shows only the pinned modes (`pinnedModes`, `uc-pins`, default Calculator, Units, Currency, VAT) in `MODE_LABELS` order, plus the mode on screen while it isn't pinned (`.unpinned`, dashed). When they don't
+  **Pins:** the strip shows only the pinned modes (`pinnedModes`, `uc-pins`, default Calculator, Units, Currency, VAT) in `MODE_LABELS` order, plus the mode on screen while it isn't pinned (`.unpinned`). When they don't
   all fit, the tabs not on screen show only their icon (`.mode-tabs.icons`; names in aria-label/title). The launcher shows no pins until **Edit** (`#modesEdit`, `setModesEdit`, `.editing`): the title "Pinned modes", the
   **All | Default | None** switch (`#modesPins`, `PIN_SETS`, `savePins`; the matching choice is lit, `pinSetNow`, none when pinned by hand) and a hint take the search's place, each icon gets a mark (`.mode-badge`, filled when pinned; unpinned ones are dimmed)
   and a press pins or unpins instead of opening (`aria-pressed`, "Pin to the bar: Fuel"). Done, or closing, goes back. A change of language re-draws it in place (`renderModesList`), Edit included.
   A new mode: also a place in `MODE_ORDER` and words in `MODE_WORDS`.
 - **Modes are tabs:** a strip of tabs at the top of the card (`MODE_LABELS`, `renderModeTabs`, `switchMode`), one tap
-  each, scrolling sideways when they don't fit; Alt+1…9 on a keyboard (Energy, Subnet, Programmer, Numbers, Equations and Statistics, the last six, have none). When they don't all fit, a slim bar under them
+  each, scrolling sideways when they don't fit. They sit in one bar in the key colour (`.mode-tabs`) and share its width
+  (`flex:1 0 auto`); the tabs themselves have no box, and one accent pill marks the tab on screen and slides to it: it is
+  the track's `::before`, placed by `--pill-x`/`--pill-w` (`syncTabPill`, called by `syncModeTabs`; at once on a resize,
+  `.pill-now`; a `ResizeObserver` on the tab moves it when the tab changes size later, e.g. the font arriving). The
+  History button beside the bar has the same key colour; Alt+1…9 on a keyboard (Energy, Subnet, Programmer, Numbers, Equations and Statistics, the last six, have none). When they don't all fit, a slim bar under them
   (`.tabs-scrollbar`, `syncTabEdges`, `flashTabsBar`) shows while they move and briefly on start; it can be dragged
   or pressed (`setupTabsBar`), spans the whole strip; with a mouse it shows while the mouse is over the tabs or its strip and
   fades out shortly after (the tabs can be mouse-dragged too). Phones keep their overscroll bounce; past an end (negative/over-max `scrollLeft`, or `tabsPull` measured from
