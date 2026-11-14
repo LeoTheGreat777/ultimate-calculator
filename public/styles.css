@@ -1121,3 +1121,39 @@ html.tablet #calculatorDisplay.unit-display .unit-rows,html.landscape #calculato
 html.tablet .calculator-card .tool-keypad button{font-size:clamp(20px,calc(var(--k) * .34),28px)}
 html.land-tablet #keypad{align-self:end}/* a tablet sideways: the keys at the bottom, level with the result, when they don't fill the height (Scientific) */
 html.tablet .display-wrap.has-live .result{font-size:min(clamp(46px,11vw,96px),calc((100cqh - 32px - var(--live-h)) / 1.05))}
+/* ---------- PROTOTYPE (preview branch): three looks for the bar of tabs (modes.js, ?bar=a|b|c, html[data-bar]) ---------- */
+.bar-try{display:flex;align-items:center;gap:4px;padding-top:9px;border-top:1px dashed var(--border);font-size:12px;font-weight:650;color:var(--muted);flex:none}
+.bar-try span{margin-right:auto}
+.bar-try button{min-width:44px;height:30px;border:1px solid var(--border);border-radius:999px;background:var(--card2);color:var(--muted);font:inherit;cursor:pointer}
+.bar-try button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.tabs-ink{position:absolute;left:0;top:0;pointer-events:none;z-index:0;transition:transform .28s cubic-bezier(.3,.85,.3,1),width .28s cubic-bezier(.3,.85,.3,1)}
+html[data-bar] .mode-tab{position:relative;z-index:1}
+/* ----- a: round like the keys ----- */
+html[data-bar="a"] .mode-tab{height:40px;border:0;border-radius:999px;background:var(--key);color:var(--text);padding:0 15px}
+html[data-bar="a"] .mode-tab.active{background:var(--accent);color:var(--on-accent)}
+html[data-bar="a"] .mode-tabs.icons .mode-tab:not(.active){width:40px;padding:0;justify-content:center}
+html[data-bar="a"] .mode-tab-icon{font-size:15px}
+html[data-bar="a"] .history-top,html[data-bar="a"] .top-actions .icon-button,html[data-bar="a"] .top-actions .language-button{border-radius:50%;border-color:transparent;background:var(--key)}
+html[data-bar="a"] .top-actions .language-button{width:40px}
+@media (max-width:359px){html[data-bar="a"] .mode-tab{height:36px;padding:0 12px}html[data-bar="a"] .mode-tabs.icons .mode-tab:not(.active){width:36px}html[data-bar="a"] .mode-tabs-track{gap:5px}}
+html[data-bar="a"] .top-actions button[aria-expanded="true"],html[data-bar="a"] .top-actions #themeButton.open{background:var(--accent)}
+@media (hover:hover) and (pointer:fine){html[data-bar="a"] .mode-tab:not(.active):hover,html[data-bar="a"] .history-top:hover,html[data-bar="a"] .top-actions .icon-button:hover:not([aria-expanded="true"]):not(.open),html[data-bar="a"] .top-actions .language-button:hover{background:var(--key-hover)}}
+/* ----- b: one control, a thumb slides to the tab on screen ----- */
+html[data-bar="b"] .mode-tabs{background:var(--key);border-radius:13px;padding:3px}
+html[data-bar="b"] .mode-tabs-track{gap:2px}
+html[data-bar="b"] .mode-tab{flex:1 0 auto;justify-content:center;height:34px;border:0;border-radius:10px;background:transparent;padding:0 12px;transition:color .25s}
+html[data-bar="b"] .mode-tab.active{background:transparent;color:var(--on-accent)}
+html[data-bar="b"] .tabs-ink{height:34px;top:50%;margin-top:-17px;border-radius:10px;background:var(--accent);box-shadow:0 1px 4px rgba(0,0,0,.25)}
+html[data-bar="b"] .mode-tabs.icons .mode-tab:not(.active){padding:0 10px}
+html[data-bar="b"] .history-top{border-color:transparent;background:var(--key)}
+/* ----- c: no boxes, an accent line under the tab on screen ----- */
+html[data-bar="c"] .mode-tabs::after{content:'';position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--border)}
+html[data-bar="c"] .mode-tabs-track{gap:2px}
+html[data-bar="c"] .mode-tab{height:40px;border:0;border-radius:8px;background:transparent;padding:0 11px;font-size:14px;transition:color .25s}
+html[data-bar="c"] .mode-tab.active{background:transparent;color:var(--text)}
+html[data-bar="c"] .mode-tab.active .mode-tab-icon{color:var(--accent)}
+html[data-bar="c"] .mode-tab:not(.active) .mode-tab-icon{color:var(--muted)}
+html[data-bar="c"] .tabs-ink{top:auto;bottom:0;height:3px;border-radius:3px 3px 0 0;background:var(--accent);z-index:2}
+html[data-bar="c"] .mode-tabs.icons .mode-tab:not(.active){padding:0 11px}
+html[data-bar="c"] .history-top{border-color:transparent;background:transparent}
+@media (prefers-reduced-motion:reduce){.tabs-ink{transition:none}}

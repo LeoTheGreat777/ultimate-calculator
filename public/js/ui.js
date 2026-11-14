@@ -86,7 +86,7 @@ function renderModeTabs(){
 function syncModeTabs(instant){
  const track=$('#modeTabs .mode-tabs-track');if(!track)return;
  // the mode on screen joins the strip while it isn't pinned (and leaves it after)
- if(!track.children.length||[...track.children].map(b=>b.dataset.mode).join()!==stripModes().join()){renderModeTabs();return}
+ if(!track.children.length||[...track.querySelectorAll('.mode-tab')].map(b=>b.dataset.mode).join()!==stripModes().join()){renderModeTabs();return}
  // when the tabs don't all fit, the ones not on screen show only their icon (their name is in aria-label and title)
  const nav=$('#modeTabs');nav.classList.remove('icons');track.querySelectorAll('.mode-tab-label').forEach(l=>l.style.fontSize='');
  if(track.scrollWidth>track.clientWidth+1){
@@ -96,12 +96,13 @@ function syncModeTabs(instant){
   for(let px=12.5;lab&&px>=11&&track.scrollWidth>track.clientWidth+1;px-=.5)lab.style.fontSize=px+'px';
  }
  let active=null;
- [...track.children].forEach(b=>{const on=b.dataset.mode===currentTab();b.classList.toggle('active',on);b.setAttribute('aria-selected',String(on));b.tabIndex=on?0:-1;if(on)active=b});
+ [...track.querySelectorAll('.mode-tab')].forEach(b=>{const on=b.dataset.mode===currentTab();b.classList.toggle('active',on);b.setAttribute('aria-selected',String(on));b.tabIndex=on?0:-1;if(on)active=b});
  if(active){
   const pad=24,left=Math.min(Math.max(track.scrollLeft,active.offsetLeft+active.offsetWidth-track.clientWidth+pad),active.offsetLeft-pad);
   track.scrollTo({left:Math.max(0,left),behavior:instant||reducedMotion()?'auto':'smooth'});
  }
  syncTabEdges();
+ if(typeof syncTabsInk==='function')syncTabsInk(active,instant);// PROTOTYPE (preview): the sliding mark of bar looks b and c
 }
 // soft edges show that there are more tabs to scroll to
 function syncTabEdges(){

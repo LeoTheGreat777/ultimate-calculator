@@ -1826,6 +1826,58 @@ async def all_modes(browser, url):
         await p.context.close()
 
 
+async def bar_looks(browser, url):
+    """PROTOTYPE (preview branch): the three looks of the bar of tabs (?bar=a|b|c). Every tab still switches modes, the
+    sliding mark of b and c sits on the tab on screen, nothing is cut on a phone or a computer in both languages;
+    without ?bar= the bar is as it was."""
+    L = '[bar looks] '
+    p = await new_page(browser, url)
+    check(L + "without ?bar= the look is 'now' and nothing of the prototype is on the page",
+          await p.evaluate("barLook==='now'&&!document.documentElement.dataset.bar&&!document.querySelector('#barTry,.tabs-ink')"))
+    await p.context.close()
+    for look in 'abc':
+        for phone, lang, size in [(True, 'en', None), (True, 'el', (344, 770)), (True, 'el', (844, 390)), (False, 'en', None), (False, 'el', None)]:
+            T = L + f"{look} {'phone' if phone else 'computer'} {lang}{' ' + str(size[0]) if size else ''}: "
+            p = await new_page(browser, url + '?bar=' + look, lang, 'dark' if lang == 'en' else 'light', phone=phone, size=size)
+            press = p.tap if phone else p.click
+            probe = """(()=>{const z=window.__uiZoom||1,nav=document.querySelector('#modeTabs').getBoundingClientRect(),a=document.querySelector('.mode-tab.active'),r=a.getBoundingClientRect(),
+              ink=document.querySelector('.tabs-ink'),i=ink&&ink.getBoundingClientRect();
+              return [document.documentElement.dataset.bar,mode,a.dataset.mode,r.left>=nav.left-1&&r.right<=nav.right+1,
+                [...document.querySelectorAll('.mode-tab-label')].filter(n=>n.offsetParent&&n.scrollWidth>n.clientWidth+1).length,
+                [...document.querySelectorAll('.mode-tab,#historyButton')].filter(b=>b.offsetParent).every(b=>{const q=b.getBoundingClientRect();return q.width/z>=30&&q.height/z>=30}),
+                !ink||(Math.abs(i.left-r.left)<=1.5&&Math.abs(i.width-r.width)<=1.5)]})()"""
+            st = await p.evaluate(probe)
+            check(T + 'the bar shows with the Calculator on, nothing cut, tabs big enough, the mark on its tab', st == [look, 'calc', 'calc', True, 0, True, True], st)
+            await press('.mode-tab[data-mode=units]')
+            await p.wait_for_timeout(450)
+            st = await p.evaluate(probe)
+            check(T + 'a press on a tab switches mode and the mark follows', st == [look, 'units', 'units', True, 0, True, True], st)
+            await p.evaluate("switchMode('graph')")
+            await p.wait_for_timeout(450)
+            st = await p.evaluate(probe)
+            check(T + 'a mode that is not in the bar gets its tab, in view, with the mark', st == [look, 'graph', 'graph', True, 0, True, True], st)
+            await p.evaluate("setLanguage(lang==='el'?'en':'el')")
+            await p.wait_for_timeout(450)
+            st = await p.evaluate(probe)
+            check(T + 'after a language switch the mark is still on its tab', st == [look, 'graph', 'graph', True, 0, True, True], st)
+            check(T + 'no page errors', not p.errors, p.errors)
+            await p.context.close()
+    p = await new_page(browser, url + '?bar=b', phone=True)
+    await p.tap('#modesButton')
+    await p.wait_for_timeout(400)
+    st = await p.evaluate("[!!document.querySelector('#barTry'),[...document.querySelectorAll('#barTry button')].map(b=>b.dataset.barLook+':'+b.getAttribute('aria-pressed')).join(' ')]")
+    check(L + 'the Try switch is at the foot of All modes with b on', st == [True, 'now:false a:false b:true c:false'], st)
+    await p.tap('#barTry [data-bar-look=c]')
+    await p.wait_for_timeout(300)
+    st = await p.evaluate("[document.documentElement.dataset.bar,modesOpen(),!!document.querySelector('.tabs-ink')]")
+    check(L + 'it changes the bar in place, All modes stays open', st == ['c', True, True], st)
+    await p.tap('#barTry [data-bar-look=now]')
+    await p.wait_for_timeout(300)
+    st = await p.evaluate("[document.documentElement.dataset.bar||'',!!document.querySelector('.tabs-ink')]")
+    check(L + "'Now' puts the bar back as it is in the app", st == ['', False], st)
+    await p.context.close()
+
+
 async def esc_everywhere(browser, url):
     """Esc clears every mode like its AC key, also from a focused field; an open window (Tips) closes first."""
     L = '[esc] '
@@ -3774,6 +3826,7 @@ async def main():
         await keys_fill_the_bottom(browser, url)
         await how_buttons_in_place(browser, url)
         await all_modes(browser, url)
+        await bar_looks(browser, url)  # PROTOTYPE (preview)
         await esc_everywhere(browser, url)
         await history_per_mode(browser, url)
         await history_groups(browser, url)

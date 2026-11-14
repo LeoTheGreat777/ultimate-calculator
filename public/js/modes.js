@@ -115,6 +115,7 @@ function renderModesList(){
  ed.setAttribute('aria-pressed',modesEditing);ed.setAttribute('aria-label',mText(modesEditing?'done':'editL'));ed.title=modesEditing?'':mText('editL');
  $('#modesHint').textContent=mText('editHint');
  renderPinSet();
+ renderBarTry();// PROTOTYPE
  fitModeNames();
 }
 // a long name (Αριθμομηχανή on a narrow phone) gets a slightly smaller font rather than "…"
@@ -146,6 +147,7 @@ function setupModes(){
   else if(e.key==='ArrowDown'){e.preventDefault();e.stopPropagation();$('#modesList .mode-pick')?.focus()}// stopped here, or modesKeydown would move on from that icon
  });
  setupModesDrag();
+ setupBarTry();// PROTOTYPE
 }
 // The sheet (phones): dragging its handle or the row under it down closes it; let go early and it goes back up.
 let modesDragged=0;// when a drag last moved, so the click that ends it on the handle doesn't count as a press
@@ -179,4 +181,43 @@ function modesKeydown(e){
   if(n)n.focus();else if((e.key==='ArrowUp'||(e.key==='ArrowLeft'&&i===0))&&!modesEditing)$('#modesSearch').focus();
  }
  return true;
+}
+// PROTOTYPE (preview branch only): three looks for the bar of tabs, to compare. ?bar=a|b|c|now picks one, and on the
+// preview site (/preview/) the switch at the bottom of the launcher does too (uc-try-bar). Anywhere else it is 'now'.
+// a: round like the keys (round icons, the tab on screen a capsule; History and the buttons at the top round too)
+// b: one control (the tabs share a rounded box, a thumb slides to the tab on screen)
+// c: no boxes (plain names, an accent line slides under the tab on screen, a hairline under the bar)
+// The look is html[data-bar]; b and c have a mark (.tabs-ink) inside the track that syncModeTabs moves (syncTabsInk).
+const BAR_LOOKS=['now','a','b','c'];
+const BAR_TRY=(()=>{try{return location.pathname.startsWith('/preview/')||new URLSearchParams(location.search).has('bar')}catch{return false}})();
+let barLook=(()=>{if(!BAR_TRY)return 'now';let v='';try{v=new URLSearchParams(location.search).get('bar')||store.get('uc-try-bar')||'a'}catch{}return BAR_LOOKS.includes(v)?v:'a'})();
+let inkAt=null,inkWatch=null,inkTab=null;// where the mark was, so a re-drawn strip slides from there
+function syncTabsInk(active,instant){
+ const track=$('#modeTabs .mode-tabs-track');if(!track)return;
+ let ink=track.querySelector('.tabs-ink');
+ if(barLook!=='b'&&barLook!=='c'||!active){ink?.remove();inkWatch?.disconnect();inkTab=null;return}
+ const to={x:active.offsetLeft,w:active.offsetWidth};
+ const put=(r,now)=>{if(now)ink.style.transition='none';ink.style.width=r.w+'px';ink.style.transform='translateX('+r.x+'px)';if(now){void ink.offsetWidth;ink.style.transition=''}};
+ const fresh=!ink;
+ // the tabs were drawn again (another language, a mode that joins the bar): the new mark starts where the old one was
+ if(fresh){ink=document.createElement('span');ink.className='tabs-ink';ink.setAttribute('aria-hidden','true');track.prepend(ink);put(inkAt||to,true)}
+ put(to,instant&&!fresh||reducedMotion());inkAt=to;
+ // a tab that changes size later (the font arrives, the names get shorter) takes its mark along
+ if(window.ResizeObserver&&inkTab!==active){inkWatch?.disconnect();inkTab=active;
+  inkWatch=new ResizeObserver(()=>{const a=$('#modeTabs .mode-tab.active');if(a&&inkAt&&(a.offsetLeft!==inkAt.x||a.offsetWidth!==inkAt.w))syncTabsInk(a,true)});inkWatch.observe(active)}
+}
+function applyBarLook(){
+ if(barLook==='now')delete document.documentElement.dataset.bar;else document.documentElement.dataset.bar=barLook;
+ inkAt=null;$('#modeTabs .tabs-ink')?.remove();
+ renderModeTabs();if(typeof fitLayout==='function')fitLayout();
+}
+function renderBarTry(){
+ const box=$('#barTry');if(!box)return;
+ box.innerHTML='<span>'+esc(lang==='el'?'Δοκιμή γραμμής':'Try the bar')+'</span>'+BAR_LOOKS.map(k=>'<button type="button" data-bar-look="'+k+'" aria-pressed="'+(k===barLook)+'">'+esc(k==='now'?(lang==='el'?'Τώρα':'Now'):k.toUpperCase())+'</button>').join('');
+}
+function setupBarTry(){
+ if(!BAR_TRY)return;
+ $('#modesModal .modes-card').insertAdjacentHTML('beforeend','<div id="barTry" class="bar-try" role="group"></div>');
+ $('#barTry').addEventListener('click',e=>{const b=e.target.closest('[data-bar-look]');if(!b)return;e.stopPropagation();barLook=b.dataset.barLook;store.set('uc-try-bar',barLook);applyBarLook();renderBarTry()});
+ applyBarLook();
 }
