@@ -52,7 +52,7 @@ Part of the notes in CLAUDE.md (read that first). Covers layout.js, side.js, mod
 - **The title** (`fitBrand`): beside the top buttons it shrinks to 14px; if it still doesn't fit (344px and narrower, or a wide
   font) the logo goes (`.brand.no-mark`) and it may shrink to 12px. Never "…".
 - **Popular phone sizes** (`phone_sizes` in the tests, `--phones` runs only it): every tab and kind filled with long values
-  (`PHONE_TABS`; Scientific with 2nd and a complex result too) and every sheet and popup (`PHONE_SHEETS`: All modes, History,
+  (`PHONE_TABS`; Scientific with 2nd and a complex result too) and every sheet and popup (`PHONE_SHEETS`: All modes and its Edit, History,
   ⋯, the working, Tips, theme menu, own theme editor) on the phones in `PHONES`, in both languages, each checked by
   `tests/layout_probe.js`: text over other text, text cut by a box that hides (not one that scrolls, not `fade-start/-end`
   scrolling, not a line clamp), text or boxes off the screen, text wider than its button, a number cut in its field, keys under
@@ -81,18 +81,19 @@ Part of the notes in CLAUDE.md (read that first). Covers layout.js, side.js, mod
   (`aria-expanded`, `#themeButton.open` while the own theme editor is open); styles at the end of styles.css.
   `setupTopPress` also gives the f(x) and M chips on the display (`.sci-bar button`) the same `.pressed` look and a hover.
   The scientific keys need their own hover rule (`.key.sci-key:hover`, after their colour, which would win over `.key:hover`).
-- **All modes** (modes.js): the ⊞ button at the top beside the language button (`#modesButton`, `.icon-button` like EN and the theme button; so the tab row starts with History and the tabs; the title shrinks to fit beside it, `fitBrand`) opens a sheet (`#modesModal`, `openModes`) with
-  every mode in groups (`MODE_GROUPS`) and a search (`modeMatches`: names in both languages plus `MODE_WORDS`, word
-  starts, accents and capitals ignored; Enter opens the first; Ctrl+K / ⌘K opens it, Esc closes, a press outside closes).
-  The strip shows only the pinned modes (`pinnedModes`, `uc-pins`, default Calculator, Units, Currency, VAT; the pin on
-  each tile) in `MODE_LABELS` order, plus the mode on screen while it isn't pinned (`.unpinned`, dashed). When they don't
-  all fit, the tabs not on screen show only their icon (`.mode-tabs.icons`; names in aria-label/title). A new mode: also
-  a group in `MODE_GROUPS` and words in `MODE_WORDS`. On phones the search isn't focused (no keyboard popping up); long
-  names shrink a little (`fitModeNames`, to 11px, then a little tighter down to 10px), never "…".
-  The header has an **All | Default | None** switch (`#modesPins`, `PIN_SETS`, `savePins`): it pins every mode, the starting four, or none; the matching choice is lit
-  (`pinSetNow`), none when pinned by hand. When the title and the switch don't fit on one line (Greek on a phone) the
-  switch moves to its own full-width line under the title (`fitModesHead`, `.seg-below`). The mode on screen is marked
-  with a soft accent fill (`.mode-tile.on`), not an outline (an outline looks like keyboard focus).
+- **All modes** (modes.js): the ⊞ button at the top beside the language button (`#modesButton`, `.icon-button` like EN and the theme button; so the tab row starts with History and the tabs; the title shrinks to fit beside it, `fitBrand`) opens a launcher (`#modesModal`, `openModes`):
+  every mode as a round icon like the keys (`.mode-pick-icon`, the key colour; the mode on screen filled with the accent like its tab), its name under it, four a row in `MODE_ORDER`
+  (everyday, money, maths, the rest; no group titles), three on a phone narrower than 360px, eight on a phone sideways. Above them a search (`modeMatches`: names in both languages plus `MODE_WORDS`, word
+  starts, accents and capitals ignored; Enter opens the first; Ctrl+K / ⌘K opens it, Esc closes, a press outside closes; the arrows move between icons, a row at a time).
+  **Two shapes** (`modesSheet`, the same sizes in styles.css): on phones, upright or sideways, and windows up to 600px wide or under 500px tall it is a sheet that slides up from the bottom with the page dimmed; its handle (`#closeModes`, a button) closes it when
+  pressed or dragged down (`setupModesDrag`: the handle and the row under it; over 90px or a quick flick closes, less springs back). On tablets and computers it is a popover under the ⊞ button
+  (`placeModes` sets `--by`/`--br` in CSS pixels, so it is right on zoomed screens), nothing dimmed, no handle. It closes with a short slide or fade (`.closing`, 200 ms): `modesOpen()` is false at once, `hidden` comes after, so tests wait before checking `hidden`.
+  The list scrolls inside the card when the screen is short. On phones the search isn't focused (no keyboard popping up); long names shrink a little (`fitModeNames`, to 10px, then a little tighter), never "…".
+  **Pins:** the strip shows only the pinned modes (`pinnedModes`, `uc-pins`, default Calculator, Units, Currency, VAT) in `MODE_LABELS` order, plus the mode on screen while it isn't pinned (`.unpinned`, dashed). When they don't
+  all fit, the tabs not on screen show only their icon (`.mode-tabs.icons`; names in aria-label/title). The launcher shows no pins until **Edit** (`#modesEdit`, `setModesEdit`, `.editing`): the title "Pinned modes", the
+  **All | Default | None** switch (`#modesPins`, `PIN_SETS`, `savePins`; the matching choice is lit, `pinSetNow`, none when pinned by hand) and a hint take the search's place, each icon gets a mark (`.mode-badge`, filled when pinned; unpinned ones are dimmed)
+  and a press pins or unpins instead of opening (`aria-pressed`, "Pin to the bar: Fuel"). Done, or closing, goes back. A change of language re-draws it in place (`renderModesList`), Edit included.
+  A new mode: also a place in `MODE_ORDER` and words in `MODE_WORDS`.
 - **Modes are tabs:** a strip of tabs at the top of the card (`MODE_LABELS`, `renderModeTabs`, `switchMode`), one tap
   each, scrolling sideways when they don't fit; Alt+1…9 on a keyboard (Energy, Subnet, Programmer, Numbers, Equations and Statistics, the last six, have none). When they don't all fit, a slim bar under them
   (`.tabs-scrollbar`, `syncTabEdges`, `flashTabsBar`) shows while they move and briefly on start; it can be dragged

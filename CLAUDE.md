@@ -72,7 +72,7 @@ Everything the app serves is in `public/` (the web root for both GitHub Pages an
 | `theme.js` | themes: the ready-made ones, own themes (`deriveTheme`), Match device (`themePair`), the theme menu and the own theme editor |
 | `ui.js` | `setLanguage`/`applyLanguage`, modes and tabs (`switchMode`, `renderTool`), dialogs, hold keys, install |
 | `clip.js` | Copy and Paste: hold a number (or right-click) for the menu (`openClipMenu`, `clipTarget`), `copyValue`/`copyResult`, `pasteCalc`/`pasteUnits`/`pasteIntoField`, Ctrl+C / Ctrl+V |
-| `modes.js` | the All modes sheet (⊞): groups, search, pins (`uc-pins`), which tabs the strip shows (`stripModes`) |
+| `modes.js` | the All modes launcher (⊞): round icons in `MODE_ORDER`, search, Edit to pin (`uc-pins`), a sheet on phones and a popover elsewhere, which tabs the strip shows (`stripModes`) |
 | `side.js` | big screens: History (left) and the working (right) beside the card, live (`refreshSide`, `renderSide`, `html.side-panels`) |
 | `help.js` | Tips & shortcuts text (`HELP`) and `showHelp` |
 | `main.js` | keypad and button wiring, the desktop keyboard handler, start-up. Loaded last |

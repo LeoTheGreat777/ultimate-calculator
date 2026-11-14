@@ -6,6 +6,15 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.44.0 – 2026-11-14
+
+### Changed
+- All modes (⊞) is now a launcher: every mode is a round icon like the keys, four a row, with the search above them.
+  On phones it slides up from the bottom, and a press on its handle or a drag down closes it; on tablets and
+  computers it opens as a small window under the button.
+- The pins moved behind an Edit button: press it, then press the modes you want in the bar at the top
+  (All | Default | None is there too), and Done.
+
 ## 0.43.0 – 2026-11-12
 
 ### Added

@@ -67,7 +67,7 @@ A fast, modern, privacy-friendly all-in-one calculator for everyday calculations
 - English and Greek language support
 - Installable on phones: an install button opens the install dialog on Android, and shows a short Add to Home Screen guide on iPhone
 - Mobile-friendly calculator controls
-- One-tap mode tabs for the pinned modes; every mode (Calculator, Units, Currency, Graph, VAT, Percent, Interest, Dates, Fuel, Energy, Subnet, Transfer, Programmer, Numbers, Equations, Statistics) is in All modes (⊞, at the top), with a search, pins, and an All | Default | None switch to pin every mode, the starting four or none at once; Alt+1–9 for the first nine on a keyboard
+- One-tap mode tabs for the pinned modes; every mode (Calculator, Units, Currency, Graph, VAT, Percent, Interest, Dates, Fuel, Energy, Subnet, Transfer, Programmer, Numbers, Equations, Statistics) is in All modes (⊞, at the top): a launcher of round icons with a search (a sheet from the bottom on phones, a popover on tablets and computers); its Edit button picks the pinned modes, with an All | Default | None switch to pin every mode, the starting four or none at once; Alt+1–9 for the first nine on a keyboard
 - On big screens History sits on the left and the working on the right, beside the calculator, updating live
 - Calculation explanations presented in a readable step-by-step view
 - Tips for every mode, with keyboard shortcuts on computers, from the footer (or ? on a keyboard)
