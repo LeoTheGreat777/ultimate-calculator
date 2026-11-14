@@ -1743,6 +1743,56 @@ async def all_modes(browser, url):
         await p.context.close()
 
 
+async def menu_looks(browser, url):
+    """PROTOTYPE (preview branch): the three new looks of the All modes sheet (?menu=a|b|c) open with every mode, switch
+    modes, pin and unpin, fit a phone and a computer in both languages; without ?menu= the sheet is as it was."""
+    L = '[menu looks] '
+    p = await new_page(browser, url)
+    check(L + "without ?menu= the look is 'now' and nothing of the prototype is on the page",
+          await p.evaluate("menuLook==='now'&&!document.querySelector('#modesEdit,#modesTry,.modes-handle')"))
+    await p.context.close()
+    for look in 'abc':
+        for phone, lang in [(True, 'en'), (True, 'el'), (False, 'en'), (False, 'el')]:
+            T = L + f"{look} {'phone' if phone else 'computer'} {lang}: "
+            p = await new_page(browser, url + '?menu=' + look, lang, 'dark' if lang == 'en' else 'light', phone=phone, size=(344, 770) if phone and lang == 'el' else None)
+            press = p.tap if phone else p.click
+            await press('#modesButton')
+            await p.wait_for_timeout(400)
+            st = await p.evaluate("""(()=>{const c=document.querySelector('.modes-card').getBoundingClientRect(),l=document.querySelector('#modesList').getBoundingClientRect();
+              return [modesOpen(),document.querySelectorAll('#modesList .mode-pick').length,c.left>=-1&&c.right<=innerWidth+1&&c.top>=-1&&c.bottom<=innerHeight+1,
+                [...document.querySelectorAll('#modesList .mode-pick-name')].filter(n=>n.scrollWidth>n.clientWidth+1).map(n=>n.textContent),
+                [...document.querySelectorAll('#modesList .mode-tile')].every(t=>{const r=t.getBoundingClientRect();return r.left>=l.left-1&&r.right<=l.right+1}),
+                [...document.querySelectorAll('.modes-card .section-heading,.modes-card .modes-foot,#modesPins')].filter(e=>e.offsetParent&&e.scrollWidth>e.clientWidth+1).length]})()""")
+            check(T + 'opens with every mode, on screen, no name cut, nothing too wide', st == [True, 16, True, [], True, 0], st)
+            await press('#modesList .mode-pick[data-mode=fuel]')
+            await p.wait_for_timeout(350)
+            st = await p.evaluate("[mode,modesModal.classList.contains('hidden'),[...document.querySelectorAll('.mode-tab')].map(t=>t.dataset.mode).includes('fuel')]")
+            check(T + 'a press opens the mode and closes the sheet', st == ['fuel', True, True], st)
+            await press('#modesButton')
+            await p.wait_for_timeout(400)
+            if look == 'b':
+                await press('#modesList [data-pin=fuel]')
+                st = await p.evaluate("[pinnedModes.includes('fuel'),modesOpen()]")
+                check(T + 'the pin on a row pins it, the sheet stays', st == [True, True], st)
+                await press('#modesPins [data-pins=default]')
+                check(T + 'Default at the foot', await p.evaluate("pinSetNow()") == 'default')
+            else:
+                await press('#modesEdit')
+                await p.wait_for_timeout(150)
+                await press('#modesList .mode-pick[data-mode=dates]')
+                st = await p.evaluate("[pinnedModes.includes('dates'),modesOpen(),mode,getComputedStyle(modesPins).display!=='none',getComputedStyle(modesSearch).display]")
+                check(T + 'Edit: a press pins instead of opening; All | Default | None shows in place of the search', st == [True, True, 'fuel', True, 'none'], st)
+                await press('#modesList .mode-pick[data-mode=dates]')
+                await press('#modesEdit')
+                st = await p.evaluate("[pinnedModes.includes('dates'),modesEdit,getComputedStyle(modesSearch).display!=='none']")
+                check(T + 'a second press unpins; Done goes back', st == [False, False, True], st)
+            await p.keyboard.press('Escape')
+            await p.wait_for_timeout(350)
+            check(T + 'Esc closes it', await p.evaluate("modesModal.classList.contains('hidden')"))
+            check(T + 'no JavaScript errors', not p.errors, p.errors)
+            await p.context.close()
+
+
 async def esc_everywhere(browser, url):
     """Esc clears every mode like its AC key, also from a focused field; an open window (Tips) closes first."""
     L = '[esc] '
@@ -3690,6 +3740,7 @@ async def main():
         await keys_fill_the_bottom(browser, url)
         await how_buttons_in_place(browser, url)
         await all_modes(browser, url)
+        await menu_looks(browser, url)
         await esc_everywhere(browser, url)
         await history_per_mode(browser, url)
         await history_groups(browser, url)
