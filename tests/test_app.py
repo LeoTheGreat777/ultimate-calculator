@@ -1660,16 +1660,25 @@ async def sideways_every_tab(browser, url):
 
 
 async def all_modes(browser, url):
-    """Navigation: the strip shows the pinned modes (and the one on screen); ⊞ opens every mode, grouped, with a search;
-    pins are kept; Ctrl+K opens it, Esc closes; on a phone the pinned tabs fit (the others show as icons)."""
+    """Navigation: the strip shows the pinned modes (and the one on screen); ⊞ opens the launcher with every mode as a round
+    icon, four a row, and a search; Edit chooses the pinned ones (a press pins or unpins, All | Default | None), and they are
+    kept; Ctrl+K opens it, Esc closes; a popover under the button on a computer or tablet, a sheet from the bottom on a phone
+    (dragged down or its handle pressed to close); the pinned tabs fit a phone (the others show as icons)."""
     L = '[all modes] '
     p = await new_page(browser, url, 'en', 'dark')
     strip = "[...document.querySelectorAll('#modeTabs .mode-tab')].map(b=>b.dataset.mode)"
+    gone = "modesModal.classList.contains('hidden')"
     check(L + 'the strip starts with Calculator, Units, Currency, VAT', await p.evaluate(strip) == ['calc', 'units', 'currency', 'vat'], await p.evaluate(strip))
     await p.click('#modesButton')
-    await p.wait_for_timeout(100)
-    got = await p.evaluate("[!modesModal.classList.contains('hidden'),document.querySelectorAll('#modesList .mode-group').length,[...document.querySelectorAll('#modesList .mode-pick')].map(b=>b.dataset.mode),document.activeElement.id]")
-    check(L + 'the sheet has every mode in 3 groups, the search has the focus', got[0] and got[1] == 3 and sorted(got[2]) == sorted(['calc', 'units', 'currency', 'graph', 'vat', 'pct', 'loan', 'dates', 'fuel', 'energy', 'net', 'transfer', 'prog', 'numbers', 'equation', 'stats']) and got[3] == 'modesSearch', got)
+    await p.wait_for_timeout(300)
+    got = await p.evaluate("[modesOpen(),[...document.querySelectorAll('#modesList .mode-pick')].map(b=>b.dataset.mode),document.activeElement.id]")
+    check(L + 'the launcher has every mode, the search has the focus', got[0] and sorted(got[1]) == sorted(['calc', 'units', 'currency', 'graph', 'vat', 'pct', 'loan', 'dates', 'fuel', 'energy', 'net', 'transfer', 'prog', 'numbers', 'equation', 'stats']) and got[2] == 'modesSearch', got)
+    check(L + 'every mode there is has a place in it', await p.evaluate("MODE_LABELS.slice().sort().join()===MODE_ORDER.slice().sort().join()&&MODE_LABELS.every(m=>MODE_WORDS[m])"))
+    st = await p.evaluate("""(()=>{const r=s=>document.querySelector(s).getBoundingClientRect(),c=r('.modes-card'),b=r('#modesButton'),t=[...document.querySelectorAll('#modesList .mode-pick')].map(e=>e.getBoundingClientRect());
+      return [Math.abs(c.right-b.right)<2,c.top>b.bottom&&c.top<b.bottom+14,new Set(t.map(x=>Math.round(x.top))).size,new Set(t.map(x=>Math.round(x.left))).size,
+        getComputedStyle(document.querySelector('#closeModes')).display,getComputedStyle(modesModal).backgroundColor,
+        [...document.querySelectorAll('#modesList .mode-pick-icon')].every(i=>{const x=i.getBoundingClientRect();return Math.abs(x.width-x.height)<1&&getComputedStyle(i).borderRadius==='50%'})]})()""")
+    check(L + 'a computer: a popover under the ⊞ button, four rows of four round icons, no handle, nothing dimmed', st == [True, True, 4, 4, 'none', 'rgba(0, 0, 0, 0)', True], st)
     for q, want in [('tip', ['pct']), ('loan', ['loan']), ('ip', ['net']), ('καυσ', ['fuel']), ('ΦΠΑ', ['vat']), ('download', ['transfer']), ('λήψη', ['transfer']), ('zzz', [])]:
         await p.fill('#modesSearch', q)
         got = await p.evaluate("[...document.querySelectorAll('#modesList .mode-pick')].map(b=>b.dataset.mode)")
@@ -1677,69 +1686,143 @@ async def all_modes(browser, url):
     check(L + 'nothing found says so', await p.evaluate("!!document.querySelector('#modesList .modes-none')"))
     await p.fill('#modesSearch', 'subnet')
     await p.keyboard.press('Enter')
-    await p.wait_for_timeout(150)
-    got = await p.evaluate(f"[mode,modesModal.classList.contains('hidden'),{strip},document.querySelector('.mode-tab.active').classList.contains('unpinned')]")
-    check(L + 'Enter opens the first match; it joins the strip while open', got == ['net', True, ['calc', 'units', 'currency', 'vat', 'net'], True], got)
+    check(L + 'Enter opens the first match and the launcher is closed for the keys at once', await p.evaluate("[mode,modesOpen()]") == ['net', False])
+    await p.wait_for_timeout(350)
+    got = await p.evaluate(f"[mode,{gone},{strip},document.querySelector('.mode-tab.active').classList.contains('unpinned')]")
+    check(L + 'it fades away; the mode joins the strip while open', got == ['net', True, ['calc', 'units', 'currency', 'vat', 'net'], True], got)
     await p.evaluate("switchMode('calc')")
     check(L + 'and leaves the strip after', await p.evaluate(strip) == ['calc', 'units', 'currency', 'vat'])
     await p.keyboard.press('Control+k')
-    await p.wait_for_timeout(100)
-    check(L + 'Ctrl+K opens it', await p.evaluate("!modesModal.classList.contains('hidden')"))
-    bg = "getComputedStyle(document.querySelector('#modesList [data-pin=pct]').closest('.mode-tile')).backgroundColor"
+    await p.wait_for_timeout(300)
+    check(L + 'Ctrl+K opens it', await p.evaluate("modesOpen()"))
+    st = await p.evaluate("(()=>{const t=document.querySelector('#modesList .mode-tile.on'),i=getComputedStyle(t.querySelector('.mode-pick-icon')),o=getComputedStyle(document.querySelector('#modesList .mode-tile:not(.on) .mode-pick-icon'));return [t.querySelector('.mode-pick').dataset.mode,i.backgroundColor!==o.backgroundColor,getComputedStyle(t.querySelector('.mode-pick')).outlineStyle]})()")
+    check(L + 'the mode on screen is marked by its filled icon, not a focus-like outline', st == ['calc', True, 'none'], st)
+    icon = "getComputedStyle(document.querySelector('#modesList .mode-pick[data-mode=pct] .mode-pick-icon')).backgroundColor"
     await p.mouse.move(1, 1)
-    rest = await p.evaluate(bg)
-    await p.hover('#modesList .mode-pick[data-mode=pct]')
-    on_name = await p.evaluate(bg)
-    await p.hover('#modesList [data-pin=pct]')
-    on_pin = await p.evaluate(bg)
-    check(L + 'the mouse over a mode lights up its whole tile, pin included', on_name != rest and on_pin == on_name, [rest, on_name, on_pin])
+    await p.wait_for_timeout(200)
+    rest = await p.evaluate(icon)
+    await p.hover('#modesList .mode-pick[data-mode=pct] .mode-pick-name')
+    await p.wait_for_timeout(200)
+    check(L + 'the mouse over a mode (its name too) lights up its icon', await p.evaluate(icon) != rest, rest)
+    await p.focus('#modesSearch')
+    await p.keyboard.press('ArrowDown')
+    await p.keyboard.press('ArrowDown')
+    await p.keyboard.press('ArrowRight')
+    got = [await p.evaluate("document.activeElement.dataset.mode")]
+    await p.keyboard.press('ArrowUp')
+    got.append(await p.evaluate("document.activeElement.dataset.mode"))
+    await p.keyboard.press('ArrowUp')
+    got.append(await p.evaluate("document.activeElement.id"))
+    check(L + 'the arrows move between the icons, a row up or down at a time; up from the first row is the search', got == ['loan', 'units', 'modesSearch'], got)
+    # Edit: choosing what shows in the bar
+    shown = "[getComputedStyle(modesPins).display,getComputedStyle(modesSearch).display,getComputedStyle(modesTitle).display,getComputedStyle(modesHint).display,getComputedStyle(document.querySelector('#modesList .mode-badge')).display]"
+    check(L + 'at first no pins show: the search, no title, no All | Default | None', await p.evaluate(shown) == ['none', 'block', 'none', 'none', 'none'], await p.evaluate(shown))
+    await p.click('#modesEdit')
+    got = await p.evaluate(f"[{shown},modesTitle.textContent,modesEdit.textContent,modesEdit.getAttribute('aria-pressed'),modesHint.textContent]")
+    check(L + 'Edit: the title, All | Default | None and a hint take the search\'s place, each icon gets its mark, the button says Done',
+          got == [['flex', 'none', 'block', 'block', 'grid'], 'Pinned modes', 'Done', 'true', 'Tap the ones you want in the bar at the top.'], got)
     lit = "[...document.querySelectorAll('#modesPins [aria-pressed=true]')].map(b=>b.dataset.pins)"
     check(L + 'the All | Default | None switch shows Default at first', await p.evaluate(lit) == ['default'], await p.evaluate(lit))
     await p.click('#modesPins [data-pins=all]')
-    got = await p.evaluate(f"[{strip}.length,{lit},!modesModal.classList.contains('hidden'),document.querySelectorAll('#modesList .mode-pin.pinned').length]")
-    check(L + 'All pins every mode at once, the sheet stays open', got == [16, ['all'], True, 16], got)
+    got = await p.evaluate(f"[{strip}.length,{lit},modesOpen(),document.querySelectorAll('#modesList .mode-tile.pinned').length]")
+    check(L + 'All pins every mode at once, the launcher stays open', got == [16, ['all'], True, 16], got)
     await p.click('#modesPins [data-pins=nopins]')
     got = await p.evaluate(f"[{strip},{lit},JSON.parse(localStorage.getItem('uc-pins'))]")
     check(L + 'None unpins them all (the mode on screen still shows)', got == [['calc'], ['nopins'], []], got)
-    await p.click('#modesList [data-pin="vat"]')
-    check(L + 'pinning by hand lights no choice', await p.evaluate(lit) == [], await p.evaluate(lit))
+    await p.click('#modesList .mode-pick[data-mode=vat]')
+    got = await p.evaluate(f"[{lit},mode,modesOpen(),{strip}]")
+    check(L + 'in Edit a press pins instead of opening; pinning by hand lights no choice', got == [[], 'calc', True, ['calc', 'vat']], got)
     await p.click('#modesPins [data-pins=default]')
     check(L + 'Default brings back the starting four', await p.evaluate(strip) == ['calc', 'units', 'currency', 'vat'], await p.evaluate(strip))
-    st = await p.evaluate("(()=>{const t=document.querySelector('#modesList .mode-tile.on'),c=getComputedStyle(t),o=getComputedStyle(document.querySelector('#modesList .mode-tile:not(.on)'));return [t.querySelector('.mode-pick').dataset.mode,c.borderColor===o.borderColor]})()")
-    check(L + 'the mode on screen is marked by a fill, not a focus-like outline', st == ['calc', True], st)
-    await p.click('#modesList [data-pin="fuel"]')
-    await p.click('#modesList [data-pin="units"]')
-    got = await p.evaluate(f"[{strip},!modesModal.classList.contains('hidden'),document.querySelector('[data-pin=fuel]').getAttribute('aria-pressed')]")
-    check(L + 'pinning and unpinning change the strip at once, the sheet stays open', got == [['calc', 'currency', 'vat', 'fuel'], True, 'true'], got)
+    await p.click('#modesList .mode-pick[data-mode=fuel]')
+    await p.click('#modesList .mode-tile:has([data-mode=units]) .mode-badge', force=True)
+    got = await p.evaluate(f"[{strip},modesOpen(),document.querySelector('#modesList [data-mode=fuel]').getAttribute('aria-pressed'),document.querySelector('#modesList [data-mode=fuel]').getAttribute('aria-label'),document.querySelector('#modesList [data-mode=units]').getAttribute('aria-pressed')]")
+    check(L + 'pinning and unpinning (the mark counts as its icon) change the strip at once and are said to a screen reader', got == [['calc', 'currency', 'vat', 'fuel'], True, 'true', 'Unpin from the bar: Fuel', 'false'], got)
+    await p.click('#modesEdit')
+    got = await p.evaluate(f"[{shown},modesEdit.textContent.trim(),modesOpen()]")
+    check(L + 'Done goes back to the launcher', got == [['none', 'block', 'none', 'none', 'none'], 'Edit', True], got)
+    await p.click('#modesEdit')
     await p.keyboard.press('Escape')
-    check(L + 'Esc closes it', await p.evaluate("modesModal.classList.contains('hidden')"))
+    check(L + 'Esc closes it', not await p.evaluate("modesOpen()"))
+    await p.wait_for_timeout(350)
+    await p.click('#modesButton')
+    await p.wait_for_timeout(300)
+    check(L + 'opened again it is the launcher, not Edit', await p.evaluate(shown) == ['none', 'block', 'none', 'none', 'none'], await p.evaluate(shown))
+    await p.keyboard.press('Escape')
     await p.reload()
     await p.wait_for_timeout(300)
     check(L + 'pins are kept', await p.evaluate(strip) == ['calc', 'currency', 'vat', 'fuel'], await p.evaluate(strip))
     await p.keyboard.press('Alt+Digit2')
     check(L + 'Alt+2 still goes to Units', await p.evaluate('mode') == 'units')
+    await p.click('#modesButton')
+    await p.wait_for_timeout(300)
+    await p.click('#modesEdit')
     await p.evaluate("setLanguage('el')")
     await p.wait_for_timeout(600)
-    await p.click('#modesButton')
-    got = await p.evaluate("[modesTitle.textContent,modesButton.getAttribute('aria-label'),document.querySelector('#modesList .mode-group h3').textContent]")
-    check(L + 'in Greek', got == ['Όλες οι λειτουργίες', 'Όλες οι λειτουργίες', 'Καθημερινά'], got)
+    got = await p.evaluate("[modesOpen(),modesTitle.textContent,modesEdit.textContent,modesHint.textContent,modesButton.getAttribute('aria-label'),document.querySelector('#modesList .mode-pick-name').textContent,document.querySelector('#modesPins button').textContent]")
+    check(L + 'a change of language while it is open (in Edit) changes its text in place', got == [True, 'Καρφιτσωμένες', 'Τέλος', 'Πάτα όσες θέλεις στη γραμμή επάνω.', 'Όλες οι λειτουργίες', 'Αριθμομηχανή', 'Όλες'], got)
+    await p.click('#modesEdit')
+    got = await p.evaluate("[modesSearch.placeholder,modesEdit.textContent.trim(),modesEdit.getAttribute('aria-label')]")
+    check(L + 'in Greek', got == ['Αναζήτηση', 'Αλλαγές', 'Διάλεξε ποιες φαίνονται στη γραμμή επάνω'], got)
     cut = await p.evaluate("[...document.querySelectorAll('#modesList .mode-pick-name')].filter(n=>n.scrollWidth>n.clientWidth+1).map(n=>n.textContent)")
     check(L + 'in Greek on a computer, no name is cut', not cut, cut)
     await p.mouse.click(5, 5)
-    check(L + 'a press outside closes it', await p.evaluate("modesModal.classList.contains('hidden')"))
+    await p.wait_for_timeout(350)
+    check(L + 'a press outside closes it', await p.evaluate(gone))
     check(L + 'no JavaScript errors', not p.errors, p.errors)
     await p.context.close()
-    for size in [(390, 844), (814, 409)]:
+    for size in [(390, 844), (814, 409), (344, 770)]:
         p = await new_page(browser, url, 'el', 'light', phone=True, size=size)
+        P = L + f'phone {size[0]}: '
         got = await p.evaluate("(()=>{const t=document.querySelector('#modeTabs .mode-tabs-track');return [t.scrollWidth<=t.clientWidth+1,[...t.children].filter(b=>b.querySelector('.mode-tab-label').offsetParent).map(b=>b.dataset.mode)]})()")
-        check(L + f'phone {size[0]}: the 4 pinned tabs fit, only the current one with its name', got == [True, ['calc']], got)
+        check(P + 'the 4 pinned tabs fit, only the current one with its name', got == [True, ['calc']], got)
         await p.tap('#modesButton')
-        await p.wait_for_timeout(150)
+        await p.wait_for_timeout(450)
         got = await p.evaluate("""[document.activeElement.id,[...document.querySelectorAll('#modesList .mode-pick-name')].filter(n=>n.scrollWidth>n.clientWidth+1).map(n=>n.textContent)]""")
-        check(L + f'phone {size[0]}: no keyboard pops up, no name is cut', got[0] != 'modesSearch' and not got[1], got)
-        st = await p.evaluate("(()=>{const h=document.querySelector('#modesModal .section-heading'),r=e=>e.getBoundingClientRect(),s=document.querySelector('#modesPins');return [h.scrollWidth<=h.clientWidth+1,[...s.querySelectorAll('button')].every(b=>b.scrollWidth<=b.clientWidth+1),r(document.querySelector('#modesTitle')).height<30,r(s).right<=r(h).right+1]})()")
-        check(L + f'phone {size[0]}: the title and the All | Default | None switch fit, nothing wraps or is cut', st == [True, True, True, True], st)
-        check(L + f'phone {size[0]}: no JavaScript errors', not p.errors, p.errors)
+        check(P + 'no keyboard pops up, no name is cut', got[0] != 'modesSearch' and not got[1], got)
+        st = await p.evaluate("""(()=>{const c=document.querySelector('.modes-card').getBoundingClientRect(),t=[...document.querySelectorAll('#modesList .mode-pick')].map(e=>e.getBoundingClientRect());
+          return [Math.abs(c.bottom-innerHeight)<2,c.top>=0,Math.round(c.left+c.right-innerWidth),getComputedStyle(document.querySelector('#closeModes')).display,new Set(t.map(x=>Math.round(x.left))).size]})()""")
+        check(P + 'a sheet at the bottom of the screen with a handle; four icons a row (three on a very narrow phone, eight sideways)',
+              st == [True, True, 0, 'block', {390: 4, 814: 8, 344: 3}[size[0]]], st)
+        await p.tap('#modesEdit')
+        st = await p.evaluate("(()=>{const h=document.querySelector('.modes-head'),s=document.querySelector('#modesPins'),r=e=>e.getBoundingClientRect();return [h.scrollWidth<=h.clientWidth+1,[...s.querySelectorAll('button')].every(b=>b.scrollWidth<=b.clientWidth+1),r(document.querySelector('#modesTitle')).height<30,r(s).right<=r(h).right+1,s.scrollWidth<=s.clientWidth+1]})()")
+        check(P + 'Edit: the title, Done and the All | Default | None switch fit, nothing wraps or is cut', st == [True, True, True, True, True], st)
+        await p.tap('#modesEdit')
+        # dragging the handle a little lets it spring back; far closes it; a press on the handle closes it too
+        h = await p.evaluate("(()=>{const r=document.querySelector('#closeModes').getBoundingClientRect();return [r.left+r.width/2,r.top+r.height/2]})()")
+        cdp = await p.context.new_cdp_session(p)
+
+        async def drag(dy):
+            await cdp.send('Input.dispatchTouchEvent', {'type': 'touchStart', 'touchPoints': [{'x': h[0], 'y': h[1]}]})
+            for i in range(1, 9):
+                await cdp.send('Input.dispatchTouchEvent', {'type': 'touchMove', 'touchPoints': [{'x': h[0], 'y': h[1] + dy * i / 8}]})
+                await p.wait_for_timeout(40)
+            moved = await p.evaluate("new DOMMatrix(getComputedStyle(document.querySelector('.modes-card')).transform).m42")
+            await cdp.send('Input.dispatchTouchEvent', {'type': 'touchEnd', 'touchPoints': []})
+            await p.wait_for_timeout(450)
+            return moved
+        moved = await drag(40)
+        st = await p.evaluate("[modesOpen(),Math.abs(document.querySelector('.modes-card').getBoundingClientRect().bottom-innerHeight)<2]")
+        check(P + 'dragged down a little by its handle the sheet follows the finger and goes back up', moved > 30 and st == [True, True], [moved, st])
+        moved = await drag(160)
+        check(P + 'dragged far down it closes', moved > 120 and await p.evaluate(gone), moved)
+        await p.tap('#modesButton')
+        await p.wait_for_timeout(450)
+        check(P + 'opened again it is back in place', await p.evaluate("Math.abs(document.querySelector('.modes-card').getBoundingClientRect().bottom-innerHeight)<2"))
+        await p.tap('#closeModes')
+        await p.wait_for_timeout(350)
+        check(P + 'a press on the handle closes it', await p.evaluate(gone))
+        await p.tap('#modesButton')
+        await p.wait_for_timeout(450)
+        await p.tap('#modesList .mode-pick[data-mode=dates]')
+        await p.wait_for_timeout(350)
+        check(P + 'a press on an icon opens the mode and closes the sheet', await p.evaluate(f"[mode,{gone}]") == ['dates', True])
+        await p.tap('#modesButton')
+        await p.wait_for_timeout(450)
+        await p.touchscreen.tap(size[0] / 2, 12)
+        await p.wait_for_timeout(350)
+        check(P + 'a press above the sheet closes it', await p.evaluate(gone))
+        check(P + 'no JavaScript errors', not p.errors, p.errors)
         await p.context.close()
 
 
@@ -3362,6 +3445,7 @@ PHONE_TABS = [
 # The sheets and popups: how to open one, the box to check, how to close it
 PHONE_SHEETS = [
     ('All modes', "openModes()", '#modesModal .modal-card', "closeModes()"),
+    ('All modes, Edit', "openModes();setModesEdit(true)", '#modesModal .modal-card', "closeModes()"),
     ('History', "switchMode('calc');if(!historyItems().length)store.set('uc-history',JSON.stringify([0,0,2,9,40].map((a,i)=>({id:Date.now()-a*864e5-i,expression:'12+'+i,shown:'12+'+i,result:String(12+i)}))));openHistory()", '#historyPanel', "closeHistory()"),
     ('Functions (⋯)', "switchMode('calc');openFunctions()", '#howModal .modal-card', "closeHow()"),
     ('the working (?) of a complex result', "switchMode('calc');expression='(9+9×i)×5';current='';equals();showHow()", '#howModal .modal-card', "closeHow()"),

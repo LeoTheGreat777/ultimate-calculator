@@ -232,7 +232,7 @@ function applyLanguage(){
  $('#historyButton').setAttribute('aria-label',t('history'));$('#historyButton').title=t('history');
  $('#modeTabs')?.setAttribute('aria-label',lang==='el'?'Λειτουργίες':'Modes');
  renderModeTabs();
- {const b=$('#modesButton');if(b){b.setAttribute('aria-label',mText('title'));b.title=mText('title')}if(modesOpen())openModes()}
+ {const b=$('#modesButton');if(b){b.setAttribute('aria-label',mText('title'));b.title=mText('title')}if(modesOpen())renderModesList()}
  $('#howTitle').textContent=t('how');
  $('#howButton')?.setAttribute('aria-label',t('how'));
  refreshSide(true);

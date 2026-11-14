@@ -879,46 +879,78 @@ html.landscape .calculator-card.mobile-tool .net-details strong{flex:1 1 auto;mi
 @keyframes ratePulse{from{opacity:.45}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){.rate-info.loading .rate-date{animation:none}}
 .conversion-category.hidden{display:none}
-/* ---------- All modes: the ⊞ button and its sheet (modes.js) ---------- */
+/* ---------- All modes: the ⊞ button and its launcher (modes.js) ---------- */
 .modes-button{display:grid;place-items:center;padding:0;flex:0 0 auto;color:var(--text)}
 .modes-button[aria-expanded="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .mode-tab.unpinned{border-style:dashed}
-.modes-card{width:min(560px,calc(calc(100vw / var(--z,1)) - 32px));display:flex;flex-direction:column;gap:10px}
-.modes-search{width:100%;border:1px solid var(--border);border-radius:12px;background:var(--card2);color:var(--text);padding:10px 12px;font:inherit;font-size:15px;outline:none;-webkit-appearance:none;appearance:none}
+/* The launcher: every mode as a round icon like the keys, four a row. On tablets and computers a popover under the ⊞ button
+   (--by, --br from placeModes), nothing dimmed; on phones a sheet from the bottom (below). It fades in and out (.closing). */
+@keyframes modes-fade{from{opacity:0}}
+@keyframes modes-up{from{transform:translateY(100%)}}
+@keyframes modes-pop{from{opacity:0;transform:translateY(-8px) scale(.97)}}
+.modes-modal{display:block;padding:0;background:transparent;backdrop-filter:none;animation:modes-fade .18s ease}
+.modes-modal.closing{opacity:0;transition:opacity .19s ease;pointer-events:none}
+.modes-card{position:absolute;top:var(--by,60px);right:var(--br,20px);width:372px;max-height:calc(calc(100dvh / var(--z,1)) - var(--by,60px) - 14px);display:flex;flex-direction:column;gap:10px;overflow:hidden;border-radius:22px;padding:14px 14px 12px;box-shadow:0 18px 60px rgba(0,0,0,.5);transform-origin:top right;animation:modes-pop .16s ease}
+.modes-handle{display:none;position:relative;align-self:center;flex:none;width:78px;height:30px;margin:0 0 -10px;border:0;padding:0;background:transparent;cursor:grab;touch-action:none}/* the sheet's handle is a button (press or drag); its bar is ::before, ::after is kept for hit areas */
+.modes-handle::before{content:'';position:absolute;left:50%;top:12px;transform:translateX(-50%);width:50px;height:6px;border-radius:999px;background:var(--muted);opacity:.48}
+.modes-handle:focus-visible{outline:2px solid var(--accent2);outline-offset:-4px}
+.modes-head{display:flex;align-items:center;gap:8px;flex:none}
+.modes-head h2{display:none;margin:0 auto 0 2px;font-size:17px;white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.modes-search{flex:1 1 auto;min-width:0;width:100%;border:1px solid transparent;border-radius:999px;background:var(--key);color:var(--text);padding:9px 16px;font:inherit;font-size:15px;outline:none;-webkit-appearance:none;appearance:none}
 .modes-search:focus{border-color:var(--accent)}
 .modes-search::placeholder{color:var(--muted)}
-.modes-list{display:flex;flex-direction:column;gap:10px}
-.mode-group h3{margin:0 0 6px;font-size:12px;font-weight:700;color:var(--muted)}
-.mode-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px}
-.mode-tile{position:relative;display:flex;border:1px solid var(--border);border-radius:12px;background:var(--card2);min-width:0}
-.mode-tile.on{background:color-mix(in srgb,var(--accent) 16%,var(--card2))}/* the mode on screen: a soft fill (an outline looked like keyboard focus) */
-.modes-card .section-heading h2{white-space:nowrap;margin-right:auto}
-.modes-seg{display:inline-flex;align-items:center;gap:2px;flex:none;background:var(--key);border:1px solid var(--border);border-radius:999px;padding:3px 3px 3px 10px}
+.modes-edit{display:inline-flex;align-items:center;gap:6px;height:36px;border:0;border-radius:999px;background:var(--card2);color:var(--text);font:inherit;font-size:13px;font-weight:650;padding:0 14px;cursor:pointer;white-space:nowrap;flex:none}
+.modes-edit svg{width:13px;height:13px;color:var(--accent)}
+.modes-edit:focus-visible{outline:2px solid var(--accent2);outline-offset:2px}
+@media (hover:hover) and (pointer:fine){.modes-edit:hover{background:var(--key-hover)}}
+.modes-list{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;margin:0 -4px;padding:3px 4px}
+.modes-list::-webkit-scrollbar{display:none}
+.mode-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px 0}
+.mode-tile{position:relative;min-width:0}
+.mode-pick{width:100%;min-width:0;display:flex;flex-direction:column;align-items:center;gap:6px;border:0;background:transparent;color:var(--text);font:inherit;font-size:11.5px;font-weight:600;padding:0;text-align:center;cursor:pointer;border-radius:14px}
+.mode-pick-icon{display:inline-flex;align-items:center;justify-content:center;flex:none;width:58px;height:58px;border-radius:50%;background:var(--key);color:var(--accent2);font-size:23px;font-weight:700;line-height:1;transition:transform .12s ease,background-color .12s ease}
+.mode-pick-icon svg{width:24px;height:24px;display:block}
+.mode-pick-icon .eq-icon{font-size:19px}
+.mode-pick-name{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mode-tile.on .mode-pick-icon{background:var(--accent);color:var(--on-accent)}/* the mode on screen, like its tab */
+.mode-pick:active .mode-pick-icon{transform:scale(.92)}
+.mode-pick:focus-visible{outline:2px solid var(--accent2);outline-offset:2px}
+@media (hover:hover) and (pointer:fine){.mode-tile:not(.on) .mode-pick:hover .mode-pick-icon{background:var(--key-hover)}}
+.modes-none{margin:6px 2px;color:var(--muted);font-size:14px}
+/* Edit: choosing the modes in the bar. The title and All | Default | None take the search's place, each icon shows its mark */
+.modes-seg{display:none;align-items:center;gap:2px;flex:none;background:var(--key);border:1px solid var(--border);border-radius:999px;padding:3px 3px 3px 10px}
 .modes-seg-icon{display:inline-flex;color:var(--accent);margin-right:3px}
 .modes-seg-icon svg{width:13px;height:13px}
-.modes-seg button{border:0;background:none;color:var(--muted);font:inherit;font-size:12.5px;font-weight:650;border-radius:999px;padding:5px 11px;cursor:pointer;white-space:nowrap}
+.modes-seg button{position:relative;flex:1;border:0;background:none;color:var(--muted);font:inherit;font-size:12.5px;font-weight:650;border-radius:999px;padding:5px 11px;cursor:pointer;white-space:nowrap}
+.modes-seg button::after{content:'';position:absolute;inset:-3px 0}/* a finger's hit area */
 .modes-seg button[aria-pressed="true"]{background:var(--key-hover);color:var(--text)}
 @media (hover:hover) and (pointer:fine){.modes-seg button:hover{color:var(--text)}}
 .modes-seg button:focus-visible{outline:2px solid var(--accent2);outline-offset:-2px}
-.modes-card.seg-below .section-heading{flex-wrap:wrap;row-gap:8px}
-.modes-card.seg-below .modes-seg{order:3;flex:1 1 100%}
-.modes-card.seg-below .modes-seg button{flex:1}
-.mode-pick{flex:1;min-width:0;display:flex;align-items:center;gap:8px;border:0;background:transparent;color:var(--text);font:inherit;font-size:13px;font-weight:650;padding:11px 2px 11px 10px;gap:7px;text-align:left;cursor:pointer;border-radius:12px}
-.mode-pick-icon{color:var(--accent2);display:inline-flex;flex:none}
-.mode-pick-icon svg{width:16px;height:16px;display:block}
-.mode-pick-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-@media (hover:hover) and (pointer:fine){.mode-tile:hover{background:var(--key-hover);border-color:var(--accent2)}}/* the whole tile, pin included */
-.mode-pick:focus-visible,.mode-pin:focus-visible{outline:2px solid var(--accent2);outline-offset:-2px}
-.mode-pin{flex:none;width:30px;border:0;background:transparent;color:var(--muted);opacity:.45;cursor:pointer;display:grid;place-items:center;border-radius:0 12px 12px 0}
-.mode-pin svg{width:15px;height:15px;transform:rotate(30deg)}
-.mode-pin:hover{opacity:.9}
-.mode-pin.pinned{color:var(--accent);opacity:1}
-.mode-pin.pinned svg{transform:none}
-.modes-none{margin:6px 2px;color:var(--muted);font-size:14px}
-.modes-hint{margin:0;color:var(--muted);font-size:12px}
-html.landscape .modes-card{width:min(620px,calc(calc(100vw / var(--z,1)) - 24px));gap:7px}
-html.landscape .mode-pick{padding-top:8px;padding-bottom:8px}
-html.landscape .mode-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
+.modes-hint{display:none;margin:0;color:var(--muted);font-size:12px;flex:none}
+.mode-badge{display:none;place-items:center;position:absolute;top:-3px;left:calc(50% + 11px);width:23px;height:23px;border-radius:50%;background:var(--card);border:1.5px solid color-mix(in srgb,var(--muted) 55%,var(--card));color:transparent;pointer-events:none}
+.mode-badge svg{width:11px;height:11px}
+.modes-modal.editing .modes-head h2{display:block}
+.modes-modal.editing .modes-search{display:none}
+.modes-modal.editing .modes-seg{display:flex}
+.modes-modal.editing .modes-hint{display:block}
+.modes-modal.editing .modes-edit{background:var(--accent);color:var(--on-accent)}
+.modes-modal.editing .mode-badge{display:grid}
+.modes-modal.editing .mode-tile.pinned .mode-badge{background:var(--accent);border-color:var(--card);color:var(--on-accent)}
+.modes-modal.editing .mode-tile:not(.pinned) .mode-pick{opacity:.55}
+/* Phones, upright or sideways, and narrow windows (modesSheet in modes.js): a sheet from the bottom, dragged down by its handle */
+@media (max-width:600px),(max-height:499px){
+  .modes-modal{display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.42)}
+  .modes-card{position:static;width:min(600px,100%);max-height:calc(calc(100dvh / var(--z,1)) - 34px);border-radius:26px 26px 0 0;border-bottom:0;padding:4px 16px calc(14px + env(safe-area-inset-bottom));box-shadow:0 -20px 70px rgba(0,0,0,.48);animation:modes-up .28s cubic-bezier(.2,.85,.25,1);transition:transform .22s cubic-bezier(.2,.85,.25,1)}
+  .modes-modal.closing .modes-card{transform:translateY(100%);transition:transform .2s cubic-bezier(.4,0,1,1);animation:none}
+  .modes-handle{display:block}
+  .modes-head{touch-action:none}
+  .mode-grid{gap:16px 0}
+  html.landscape .modes-card{width:min(760px,100%);max-height:calc(calc(100dvh / var(--z,1)) - 10px)}
+}
+@media (max-width:359px){.mode-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}/* a very narrow phone: three a row, so Αριθμομηχανή fits */
+@media (max-height:499px){html.landscape .mode-grid{grid-template-columns:repeat(8,minmax(0,1fr));gap:10px 0}}
+.modes-modal.hidden{display:none}
+@media (prefers-reduced-motion:reduce){.modes-modal,.modes-card,.modes-modal.closing .modes-card,.mode-pick-icon{animation:none;transition:none}}
 .mode-tabs.icons .mode-tab:not(.active) .mode-tab-label{display:none}
 .mode-tabs.icons .mode-tab:not(.active){padding:0 8px}
 .mode-tabs.icons .mode-tab:not(.active) .mode-tab-icon{font-size:15px}
@@ -1032,8 +1064,6 @@ html.landscape .tool-field .xf-box input,.calculator-card.fit-row .tool-field .x
 .calculator-card.mobile-tool .how-button,.calculator-card.compact-display .how-button{position:relative;inset:auto}
 .help-link::after,.graph-fn-btn::after,.graph-tool::after,.how-button::after{content:'';position:absolute;inset:-6px}
 .help-link::after{inset:-10px -4px}
-.modes-seg button{position:relative}
-.modes-seg button::after{content:'';position:absolute;inset:-3px 0}
 /* the unit names under Units' values: a taller box (transparent) with the text where it was */
 .unit-unit{height:36px!important;padding-top:9px!important;padding-bottom:7px!important;margin-top:-7px!important;margin-bottom:-7px!important}
 /* The buttons at the top: hover, pressed (.pressed, ui.js setupTopPress) and lit while their menu or window is open */
