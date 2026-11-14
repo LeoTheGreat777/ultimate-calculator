@@ -80,13 +80,13 @@ function renderModeTabs(){
  const pins=typeof pinnedModes!=='undefined'?pinnedModes:MODE_LABELS;
  track.innerHTML=stripModes().map(m=>'<button class="mode-tab" role="tab" type="button" data-mode="'+m+'" aria-label="'+esc(modeText(m))+'" title="'+esc(modeText(m))+'"><span class="mode-tab-icon" aria-hidden="true">'+modeIcon(m)+'</span><span class="mode-tab-label">'+esc(modeText(m))+'</span></button>').join('');
  track.querySelectorAll('.mode-tab').forEach(b=>b.classList.toggle('unpinned',!pins.includes(b.dataset.mode)));
- syncModeTabs(true);
+ tabsDrawn=true;syncModeTabs(true);tabsDrawn=false;
 }
 // Highlight the current tab and bring it into view.
 function syncModeTabs(instant){
  const track=$('#modeTabs .mode-tabs-track');if(!track)return;
  // the mode on screen joins the strip while it isn't pinned (and leaves it after)
- if(!track.children.length||[...track.querySelectorAll('.mode-tab')].map(b=>b.dataset.mode).join()!==stripModes().join()){renderModeTabs();return}
+ if(!track.children.length||[...track.children].map(b=>b.dataset.mode).join()!==stripModes().join()){renderModeTabs();return}
  // when the tabs don't all fit, the ones not on screen show only their icon (their name is in aria-label and title)
  const nav=$('#modeTabs');nav.classList.remove('icons');track.querySelectorAll('.mode-tab-label').forEach(l=>l.style.fontSize='');
  if(track.scrollWidth>track.clientWidth+1){
@@ -96,13 +96,27 @@ function syncModeTabs(instant){
   for(let px=12.5;lab&&px>=11&&track.scrollWidth>track.clientWidth+1;px-=.5)lab.style.fontSize=px+'px';
  }
  let active=null;
- [...track.querySelectorAll('.mode-tab')].forEach(b=>{const on=b.dataset.mode===currentTab();b.classList.toggle('active',on);b.setAttribute('aria-selected',String(on));b.tabIndex=on?0:-1;if(on)active=b});
+ [...track.children].forEach(b=>{const on=b.dataset.mode===currentTab();b.classList.toggle('active',on);b.setAttribute('aria-selected',String(on));b.tabIndex=on?0:-1;if(on)active=b});
  if(active){
   const pad=24,left=Math.min(Math.max(track.scrollLeft,active.offsetLeft+active.offsetWidth-track.clientWidth+pad),active.offsetLeft-pad);
   track.scrollTo({left:Math.max(0,left),behavior:instant||reducedMotion()?'auto':'smooth'});
  }
  syncTabEdges();
- if(typeof syncTabsInk==='function')syncTabsInk(active,instant);// PROTOTYPE (preview): the sliding mark of bar looks b and c
+ syncTabPill(active,instant&&!tabsDrawn);
+}
+// One pill marks the tab on screen and slides to it (.mode-tabs-track::before, placed by --pill-x and --pill-w). It slides
+// too when the tabs were drawn again (another language, a mode that joins the bar); a resize moves it at once.
+let tabsDrawn=false,tabPill=null,tabPillWatch=null,tabPillTab=null;
+function syncTabPill(active,instant){
+ const track=$('#modeTabs .mode-tabs-track');if(!track||!active)return;
+ const now=instant||tabPill===null||reducedMotion();
+ if(now)track.classList.add('pill-now');
+ track.style.setProperty('--pill-x',active.offsetLeft+'px');track.style.setProperty('--pill-w',active.offsetWidth+'px');
+ if(now){void track.offsetWidth;track.classList.remove('pill-now')}
+ tabPill=active.offsetLeft+'|'+active.offsetWidth;
+ // a tab that changes size later (the font arrives, its name gets smaller) takes the pill along
+ if(window.ResizeObserver&&tabPillTab!==active){tabPillWatch?.disconnect();tabPillTab=active;
+  tabPillWatch=new ResizeObserver(()=>{const a=$('#modeTabs .mode-tab.active');if(a&&a.offsetLeft+'|'+a.offsetWidth!==tabPill)syncTabPill(a,true)});tabPillWatch.observe(active)}
 }
 // soft edges show that there are more tabs to scroll to
 function syncTabEdges(){

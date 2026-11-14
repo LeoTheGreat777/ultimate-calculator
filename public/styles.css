@@ -587,13 +587,13 @@ html.theme-fade *,html.theme-fade *::before,html.theme-fade *::after{transition:
   .help-tips li{break-inside:avoid;border-top:0;border-bottom:1px solid var(--border)}
   .help-tips li:last-child{border-bottom:0}
 }
-/* ---------- Mode tabs (one tap per mode; the strip scrolls sideways when they don't all fit) ---------- */
+/* ---------- Mode tabs (one tap per mode, in one bar; a pill slides to the one on screen; the strip scrolls sideways when they don't all fit) ---------- */
 .calculator-toolbar{gap:7px;align-items:center}
-.history-top{width:40px;padding:0;justify-content:center;flex:0 0 auto;color:var(--muted)}
+.history-top{width:40px;padding:0;justify-content:center;flex:0 0 auto;color:var(--muted);border-color:transparent;background:var(--key)}
 .history-top:hover{color:var(--text)}
 .history-icon{display:block}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
-.mode-tabs{position:relative;flex:1 1 auto;min-width:0;height:40px}
+.mode-tabs{position:relative;flex:1 1 auto;min-width:0;height:40px;padding:3px;border-radius:13px;background:var(--key)}
 /* more tabs than fit: a slim bar under them shows how much is in view and where; it fades in while they move */
 .tabs-scrollbar{position:absolute;left:0;right:0;bottom:-10px;height:12px;opacity:0;transition:opacity .35s;pointer-events:none;touch-action:none;cursor:pointer;z-index:2}
 .tabs-scrollbar::before,.tabs-scrollbar span{content:'';position:absolute;top:50%;height:4px;margin-top:-2px;border-radius:4px;transition:height .15s,margin .15s}
@@ -612,20 +612,23 @@ html.theme-fade *,html.theme-fade *::before,html.theme-fade *::after{transition:
 .tabs-prev{left:0}.tabs-next{right:0}
 @media (hover:hover) and (pointer:fine){.tabs-arrow{display:flex}.mode-tabs:hover .tabs-arrow{opacity:.95}.tabs-scrollbar{pointer-events:auto;transition:opacity .3s .4s}.mode-tabs:hover .tabs-scrollbar,.mode-tabs.show-bar .tabs-scrollbar{opacity:1;transition:opacity .15s}.mode-tabs.at-start .tabs-prev,.mode-tabs.at-end .tabs-next{opacity:0!important;pointer-events:none}}
 @media (prefers-reduced-motion:reduce){.tabs-scrollbar,.tabs-arrow{transition:none}}
-.mode-tabs-track{position:relative;display:flex;align-items:center;gap:6px;height:100%;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;overscroll-behavior-x:contain;touch-action:pan-x;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 18px,#000 calc(100% - 18px),transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 18px,#000 calc(100% - 18px),transparent 100%)}
+.mode-tabs-track{position:relative;display:flex;align-items:center;gap:2px;height:100%;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;overscroll-behavior-x:contain;touch-action:pan-x;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 18px,#000 calc(100% - 18px),transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 18px,#000 calc(100% - 18px),transparent 100%)}
 .mode-tabs-track::-webkit-scrollbar{display:none}
+/* the pill under the tab on screen: syncTabPill (ui.js) gives it that tab's place and width, and it slides there */
+.mode-tabs-track::before{content:'';position:absolute;left:0;top:0;bottom:0;width:var(--pill-w,0);border-radius:10px;background:var(--accent);transform:translateX(var(--pill-x,0));transition:transform .24s cubic-bezier(.2,.8,.2,1),width .24s cubic-bezier(.2,.8,.2,1);pointer-events:none}
+.mode-tabs-track.pill-now::before{transition:none}
 .mode-tabs-track.at-start{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 18px),transparent 100%);mask-image:linear-gradient(90deg,#000 calc(100% - 18px),transparent 100%)}
 .mode-tabs-track.at-end{-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 18px);mask-image:linear-gradient(90deg,transparent 0,#000 18px)}
 .mode-tabs-track.at-start.at-end{-webkit-mask-image:none;mask-image:none}
-.mode-tab{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;height:38px;border:1px solid var(--border);border-radius:12px;background:var(--card2);color:var(--muted);font:inherit;font-size:13px;font-weight:700;padding:0 12px;cursor:pointer;white-space:nowrap;touch-action:pan-x;transition:background .15s,color .15s,border-color .15s}
+.mode-tab{position:relative;flex:1 0 auto;display:inline-flex;align-items:center;justify-content:center;gap:6px;height:34px;border:0;border-radius:10px;background:transparent;color:var(--muted);font:inherit;font-size:13px;font-weight:700;padding:0 12px;cursor:pointer;white-space:nowrap;touch-action:pan-x;transition:color .2s}
 .mode-tab:hover{color:var(--text)}
 .mode-tab:focus-visible{outline:2px solid var(--accent2);outline-offset:-2px}
 .mode-tab-icon{color:var(--accent2);font-size:14px;line-height:1;display:inline-flex;align-items:center;justify-content:center;min-width:15px;height:15px}
 .mode-tab-icon svg{display:block;width:15px;height:15px}
-.mode-tab.active{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.mode-tab.active{color:var(--on-accent)}
 .mode-tab.active .mode-tab-icon{color:var(--on-accent)}
 @media (prefers-reduced-motion:reduce){
-  .mode-tab{transition:none}
+  .mode-tab,.mode-tabs-track::before{transition:none}
 }
 /* ---------- Logo next to the title: drawn with the theme's colours, so every theme recolours it ---------- */
 .topbar h1.brand{display:flex;align-items:center;gap:9px;min-width:0;white-space:nowrap}
@@ -882,7 +885,6 @@ html.landscape .calculator-card.mobile-tool .net-details strong{flex:1 1 auto;mi
 /* ---------- All modes: the ⊞ button and its launcher (modes.js) ---------- */
 .modes-button{display:grid;place-items:center;padding:0;flex:0 0 auto;color:var(--text)}
 .modes-button[aria-expanded="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
-.mode-tab.unpinned{border-style:dashed}
 /* The launcher: every mode as a round icon like the keys, four a row. On tablets and computers a popover under the ⊞ button
    (--by, --br from placeModes), nothing dimmed; on phones a sheet from the bottom (below). It fades in and out (.closing). */
 @keyframes modes-fade{from{opacity:0}}
@@ -952,7 +954,7 @@ html.landscape .calculator-card.mobile-tool .net-details strong{flex:1 1 auto;mi
 .modes-modal.hidden{display:none}
 @media (prefers-reduced-motion:reduce){.modes-modal,.modes-card,.modes-modal.closing .modes-card,.mode-pick-icon{animation:none;transition:none}}
 .mode-tabs.icons .mode-tab:not(.active) .mode-tab-label{display:none}
-.mode-tabs.icons .mode-tab:not(.active){padding:0 8px}
+.mode-tabs.icons .mode-tab:not(.active){padding:0 10px}
 .mode-tabs.icons .mode-tab:not(.active) .mode-tab-icon{font-size:15px}
 /* ---------- Big screens: History and the working beside the app (side.js; html.side-panels when there is room) ---------- */
 .side-panel{display:none}
@@ -1121,39 +1123,3 @@ html.tablet #calculatorDisplay.unit-display .unit-rows,html.landscape #calculato
 html.tablet .calculator-card .tool-keypad button{font-size:clamp(20px,calc(var(--k) * .34),28px)}
 html.land-tablet #keypad{align-self:end}/* a tablet sideways: the keys at the bottom, level with the result, when they don't fill the height (Scientific) */
 html.tablet .display-wrap.has-live .result{font-size:min(clamp(46px,11vw,96px),calc((100cqh - 32px - var(--live-h)) / 1.05))}
-/* ---------- PROTOTYPE (preview branch): three looks for the bar of tabs (modes.js, ?bar=a|b|c, html[data-bar]) ---------- */
-.bar-try{display:flex;align-items:center;gap:4px;padding-top:9px;border-top:1px dashed var(--border);font-size:12px;font-weight:650;color:var(--muted);flex:none}
-.bar-try span{margin-right:auto}
-.bar-try button{min-width:44px;height:30px;border:1px solid var(--border);border-radius:999px;background:var(--card2);color:var(--muted);font:inherit;cursor:pointer}
-.bar-try button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
-.tabs-ink{position:absolute;left:0;top:0;pointer-events:none;z-index:0;transition:transform .28s cubic-bezier(.3,.85,.3,1),width .28s cubic-bezier(.3,.85,.3,1)}
-html[data-bar] .mode-tab{position:relative;z-index:1}
-/* ----- a: round like the keys ----- */
-html[data-bar="a"] .mode-tab{height:40px;border:0;border-radius:999px;background:var(--key);color:var(--text);padding:0 15px}
-html[data-bar="a"] .mode-tab.active{background:var(--accent);color:var(--on-accent)}
-html[data-bar="a"] .mode-tabs.icons .mode-tab:not(.active){width:40px;padding:0;justify-content:center}
-html[data-bar="a"] .mode-tab-icon{font-size:15px}
-html[data-bar="a"] .history-top,html[data-bar="a"] .top-actions .icon-button,html[data-bar="a"] .top-actions .language-button{border-radius:50%;border-color:transparent;background:var(--key)}
-html[data-bar="a"] .top-actions .language-button{width:40px}
-@media (max-width:359px){html[data-bar="a"] .mode-tab{height:36px;padding:0 12px}html[data-bar="a"] .mode-tabs.icons .mode-tab:not(.active){width:36px}html[data-bar="a"] .mode-tabs-track{gap:5px}}
-html[data-bar="a"] .top-actions button[aria-expanded="true"],html[data-bar="a"] .top-actions #themeButton.open{background:var(--accent)}
-@media (hover:hover) and (pointer:fine){html[data-bar="a"] .mode-tab:not(.active):hover,html[data-bar="a"] .history-top:hover,html[data-bar="a"] .top-actions .icon-button:hover:not([aria-expanded="true"]):not(.open),html[data-bar="a"] .top-actions .language-button:hover{background:var(--key-hover)}}
-/* ----- b: one control, a thumb slides to the tab on screen ----- */
-html[data-bar="b"] .mode-tabs{background:var(--key);border-radius:13px;padding:3px}
-html[data-bar="b"] .mode-tabs-track{gap:2px}
-html[data-bar="b"] .mode-tab{flex:1 0 auto;justify-content:center;height:34px;border:0;border-radius:10px;background:transparent;padding:0 12px;transition:color .25s}
-html[data-bar="b"] .mode-tab.active{background:transparent;color:var(--on-accent)}
-html[data-bar="b"] .tabs-ink{height:34px;top:50%;margin-top:-17px;border-radius:10px;background:var(--accent);box-shadow:0 1px 4px rgba(0,0,0,.25)}
-html[data-bar="b"] .mode-tabs.icons .mode-tab:not(.active){padding:0 10px}
-html[data-bar="b"] .history-top{border-color:transparent;background:var(--key)}
-/* ----- c: no boxes, an accent line under the tab on screen ----- */
-html[data-bar="c"] .mode-tabs::after{content:'';position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--border)}
-html[data-bar="c"] .mode-tabs-track{gap:2px}
-html[data-bar="c"] .mode-tab{height:40px;border:0;border-radius:8px;background:transparent;padding:0 11px;font-size:14px;transition:color .25s}
-html[data-bar="c"] .mode-tab.active{background:transparent;color:var(--text)}
-html[data-bar="c"] .mode-tab.active .mode-tab-icon{color:var(--accent)}
-html[data-bar="c"] .mode-tab:not(.active) .mode-tab-icon{color:var(--muted)}
-html[data-bar="c"] .tabs-ink{top:auto;bottom:0;height:3px;border-radius:3px 3px 0 0;background:var(--accent);z-index:2}
-html[data-bar="c"] .mode-tabs.icons .mode-tab:not(.active){padding:0 11px}
-html[data-bar="c"] .history-top{border-color:transparent;background:transparent}
-@media (prefers-reduced-motion:reduce){.tabs-ink{transition:none}}

@@ -607,7 +607,7 @@ async def desktop(browser, url, lang, theme):
     await p.mouse.up()
     dragged = await p.evaluate("(()=>{const t=modeTabs.querySelector('.mode-tabs-track');return t.scrollLeft>=t.scrollWidth-t.clientWidth-1})()")
     check(L + 'tabs: the bar can be dragged with the mouse', dragged)
-    g = await p.evaluate("(()=>{const b=modeTabs.querySelector('.tabs-scrollbar').getBoundingClientRect(),t=modeTabs.querySelector('.mode-tabs-track').getBoundingClientRect();return [Math.round(b.left-t.left),Math.round(b.right-t.right)]})()")
+    g = await p.evaluate("(()=>{const b=modeTabs.querySelector('.tabs-scrollbar').getBoundingClientRect(),t=modeTabs.getBoundingClientRect();return [Math.round(b.left-t.left),Math.round(b.right-t.right)]})()")
     check(L + 'tabs: the bar spans the whole tab strip', g == [0, 0], g)
     await p.evaluate("modeTabs.querySelector('.mode-tabs-track').scrollLeft=0")
     tab = await p.locator('.mode-tab[data-mode="graph"]').bounding_box()
@@ -1826,55 +1826,54 @@ async def all_modes(browser, url):
         await p.context.close()
 
 
-async def bar_looks(browser, url):
-    """PROTOTYPE (preview branch): the three looks of the bar of tabs (?bar=a|b|c). Every tab still switches modes, the
-    sliding mark of b and c sits on the tab on screen, nothing is cut on a phone or a computer in both languages;
-    without ?bar= the bar is as it was."""
-    L = '[bar looks] '
-    p = await new_page(browser, url)
-    check(L + "without ?bar= the look is 'now' and nothing of the prototype is on the page",
-          await p.evaluate("barLook==='now'&&!document.documentElement.dataset.bar&&!document.querySelector('#barTry,.tabs-ink')"))
-    await p.context.close()
-    for look in 'abc':
-        for phone, lang, size in [(True, 'en', None), (True, 'el', (344, 770)), (True, 'el', (844, 390)), (False, 'en', None), (False, 'el', None)]:
-            T = L + f"{look} {'phone' if phone else 'computer'} {lang}{' ' + str(size[0]) if size else ''}: "
-            p = await new_page(browser, url + '?bar=' + look, lang, 'dark' if lang == 'en' else 'light', phone=phone, size=size)
-            press = p.tap if phone else p.click
-            probe = """(()=>{const z=window.__uiZoom||1,nav=document.querySelector('#modeTabs').getBoundingClientRect(),a=document.querySelector('.mode-tab.active'),r=a.getBoundingClientRect(),
-              ink=document.querySelector('.tabs-ink'),i=ink&&ink.getBoundingClientRect();
-              return [document.documentElement.dataset.bar,mode,a.dataset.mode,r.left>=nav.left-1&&r.right<=nav.right+1,
-                [...document.querySelectorAll('.mode-tab-label')].filter(n=>n.offsetParent&&n.scrollWidth>n.clientWidth+1).length,
-                [...document.querySelectorAll('.mode-tab,#historyButton')].filter(b=>b.offsetParent).every(b=>{const q=b.getBoundingClientRect();return q.width/z>=30&&q.height/z>=30}),
-                !ink||(Math.abs(i.left-r.left)<=1.5&&Math.abs(i.width-r.width)<=1.5)]})()"""
-            st = await p.evaluate(probe)
-            check(T + 'the bar shows with the Calculator on, nothing cut, tabs big enough, the mark on its tab', st == [look, 'calc', 'calc', True, 0, True, True], st)
-            await press('.mode-tab[data-mode=units]')
-            await p.wait_for_timeout(450)
-            st = await p.evaluate(probe)
-            check(T + 'a press on a tab switches mode and the mark follows', st == [look, 'units', 'units', True, 0, True, True], st)
-            await p.evaluate("switchMode('graph')")
-            await p.wait_for_timeout(450)
-            st = await p.evaluate(probe)
-            check(T + 'a mode that is not in the bar gets its tab, in view, with the mark', st == [look, 'graph', 'graph', True, 0, True, True], st)
-            await p.evaluate("setLanguage(lang==='el'?'en':'el')")
-            await p.wait_for_timeout(450)
-            st = await p.evaluate(probe)
-            check(T + 'after a language switch the mark is still on its tab', st == [look, 'graph', 'graph', True, 0, True, True], st)
-            check(T + 'no page errors', not p.errors, p.errors)
-            await p.context.close()
-    p = await new_page(browser, url + '?bar=b', phone=True)
-    await p.tap('#modesButton')
-    await p.wait_for_timeout(400)
-    st = await p.evaluate("[!!document.querySelector('#barTry'),[...document.querySelectorAll('#barTry button')].map(b=>b.dataset.barLook+':'+b.getAttribute('aria-pressed')).join(' ')]")
-    check(L + 'the Try switch is at the foot of All modes with b on', st == [True, 'now:false a:false b:true c:false'], st)
-    await p.tap('#barTry [data-bar-look=c]')
-    await p.wait_for_timeout(300)
-    st = await p.evaluate("[document.documentElement.dataset.bar,modesOpen(),!!document.querySelector('.tabs-ink')]")
-    check(L + 'it changes the bar in place, All modes stays open', st == ['c', True, True], st)
-    await p.tap('#barTry [data-bar-look=now]')
-    await p.wait_for_timeout(300)
-    st = await p.evaluate("[document.documentElement.dataset.bar||'',!!document.querySelector('.tabs-ink')]")
-    check(L + "'Now' puts the bar back as it is in the app", st == ['', False], st)
+async def tab_bar(browser, url):
+    """The tabs sit in one bar and one pill marks the tab on screen: it is on that tab (place and width) after a press,
+    a mode that joins the bar, a change of language and a resize, on a phone and a computer in both languages."""
+    L = '[tab bar] '
+    for phone, lang, size in [(True, 'en', None), (True, 'el', (344, 770)), (True, 'el', (844, 390)), (False, 'en', None), (False, 'el', None)]:
+        T = L + f"{'phone' if phone else 'computer'} {lang}{' ' + str(size[0]) if size else ''}: "
+        p = await new_page(browser, url, lang, 'dark' if lang == 'en' else 'light', phone=phone, size=size)
+        press = p.tap if phone else p.click
+        probe = """(()=>{const z=window.__uiZoom||1,nav=document.querySelector('#modeTabs').getBoundingClientRect(),t=document.querySelector('#modeTabs .mode-tabs-track'),
+          a=t.querySelector('.mode-tab.active'),r=a.getBoundingClientRect(),cs=getComputedStyle(t,'::before'),x=new DOMMatrixReadOnly(cs.transform).m41;
+          return [mode,a.dataset.mode,r.left>=nav.left-1&&r.right<=nav.right+1,
+            [...t.querySelectorAll('.mode-tab-label')].filter(n=>n.offsetParent&&n.scrollWidth>n.clientWidth+1).length,
+            [...document.querySelectorAll('.mode-tab,#historyButton')].filter(b=>b.offsetParent).every(b=>{const q=b.getBoundingClientRect();return q.width/z>=30&&q.height/z>=30}),
+            Math.abs(x-a.offsetLeft)<=1&&Math.abs(parseFloat(cs.width)-a.offsetWidth)<=1]})()"""
+        st = await p.evaluate(probe)
+        check(T + 'the Calculator is on, in view, nothing cut, tabs big enough, the pill on its tab', st == ['calc', 'calc', True, 0, True, True], st)
+        look = await p.evaluate("""(()=>{const n=getComputedStyle(modeTabs),t=document.querySelector('.mode-tabs-track'),a=getComputedStyle(t.querySelector('.mode-tab.active')),
+          o=getComputedStyle(t.querySelector('.mode-tab:not(.active)')),pill=getComputedStyle(t,'::before'),c=k=>{const e=document.createElement('i');e.style.color='var('+k+')';document.body.append(e);const v=getComputedStyle(e).color;e.remove();return v};
+          return [n.backgroundColor===c('--key'),pill.backgroundColor===c('--accent'),a.color===c('--on-accent'),a.backgroundColor==='rgba(0, 0, 0, 0)'&&o.backgroundColor==='rgba(0, 0, 0, 0)',o.borderTopWidth,
+            t.scrollWidth<=t.clientWidth+1&&Math.abs(t.lastElementChild.getBoundingClientRect().right-t.getBoundingClientRect().right)<=1.5]})()""")
+        check(T + 'one bar in the key colour, the pill in the accent, the tabs themselves plain, and they fill the bar', look == [True, True, True, True, '0px', True], look)
+        await press('.mode-tab[data-mode=units]')
+        await p.wait_for_timeout(450)
+        st = await p.evaluate(probe)
+        check(T + 'a press on a tab switches mode and the pill slides to it', st == ['units', 'units', True, 0, True, True], st)
+        await p.evaluate("switchMode('graph')")
+        await p.wait_for_timeout(450)
+        st = await p.evaluate(probe)
+        check(T + 'a mode that is not in the bar gets its tab, in view, with the pill', st == ['graph', 'graph', True, 0, True, True], st)
+        await p.evaluate("setLanguage(lang==='el'?'en':'el')")
+        await p.wait_for_timeout(450)
+        st = await p.evaluate(probe)
+        check(T + 'after a language switch the pill is still on its tab', st == ['graph', 'graph', True, 0, True, True], st)
+        w, h = size or ((390, 844) if phone else (1280, 860))
+        await p.set_viewport_size({'width': w - 30, 'height': h})
+        await p.wait_for_timeout(120)
+        st = await p.evaluate(probe)
+        check(T + 'after a resize the pill is on its tab at once', st == ['graph', 'graph', True, 0, True, True], st)
+        check(T + 'no page errors', not p.errors, p.errors)
+        await p.context.close()
+    p = await new_page(browser, url, phone=True)
+    await p.evaluate("openModes();setModesEdit(true);document.querySelector('[data-pins=all]').click();closeModes()")
+    await p.wait_for_timeout(350)
+    await p.evaluate("switchMode('stats')")
+    await p.wait_for_timeout(600)
+    st = await p.evaluate("""(()=>{const t=document.querySelector('#modeTabs .mode-tabs-track'),a=t.querySelector('.mode-tab.active'),r=a.getBoundingClientRect(),q=t.getBoundingClientRect(),cs=getComputedStyle(t,'::before');
+      return [t.querySelectorAll('.mode-tab').length,t.scrollWidth>t.clientWidth,r.left>=q.left-1&&r.right<=q.right+1,Math.abs(new DOMMatrixReadOnly(cs.transform).m41-a.offsetLeft)<=1&&Math.abs(parseFloat(cs.width)-a.offsetWidth)<=1]})()""")
+    check(L + 'every mode pinned: the bar scrolls, the tab on screen is in view and the pill is on it', st == [16, True, True, True], st)
     await p.context.close()
 
 
@@ -3826,7 +3825,7 @@ async def main():
         await keys_fill_the_bottom(browser, url)
         await how_buttons_in_place(browser, url)
         await all_modes(browser, url)
-        await bar_looks(browser, url)  # PROTOTYPE (preview)
+        await tab_bar(browser, url)
         await esc_everywhere(browser, url)
         await history_per_mode(browser, url)
         await history_groups(browser, url)
