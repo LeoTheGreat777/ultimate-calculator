@@ -6,7 +6,9 @@ Part of the notes in CLAUDE.md (read that first). Covers layout.js, side.js, mod
   start, a calculation (typed or above a result) its end; the cut-off side fades (`fade-start`/`fade-end`). Used for the result and
   expression lines, Units values, tool fields and Subnet's details. A fitted element is watched (`fitWatch`, a
   ResizeObserver): when its own width changes it is fitted again, so turning the phone never leaves a number sized for
-  the old width (iOS reports the new width late, after the resize event).
+  the old width (iOS reports the new width late, after the resize event). It fits at once and again on the next frame (`fitText`), each pass
+  resetting and setting the size in one go: a frame drawn in between showed long text at full size for a moment (a jump at
+  every tap). From `fitWatch` it fits on the next frame only, as a ResizeObserver must not resize in its own call.
 - **Bigger keys on phones held upright** (`html.big-keys`: touch, upright, at most 500px wide, or a tablet; not Graph): the keys grow into
   the room the screen leaves (`bigSpec`: up to 100px tall, Scientific 62px), the display giving way down to
   150px first; digits grow with them (the tools' keys too); the footer is on one line (`fit-small`). Every keypad's keys may be as tall as

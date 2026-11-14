@@ -53,6 +53,11 @@ function caretTo(k){
  else{expression=head;current=''}
  caretOn=k<s.length;// at the end there is nothing to edit around: the cursor hides (a tap at the end, End, → to the end)
 }
+// A tap at the end of the calculation (or End, → to the end) shows the cursor there for a moment, so the tap is seen to
+// have worked, then it hides (caretFlash). Any change to the calculation hides it at once.
+const CARET_FLASH_MS=1500;
+let caretFlash=null;
+function flashCaret(){clearTimeout(caretFlash?.timer);caretFlash={text:typedText(),timer:setTimeout(()=>{caretFlash=null;if(mode==='calc')render()},CARET_FLASH_MS)}}
 function dropCaret(){if(caretTail||caretOn){if(caretTail)caretTo(Infinity);caretTail='';caretOn=false}}
 // ← → (and Home, End) move the cursor one place
 function moveCaret(dir){
@@ -61,7 +66,7 @@ function moveCaret(dir){
  const at=(expression+current).length,stops=caretStops(s);
  const k=dir==='home'?0:dir==='end'?s.length:dir<0?[...stops].reverse().find(x=>x<at):stops.find(x=>x>at);
  if(k===undefined){refuseKey();return true}
- resetHow();caretTo(k);render();return true;
+ resetHow();caretTo(k);if(!caretOn)flashCaret();render();return true;
 }
 // a tap on the calculation: the cursor goes to the place nearest the finger
 function caretFromPoint(x){
@@ -74,7 +79,7 @@ function caretFromPoint(x){
   if(px==null)continue;const d=Math.abs(px-x);if(d<bestD){bestD=d;best=k}
  }
  if(best===null)return;
- resetHow();caretTo(best);render();
+ resetHow();caretTo(best);if(!caretOn)flashCaret();render();
 }
 // ")" with nothing open, or ( ) after a calculation with nothing open: the brackets go around everything before the
 // cursor, 5+5 → (5+5), so a forgotten bracket needs no retyping. Only when they group something (an operator outside brackets).
@@ -95,15 +100,19 @@ function render(){refreshSide();
  renderSciBar();
  if(justCalculated){caretTail='';caretOn=false}
  const raw=typedText();if(!raw)caretOn=false;
- const withCaret=caretOn&&!justCalculated&&!calcError?formatExpressionDisplay(typedText(true)).split(CARET):null;
+ if(caretFlash&&(caretOn||justCalculated||calcError||caretFlash.text!==raw)){clearTimeout(caretFlash.timer);caretFlash=null}
+ const withCaret=caretOn&&!justCalculated&&!calcError?formatExpressionDisplay(typedText(true)).split(CARET):caretFlash?[formatExpressionDisplay(raw),'']:null;
  const display=calcError?t(ERROR_TEXT[calcError]||'errMath'):justCalculated?minusSign(fmt(lastResult)):(raw?formatExpressionDisplay(raw):'0');
  $('#calculatorDisplay').classList.remove('tool-display','tool-empty');
  $('#calculatorDisplay').classList.toggle('calculated',justCalculated);
  $('#calculatorDisplay').classList.toggle('error',Boolean(calcError));
  $('#expression').textContent=justCalculated?(lastShown||formatExpressionDisplay(lastExpression)):calcError?formatExpressionDisplay(raw):'';
  const exprEl=$('#expression');
- if(withCaret)$('#result').innerHTML=esc(withCaret[0])+'<span class="caret" aria-hidden="true"></span>'+esc(withCaret[1]);
+ if(withCaret)$('#result').innerHTML=esc(withCaret[0])+'<span class="caret'+(caretFlash?' flash':'')+'" aria-hidden="true"></span>'+esc(withCaret[1]);
  else $('#result').textContent=display;
+ // like the iPhone: a faded ) at the end for every bracket still open, so it is clear one needs closing (= closes them)
+ const ghost=raw&&!justCalculated&&!calcError?openParens(formatExpressionDisplay(raw)):0;
+ if(ghost)$('#result').dataset.ghost=')'.repeat(ghost);else delete $('#result').dataset.ghost;
  $('#calculatorDisplay').classList.toggle('editing',Boolean(withCaret));
  $('#result').classList.remove('long-value','near-limit');
  // a result with more decimals than shown: up to 10 when the display has room (fitDisplayText picks)
@@ -136,7 +145,7 @@ function liveText(raw){
 function liveValue(raw){const s=liveText(raw);if(!s)return null;try{return evalExpr(s)}catch{return null}}
 // The live result: while a real calculation is typed, its value as it stands, without pressing = (like Pixel's
 // calculator): grey, above the calculation, no = sign. None for a number alone, an error (5 ÷ 0 shows nothing until =)
-// or one too large. = does what it always did; the live result grows into the result (liveGrow).
+// or one too large. = does what it always did, at once (no animation: a calculator answers instantly).
 function livePreviewText(raw){
  if(!raw||complexTyped(raw))return '';
  const s=liveText(raw);if(!s||PLAIN_NUMBER.test(s))return '';
@@ -312,18 +321,23 @@ function equals(){
  if(/[()]/.test(full)){full=tidyParens(full);expression=full;current=''}// close what is open, drop brackets that change nothing
  if(!full||OP_OPEN_END.test(full)){back();return}
  if(PLAIN_NUMBER.test(full)){if(full!==was[0]+was[1]+was[3]){expression='';current=full;currentIsPercent=false}else[expression,current,currentIsPercent,caretTail,caretOn]=was;render();return}// a number alone is no calculation: nothing to save (brackets round it still go)
- resetHow();const from=$('#calculatorDisplay')?.classList.contains('has-live')?$('#resultAlt')?.getBoundingClientRect():null;
- try{const value=evalExpr(full);lastExpression=full;lastShown=formatExpressionDisplay(full);lastResult=value;lastOperation=parseLastOperation(full);justCalculated=true;resultNegated=false;currentIsPercent=false;howData=explanationForExpression(full,value)||{formula:formatExpressionDisplay(full),steps:[`${formatExpressionDisplay(full)} = ${fmt(value)}`],result:howResult(value)};saveHistory({expression:full,result:value,how:howData});render();if(from)liveGrow(from)}
+ resetHow();
+ try{const value=evalExpr(full);lastExpression=full;lastShown=formatExpressionDisplay(full);lastResult=value;lastOperation=parseLastOperation(full);justCalculated=true;resultNegated=false;currentIsPercent=false;howData=explanationForExpression(full,value)||{formula:formatExpressionDisplay(full),steps:[`${formatExpressionDisplay(full)} = ${fmt(value)}`],result:howResult(value)};saveHistory({expression:full,result:value,how:howData});render()}
  catch(e){calcError=calcErrorKind(e);render()}
 }
-// on =, the live result (where it stood, from) grows into the result
-function liveGrow(from){
- const r=$('#result');if(!r?.animate||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
- requestAnimationFrame(()=>requestAnimationFrame(()=>{// after fitDisplayText has sized it
-  const to=r.getBoundingClientRect(),z=window.__uiZoom||1;if(!to.height||!from.height)return;
-  r.style.transformOrigin='100% 100%';
-  r.animate([{transform:`translateY(${(from.bottom-to.bottom)/z}px) scale(${Math.min(1,from.height/to.height)})`,opacity:.6},{transform:'none',opacity:1}],{duration:220,easing:'cubic-bezier(.2,.7,.3,1)'});
- }));
+// A tap on the calculation above a result (or above an error's reason) brings it back down to edit, like the iPhone:
+// the result goes (the live result shows its value again), the cursor shows at the end for a moment, = works it out
+// anew. Only when what is shown is the calculation itself (a result carried from an older one that is no longer at hand,
+// e.g. from History, is refused).
+function editCalculation(){
+ if(mode!=='calc')return false;
+ if(calcError){calcError='';resetHow();caretTo(typedText().length);flashCaret();render();return true}
+ if(!justCalculated||!lastExpression)return false;
+ if(formatExpressionDisplay(lastExpression)!==lastShown){refuseKey($('#expression'));return true}
+ const s=lastExpression;
+ resetHow();justCalculated=false;resultNegated=false;lastResult=null;lastOperation=null;lastExpression='';lastShown='';
+ expression=s;current='';currentIsPercent=false;caretTail='';caretOn=false;caretTo(s.length);flashCaret();render();
+ return true;
 }
 // ---------- Scientific ----------
 // Basic or Scientific is a view of the same calculator (the switch on the display, saved as uc-sci): the same

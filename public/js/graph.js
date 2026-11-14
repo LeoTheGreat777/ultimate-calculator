@@ -79,8 +79,8 @@ function renderGraphMode(){
 function renderGraphFns(){
  const box=$('#graphFns');if(!box)return;const C=chColors();
  box.innerHTML=graph.fns.map((src,i)=>{
-  const ok=!src||gParse(src),last=i===graph.fns.length-1;
-  return '<div class="graph-fn'+(i===graph.active?' active':'')+(ok?'':' invalid')+'" data-grow="'+i+'" role="button" tabindex="-1"><span class="graph-fn-dot" style="background:'+C.series[i]+'"></span><span class="graph-fn-name">'+GRAPH_NAMES[i]+'(x) =</span><span class="graph-fn-src'+(src?'':' empty')+'" title="'+(ok?'':esc(gText('invalid')))+'">'+esc(src?gPretty(src):gText('empty'))+'</span>'+
+  const ok=!src||gParse(src),last=i===graph.fns.length-1,ghost=src?openParens(gPretty(src)):0;// faded ) for brackets still open, as in the Calculator
+  return '<div class="graph-fn'+(i===graph.active?' active':'')+(ok?'':' invalid')+'" data-grow="'+i+'" role="button" tabindex="-1"><span class="graph-fn-dot" style="background:'+C.series[i]+'"></span><span class="graph-fn-name">'+GRAPH_NAMES[i]+'(x) =</span><span class="graph-fn-src'+(src?'':' empty')+(ghost?' has-ghost':'')+'" title="'+(ok?'':esc(gText('invalid')))+'">'+esc(src?gPretty(src):gText('empty'))+(ghost?'<span class="graph-fn-ghost" aria-hidden="true">'+')'.repeat(ghost)+'</span>':'')+'</span>'+
    '<button class="graph-fn-btn" data-gdel="'+i+'" type="button" aria-label="'+esc(gText(graph.fns.length>1?'del':'clearFn'))+'">×</button>'+(last&&graph.fns.length<3?'<button class="graph-fn-btn graph-fn-add" data-gadd="1" type="button" aria-label="'+esc(gText('add'))+'" title="'+esc(gText('add'))+'">+</button>':'')+'</div>';
  }).join('');
  box.querySelectorAll('.graph-fn-src').forEach(el=>{el.scrollLeft=el.scrollWidth;el.dataset.fit='1';fitFade(el)});// long: shows its end, the start fades
@@ -282,7 +282,7 @@ function graphPointsHtml(){
  let html='';
  graph.fns.forEach((src,i)=>{
   if(!src||!gParse(src))return;const mine=pts.filter(p=>p.i===i&&p.type!=='cross');
-  html+='<div class="how-step graph-points"><div class="how-formula"><span class="chart-dot" style="background:'+C.series[i]+'"></span> '+GRAPH_NAMES[i]+'(x) = '+esc(gPretty(src))+'</div>'+
+  html+='<div class="how-step graph-points"><div class="how-formula"><span class="chart-dot" style="background:'+C.series[i]+'"></span> '+GRAPH_NAMES[i]+'(x) = '+esc(gPretty(src)+')'.repeat(openParens(gPretty(src))))+'</div>'+/* written out with its brackets closed, as it is drawn */
    (mine.length?mine.map(p=>'<div class="graph-point-line"><span>'+esc(gText(p.type))+'</span><strong>'+(p.type==='root'?'x = '+esc(chNum(p.x)):p.type==='yint'?'y = '+esc(chNum(p.y)):'('+esc(chNum(p.x))+'; '+esc(chNum(p.y))+')')+'</strong></div>').join(''):'<div class="empty">'+esc(gText('none'))+'</div>')+'</div>';
  });
  const cross=pts.filter(p=>p.type==='cross');

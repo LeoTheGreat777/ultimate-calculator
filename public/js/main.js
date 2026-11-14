@@ -26,7 +26,8 @@ $('#howButton').addEventListener('click',showHow);$('#closeHow').addEventListene
 $('#historyButton').addEventListener('click',openHistory);$('#closeHistory').addEventListener('click',closeHistory);$('#historyBackdrop').addEventListener('click',historyBackdropClick);$('#historyList').addEventListener('click',historyClick);
 // Tapping a finished result copies it (holding it gives Copy and Paste, clip.js).
 // While a calculation is typed, a tap on it puts the cursor there (calculator.js, caretFromPoint).
-$('#calculatorDisplay').addEventListener('click',e=>{if(mode==='units'||mode==='graph'||!e.target.closest('#result'))return;if(mode==='calc'&&!justCalculated&&!calcError){caretFromPoint(e.clientX);return}if(mode==='calc'?!justCalculated:!toolResult?.main)return;copyResult();const r=$('#result');r.classList.add('copied');setTimeout(()=>r.classList.remove('copied'),700)});
+$('#calculatorDisplay').addEventListener('click',e=>{if(mode==='calc'&&e.target.closest('#expression')){editCalculation();return}// the calculation above a result: back down to edit
+ if(mode==='units'||mode==='graph'||!e.target.closest('#result'))return;if(mode==='calc'&&!justCalculated&&!calcError){caretFromPoint(e.clientX);return}if(mode==='calc'?!justCalculated:!toolResult?.main)return;copyResult();const r=$('#result');r.classList.add('copied');setTimeout(()=>r.classList.remove('copied'),700)});
 $('#langButton').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();setLanguage(lang==='el'?'en':'el')});
 $('#themeButton').addEventListener('click',toggleThemeMenu);
 $('#installButton')?.addEventListener('click',installApp);

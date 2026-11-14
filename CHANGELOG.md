@@ -6,6 +6,32 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.43.0 – 2026-11-12
+
+### Added
+- Calculator: a tap on the calculation above a result brings it back down to edit, like the iPhone's calculator; = then
+  works it out again. The same above an error's message (Can't divide by 0), to fix the calculation.
+
+## 0.42.1 – 2026-11-12
+
+### Fixed
+- A long calculation no longer jumps to a bigger size for a moment at every tap (or key) before shrinking back.
+
+## 0.42.0 – 2026-11-12
+
+### Added
+- Calculator and Graph: each bracket still open shows a faded ) at the end, like the iPhone's calculator, so it is
+  clear it still needs closing (= closes it). Typing ) fills it in.
+
+### Changed
+- Calculator: a tap at the end of the calculation (or End / → on a keyboard) shows the cursor there for a moment,
+  so the tap is seen to have worked, then it hides again. Any key hides it at once.
+
+## 0.41.1 – 2026-11-12
+
+### Changed
+- Calculator: pressing = shows the result at once; the result no longer grows into place from the live result.
+
 ## 0.41.0 – 2026-11-11
 
 ### Added

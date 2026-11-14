@@ -67,6 +67,8 @@ const sciPretty=s=>s.replace(/a(sinh|cosh|tanh|coth|sech|csch|sin|cos|tan|cot|se
 // CARET (U+0007) may stand anywhere in the text: where the Calculator's cursor is (calculator.js). It is kept in place,
 // numbers keep their grouping around it (1.2|34.567), and it never changes how the rest is shown.
 const CARET='\u0007';
+// brackets opened and not yet closed in a text as shown: the Calculator and Graph add as many faded ) at the end
+function openParens(s){let n=0;for(const c of String(s))if(c==='(')n++;else if(c===')'&&n>0)n--;return n}
 function groupWithCaret(m){
  const at=m.indexOf(CARET);if(at<0)return formatGroupedNumber(m);
  const f=formatGroupedNumber(m.replace(CARET,''));let i=0;for(let n=0;i<f.length&&n<at;i++)if(/[\d,]/.test(f[i]))n++;

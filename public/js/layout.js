@@ -6,35 +6,39 @@
 // re-fitted) it is fitted again, so a number sized for one width is never cut off at another.
 const fitWatch=window.ResizeObserver?new ResizeObserver(entries=>{for(const {target:el,contentRect} of entries){
  if(!el.isConnected||el.dataset.fit!=='1'){fitWatch.unobserve(el);continue}
- const w=Math.round(contentRect.width);if(w&&String(w)!==el.dataset.fitW)fitDisplayText(el,+el.dataset.fitMin||12,el.dataset.fitEnd==='1');
+ const w=Math.round(contentRect.width);if(w&&String(w)!==el.dataset.fitW)fitDisplayText(el,+el.dataset.fitMin||12,el.dataset.fitEnd==='1',true);
 }}):null;
-function fitDisplayText(el,minSize,showEnd=false){
+// The text is fitted at once and again on the next frame (the layout may still be settling). Each pass resets the size
+// and sets the new one in one go: a frame drawn between the two showed the whole text at full size for a moment, so a long
+// calculation jumped at every tap or key. later: only on the next frame (from fitWatch, which must not resize in its own call).
+function fitDisplayText(el,minSize,showEnd=false,later=false){
  if(!el)return;
  el.dataset.fitMin=minSize;el.dataset.fitEnd=showEnd?'1':'';
+ el.dataset.fit='1';
+ if(!later)fitText(el,minSize,showEnd);
+ requestAnimationFrame(()=>{if(el.isConnected)fitText(el,minSize,showEnd)});
+}
+function fitText(el,minSize,showEnd){
  el.classList.remove('near-limit');
  el.style.removeProperty('font-size');
  el.style.removeProperty('letter-spacing');
- el.dataset.fit='1';
  // A result with a longer form (more decimals, data-long) shows it when it fits at 70% of the normal size or more,
  // else its usual form (data-short); only while the text is still one of the two (a new text clears it)
  const twoForms=el.dataset.short!=null&&el.dataset.long!=null&&(el.textContent===el.dataset.short||el.textContent===el.dataset.long);
  if(twoForms)el.textContent=el.dataset.long;
- requestAnimationFrame(()=>{
-   if(!el.isConnected)return;
-   const width=el.clientWidth;let contentWidth=el.scrollWidth;
-   const cs=getComputedStyle(el);el.dataset.fitW=Math.round(width-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight));fitWatch?.observe(el);// the same width the watcher sees
-   if(twoForms&&width&&contentWidth>width+1&&width/contentWidth*0.97<0.7){el.textContent=el.dataset.short;contentWidth=el.scrollWidth}
-   if(width&&contentWidth>width+1){// even 2px more cuts the last digit
-     const base=parseFloat(getComputedStyle(el).fontSize);
-     el.style.setProperty('font-size',Math.max(minSize,base*(width/contentWidth)*0.97)+'px','important');// beats the !important sizes of .unit-value
-     el.style.setProperty('letter-spacing','-0.04em','important');
-   }
-   el.scrollLeft=showEnd?el.scrollWidth:0;
-   const caret=el.querySelector('.caret');// the Calculator's cursor stays in view, with a little room on its sides
-   if(caret){const z=window.__uiZoom||1,x=(caret.getBoundingClientRect().left-el.getBoundingClientRect().left)/z+el.scrollLeft,room=Math.min(40,el.clientWidth/4);
-    if(x<el.scrollLeft+room||x>el.scrollLeft+el.clientWidth-room)el.scrollLeft=x-el.clientWidth/2}
-   fitFade(el);
- });
+ const width=el.clientWidth;let contentWidth=el.scrollWidth;
+ const cs=getComputedStyle(el);el.dataset.fitW=Math.round(width-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight));fitWatch?.observe(el);// the same width the watcher sees
+ if(twoForms&&width&&contentWidth>width+1&&width/contentWidth*0.97<0.7){el.textContent=el.dataset.short;contentWidth=el.scrollWidth}
+ if(width&&contentWidth>width+1){// even 2px more cuts the last digit
+   const base=parseFloat(cs.fontSize);
+   el.style.setProperty('font-size',Math.max(minSize,base*(width/contentWidth)*0.97)+'px','important');// beats the !important sizes of .unit-value
+   el.style.setProperty('letter-spacing','-0.04em','important');
+ }
+ el.scrollLeft=showEnd?el.scrollWidth:0;
+ const caret=el.querySelector('.caret');// the Calculator's cursor stays in view, with a little room on its sides
+ if(caret){const z=window.__uiZoom||1,x=(caret.getBoundingClientRect().left-el.getBoundingClientRect().left)/z+el.scrollLeft,room=Math.min(40,el.clientWidth/4);
+  if(x<el.scrollLeft+room||x>el.scrollLeft+el.clientWidth-room)el.scrollLeft=x-el.clientWidth/2}
+ fitFade(el);
 }
 function fitFade(el){
  const max=el.scrollWidth-el.clientWidth;

@@ -31,7 +31,7 @@ Part of the notes in CLAUDE.md (read that first). Covers numbers.js, calculator.
   on the whole calculation (`typedText`, also after the cursor). None for a number alone (`PLAIN_NUMBER`, also (5) and a
   carried result with an operator), an error or a value too large/small (5 ÷ 0 shows nothing until =), and never in other
   modes. Formatted with `fmt` (6 decimals). It saves nothing; = works as before (calculation above, ?, History) and the
-  result grows from where the live result stood (`liveGrow`, none with reduced motion). The calculation's size is capped by
+  result shows at once, with no animation (a calculator answers instantly). The calculation's size is capped by
   the room left under the f(x) chip and the live line (`container-type:size`, `--live-h`; compact displays have their own
   sizes). A calculation with i or ∠ keeps the complex line under it instead.
 - **= with no calculation** (`equals`): a number alone (`PLAIN_NUMBER`, also `(455)` once its brackets go) saves
@@ -43,6 +43,11 @@ Part of the notes in CLAUDE.md (read that first). Covers numbers.js, calculator.
   With no bracket open, `)` (Scientific, keyboard) and the basic pad's ( ) after a calculation put brackets around
   everything before the cursor: 5+5 -> (5+5) (`wrapAll`; only when an operator stands outside brackets, `topOperator`, so after
   a single value ( ) still opens one, 5 -> 5×(). Same in Units.
+  Each bracket still open in the text as shown (`openParens`, numbers.js, counted on `formatExpressionDisplay`, so the
+  display's own 25−(− counts too) shows a faded ) at the end (`#result` data-ghost, drawn by `.result[data-ghost]::after`,
+  so it is in no `textContent`: copy, tests and `caretFromPoint` never see it); none after = or an error, none in other
+  modes (`renderTool` removes it). Graph does the same in the function's line (`.graph-fn-ghost`, the cursor before it)
+  and writes the function with its brackets closed in Key points. Units' values are text boxes and have none.
 - **C / AC:** the key shows C while anything is typed (5, 5+, 5+5), AC with nothing typed, after a result or an error.
   C clears the number being typed (with the cursor in a number, the whole number); with none (5+), everything. Same in
   Units (`unitTyped` for the label, `unitEntry` for what C clears). Delete = C, Esc = AC on a keyboard.
@@ -53,9 +58,15 @@ Part of the notes in CLAUDE.md (read that first). Covers numbers.js, calculator.
   two meet, a × goes between two values (2 before (5+5) -> 2×(5+5)) and an operator typed before another replaces it;
   `caretTo` makes that real when the cursor moves. It never stands inside a function's name, a constant, a power's digits or
   a carried result; a digit right after a carried result edits it as shown (`carry.plain`). = works out everything and drops
-  the cursor, as do AC and a result; it also hides when it goes back to the end (a tap at the end, End, → to the end:
-  `caretTo` sets `caretOn` only before the end). The display marks the cursor with `CARET` (U+0007), which `formatInputDisplay` keeps in
+  the cursor, as do AC and a result; it also hides when it goes back to the end (`caretTo` sets `caretOn` only before
+  the end). A tap at the end, End or → to the end shows it there for a moment first (`flashCaret`, `CARET_FLASH_MS`
+  1,5 s, `.caret.flash` fades out), so the tap is seen to have worked; any change to the calculation hides it at once. The display marks the cursor with `CARET` (U+0007), which `formatInputDisplay` keeps in
   place (grouping stays right: 1.2|34.567).
+- **Editing a finished calculation** (`editCalculation`, a tap on `#expression`): after = the calculation above the result
+  comes back down to edit, like the iPhone (`expression` = `lastExpression`, the result and `lastOperation` go, the cursor
+  flashes at the end, the live result shows); = saves it again as a new entry. Above an error it clears the error and
+  leaves the calculation to fix. Refused (`refuseKey`) when what is shown is not `formatExpressionDisplay(lastExpression)`
+  (a result loaded from History that went on from an older one keeps its long carried digits).
 - **Scientific:** a view of the Calculator, not a mode: the f(x) switch on the display (`sciMode`, `uc-sci`; the only chip
   there, the angle unit is the keypad's Deg/Rad key; at the display's top-left in line with History, styled like ?, and
   Dates' Working days chip sits in the same place) adds the
