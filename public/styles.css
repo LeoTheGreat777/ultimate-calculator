@@ -781,18 +781,19 @@ html.landscape .theme-group{padding-top:3px;padding-bottom:1px}
 .te-sw:hover{transform:scale(1.08)}
 .te-sw{transition:transform .12s ease}
 /* ---------- Scientific (calculator.js): the f(x) switch and DEG/RAD on the display, 15 keys above the basic ones ---------- */
-/* f(x): a quiet button at the display's top-left, in line with the history button above it and styled like ? (top-right) */
+/* f(x): a button at the display's top-left, in line with the history button above it, as tall as ? (top-right); it looks
+   like a tab of the bar above (the key colour, no border) and is filled with the accent while on, like the tab on screen */
 .sci-bar{position:absolute;top:6px;left:0;z-index:3;display:flex;gap:6px}
 .calculator-card.tool-mode .sci-bar,.calculator-card.graph-mode .sci-bar{display:none}
 .date-bar{position:absolute;top:6px;left:0;z-index:3;display:flex}/* in the same place as f(x) */
 .date-bar.hidden{display:none}
 .display-wrap.has-date-bar .expression{padding-left:124px}
-.sci-chip{height:34px;min-width:48px;padding:0 12px;border:1px solid var(--border);border-radius:999px;background:var(--card2);color:var(--muted);font:inherit;font-size:13px;font-weight:750;letter-spacing:.03em;cursor:pointer;transition:color .15s,background-color .15s,border-color .15s,transform .12s}
-.sci-chip.on{background:color-mix(in srgb,var(--accent) 14%,var(--card2));border-color:color-mix(in srgb,var(--accent) 55%,transparent);color:var(--accent2)}
+.sci-chip{height:34px;min-width:48px;padding:0 12px;border:0;border-radius:10px;background:var(--key);color:var(--muted);font:inherit;font-size:13px;font-weight:750;letter-spacing:.03em;cursor:pointer;transition:color .15s,background-color .15s,border-color .15s,transform .12s}
+.sci-chip.on{background:var(--accent);color:var(--on-accent)}
 /* hover and pressed like the keys (ui.js setupTopPress); lit (.on) stays lit, a little brighter */
-@media (hover:hover) and (pointer:fine){.sci-chip:hover{background:var(--key-hover);color:var(--text)}.sci-chip.on:hover{background:color-mix(in srgb,var(--accent) 24%,var(--card2));color:var(--accent2)}}
+@media (hover:hover) and (pointer:fine){.sci-chip:hover{background:var(--key-hover);color:var(--text)}.sci-chip.on:hover{background:color-mix(in srgb,var(--accent) 88%,var(--text));color:var(--on-accent)}}
 .sci-chip.pressed{background:var(--key-hover);color:var(--text);transform:scale(.93)}
-.sci-chip.on.pressed{background:color-mix(in srgb,var(--accent) 30%,var(--card2));color:var(--accent2)}
+.sci-chip.on.pressed{background:var(--accent);color:var(--on-accent)}
 @media (prefers-reduced-motion:reduce){.sci-chip.pressed{transform:none}}
 .sci-chip:focus{outline:none}
 .sci-chip:focus-visible{outline:2px solid var(--accent2);outline-offset:1px}
