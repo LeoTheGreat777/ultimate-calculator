@@ -389,12 +389,20 @@ function typeRandom(){
 }
 // a finished result becomes the start of a new calculation (as when an operator follows it)
 // The switch on the display: f(x) turns Scientific on and off. (The angle unit is the Deg/Rad key on the keypad.)
+// PROTOTYPE (preview branch only): three looks for f(x), to compare. ?fx=a|b|c|now picks one (kept in uc-try-fx);
+// on the preview site (/preview/) it starts at 'a'. Anywhere else it is 'now'. The look is html[data-fx].
+// a: a two-way switch 123 | f(x), a small bar like the tabs with the accent pill sliding to the side in use
+// b: like a tab: the key colour, no border, filled with the accent while on (as the tab on screen)
+// c: like the buttons at the top (⊞, EN, theme): outlined, filled with the accent while on (as an open menu's button)
+const FX_LOOKS=['now','a','b','c'];
+const fxLook=(()=>{let v='now';try{const q=new URLSearchParams(location.search).get('fx');if(q){v=q;store.set('uc-try-fx',q)}else if(location.pathname.startsWith('/preview/'))v=store.get('uc-try-fx')||'a'}catch{}return FX_LOOKS.includes(v)?v:'now'})();
+if(fxLook!=='now')document.documentElement.dataset.fx=fxLook;
 function renderSciBar(){
  const d=$('#calculatorDisplay');if(!d)return;
  let bar=$('#sciBar');
  if(!bar){bar=document.createElement('div');bar.id='sciBar';bar.className='sci-bar';d.appendChild(bar);
   bar.addEventListener('click',e=>{if(e.target.closest('[data-bar="sci"]'))toggleSci();else if(e.target.closest('[data-bar="mr"]'))memKey('mr')})}
- const html='<button class="sci-chip'+(sciMode?' on':'')+'" data-bar="sci" type="button" aria-pressed="'+sciMode+'" aria-label="'+esc(t('scientific'))+'" title="'+esc(t('scientific'))+'">f(x)</button>'+memChipHtml();
+ const html='<button class="sci-chip'+(sciMode?' on':'')+'" data-bar="sci" type="button" aria-pressed="'+sciMode+'" aria-label="'+esc(t('scientific'))+'" title="'+esc(t('scientific'))+'">'+(fxLook==='a'?'<span class="fx-half">123</span><span class="fx-half">f(x)</span>':'f(x)')+'</button>'+memChipHtml();
  if(bar.dataset.html!==html){bar.innerHTML=html;bar.dataset.html=html}
 }
 function toggleSci(){sciMode=!sciMode;sciSecond=false;store.set('uc-sci',sciMode?'1':'0');renderCalcKeypad();render();fitLayout()}
