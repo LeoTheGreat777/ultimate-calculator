@@ -76,12 +76,12 @@ Part of the notes in CLAUDE.md (read that first). Covers layout.js, side.js, mod
   'resize': a ResizeObserver on the page fires 'resize' again when the width really changes (layout.js), and one on the
   tabs re-measures their bar (ui.js). The app is not
   locked to portrait (iPhones can't be), so both must work.
-- **The buttons at the top** (Install, All modes, language, theme): hover and a pressed look (`.pressed` from `setupTopPress`,
+- **The buttons at the top** (Install, History, All modes, language, theme): hover and a pressed look (`.pressed` from `setupTopPress`,
   ui.js, held at least 110 ms so a quick tap shows), and lit with the accent while their menu or window is open
   (`aria-expanded`, `#themeButton.open` while the own theme editor is open); styles at the end of styles.css.
   `setupTopPress` also gives the f(x) and M chips on the display (`.sci-bar button`) the same `.pressed` look and a hover.
   The scientific keys need their own hover rule (`.key.sci-key:hover`, after their colour, which would win over `.key:hover`).
-- **All modes** (modes.js): the ⊞ button at the top beside the language button (`#modesButton`, `.icon-button` like EN and the theme button; so the tab row starts with History and the tabs; the title shrinks to fit beside it, `fitBrand`) opens a launcher (`#modesModal`, `openModes`):
+- **All modes** (modes.js): the ⊞ button at the top beside the language button (`#modesButton`, `.icon-button` like EN and the theme button; History, `#historyButton`, is the same kind of button just before it, lit while the History sheet is open, so the bar of tabs has the whole row under the header; the title shrinks to fit beside them, `fitBrand`, and on a narrow phone with Install showing only the title is left; under 360px wide those five buttons are 34px) opens a launcher (`#modesModal`, `openModes`):
   every mode as a round icon like the keys (`.mode-pick-icon`, the key colour; the mode on screen filled with the accent like its tab), its name under it, four a row in `MODE_ORDER`
   (everyday, money, maths, the rest; no group titles), three on a phone narrower than 360px, eight on a phone sideways. Above them a search (`modeMatches`: names in both languages plus `MODE_WORDS`, word
   starts, accents and capitals ignored; Enter opens the first; Ctrl+K / ⌘K opens it, Esc closes, a press outside closes; the arrows move between icons, a row at a time).
@@ -98,8 +98,10 @@ Part of the notes in CLAUDE.md (read that first). Covers layout.js, side.js, mod
   each, scrolling sideways when they don't fit. They sit in one bar in the key colour (`.mode-tabs`) and share its width
   (`flex:1 0 auto`); the tabs themselves have no box, and one accent pill marks the tab on screen and slides to it: it is
   the track's `::before`, placed by `--pill-x`/`--pill-w` (`syncTabPill`, called by `syncModeTabs`; at once on a resize,
-  `.pill-now`; a `ResizeObserver` on the tab moves it when the tab changes size later, e.g. the font arriving). The
-  History button beside the bar has the same key colour; Alt+1…9 on a keyboard (Energy, Subnet, Programmer, Numbers, Equations and Statistics, the last six, have none). When they don't all fit, a slim bar under them
+  `.pill-now`; a `ResizeObserver` on the tab moves it when the tab changes size later, e.g. the font arriving; not while `tabsSlide` runs, `tabsSlideEnd`). When only the tab on screen shows its name
+  (`.icons`), a press folds the old name away and unfolds the new one as the pill slides (`tabsBefore`/`tabsSlide` in
+  ui.js, Web Animations on the name's max-width, margin and opacity and the tab's padding), with the pill's duration and
+  curve (240 ms, `cubic-bezier(.32,.72,0,1)`, also the tab colours), so the tabs glide instead of jumping. Alt+1…9 on a keyboard (Energy, Subnet, Programmer, Numbers, Equations and Statistics, the last six, have none). When they don't all fit, a slim bar under them
   (`.tabs-scrollbar`, `syncTabEdges`, `flashTabsBar`) shows while they move and briefly on start; it can be dragged
   or pressed (`setupTabsBar`), spans the whole strip; with a mouse it shows while the mouse is over the tabs or its strip and
   fades out shortly after (the tabs can be mouse-dragged too). Phones keep their overscroll bounce; past an end (negative/over-max `scrollLeft`, or `tabsPull` measured from

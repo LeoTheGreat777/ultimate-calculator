@@ -53,13 +53,13 @@ function historyGroupTitle(k,now=new Date()){
  return y===now.getFullYear()?name:name+' '+y;
 }
 
-function openHistory(){const p=$('#historyPanel'),b=$('#historyBackdrop');renderHistory();p.style.height='';p.style.transform='';p.classList.remove('hidden','moving','dragging');b.classList.remove('hidden');requestAnimationFrame(()=>{p.classList.add('open');b.classList.add('open')});p.classList.remove('expanded');$('#historyList').scrollTop=0}
+function openHistory(){const p=$('#historyPanel'),b=$('#historyBackdrop');$('#historyButton').setAttribute('aria-expanded','true');renderHistory();p.style.height='';p.style.transform='';p.classList.remove('hidden','moving','dragging');b.classList.remove('hidden');requestAnimationFrame(()=>{p.classList.add('open');b.classList.add('open')});p.classList.remove('expanded');$('#historyList').scrollTop=0}
 // A press outside the sheet while it asks "Delete all?" only takes the question back (as a press inside would); the next one closes it
 function historyBackdropClick(){if(historyClearConfirm)clearHistoryConfirm();else closeHistory()}
 // It slides down at the height it has (dragged or fully open) and goes; the page behind is put back where it was (iPhone can
 // scroll even a page that doesn't scroll when a swipe runs past the sheet)
 function closeHistory(){
- if(historyClearConfirm)clearHistoryConfirm();const p=$('#historyPanel'),b=$('#historyBackdrop');
+ if(historyClearConfirm)clearHistoryConfirm();const p=$('#historyPanel'),b=$('#historyBackdrop');$('#historyButton').setAttribute('aria-expanded','false');
  if(!p.classList.contains('hidden'))p.style.height=p.getBoundingClientRect().height/(window.__uiZoom||1)+'px';
  p.style.transform='';p.classList.remove('open','dragging');b.classList.remove('open');
  if(!document.documentElement.classList.contains('page-scroll')&&(scrollX||scrollY))scrollTo(0,0);
