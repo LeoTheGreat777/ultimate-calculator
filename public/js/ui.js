@@ -163,41 +163,43 @@ function syncTabEdges(){
 // The bar can be grabbed, with a mouse or a finger: drag the thumb, or press the bar elsewhere to jump there.
 // With a mouse the tabs themselves can be dragged sideways too. On a phone the tabs bounce past their ends (the
 // phone's own overscroll) and the thumb shrinks against that end while they do.
-// Dragging the pill: press the tab on screen and slide sideways, with a finger or a mouse. The pill follows (between two
-// tabs it takes a width between theirs), the tab under it lights, and letting go switches to that tab, the pill sliding
-// the rest of the way as after a press; let go over the same tab and it slides back. A press that moves less than 6px
-// is a tap, and one that goes more up or down than sideways is left alone. The tab on screen has touch-action:none
-// (styles.css), so a finger on it moves the pill, not the strip.
+// Dragging the pill: press the tab on screen and slide sideways, with a finger or a mouse. Every tab the finger reaches
+// becomes the mode on screen at once (switchMode, as a tap would), so its name unfolds and the pill slides to it as
+// after a tap; a quick finger runs through the modes as fast as it moves (each slide starts from where the last one is).
+// The pill is always on its way to a real tab, so letting go anywhere leaves a mode fully shown. A press that moves less
+// than 6px is a tap; one that goes more up or down than sideways is left alone. The tab on screen has touch-action:none
+// (styles.css) and its touchmoves are cancelled while it is held, so a finger on it moves through the modes, not the strip.
 function setupPillDrag(){
  const nav=$('#modeTabs'),track=nav?.querySelector('.mode-tabs-track');if(!track)return;
  let d=null,suppress=false;const Z=()=>window.__uiZoom||1;
- const place=e=>{
-  const tabs=[...track.querySelectorAll('.mode-tab')],mid=t=>t.offsetLeft+t.offsetWidth/2;
-  const lo=Math.max(mid(tabs[0]),track.scrollLeft+d.w/2),hi=Math.min(mid(tabs[tabs.length-1]),track.scrollLeft+track.clientWidth-d.w/2);
-  const c=Math.min(Math.max(d.mid+(e.clientX-d.x)/Z(),Math.min(lo,hi)),Math.max(lo,hi));
-  let i=0;while(i<tabs.length-2&&mid(tabs[i+1])<c)i++;
-  const a=tabs[i],b=tabs[i+1]||a,k=b===a?0:Math.min(1,Math.max(0,(c-mid(a))/(mid(b)-mid(a)))),w=a.offsetWidth+(b.offsetWidth-a.offsetWidth)*k;
-  track.style.setProperty('--pill-x',c-w/2+'px');track.style.setProperty('--pill-w',w+'px');
-  const under=k<.5?a:b;if(under!==d.under){d.under?.classList.remove('under');under.classList.add('under');d.under=under}
+ // the tab under the finger: of the tabs whose middle is in view, the one the finger is over (or the nearest)
+ const tabAt=clientX=>{
+  const x=(clientX-track.getBoundingClientRect().left)/Z()+track.scrollLeft,lo=track.scrollLeft,hi=lo+track.clientWidth;
+  let best=null,dist=1e9;
+  for(const t of track.querySelectorAll('.mode-tab')){const m=t.offsetLeft+t.offsetWidth/2;if(m<lo||m>hi)continue;
+   const dd=x<t.offsetLeft?t.offsetLeft-x:x>t.offsetLeft+t.offsetWidth?x-t.offsetLeft-t.offsetWidth:0;if(dd<dist){dist=dd;best=t}}
+  return best;
  };
  track.addEventListener('pointerdown',e=>{
-  if(e.button>0||d)return;const t=e.target.closest?.('.mode-tab.active');if(!t)return;
-  d={id:e.pointerId,x:e.clientX,y:e.clientY,mid:t.offsetLeft+t.offsetWidth/2,w:t.offsetWidth,tab:t,on:false,under:null};
+  if(e.button>0||d)return;if(!e.target.closest?.('.mode-tab.active'))return;
+  d={id:e.pointerId,x:e.clientX,y:e.clientY,on:false};
  });
  track.addEventListener('pointermove',e=>{
   if(!d||e.pointerId!==d.id)return;
   if(!d.on){const dx=Math.abs(e.clientX-d.x)/Z(),dy=Math.abs(e.clientY-d.y)/Z();if(dx<6&&dy<6)return;if(dy>dx){d=null;return}
-   d.on=true;track.setPointerCapture?.(e.pointerId);track.classList.add('pill-now');nav.classList.add('pill-drag')}
-  place(e);
+   d.on=true;try{track.setPointerCapture(e.pointerId)}catch{}nav.classList.add('pill-drag')}
+  const t=tabAt(e.clientX);if(t&&t.dataset.mode!==currentTab())switchMode(t.dataset.mode);
  });
- const end=(e,keep)=>{
-  if(!d||e.pointerId!==d.id)return;const was=d;d=null;if(!was.on)return;
-  suppress=true;setTimeout(()=>suppress=false,0);// the click that ends the drag is not a tap
-  was.under?.classList.remove('under');nav.classList.remove('pill-drag');track.classList.remove('pill-now');
-  const to=keep&&was.under?.dataset.mode;
-  if(to&&to!==currentTab())switchMode(to);else syncTabPill(was.tab)
+ track.addEventListener('touchmove',e=>{if(d)e.preventDefault()},{passive:false});
+ const end=e=>{
+  if(!d||e.pointerId!==undefined&&e.pointerId!==d.id)return;const was=d;d=null;nav.classList.remove('pill-drag');
+  if(was.on){suppress=true;setTimeout(()=>suppress=false,0);syncModeTabs()}// the click that ends a drag is not a tap; the pill settles on its tab
  };
- track.addEventListener('pointerup',e=>end(e,true));track.addEventListener('pointercancel',e=>end(e,false));
+ // every way a press can end lets go (a browser that takes the finger over sends pointercancel or only touchend)
+ track.addEventListener('pointerup',end);track.addEventListener('pointercancel',end);
+ track.addEventListener('lostpointercapture',e=>{if(e.target===track)end(e)});// a finger's press starts captured by its tab: moving that to the track is not an end
+ addEventListener('pointerup',end,true);addEventListener('pointercancel',end,true);
+ addEventListener('touchend',e=>{if(d&&!e.touches.length)end({pointerId:d.id})},true);addEventListener('touchcancel',e=>{if(d)end({pointerId:d.id})},true);
  track.addEventListener('click',e=>{if(suppress){e.stopPropagation();e.preventDefault()}},true);
 }
 let tabsPull=0;
