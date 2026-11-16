@@ -1827,15 +1827,15 @@ async def all_modes(browser, url):
 
 
 async def pill_drag(browser, url):
-    """Dragging from the tab on screen, with a mouse (computer) or a finger (phone), runs through the modes: every tab the
-    pointer reaches becomes the mode on screen at once, its name shown in full and the pill on it; a quick run and an
-    early let-go still end on a whole tab. A small move is still a tap, a drag up or down changes nothing, and other
+    """Dragging from the tab on screen, with a mouse (computer) or a finger (phone): the pill follows the pointer one to one,
+    even a few pixels; let go nearer the tab it started on and it goes back, nearer the next one and that mode opens; it
+    always ends on a whole tab with its name shown. A small move is still a tap, a drag up or down springs back, and other
     tabs still work with a tap."""
     L = '[pill drag] '
     st_js = """(()=>{const t=document.querySelector('#modeTabs .mode-tabs-track'),a=t.querySelector('.mode-tab.active'),cs=getComputedStyle(t,'::before'),x=new DOMMatrixReadOnly(cs.transform).m41,l=a.querySelector('.mode-tab-label');
       return [mode==='units'&&unitView==='currency'?'currency':mode,Math.abs(x-a.offsetLeft)<=1&&Math.abs(parseFloat(cs.width)-a.offsetWidth)<=1,!!l.offsetParent&&l.scrollWidth<=l.clientWidth+1,modeTabs.classList.contains('pill-drag')]})()"""
+    pill = "(()=>{const t=document.querySelector('#modeTabs .mode-tabs-track'),cs=getComputedStyle(t,'::before');return new DOMMatrixReadOnly(cs.transform).m41+parseFloat(cs.width)/2})()"
     centre = "(m=>{const r=document.querySelector('.mode-tab[data-mode='+m+']').getBoundingClientRect();return [r.left+r.width/2,r.top+r.height/2]})"
-    cur = "(mode==='units'&&unitView==='currency'?'currency':mode)"
     for phone, lang in [(False, 'en'), (True, 'en'), (True, 'el')]:
         T = L + f"{'phone' if phone else 'computer'} {lang}: "
         p = await new_page(browser, url, lang, 'dark' if lang == 'en' else 'light', phone=phone)
@@ -1854,46 +1854,53 @@ async def pill_drag(browser, url):
             else: await p.mouse.up()
 
         tabs = await p.evaluate("[...document.querySelectorAll('#modeTabs .mode-tab')].map(t=>t.dataset.mode)")
-        x0, y = await p.evaluate(centre + "('calc')")
+        x0, y = await p.evaluate(centre + f"('{tabs[0]}')")
+        x1, _ = await p.evaluate(centre + f"('{tabs[1]}')")
+        start = await p.evaluate(pill)
         await down(x0, y)
-        seen = []
-        for m in tabs[1:]:  # slowly across every tab: each one becomes the mode on screen on the way
-            x1, _ = await p.evaluate(centre + f"('{m}')")
-            for k in range(1, 5):
-                await move(x0 + (x1 - x0) * k / 4, y)
-                await p.wait_for_timeout(20)
-            x0 = x1
-            seen.append(await p.evaluate(cur))
-        check(T + 'every tab the finger reaches becomes the mode on screen', seen == tabs[1:], [seen, tabs])
-        await p.wait_for_timeout(400)
-        st = await p.evaluate(st_js)
-        check(T + 'held still on a tab: the pill is on it and its name is shown in full', st == [tabs[-1], True, True, True], st)
+        await move(x0 + 3, y)
+        await p.wait_for_timeout(30)
+        a = await p.evaluate(pill)
+        await move(x0 + 3 + (x1 - x0) * .3, y)
+        await p.wait_for_timeout(30)
+        b = await p.evaluate(pill)
+        check(T + 'the pill follows the pointer one to one, even 3px', abs(a - start - 3) <= 1 and abs(b - start - 3 - (x1 - x0) * .3) <= 2, [start, a, b])
         await up()
         await p.wait_for_timeout(450)
         st = await p.evaluate(st_js)
-        check(T + 'letting go keeps that mode, the pill on its tab, nothing held', st == [tabs[-1], True, True, False], st)
-        # a quick run back to the first tab, let go at once: it still ends on a whole tab
-        xa, y = await p.evaluate(centre + f"('{tabs[-1]}')")
-        xb, _ = await p.evaluate(centre + f"('{tabs[0]}')")
+        check(T + 'let go nearer its own tab: it goes back and the mode stays', st == [tabs[0], True, True, False], st)
+        await down(x0, y)
+        for k in range(1, 6):
+            await move(x0 + (x1 - x0) * .7 * k / 5, y)
+            await p.wait_for_timeout(16)
+        under = await p.evaluate("document.querySelector('.mode-tab.under')?.dataset.mode||null")
+        check(T + 'past half way the next tab lights', under == tabs[1], under)
+        await up()
+        await p.wait_for_timeout(450)
+        st = await p.evaluate(st_js)
+        check(T + 'let go nearer the next tab: that mode opens, the pill on it, its name in full', st == [tabs[1], True, True, False], st)
+        # a quick fling to the far end, let go at once: still a whole tab
+        xa, y = await p.evaluate(centre + f"('{tabs[1]}')")
+        xb, _ = await p.evaluate(centre + f"('{tabs[-1]}')")
         await down(xa, y)
-        for k in range(1, 4):
-            await move(xa + (xb - xa) * k / 3, y)
+        for k in range(1, 3):
+            await move(xa + (xb - xa) * k / 2, y)
         await up()
         await p.wait_for_timeout(450)
         st = await p.evaluate(st_js)
-        check(T + 'a quick run and let go ends on a whole tab with its name', st == [tabs[0], True, True, False], st)
-        x, y = await p.evaluate(centre + f"('{tabs[0]}')")
+        check(T + 'a quick fling ends on a whole tab with its name', st == [tabs[-1], True, True, False], st)
+        x, y = await p.evaluate(centre + f"('{tabs[-1]}')")
         await down(x, y); await move(x + 3, y); await up()  # hardly moves: a tap
-        await p.wait_for_timeout(300)
+        await p.wait_for_timeout(450)
         st = await p.evaluate(st_js)
-        check(T + 'a press that hardly moves is a tap (nothing changes)', st == [tabs[0], True, True, False], st)
+        check(T + 'a press that hardly moves is a tap (nothing changes)', st == [tabs[-1], True, True, False], st)
         await down(x, y)
         for k in range(1, 6):
-            await move(x + 2 * k, y + 14 * k)
+            await move(x - 2 * k, y + 14 * k)
         await up()
-        await p.wait_for_timeout(300)
+        await p.wait_for_timeout(450)
         st = await p.evaluate(st_js)
-        check(T + 'a drag up or down changes nothing', st == [tabs[0], True, True, False], st)
+        check(T + 'a drag up or down springs back and changes nothing', st == [tabs[-1], True, True, False], st)
         await p.tap('.mode-tab[data-mode=vat]') if phone else await p.click('.mode-tab[data-mode=vat]')
         await p.wait_for_timeout(450)
         st = await p.evaluate(st_js)

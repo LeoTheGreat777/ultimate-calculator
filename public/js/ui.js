@@ -114,20 +114,25 @@ const TAB_SLIDE={duration:240,easing:'cubic-bezier(.32,.72,0,1)'};
 function tabsBefore(track){
  if(reducedMotion()||!Element.prototype.animate)return null;
  const list=[...track.querySelectorAll('.mode-tab')].map(b=>{const l=b.querySelector('.mode-tab-label'),shown=!!l.offsetParent,ls=getComputedStyle(l);
-  return {b,l,w:shown?l.getBoundingClientRect().width/(window.__uiZoom||1):0,ml:shown?ls.marginLeft:null,op:shown?ls.opacity:'0',pad:getComputedStyle(b).paddingLeft}});
+  return {b,l,w:shown?l.offsetWidth:0,ml:shown?ls.marginLeft:null,op:shown?+ls.opacity:0,pad:getComputedStyle(b).paddingLeft}});
  list.forEach(o=>{o.b.getAnimations().forEach(a=>a.cancel());o.l.getAnimations().forEach(a=>a.cancel());tabLabelPlain(o.l)});
  return list;
 }
-function tabLabelPlain(l){l.style.overflow=l.style.display=''}
+// while it moves, a name is centred on its room and may stand out of it (flex, min-width 0), so the whole word shows at
+// once, fading and growing in (or shrinking and fading out) rather than being uncovered letter by letter
+function tabLabelPlain(l){l.style.display=l.style.justifyContent=l.style.minWidth=''}
 function tabsSlide(list){
  if(!list)return;let moved=false;
  for(const o of list){
-  const {b,l}=o,shown=!!l.offsetParent,bs=getComputedStyle(b),gap=(parseFloat(bs.columnGap)||0)+'px',w=shown?l.getBoundingClientRect().width/(window.__uiZoom||1):0;
+  const {b,l}=o,shown=!!l.offsetParent,bs=getComputedStyle(b),gap=(parseFloat(bs.columnGap)||0)+'px';
+  l.style.display='flex';const w=shown?l.offsetWidth:0;// measured as a flex box too, so the end matches
   if(Math.abs(w-o.w)>.5){
-   l.style.overflow='hidden';if(!shown)l.style.display='block';// a name that goes stays until it has folded away
-   const a=l.animate([{maxWidth:o.w+'px',marginLeft:o.ml??'-'+gap,opacity:o.op},{maxWidth:w+'px',marginLeft:shown?'0px':'-'+gap,opacity:shown?1:0}],TAB_SLIDE);
+   l.style.justifyContent='center';l.style.minWidth='0';
+   const a=l.animate([{maxWidth:o.w+'px',marginLeft:o.ml??'-'+gap},{maxWidth:w+'px',marginLeft:shown?'0px':'-'+gap}],TAB_SLIDE);
+   l.animate(shown?[{opacity:o.op,transform:'scale(.9)'},{opacity:o.op,offset:.2},{opacity:1,transform:'scale(1)'}]
+                  :[{opacity:o.op,transform:'scale(1)'},{opacity:0,transform:'scale(.9)',offset:.2},{opacity:0,transform:'scale(.9)'}],{duration:TAB_SLIDE.duration,easing:'ease-out'});
    a.onfinish=()=>tabLabelPlain(l);moved=true;
-  }
+  }else tabLabelPlain(l);
   if(o.pad!==bs.paddingLeft)moved=!!b.animate([{paddingLeft:o.pad,paddingRight:o.pad},{paddingLeft:bs.paddingLeft,paddingRight:bs.paddingRight}],TAB_SLIDE);
  }
  if(moved)tabsSlideEnd=performance.now()+TAB_SLIDE.duration+50;
@@ -163,43 +168,54 @@ function syncTabEdges(){
 // The bar can be grabbed, with a mouse or a finger: drag the thumb, or press the bar elsewhere to jump there.
 // With a mouse the tabs themselves can be dragged sideways too. On a phone the tabs bounce past their ends (the
 // phone's own overscroll) and the thumb shrinks against that end while they do.
-// Dragging the pill: press the tab on screen and slide sideways, with a finger or a mouse. Every tab the finger reaches
-// becomes the mode on screen at once (switchMode, as a tap would), so its name unfolds and the pill slides to it as
-// after a tap; a quick finger runs through the modes as fast as it moves (each slide starts from where the last one is).
-// The pill is always on its way to a real tab, so letting go anywhere leaves a mode fully shown. A press that moves less
-// than 6px is a tap; one that goes more up or down than sideways is left alone. The tab on screen has touch-action:none
-// (styles.css) and its touchmoves are cancelled while it is held, so a finger on it moves through the modes, not the strip.
+// Dragging the pill: press the tab on screen and slide sideways, with a finger or a mouse. The pill follows the pointer
+// one to one from the first pixel (between two tabs it takes a width between theirs; past the first or last tab it
+// moves a third as far, like a rubber band), and the tab nearer its middle lights. Letting go, it settles with a small
+// spring (.pill-snap) on that tab: back on the tab on screen, or on the next one, which then opens (switchMode). A press
+// that moves under 6px is a tap; one that goes more up or down than sideways springs back and is left alone. The tab on
+// screen has touch-action:none (styles.css) and its touchmoves are cancelled while it is held, so the strip doesn't
+// scroll under the finger. Every way a press can end lets go, so the pill is never left between two tabs.
 function setupPillDrag(){
  const nav=$('#modeTabs'),track=nav?.querySelector('.mode-tabs-track');if(!track)return;
- let d=null,suppress=false;const Z=()=>window.__uiZoom||1;
- // the tab under the finger: of the tabs whose middle is in view, the one the finger is over (or the nearest)
- const tabAt=clientX=>{
-  const x=(clientX-track.getBoundingClientRect().left)/Z()+track.scrollLeft,lo=track.scrollLeft,hi=lo+track.clientWidth;
-  let best=null,dist=1e9;
-  for(const t of track.querySelectorAll('.mode-tab')){const m=t.offsetLeft+t.offsetWidth/2;if(m<lo||m>hi)continue;
-   const dd=x<t.offsetLeft?t.offsetLeft-x:x>t.offsetLeft+t.offsetWidth?x-t.offsetLeft-t.offsetWidth:0;if(dd<dist){dist=dd;best=t}}
-  return best;
+ let d=null,suppress=false,snapT=0;const Z=()=>window.__uiZoom||1;
+ const mid=t=>t.offsetLeft+t.offsetWidth/2;
+ const place=clientX=>{
+  const tabs=[...track.querySelectorAll('.mode-tab')],first=mid(tabs[0]),last=mid(tabs[tabs.length-1]);
+  let c=d.mid+(clientX-d.x)/Z();
+  if(c<first)c=first-(first-c)/3;else if(c>last)c=last+(c-last)/3;// past the ends: a rubber band
+  const lo=track.scrollLeft+d.w/3,hi=track.scrollLeft+track.clientWidth-d.w/3;c=Math.min(Math.max(c,lo),hi);// kept in view
+  let i=0;while(i<tabs.length-2&&mid(tabs[i+1])<c)i++;
+  const a=tabs[i],b=tabs[i+1]||a,k=b===a?0:Math.min(1,Math.max(0,(c-mid(a))/(mid(b)-mid(a)))),w=a.offsetWidth+(b.offsetWidth-a.offsetWidth)*k;
+  track.style.setProperty('--pill-x',c-w/2+'px');track.style.setProperty('--pill-w',w+'px');
+  const under=c<=first?tabs[0]:c>=last?tabs[tabs.length-1]:k<.5?a:b;
+  if(under!==d.under){d.under?.classList.remove('under');under.classList.add('under');d.under=under}
  };
  track.addEventListener('pointerdown',e=>{
-  if(e.button>0||d)return;if(!e.target.closest?.('.mode-tab.active'))return;
-  d={id:e.pointerId,x:e.clientX,y:e.clientY,on:false};
+  if(e.button>0||d)return;const t=e.target.closest?.('.mode-tab.active');if(!t)return;
+  d={id:e.pointerId,x:e.clientX,y:e.clientY,mid:mid(t),w:t.offsetWidth,tab:t,on:false,moved:false,under:null};
+  try{track.setPointerCapture(e.pointerId)}catch{}
+  track.classList.remove('pill-snap');track.classList.add('pill-now');nav.classList.add('pill-drag');place(e.clientX);
  });
  track.addEventListener('pointermove',e=>{
   if(!d||e.pointerId!==d.id)return;
-  if(!d.on){const dx=Math.abs(e.clientX-d.x)/Z(),dy=Math.abs(e.clientY-d.y)/Z();if(dx<6&&dy<6)return;if(dy>dx){d=null;return}
-   d.on=true;try{track.setPointerCapture(e.pointerId)}catch{}nav.classList.add('pill-drag')}
-  const t=tabAt(e.clientX);if(t&&t.dataset.mode!==currentTab())switchMode(t.dataset.mode);
+  const dx=Math.abs(e.clientX-d.x)/Z(),dy=Math.abs(e.clientY-d.y)/Z();
+  if(!d.on&&(dx>=6||dy>=6)){if(dy>dx){end(e,false);return}d.on=true}// past 6px it is a drag, not a tap
+  place(e.clientX);
  });
  track.addEventListener('touchmove',e=>{if(d)e.preventDefault()},{passive:false});
- const end=e=>{
-  if(!d||e.pointerId!==undefined&&e.pointerId!==d.id)return;const was=d;d=null;nav.classList.remove('pill-drag');
-  if(was.on){suppress=true;setTimeout(()=>suppress=false,0);syncModeTabs()}// the click that ends a drag is not a tap; the pill settles on its tab
- };
- // every way a press can end lets go (a browser that takes the finger over sends pointercancel or only touchend)
- track.addEventListener('pointerup',end);track.addEventListener('pointercancel',end);
- track.addEventListener('lostpointercapture',e=>{if(e.target===track)end(e)});// a finger's press starts captured by its tab: moving that to the track is not an end
- addEventListener('pointerup',end,true);addEventListener('pointercancel',end,true);
- addEventListener('touchend',e=>{if(d&&!e.touches.length)end({pointerId:d.id})},true);addEventListener('touchcancel',e=>{if(d)end({pointerId:d.id})},true);
+ // keep: false springs back to the tab on screen whatever is under the pill
+ function end(e,keep){
+  if(!d||e.pointerId!==undefined&&e.pointerId!==d.id)return;const was=d;d=null;
+  was.under?.classList.remove('under');nav.classList.remove('pill-drag');track.classList.remove('pill-now');
+  if(was.on){suppress=true;setTimeout(()=>suppress=false,0)}// the click that ends a drag is not a tap
+  if(!reducedMotion()){track.classList.add('pill-snap');clearTimeout(snapT);snapT=setTimeout(()=>track.classList.remove('pill-snap'),400)}
+  const to=keep&&was.on&&was.under?.dataset.mode;
+  if(to&&to!==currentTab())switchMode(to);else syncTabPill($('#modeTabs .mode-tab.active')||was.tab);
+ }
+ track.addEventListener('pointerup',e=>end(e,true));track.addEventListener('pointercancel',e=>end(e,false));
+ track.addEventListener('lostpointercapture',e=>{if(e.target===track)end(e,true)});// not the tab's (a finger's press starts captured by it)
+ addEventListener('pointerup',e=>end(e,true),true);addEventListener('pointercancel',e=>end(e,false),true);
+ addEventListener('touchend',e=>{if(d&&!e.touches.length)end({pointerId:d.id},true)},true);addEventListener('touchcancel',e=>{if(d)end({pointerId:d.id},false)},true);
  track.addEventListener('click',e=>{if(suppress){e.stopPropagation();e.preventDefault()}},true);
 }
 let tabsPull=0;
