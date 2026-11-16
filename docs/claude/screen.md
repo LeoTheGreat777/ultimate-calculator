@@ -101,7 +101,14 @@ Part of the notes in CLAUDE.md (read that first). Covers layout.js, side.js, mod
   `.pill-now`; a `ResizeObserver` on the tab moves it when the tab changes size later, e.g. the font arriving; not while `tabsSlide` runs, `tabsSlideEnd`). When only the tab on screen shows its name
   (`.icons`), a press folds the old name away and unfolds the new one as the pill slides (`tabsBefore`/`tabsSlide` in
   ui.js, Web Animations on the name's max-width, margin and opacity and the tab's padding), with the pill's duration and
-  curve (240 ms, `cubic-bezier(.32,.72,0,1)`, also the tab colours), so the tabs glide instead of jumping. Alt+1…9 on a keyboard (Energy, Subnet, Programmer, Numbers, Equations and Statistics, the last six, have none). When they don't all fit, a slim bar under them
+  curve (240 ms, `cubic-bezier(.32,.72,0,1)`, also the tab colours), so the tabs glide instead of jumping. **Dragging the pill** (`setupPillDrag`, ui.js): a press on the
+  tab on screen that moves sideways (6px, more sideways than up or down) holds the pill (`.pill-drag` on the bar,
+  `.pill-now` on the track so it follows at once): its centre follows the pointer, kept between the first and last tab and
+  inside the part in view, its width between the two tabs it is over; the nearer one lights (`.under`, the tab on screen
+  goes plain). Letting go switches to that tab (`switchMode`, the pill sliding on from where it is); over its own tab, or
+  on pointercancel, it slides back. The click that ends a drag is swallowed. That tab has `touch-action:none`, and the
+  strip's own touch pull and mouse grab (`setupTabsBar`) skip it, so a swipe that starts on any other tab still
+  scrolls the strip. Alt+1…9 on a keyboard (Energy, Subnet, Programmer, Numbers, Equations and Statistics, the last six, have none). When they don't all fit, a slim bar under them
   (`.tabs-scrollbar`, `syncTabEdges`, `flashTabsBar`) shows while they move and briefly on start; it can be dragged
   or pressed (`setupTabsBar`), spans the whole strip; with a mouse it shows while the mouse is over the tabs or its strip and
   fades out shortly after (the tabs can be mouse-dragged too). Phones keep their overscroll bounce; past an end (negative/over-max `scrollLeft`, or `tabsPull` measured from

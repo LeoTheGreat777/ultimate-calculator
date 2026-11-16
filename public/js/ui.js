@@ -163,12 +163,49 @@ function syncTabEdges(){
 // The bar can be grabbed, with a mouse or a finger: drag the thumb, or press the bar elsewhere to jump there.
 // With a mouse the tabs themselves can be dragged sideways too. On a phone the tabs bounce past their ends (the
 // phone's own overscroll) and the thumb shrinks against that end while they do.
+// Dragging the pill: press the tab on screen and slide sideways, with a finger or a mouse. The pill follows (between two
+// tabs it takes a width between theirs), the tab under it lights, and letting go switches to that tab, the pill sliding
+// the rest of the way as after a press; let go over the same tab and it slides back. A press that moves less than 6px
+// is a tap, and one that goes more up or down than sideways is left alone. The tab on screen has touch-action:none
+// (styles.css), so a finger on it moves the pill, not the strip.
+function setupPillDrag(){
+ const nav=$('#modeTabs'),track=nav?.querySelector('.mode-tabs-track');if(!track)return;
+ let d=null,suppress=false;const Z=()=>window.__uiZoom||1;
+ const place=e=>{
+  const tabs=[...track.querySelectorAll('.mode-tab')],mid=t=>t.offsetLeft+t.offsetWidth/2;
+  const lo=Math.max(mid(tabs[0]),track.scrollLeft+d.w/2),hi=Math.min(mid(tabs[tabs.length-1]),track.scrollLeft+track.clientWidth-d.w/2);
+  const c=Math.min(Math.max(d.mid+(e.clientX-d.x)/Z(),Math.min(lo,hi)),Math.max(lo,hi));
+  let i=0;while(i<tabs.length-2&&mid(tabs[i+1])<c)i++;
+  const a=tabs[i],b=tabs[i+1]||a,k=b===a?0:Math.min(1,Math.max(0,(c-mid(a))/(mid(b)-mid(a)))),w=a.offsetWidth+(b.offsetWidth-a.offsetWidth)*k;
+  track.style.setProperty('--pill-x',c-w/2+'px');track.style.setProperty('--pill-w',w+'px');
+  const under=k<.5?a:b;if(under!==d.under){d.under?.classList.remove('under');under.classList.add('under');d.under=under}
+ };
+ track.addEventListener('pointerdown',e=>{
+  if(e.button>0||d)return;const t=e.target.closest?.('.mode-tab.active');if(!t)return;
+  d={id:e.pointerId,x:e.clientX,y:e.clientY,mid:t.offsetLeft+t.offsetWidth/2,w:t.offsetWidth,tab:t,on:false,under:null};
+ });
+ track.addEventListener('pointermove',e=>{
+  if(!d||e.pointerId!==d.id)return;
+  if(!d.on){const dx=Math.abs(e.clientX-d.x)/Z(),dy=Math.abs(e.clientY-d.y)/Z();if(dx<6&&dy<6)return;if(dy>dx){d=null;return}
+   d.on=true;track.setPointerCapture?.(e.pointerId);track.classList.add('pill-now');nav.classList.add('pill-drag')}
+  place(e);
+ });
+ const end=(e,keep)=>{
+  if(!d||e.pointerId!==d.id)return;const was=d;d=null;if(!was.on)return;
+  suppress=true;setTimeout(()=>suppress=false,0);// the click that ends the drag is not a tap
+  was.under?.classList.remove('under');nav.classList.remove('pill-drag');track.classList.remove('pill-now');
+  const to=keep&&was.under?.dataset.mode;
+  if(to&&to!==currentTab())switchMode(to);else syncTabPill(was.tab)
+ };
+ track.addEventListener('pointerup',e=>end(e,true));track.addEventListener('pointercancel',e=>end(e,false));
+ track.addEventListener('click',e=>{if(suppress){e.stopPropagation();e.preventDefault()}},true);
+}
 let tabsPull=0;
 function setupTabsBar(){
  const nav=$('#modeTabs'),bar=nav?.querySelector('.tabs-scrollbar'),track=nav?.querySelector('.mode-tabs-track');if(!bar||!track)return;
  let drag=null,touch=null,grab=null,suppress=false;
  // a finger pulling past an end
- track.addEventListener('touchstart',e=>{const t=e.touches[0];touch={x:t.clientX,left:track.scrollLeft};nav.classList.remove('bar-release')},{passive:true});
+ track.addEventListener('touchstart',e=>{if(e.target.closest?.('.mode-tab.active')){touch=null;return}const t=e.touches[0];touch={x:t.clientX,left:track.scrollLeft};nav.classList.remove('bar-release')},{passive:true});
  track.addEventListener('touchmove',e=>{
   if(!touch)return;const dx=(e.touches[0].clientX-touch.x)/(window.__uiZoom||1),m=track.scrollWidth-track.clientWidth;
   const pull=track.scrollLeft<=1&&dx>0?dx-touch.left:track.scrollLeft>=m-1&&dx<0?-dx-(m-touch.left):0;
@@ -177,7 +214,8 @@ function setupTabsBar(){
  const letGo=()=>{touch=null;if(!tabsPull)return;tabsPull=0;nav.classList.add('bar-release');syncTabEdges();setTimeout(()=>nav.classList.remove('bar-release'),400)};
  track.addEventListener('touchend',letGo);track.addEventListener('touchcancel',letGo);
  // dragging the tabs with a mouse (a click that doesn't move still picks the tab)
- track.addEventListener('pointerdown',e=>{if(e.pointerType!=='mouse'||e.button>0||nav.classList.contains('all-fit'))return;grab={id:e.pointerId,x:e.clientX,left:track.scrollLeft,moved:false}});
+ track.addEventListener('pointerdown',e=>{if(e.pointerType!=='mouse'||e.button>0||nav.classList.contains('all-fit')||e.target.closest?.('.mode-tab.active'))return;// the tab on screen drags the pill (setupPillDrag)
+ grab={id:e.pointerId,x:e.clientX,left:track.scrollLeft,moved:false}});
  track.addEventListener('pointermove',e=>{
   if(!grab||e.pointerId!==grab.id)return;const dx=e.clientX-grab.x;
   if(!grab.moved&&Math.abs(dx)<5)return;
@@ -469,7 +507,7 @@ $('#modeTabs .mode-tabs-track').addEventListener('scroll',()=>{syncTabEdges();fl
 $$('#modeTabs .tabs-arrow').forEach(b=>b.addEventListener('click',()=>{const t=$('#modeTabs .mode-tabs-track');t.scrollBy({left:(b.classList.contains('tabs-prev')?-1:1)*t.clientWidth*.7,behavior:reducedMotion()?'auto':'smooth'})}));
 addEventListener('load',()=>setTimeout(()=>{syncTabEdges();flashTabsBar(1800)},400));
 addEventListener('resize',()=>syncTabEdges());
-setupTabsBar();
+setupTabsBar();setupPillDrag();
 // a mouse wheel over the tabs scrolls them sideways (when they don't all fit)
 $('#modeTabs').addEventListener('wheel',e=>{const t=$('#modeTabs .mode-tabs-track');if(t.scrollWidth<=t.clientWidth)return;e.preventDefault();t.scrollLeft+=Math.abs(e.deltaY)>Math.abs(e.deltaX)?e.deltaY:e.deltaX},{passive:false});
 // arrow keys move between tabs when one has keyboard focus

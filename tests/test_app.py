@@ -1826,6 +1826,71 @@ async def all_modes(browser, url):
         await p.context.close()
 
 
+async def pill_drag(browser, url):
+    """The pill can be dragged from the tab on screen, with a mouse (computer) or a finger (phone): it follows, the tab under
+    it lights, and letting go there switches mode; back over its own tab it returns; a small move is still a tap, and a
+    drag that goes up or down leaves the pill alone. Starting on another tab still scrolls or picks as before."""
+    L = '[pill drag] '
+    st_js = """(()=>{const t=document.querySelector('#modeTabs .mode-tabs-track'),a=t.querySelector('.mode-tab.active'),cs=getComputedStyle(t,'::before'),x=new DOMMatrixReadOnly(cs.transform).m41;
+      return [mode==='units'&&unitView==='currency'?'currency':mode,Math.abs(x-a.offsetLeft)<=1&&Math.abs(parseFloat(cs.width)-a.offsetWidth)<=1,modeTabs.classList.contains('pill-drag'),!!t.querySelector('.under')]})()"""
+    centre = "(m=>{const r=document.querySelector('.mode-tab[data-mode='+m+']').getBoundingClientRect();return [r.left+r.width/2,r.top+r.height/2]})"
+    for phone, lang in [(False, 'en'), (True, 'en'), (True, 'el')]:
+        T = L + f"{'phone' if phone else 'computer'} {lang}: "
+        p = await new_page(browser, url, lang, 'dark' if lang == 'en' else 'light', phone=phone)
+        cdp = await p.context.new_cdp_session(p) if phone else None
+
+        async def down(x, y):
+            if phone: await cdp.send('Input.dispatchTouchEvent', {'type': 'touchStart', 'touchPoints': [{'x': x, 'y': y}]})
+            else: await p.mouse.move(x, y); await p.mouse.down()
+
+        async def move(x, y):
+            if phone: await cdp.send('Input.dispatchTouchEvent', {'type': 'touchMove', 'touchPoints': [{'x': x, 'y': y}]})
+            else: await p.mouse.move(x, y)
+
+        async def up():
+            if phone: await cdp.send('Input.dispatchTouchEvent', {'type': 'touchEnd', 'touchPoints': []})
+            else: await p.mouse.up()
+
+        async def drag(frm, to, steps=8, release=True, dy=0):
+            x0, y0 = await p.evaluate(centre + f"('{frm}')")
+            x1, _ = await p.evaluate(centre + f"('{to}')") if to else (x0, 0)
+            await down(x0, y0)
+            for i in range(1, steps + 1):
+                await move(x0 + (x1 - x0) * i / steps, y0 + dy * i / steps)
+                await p.wait_for_timeout(16)
+            mid = await p.evaluate(st_js)
+            under = await p.evaluate("document.querySelector('.mode-tab.under')?.dataset.mode||null")
+            if release:
+                await up()
+                await p.wait_for_timeout(450)
+            return mid, under
+
+        mid, under = await drag('calc', 'currency')
+        check(T + 'mid-drag the pill is held and the tab under it lights', mid[2] and under == 'currency', [mid, under])
+        st = await p.evaluate(st_js)
+        check(T + 'letting go switches to that tab and the pill settles on it', st == ['currency', True, False, False], st)
+        mid, under = await drag('currency', 'units', release=False)
+        x0, _ = await p.evaluate(centre + "('currency')")
+        await move(x0 + 2, (await p.evaluate(centre + "('currency')"))[1])
+        await p.wait_for_timeout(30)
+        await up()
+        await p.wait_for_timeout(450)
+        st = await p.evaluate(st_js)
+        check(T + 'dragged away and back over its own tab, the pill returns and the mode stays', st == ['currency', True, False, False], st)
+        await drag('currency', None, steps=2)  # a press that hardly moves is a tap on the tab on screen
+        st = await p.evaluate(st_js)
+        check(T + 'a press that does not move is a tap (nothing changes)', st == ['currency', True, False, False], st)
+        mid, under = await drag('currency', None, steps=6, dy=60)
+        st = await p.evaluate(st_js)
+        check(T + 'a drag up or down leaves the pill alone', not mid[2] and st == ['currency', True, False, False], [mid, st])
+        await p.tap('.mode-tab[data-mode=vat]') if phone else await p.click('.mode-tab[data-mode=vat]')
+        await p.wait_for_timeout(450)
+        st = await p.evaluate(st_js)
+        check(T + 'a tap on another tab still switches', st == ['vat', True, False, False], st)
+        check(T + 'no page errors', not p.errors, p.errors)
+        await p.context.close()
+
+
 async def tab_bar(browser, url):
     """The tabs sit in one bar and one pill marks the tab on screen: it is on that tab (place and width) after a press,
     a mode that joins the bar, a change of language and a resize, on a phone and a computer in both languages."""
@@ -3843,6 +3908,7 @@ async def main():
         await how_buttons_in_place(browser, url)
         await all_modes(browser, url)
         await tab_bar(browser, url)
+        await pill_drag(browser, url)
         await esc_everywhere(browser, url)
         await history_per_mode(browser, url)
         await history_groups(browser, url)
