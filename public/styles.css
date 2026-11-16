@@ -1123,3 +1123,30 @@ html.tablet #calculatorDisplay.unit-display .unit-rows,html.landscape #calculato
 html.tablet .calculator-card .tool-keypad button{font-size:clamp(20px,calc(var(--k) * .34),28px)}
 html.land-tablet #keypad{align-self:end}/* a tablet sideways: the keys at the bottom, level with the result, when they don't fill the height (Scientific) */
 html.tablet .display-wrap.has-live .result{font-size:min(clamp(46px,11vw,96px),calc((100cqh - 32px - var(--live-h)) / 1.05))}
+/* PROTOTYPE (preview branch only): three looks for f(x) and the chips beside it (html[data-fx], calculator.js fxLook) */
+html[data-fx] .sci-chip.mem-chip{color:var(--accent2)}
+/* a: a two-way switch 123 | f(x) like the bar of tabs; M and Working days like b */
+html[data-fx="a"] .sci-chip,html[data-fx="b"] .sci-chip{border-color:transparent;background:var(--key);color:var(--muted);border-radius:10px}
+html[data-fx="a"] .sci-chip.on,html[data-fx="b"] .sci-chip.on{background:var(--accent);color:var(--on-accent)}
+html[data-fx="a"] .sci-bar .sci-chip[data-bar="sci"]{position:relative;display:inline-flex;align-items:stretch;padding:3px;min-width:0;border:0;border-radius:12px;background:var(--key);color:var(--muted)}
+html[data-fx="a"] .sci-chip[data-bar="sci"]::before{content:'';position:absolute;top:3px;bottom:3px;left:3px;width:calc(50% - 3px);border-radius:9px;background:var(--accent);transition:transform .24s cubic-bezier(.2,.8,.2,1)}
+html[data-fx="a"] .sci-chip[data-bar="sci"].on::before{transform:translateX(100%)}
+html[data-fx="a"] .fx-half{position:relative;display:flex;align-items:center;justify-content:center;width:44px;transition:color .2s}
+html[data-fx="a"] .compact-display .fx-half,html[data-fx="a"] .mobile-tool .fx-half{width:40px}
+html[data-fx="a"] .sci-chip[data-bar="sci"]:not(.on) .fx-half:first-child,html[data-fx="a"] .sci-chip[data-bar="sci"].on .fx-half:last-child{color:var(--on-accent)}
+/* b: like a tab (the key colour, the one in use filled with the accent) */
+@media (hover:hover) and (pointer:fine){
+  html[data-fx="a"] .sci-chip:hover,html[data-fx="b"] .sci-chip:hover{background:var(--key-hover);color:var(--text)}
+  html[data-fx="a"] .sci-chip.on:hover,html[data-fx="b"] .sci-chip.on:hover{background:color-mix(in srgb,var(--accent) 88%,var(--text));color:var(--on-accent)}
+  html[data-fx="a"] .sci-bar .sci-chip[data-bar="sci"]:hover{background:var(--key-hover);color:var(--text)}
+  html[data-fx="c"] .sci-chip:hover{background:var(--key)}
+  html[data-fx="c"] .sci-chip.on:hover{background:color-mix(in srgb,var(--accent) 88%,var(--text));color:var(--on-accent)}
+}
+html[data-fx="a"] .sci-chip.pressed,html[data-fx="b"] .sci-chip.pressed{background:var(--key-hover);color:var(--text)}
+html[data-fx="a"] .sci-chip.on.pressed,html[data-fx="b"] .sci-chip.on.pressed,html[data-fx="c"] .sci-chip.on.pressed{background:var(--accent);color:var(--on-accent)}
+html[data-fx="a"] .sci-bar .sci-chip[data-bar="sci"].pressed{background:var(--key-hover);transform:scale(.96)}
+/* c: like the buttons at the top (⊞, EN, theme), lit like an open menu's button */
+html[data-fx="c"] .sci-chip{border:1px solid var(--border);border-radius:12px;background:var(--card);color:var(--text)}
+html[data-fx="c"] .sci-chip.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+html[data-fx="c"] .sci-chip.pressed{background:var(--key-hover)}
+@media (prefers-reduced-motion:reduce){html[data-fx="a"] .sci-chip[data-bar="sci"]::before{transition:none}}
