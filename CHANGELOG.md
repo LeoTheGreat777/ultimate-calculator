@@ -6,6 +6,12 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.44.3 – 2026-11-16
+
+### Changed
+- The History button is at the top, before the All modes button, so the bar of tabs has the whole row. It lights up while History is open.
+- Switching modes on a phone is smoother: the names of the tabs fold and unfold as the highlight slides, instead of jumping, at the same speed as before.
+
 ## 0.44.2 – 2026-11-16
 
 ### Changed

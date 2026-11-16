@@ -87,6 +87,7 @@ function syncModeTabs(instant){
  const track=$('#modeTabs .mode-tabs-track');if(!track)return;
  // the mode on screen joins the strip while it isn't pinned (and leaves it after)
  if(!track.children.length||[...track.children].map(b=>b.dataset.mode).join()!==stripModes().join()){renderModeTabs();return}
+ const before=instant?null:tabsBefore(track);
  // when the tabs don't all fit, the ones not on screen show only their icon (their name is in aria-label and title)
  const nav=$('#modeTabs');nav.classList.remove('icons');track.querySelectorAll('.mode-tab-label').forEach(l=>l.style.fontSize='');
  if(track.scrollWidth>track.clientWidth+1){
@@ -103,10 +104,37 @@ function syncModeTabs(instant){
  }
  syncTabEdges();
  syncTabPill(active,instant&&!tabsDrawn);
+ tabsSlide(before);
+}
+// When only the tab on screen shows its name (a phone), a press moves that name: the old one folds away and the new one
+// unfolds as the pill slides, at the pill's pace and curve (styles.css), so the tabs glide instead of jumping. tabsBefore
+// notes each tab as it is now (mid-way, if a slide is still running) and stops the slide; tabsSlide, once the tabs are
+// laid out the new way, runs each change from there.
+const TAB_SLIDE={duration:240,easing:'cubic-bezier(.32,.72,0,1)'};
+function tabsBefore(track){
+ if(reducedMotion()||!Element.prototype.animate)return null;
+ const list=[...track.querySelectorAll('.mode-tab')].map(b=>{const l=b.querySelector('.mode-tab-label'),shown=!!l.offsetParent,ls=getComputedStyle(l);
+  return {b,l,w:shown?l.getBoundingClientRect().width/(window.__uiZoom||1):0,ml:shown?ls.marginLeft:null,op:shown?ls.opacity:'0',pad:getComputedStyle(b).paddingLeft}});
+ list.forEach(o=>{o.b.getAnimations().forEach(a=>a.cancel());o.l.getAnimations().forEach(a=>a.cancel());tabLabelPlain(o.l)});
+ return list;
+}
+function tabLabelPlain(l){l.style.overflow=l.style.display=''}
+function tabsSlide(list){
+ if(!list)return;let moved=false;
+ for(const o of list){
+  const {b,l}=o,shown=!!l.offsetParent,bs=getComputedStyle(b),gap=(parseFloat(bs.columnGap)||0)+'px',w=shown?l.getBoundingClientRect().width/(window.__uiZoom||1):0;
+  if(Math.abs(w-o.w)>.5){
+   l.style.overflow='hidden';if(!shown)l.style.display='block';// a name that goes stays until it has folded away
+   const a=l.animate([{maxWidth:o.w+'px',marginLeft:o.ml??'-'+gap,opacity:o.op},{maxWidth:w+'px',marginLeft:shown?'0px':'-'+gap,opacity:shown?1:0}],TAB_SLIDE);
+   a.onfinish=()=>tabLabelPlain(l);moved=true;
+  }
+  if(o.pad!==bs.paddingLeft)moved=!!b.animate([{paddingLeft:o.pad,paddingRight:o.pad},{paddingLeft:bs.paddingLeft,paddingRight:bs.paddingRight}],TAB_SLIDE);
+ }
+ if(moved)tabsSlideEnd=performance.now()+TAB_SLIDE.duration+50;
 }
 // One pill marks the tab on screen and slides to it (.mode-tabs-track::before, placed by --pill-x and --pill-w). It slides
 // too when the tabs were drawn again (another language, a mode that joins the bar); a resize moves it at once.
-let tabsDrawn=false,tabPill=null,tabPillWatch=null,tabPillTab=null;
+let tabsDrawn=false,tabPill=null,tabPillWatch=null,tabPillTab=null,tabsSlideEnd=0;// tabsSlideEnd: while tabsSlide runs, the pill is already on its way to where its tab ends up
 function syncTabPill(active,instant){
  const track=$('#modeTabs .mode-tabs-track');if(!track||!active)return;
  const now=instant||tabPill===null||reducedMotion();
@@ -116,7 +144,7 @@ function syncTabPill(active,instant){
  tabPill=active.offsetLeft+'|'+active.offsetWidth;
  // a tab that changes size later (the font arrives, its name gets smaller) takes the pill along
  if(window.ResizeObserver&&tabPillTab!==active){tabPillWatch?.disconnect();tabPillTab=active;
-  tabPillWatch=new ResizeObserver(()=>{const a=$('#modeTabs .mode-tab.active');if(a&&a.offsetLeft+'|'+a.offsetWidth!==tabPill)syncTabPill(a,true)});tabPillWatch.observe(active)}
+  tabPillWatch=new ResizeObserver(()=>{if(performance.now()<tabsSlideEnd)return;const a=$('#modeTabs .mode-tab.active');if(a&&a.offsetLeft+'|'+a.offsetWidth!==tabPill)syncTabPill(a,true)});tabPillWatch.observe(active)}
 }
 // soft edges show that there are more tabs to scroll to
 function syncTabEdges(){
@@ -319,7 +347,7 @@ function nameKeys(pad=$('#keypad')){
 // touch screens too (:active alone isn't reliable on iPhone); their menus' buttons stay lit while open (styles.css)
 // the buttons at the top and the chips on the display (f(x), M): .pressed while held, like the keys
 function setupTopPress(){
- const SEL='.top-actions button,.sci-bar button,.history-head';let on=null,since=0;
+ const SEL='.top-actions button,.sci-bar button';let on=null,since=0;
  const up=()=>{if(!on)return;const b=on;on=null;setTimeout(()=>b.classList.remove('pressed'),Math.max(0,110-(performance.now()-since)))};
  document.addEventListener('pointerdown',e=>{const b=e.target.closest?.(SEL);if(!b)return;up();on=b;since=performance.now();b.classList.add('pressed')});
  ['pointerup','pointercancel'].forEach(t=>document.addEventListener(t,up));

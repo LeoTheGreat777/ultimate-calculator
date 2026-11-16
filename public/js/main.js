@@ -1,15 +1,4 @@
 // Start-up: keypad and button wiring, the desktop keyboard, then the first render. Loaded last.
-// PROTOTYPE (preview branch only): where the History button goes, so the bar of tabs gets the whole row. ?hist=a|b|c|now
-// picks one (kept in uc-try-hist); on the preview site (/preview/) it starts at 'a'. Anywhere else it is 'now'.
-// a: in the header, before ⊞ (like the buttons there)   b: inside the bar, its first part, an icon before a thin line
-// c: in the header, at its left, before the title
-const HIST_LOOKS=['now','a','b','c'];
-const histLook=(()=>{let v='now';try{const q=new URLSearchParams(location.search).get('hist');if(q){v=q;store.set('uc-try-hist',q)}else if(location.pathname.startsWith('/preview/'))v=store.get('uc-try-hist')||'a'}catch{}return HIST_LOOKS.includes(v)?v:'now'})();
-if(histLook!=='now'){
- document.documentElement.dataset.hist=histLook;const h=$('#historyButton');
- if(histLook==='b')$('#modeTabs').prepend(h);
- else{h.classList.remove('toolbar-button','history-top');h.classList.add('icon-button','history-head');if(histLook==='a')$('#modesButton').before(h);else $('.topbar').prepend(h)}
-}
 $('#keypad').addEventListener('click',e=>{
  const b=e.target.closest('button');if(!b)return;
  // The keypad shows "," as the decimal key; every mode handles it as ".".

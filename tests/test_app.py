@@ -1847,6 +1847,18 @@ async def tab_bar(browser, url):
           return [n.backgroundColor===c('--key'),pill.backgroundColor===c('--accent'),a.color===c('--on-accent'),a.backgroundColor==='rgba(0, 0, 0, 0)'&&o.backgroundColor==='rgba(0, 0, 0, 0)',o.borderTopWidth,
             t.scrollWidth<=t.clientWidth+1&&Math.abs(t.lastElementChild.getBoundingClientRect().right-t.getBoundingClientRect().right)<=1.5]})()""")
         check(T + 'one bar in the key colour, the pill in the accent, the tabs themselves plain, and they fill the bar', look == [True, True, True, True, '0px', True], look)
+        row = await p.evaluate("""(()=>{const b=document.querySelector('.calculator-toolbar').getBoundingClientRect(),n=modeTabs.getBoundingClientRect(),h=historyButton;
+          return [h.parentElement.classList.contains('top-actions')&&h.nextElementSibling===modesButton,Math.abs(n.left-b.left)<=1&&Math.abs(n.right-b.right)<=1]})()""")
+        check(T + 'History is in the header before the All modes button, and the bar has the whole row', row == [True, True], row)
+        if phone and lang == 'en':
+            # only the tab on screen shows its name: mid-way the old name folds away and the new one unfolds (no jump)
+            mid = await p.evaluate("""new Promise(r=>{const t=document.querySelector('.mode-tabs-track'),lab=m=>t.querySelector('.mode-tab[data-mode='+m+'] .mode-tab-label'),
+              part=l=>!!l.offsetParent&&l.getBoundingClientRect().width>2&&l.getBoundingClientRect().width<l.scrollWidth-1;
+              t.querySelector('.mode-tab[data-mode=units]').click();setTimeout(()=>r([modeTabs.classList.contains('icons'),part(lab('calc')),part(lab('units'))]),90)})""")
+            check(T + 'switching tabs: the names fold and unfold while the pill slides', mid == [True, True, True], mid)
+            await p.wait_for_timeout(400)
+            end = await p.evaluate("(()=>{const l=document.querySelector('.mode-tab[data-mode=calc] .mode-tab-label');return [l.offsetParent===null,l.style.display,l.style.overflow]})()")
+            check(T + 'after the slide the old name is hidden and nothing is left behind', end == [True, '', ''], end)
         await press('.mode-tab[data-mode=units]')
         await p.wait_for_timeout(450)
         st = await p.evaluate(probe)
@@ -2267,7 +2279,7 @@ async def sideways_and_chips(browser, url):
         await p.tap(f'#keypad [data-value="{k}"]')
     await p.tap('#keypad [data-action="equals"]')
     await p.wait_for_timeout(200)
-    st = await p.evaluate("""(()=>{const r=s=>document.querySelector(s).getBoundingClientRect(),f=r('[data-bar=sci]'),h=r('#historyButton'),q=[...document.querySelectorAll('.how-button')].find(b=>b.offsetParent).getBoundingClientRect();
+    st = await p.evaluate("""(()=>{const r=s=>document.querySelector(s).getBoundingClientRect(),f=r('[data-bar=sci]'),h=r('#modeTabs'),q=[...document.querySelectorAll('.how-button')].find(b=>b.offsetParent).getBoundingClientRect();
       return {fxLeft:Math.round(f.left),histLeft:Math.round(h.left),fxH:Math.round(f.height),howH:Math.round(q.height),on:document.querySelector('[data-bar=sci]').classList.contains('on')}})()""")
     # the Working days chip belongs to Dates only: leaving Dates hides it in every other tab
     left = []
@@ -2285,7 +2297,7 @@ async def sideways_and_chips(browser, url):
             shown.append(m)
     check('[f(x)] shows only in the Calculator', not shown, shown)
     await p.evaluate("switchMode('calc')")
-    check('[f(x)] lines up with the History button and is as tall as ?', abs(st['fxLeft'] - st['histLeft']) <= 1 and st['fxH'] == st['howH'] and st['on'], st)
+    check('[f(x)] lines up with the bar of tabs and is as tall as ?', abs(st['fxLeft'] - st['histLeft']) <= 1 and st['fxH'] == st['howH'] and st['on'], st)
     # f(x) looks like a tab of the bar: the key colour and no border while off, the accent (like the tab on screen) while on
     look = await p.evaluate("""(()=>{const f=document.querySelector('[data-bar=sci]'),bg=e=>getComputedStyle(e).backgroundColor,v=n=>{const d=document.createElement('div');d.style.background='var('+n+')';document.body.appendChild(d);const c=bg(d);d.remove();return c};
       const on={bg:bg(f),border:getComputedStyle(f).borderTopWidth};toggleSci();const g=document.querySelector('[data-bar=sci]'),off={bg:bg(g),border:getComputedStyle(g).borderTopWidth};toggleSci();
