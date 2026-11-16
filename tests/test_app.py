@@ -2286,6 +2286,11 @@ async def sideways_and_chips(browser, url):
     check('[f(x)] shows only in the Calculator', not shown, shown)
     await p.evaluate("switchMode('calc')")
     check('[f(x)] lines up with the History button and is as tall as ?', abs(st['fxLeft'] - st['histLeft']) <= 1 and st['fxH'] == st['howH'] and st['on'], st)
+    # f(x) looks like a tab of the bar: the key colour and no border while off, the accent (like the tab on screen) while on
+    look = await p.evaluate("""(()=>{const f=document.querySelector('[data-bar=sci]'),bg=e=>getComputedStyle(e).backgroundColor,v=n=>{const d=document.createElement('div');d.style.background='var('+n+')';document.body.appendChild(d);const c=bg(d);d.remove();return c};
+      const on={bg:bg(f),border:getComputedStyle(f).borderTopWidth};toggleSci();const g=document.querySelector('[data-bar=sci]'),off={bg:bg(g),border:getComputedStyle(g).borderTopWidth};toggleSci();
+      return {on,off,accent:v('--accent'),key:v('--key')}})()""")
+    check('[f(x)] like a tab: key colour, no border; accent while on', look['off']['bg'] == look['key'] and look['on']['bg'] == look['accent'] and look['on']['border'] == look['off']['border'] == '0px', look)
     check('[sideways/chips] no JavaScript errors (f(x))', not p.errors, p.errors)
     await p.context.close()
     # the tab bar: measured for a wide strip, then the strip narrows with no resize event (iOS reports a turned phone late)

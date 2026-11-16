@@ -68,7 +68,7 @@ Part of the notes in CLAUDE.md (read that first). Covers numbers.js, calculator.
   leaves the calculation to fix. Refused (`refuseKey`) when what is shown is not `formatExpressionDisplay(lastExpression)`
   (a result loaded from History that went on from an older one keeps its long carried digits).
 - **Scientific:** a view of the Calculator, not a mode: the f(x) switch on the display (`sciMode`, `uc-sci`; the only chip
-  there, the angle unit is the keypad's Deg/Rad key; at the display's top-left in line with History, styled like ?, and
+  there, the angle unit is the keypad's Deg/Rad key; at the display's top-left in line with History, as tall as ?; it looks like a tab of the bar above: the key colour, no border, filled with the accent while on (`.sci-chip`, also the M chip and Dates' Working days chip), and
   Dates' Working days chip sits in the same place) adds the
   five memory keys and 24 more in six columns above the basic ones (`sciKeysHtml`, `.keypad.sci`, the memory keys in `.mem-row`; labels size with
   the pad's width, `cqw`, and labels over 4 characters get `.long`, so sinh⁻¹ fits a 320px phone). Sideways they stand beside the basic keys

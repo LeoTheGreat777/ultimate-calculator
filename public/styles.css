@@ -781,18 +781,19 @@ html.landscape .theme-group{padding-top:3px;padding-bottom:1px}
 .te-sw:hover{transform:scale(1.08)}
 .te-sw{transition:transform .12s ease}
 /* ---------- Scientific (calculator.js): the f(x) switch and DEG/RAD on the display, 15 keys above the basic ones ---------- */
-/* f(x): a quiet button at the display's top-left, in line with the history button above it and styled like ? (top-right) */
+/* f(x): a button at the display's top-left, in line with the history button above it, as tall as ? (top-right); it looks
+   like a tab of the bar above (the key colour, no border) and is filled with the accent while on, like the tab on screen */
 .sci-bar{position:absolute;top:6px;left:0;z-index:3;display:flex;gap:6px}
 .calculator-card.tool-mode .sci-bar,.calculator-card.graph-mode .sci-bar{display:none}
 .date-bar{position:absolute;top:6px;left:0;z-index:3;display:flex}/* in the same place as f(x) */
 .date-bar.hidden{display:none}
 .display-wrap.has-date-bar .expression{padding-left:124px}
-.sci-chip{height:34px;min-width:48px;padding:0 12px;border:1px solid var(--border);border-radius:999px;background:var(--card2);color:var(--muted);font:inherit;font-size:13px;font-weight:750;letter-spacing:.03em;cursor:pointer;transition:color .15s,background-color .15s,border-color .15s,transform .12s}
-.sci-chip.on{background:color-mix(in srgb,var(--accent) 14%,var(--card2));border-color:color-mix(in srgb,var(--accent) 55%,transparent);color:var(--accent2)}
+.sci-chip{height:34px;min-width:48px;padding:0 12px;border:0;border-radius:10px;background:var(--key);color:var(--muted);font:inherit;font-size:13px;font-weight:750;letter-spacing:.03em;cursor:pointer;transition:color .15s,background-color .15s,border-color .15s,transform .12s}
+.sci-chip.on{background:var(--accent);color:var(--on-accent)}
 /* hover and pressed like the keys (ui.js setupTopPress); lit (.on) stays lit, a little brighter */
-@media (hover:hover) and (pointer:fine){.sci-chip:hover{background:var(--key-hover);color:var(--text)}.sci-chip.on:hover{background:color-mix(in srgb,var(--accent) 24%,var(--card2));color:var(--accent2)}}
+@media (hover:hover) and (pointer:fine){.sci-chip:hover{background:var(--key-hover);color:var(--text)}.sci-chip.on:hover{background:color-mix(in srgb,var(--accent) 88%,var(--text));color:var(--on-accent)}}
 .sci-chip.pressed{background:var(--key-hover);color:var(--text);transform:scale(.93)}
-.sci-chip.on.pressed{background:color-mix(in srgb,var(--accent) 30%,var(--card2));color:var(--accent2)}
+.sci-chip.on.pressed{background:var(--accent);color:var(--on-accent)}
 @media (prefers-reduced-motion:reduce){.sci-chip.pressed{transform:none}}
 .sci-chip:focus{outline:none}
 .sci-chip:focus-visible{outline:2px solid var(--accent2);outline-offset:1px}
@@ -1123,30 +1124,3 @@ html.tablet #calculatorDisplay.unit-display .unit-rows,html.landscape #calculato
 html.tablet .calculator-card .tool-keypad button{font-size:clamp(20px,calc(var(--k) * .34),28px)}
 html.land-tablet #keypad{align-self:end}/* a tablet sideways: the keys at the bottom, level with the result, when they don't fill the height (Scientific) */
 html.tablet .display-wrap.has-live .result{font-size:min(clamp(46px,11vw,96px),calc((100cqh - 32px - var(--live-h)) / 1.05))}
-/* PROTOTYPE (preview branch only): three looks for f(x) and the chips beside it (html[data-fx], calculator.js fxLook) */
-html[data-fx] .sci-chip.mem-chip{color:var(--accent2)}
-/* a: a two-way switch 123 | f(x) like the bar of tabs; M and Working days like b */
-html[data-fx="a"] .sci-chip,html[data-fx="b"] .sci-chip{border-color:transparent;background:var(--key);color:var(--muted);border-radius:10px}
-html[data-fx="a"] .sci-chip.on,html[data-fx="b"] .sci-chip.on{background:var(--accent);color:var(--on-accent)}
-html[data-fx="a"] .sci-bar .sci-chip[data-bar="sci"]{position:relative;display:inline-flex;align-items:stretch;padding:3px;min-width:0;border:0;border-radius:12px;background:var(--key);color:var(--muted)}
-html[data-fx="a"] .sci-chip[data-bar="sci"]::before{content:'';position:absolute;top:3px;bottom:3px;left:3px;width:calc(50% - 3px);border-radius:9px;background:var(--accent);transition:transform .24s cubic-bezier(.2,.8,.2,1)}
-html[data-fx="a"] .sci-chip[data-bar="sci"].on::before{transform:translateX(100%)}
-html[data-fx="a"] .fx-half{position:relative;display:flex;align-items:center;justify-content:center;width:44px;transition:color .2s}
-html[data-fx="a"] .compact-display .fx-half,html[data-fx="a"] .mobile-tool .fx-half{width:40px}
-html[data-fx="a"] .sci-chip[data-bar="sci"]:not(.on) .fx-half:first-child,html[data-fx="a"] .sci-chip[data-bar="sci"].on .fx-half:last-child{color:var(--on-accent)}
-/* b: like a tab (the key colour, the one in use filled with the accent) */
-@media (hover:hover) and (pointer:fine){
-  html[data-fx="a"] .sci-chip:hover,html[data-fx="b"] .sci-chip:hover{background:var(--key-hover);color:var(--text)}
-  html[data-fx="a"] .sci-chip.on:hover,html[data-fx="b"] .sci-chip.on:hover{background:color-mix(in srgb,var(--accent) 88%,var(--text));color:var(--on-accent)}
-  html[data-fx="a"] .sci-bar .sci-chip[data-bar="sci"]:hover{background:var(--key-hover);color:var(--text)}
-  html[data-fx="c"] .sci-chip:hover{background:var(--key)}
-  html[data-fx="c"] .sci-chip.on:hover{background:color-mix(in srgb,var(--accent) 88%,var(--text));color:var(--on-accent)}
-}
-html[data-fx="a"] .sci-chip.pressed,html[data-fx="b"] .sci-chip.pressed{background:var(--key-hover);color:var(--text)}
-html[data-fx="a"] .sci-chip.on.pressed,html[data-fx="b"] .sci-chip.on.pressed,html[data-fx="c"] .sci-chip.on.pressed{background:var(--accent);color:var(--on-accent)}
-html[data-fx="a"] .sci-bar .sci-chip[data-bar="sci"].pressed{background:var(--key-hover);transform:scale(.96)}
-/* c: like the buttons at the top (⊞, EN, theme), lit like an open menu's button */
-html[data-fx="c"] .sci-chip{border:1px solid var(--border);border-radius:12px;background:var(--card);color:var(--text)}
-html[data-fx="c"] .sci-chip.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
-html[data-fx="c"] .sci-chip.pressed{background:var(--key-hover)}
-@media (prefers-reduced-motion:reduce){html[data-fx="a"] .sci-chip[data-bar="sci"]::before{transition:none}}
