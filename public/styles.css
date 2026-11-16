@@ -1124,3 +1124,18 @@ html.tablet #calculatorDisplay.unit-display .unit-rows,html.landscape #calculato
 html.tablet .calculator-card .tool-keypad button{font-size:clamp(20px,calc(var(--k) * .34),28px)}
 html.land-tablet #keypad{align-self:end}/* a tablet sideways: the keys at the bottom, level with the result, when they don't fill the height (Scientific) */
 html.tablet .display-wrap.has-live .result{font-size:min(clamp(46px,11vw,96px),calc((100cqh - 32px - var(--live-h)) / 1.05))}
+/* PROTOTYPE (preview branch only): where History goes (html[data-hist], main.js histLook) */
+html[data-hist] .calculator-toolbar .mode-tabs{flex:1 1 auto}
+html[data-hist="a"] .history-head,html[data-hist="c"] .history-head{display:flex;align-items:center;justify-content:center;padding:0;flex:0 0 auto}
+html[data-hist="c"] .topbar{justify-content:flex-start}
+html[data-hist="c"] .topbar .brand{flex:1 1 auto;min-width:0}
+html[data-hist="b"] .mode-tabs{display:flex;align-items:center}
+html[data-hist="b"] .mode-tabs .history-top{position:relative;flex:0 0 40px;width:40px;height:100%;margin-right:5px;border:0;border-radius:10px;background:transparent;color:var(--muted)}
+html[data-hist="b"] .mode-tabs .history-top::after{content:'';position:absolute;right:-3px;top:8px;bottom:8px;width:1px;background:var(--border)}
+html[data-hist="b"] .mode-tabs-track{flex:1 1 auto;min-width:0}
+html[data-hist="b"] .tabs-prev{left:45px}
+@media(max-width:400px){html[data-hist="c"] .topbar .history-head{width:38px;height:38px}}
+html.landscape[data-hist="c"] .topbar .history-head{width:34px;height:34px}
+html[data-hist="c"] .topbar .history-head{transition:background-color .15s,transform .12s}
+@media (hover:hover){html[data-hist="c"] .topbar .history-head:hover{background:var(--key)}}
+html[data-hist="c"] .topbar .history-head.pressed{background:var(--key-hover);transform:scale(.93)}

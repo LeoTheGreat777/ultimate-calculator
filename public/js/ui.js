@@ -319,7 +319,7 @@ function nameKeys(pad=$('#keypad')){
 // touch screens too (:active alone isn't reliable on iPhone); their menus' buttons stay lit while open (styles.css)
 // the buttons at the top and the chips on the display (f(x), M): .pressed while held, like the keys
 function setupTopPress(){
- const SEL='.top-actions button,.sci-bar button';let on=null,since=0;
+ const SEL='.top-actions button,.sci-bar button,.history-head';let on=null,since=0;
  const up=()=>{if(!on)return;const b=on;on=null;setTimeout(()=>b.classList.remove('pressed'),Math.max(0,110-(performance.now()-since)))};
  document.addEventListener('pointerdown',e=>{const b=e.target.closest?.(SEL);if(!b)return;up();on=b;since=performance.now();b.classList.add('pressed')});
  ['pointerup','pointercancel'].forEach(t=>document.addEventListener(t,up));
