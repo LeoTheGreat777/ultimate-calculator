@@ -93,6 +93,7 @@ jobs:
     permissions:
       pages: write
       id-token: write
+      actions: read
     # Records each deploy under Deployments on the repo page (the green tick / red X there).
     environment:
       name: github-pages
@@ -146,6 +147,19 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: site
+
+      # GitHub can take a moment to list a fresh upload, and deploying before then fails with
+      # "No artifacts named github-pages were found"; wait (up to a minute) until it is listed.
+      - name: Wait for the upload to be listed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for i in $(seq 1 30); do
+            n=$(gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" --jq '[.artifacts[] | select(.name == "github-pages")] | length' 2>/dev/null || echo 0)
+            if [ "${n:-0}" -ge 1 ]; then echo "listed after $((i * 2 - 2)) s"; exit 0; fi
+            sleep 2
+          done
+          echo "not listed after a minute; deploying anyway"
 
       - name: Deploy to GitHub Pages
         id: deployment
