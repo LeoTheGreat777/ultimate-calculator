@@ -104,16 +104,20 @@ Part of the notes in CLAUDE.md (read that first). Covers layout.js, side.js, mod
   stand out of it while it moves, so the whole word fades and grows in, or shrinks and fades out early, never uncovered
   letter by letter), with the pill's duration and
   curve (240 ms, `cubic-bezier(.32,.72,0,1)`, also the tab colours), so the tabs glide instead of jumping. **Dragging the pill** (`setupPillDrag`, ui.js): a press on the
-  tab on screen holds the pill (`.pill-drag` on the bar, `.pill-now` on the track): it follows the pointer one to one from
-  the first pixel, its width between the two tabs it is over, a third as far past the first or last tab (a rubber band),
-  kept in view; the tab nearer its middle lights (`.under`; the tab on screen goes plain while another is lit). Letting
-  go, it settles on that tab with a small spring (`.pill-snap`, 240 ms, `cubic-bezier(.3,1.35,.55,1)`): back on the tab
-  on screen, or on the other one, which opens (`switchMode`). Under 6px it is a tap; more up or down than sideways springs
-  back. The press ends on pointerup, pointercancel (springs back), the track's own lostpointercapture (not the tab's: a
-  finger's press starts captured by its tab) or a window touchend/touchcancel, so the pill is never left between tabs;
-  the click that ends a drag is swallowed. That tab has `touch-action:none` and its touchmoves are cancelled while held;
-  the strip's own touch pull and mouse grab (`setupTabsBar`) skip it, so a swipe that starts on any other tab still
-  scrolls the strip. Alt+1…9 on a keyboard (Energy, Subnet, Programmer, Numbers, Equations and Statistics, the last six, have none). When they don't all fit, a slim bar under them
+  tab on screen holds the pill (`pillHeld`, `.pill-drag` on the bar, `.pill-now` on the track): it follows the pointer one
+  to one from the first pixel, redrawn every frame while held (the tabs move as names fold), its width between the two
+  tabs it is over, a third as far past the first or last tab (a rubber band), kept in view. Once past 6px sideways, as
+  soon as its middle is nearer another tab that mode opens (`switchMode`): the old name folds to its icon and the new one
+  unfolds while the finger moves on. While held, `syncTabPill` leaves the pill alone and `syncModeTabs` keeps the strip's
+  tabs (an unpinned mode left on the way stays until it lets go). Letting go, it springs onto the tab on screen
+  (`.pill-snap`, 240 ms, `cubic-bezier(.3,1.35,.55,1)`). Under 6px it is a tap; more up or down than sideways springs back
+  and changes nothing. The press ends on pointerup, pointercancel, the track's own lostpointercapture (not the tab's: a
+  finger's press starts captured by its tab) or a window touchend/touchcancel; the click that ends a drag is swallowed.
+  That tab has `touch-action:none` and touchmoves are cancelled while held; the strip's own touch pull and mouse grab
+  (`setupTabsBar`) skip it, so a swipe that starts on any other tab still scrolls the strip. **The pill on its tab:** an
+  instant `syncModeTabs` (a resize; iOS sends them while its bars move) first finishes any running name slide so it
+  measures where the tabs end up, and after every slide `pillOnTab` checks the pill against the tab on screen (a tab that
+  only moves isn't seen by the ResizeObserver). Alt+1…9 on a keyboard (Energy, Subnet, Programmer, Numbers, Equations and Statistics, the last six, have none). When they don't all fit, a slim bar under them
   (`.tabs-scrollbar`, `syncTabEdges`, `flashTabsBar`) shows while they move and briefly on start; it can be dragged
   or pressed (`setupTabsBar`), spans the whole strip; with a mouse it shows while the mouse is over the tabs or its strip and
   fades out shortly after (the tabs can be mouse-dragged too). Phones keep their overscroll bounce; past an end (negative/over-max `scrollLeft`, or `tabsPull` measured from

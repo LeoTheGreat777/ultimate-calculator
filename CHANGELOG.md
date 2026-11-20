@@ -6,6 +6,14 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.45.3 – 2026-11-20
+
+### Changed
+- Dragging in the mode bar opens each mode as the highlight reaches it: the old name folds to its icon and the new one unfolds while your finger is still moving. Let go and the highlight springs onto the mode.
+
+### Fixed
+- After switching modes, the highlight sometimes covered only part of the mode's tab.
+
 ## 0.45.2 – 2026-11-16
 
 ### Changed

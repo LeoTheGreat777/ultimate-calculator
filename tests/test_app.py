@@ -1828,18 +1828,29 @@ async def all_modes(browser, url):
 
 async def pill_drag(browser, url):
     """Dragging from the tab on screen, with a mouse (computer) or a finger (phone): the pill follows the pointer one to one,
-    even a few pixels; let go nearer the tab it started on and it goes back, nearer the next one and that mode opens; it
-    always ends on a whole tab with its name shown. A small move is still a tap, a drag up or down springs back, and other
+    even a few pixels; once it is nearer the next tab that mode opens while still held (names fold and unfold); let go and
+    it springs onto the tab on screen, whole, with its name shown. A small move is still a tap, a drag up or down springs back, and other
     tabs still work with a tap."""
     L = '[pill drag] '
     st_js = """(()=>{const t=document.querySelector('#modeTabs .mode-tabs-track'),a=t.querySelector('.mode-tab.active'),cs=getComputedStyle(t,'::before'),x=new DOMMatrixReadOnly(cs.transform).m41,l=a.querySelector('.mode-tab-label');
       return [mode==='units'&&unitView==='currency'?'currency':mode,Math.abs(x-a.offsetLeft)<=1&&Math.abs(parseFloat(cs.width)-a.offsetWidth)<=1,!!l.offsetParent&&l.scrollWidth<=l.clientWidth+1,modeTabs.classList.contains('pill-drag')]})()"""
     pill = "(()=>{const t=document.querySelector('#modeTabs .mode-tabs-track'),cs=getComputedStyle(t,'::before');return new DOMMatrixReadOnly(cs.transform).m41+parseFloat(cs.width)/2})()"
     centre = "(m=>{const r=document.querySelector('.mode-tab[data-mode='+m+']').getBoundingClientRect();return [r.left+r.width/2,r.top+r.height/2]})"
+    cur = "(mode==='units'&&unitView==='currency'?'currency':mode)"
     for phone, lang in [(False, 'en'), (True, 'en'), (True, 'el')]:
         T = L + f"{'phone' if phone else 'computer'} {lang}: "
         p = await new_page(browser, url, lang, 'dark' if lang == 'en' else 'light', phone=phone)
         cdp = await p.context.new_cdp_session(p) if phone else None
+        # a resize (iOS sends them while its bars move) in the middle of a slide still leaves the pill on its tab
+        wrong = []
+        for delay in [40, 100, 180]:
+            await p.evaluate(f"(()=>{{const m=mode==='calc'?'vat':'calc';switchMode(m);setTimeout(()=>syncModeTabs(true),{delay})}})()")
+            await p.wait_for_timeout(600)
+            st = await p.evaluate(st_js)
+            if not st[1]: wrong.append([delay, st])
+        check(T + 'a resize in the middle of a switch: the pill still covers its whole tab', not wrong, wrong)
+        await p.evaluate("switchMode('calc')")
+        await p.wait_for_timeout(450)
 
         async def down(x, y):
             if phone: await cdp.send('Input.dispatchTouchEvent', {'type': 'touchStart', 'touchPoints': [{'x': x, 'y': y}]})
@@ -1873,8 +1884,10 @@ async def pill_drag(browser, url):
         for k in range(1, 6):
             await move(x0 + (x1 - x0) * .7 * k / 5, y)
             await p.wait_for_timeout(16)
-        under = await p.evaluate("document.querySelector('.mode-tab.under')?.dataset.mode||null")
-        check(T + 'past half way the next tab lights', under == tabs[1], under)
+        await p.wait_for_timeout(350)
+        held = await p.evaluate(f"""(()=>{{const l=m=>document.querySelector('.mode-tab[data-mode='+m+'] .mode-tab-label');
+          return [{cur}, modeTabs.classList.contains('pill-drag'), !!l('{tabs[1]}').offsetParent, !modeTabs.classList.contains('icons')||!l('{tabs[0]}').offsetParent]}})()""")
+        check(T + 'past half way the next mode opens while still held: its name unfolds, the old one folds to its icon', held == [tabs[1], True, True, True], held)
         await up()
         await p.wait_for_timeout(450)
         st = await p.evaluate(st_js)

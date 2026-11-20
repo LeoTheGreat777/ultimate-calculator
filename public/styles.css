@@ -628,9 +628,6 @@ html.theme-fade *,html.theme-fade *::before,html.theme-fade *::after{transition:
 .mode-tab.active .mode-tab-icon{color:var(--on-accent)}
 .mode-tab.active{touch-action:none;cursor:grab}/* the pill can be dragged from it (setupPillDrag, ui.js) */
 .mode-tabs.pill-drag .mode-tabs-track,.mode-tabs.pill-drag .mode-tab{cursor:grabbing}
-.mode-tabs.pill-drag .mode-tab.active{color:var(--muted)}
-.mode-tabs.pill-drag .mode-tab.active .mode-tab-icon{color:var(--accent2)}
-.mode-tabs.pill-drag .mode-tab.under,.mode-tabs.pill-drag .mode-tab.under .mode-tab-icon{color:var(--on-accent)}
 /* let go of a dragged pill: it settles on its tab with a small spring, in the same time as a tap's slide */
 .mode-tabs-track.pill-snap::before{transition:transform .24s cubic-bezier(.3,1.35,.55,1),width .24s cubic-bezier(.3,1.35,.55,1)}
 @media (prefers-reduced-motion:reduce){
