@@ -1774,7 +1774,7 @@ async def all_modes(browser, url):
     for size in [(390, 844), (814, 409), (344, 770)]:
         p = await new_page(browser, url, 'el', 'light', phone=True, size=size)
         P = L + f'phone {size[0]}: '
-        got = await p.evaluate("(()=>{const t=document.querySelector('#modeTabs .mode-tabs-track');return [t.scrollWidth<=t.clientWidth+1,[...t.children].filter(b=>b.querySelector('.mode-tab-label').offsetParent).map(b=>b.dataset.mode)]})()")
+        got = await p.evaluate("(()=>{const t=document.querySelector('#modeTabs .mode-tabs-track');return [t.scrollWidth<=t.clientWidth+1,[...t.querySelectorAll('.mode-tab')].filter(b=>b.querySelector('.mode-tab-label').offsetParent).map(b=>b.dataset.mode)]})()")
         check(P + 'the 4 pinned tabs fit, only the current one with its name', got == [True, ['calc']], got)
         await p.tap('#modesButton')
         await p.wait_for_timeout(450)
@@ -1832,9 +1832,9 @@ async def pill_drag(browser, url):
     it springs onto the tab on screen, whole, with its name shown. A small move is still a tap, a drag up or down springs back, and other
     tabs still work with a tap."""
     L = '[pill drag] '
-    st_js = """(()=>{const t=document.querySelector('#modeTabs .mode-tabs-track'),a=t.querySelector('.mode-tab.active'),cs=getComputedStyle(t,'::before'),x=new DOMMatrixReadOnly(cs.transform).m41,l=a.querySelector('.mode-tab-label');
+    st_js = """(()=>{const t=document.querySelector('#modeTabs .mode-tabs-track'),a=t.querySelector('.mode-tab.active'),cs=getComputedStyle(t.querySelector('.tabs-pill')),x=new DOMMatrixReadOnly(cs.transform).m41,l=a.querySelector('.mode-tab-label');
       return [mode==='units'&&unitView==='currency'?'currency':mode,Math.abs(x-a.offsetLeft)<=1&&Math.abs(parseFloat(cs.width)-a.offsetWidth)<=1,!!l.offsetParent&&l.scrollWidth<=l.clientWidth+1,modeTabs.classList.contains('pill-drag')]})()"""
-    pill = "(()=>{const t=document.querySelector('#modeTabs .mode-tabs-track'),cs=getComputedStyle(t,'::before');return new DOMMatrixReadOnly(cs.transform).m41+parseFloat(cs.width)/2})()"
+    pill = "(()=>{const t=document.querySelector('#modeTabs .mode-tabs-track'),cs=getComputedStyle(t.querySelector('.tabs-pill'));return new DOMMatrixReadOnly(cs.transform).m41+parseFloat(cs.width)/2})()"
     centre = "(m=>{const r=document.querySelector('.mode-tab[data-mode='+m+']').getBoundingClientRect();return [r.left+r.width/2,r.top+r.height/2]})"
     cur = "(mode==='units'&&unitView==='currency'?'currency':mode)"
     for phone, lang in [(False, 'en'), (True, 'en'), (True, 'el')]:
@@ -1849,6 +1849,20 @@ async def pill_drag(browser, url):
             st = await p.evaluate(st_js)
             if not st[1]: wrong.append([delay, st])
         check(T + 'a resize in the middle of a switch: the pill still covers its whole tab', not wrong, wrong)
+        # a slow phone draws the slide's first frame late (the page busy right after the press), or the pill is left
+        # somewhere else while the names slide: once the bar stops moving it is on its whole tab
+        wrong = []
+        for busy in [150, 400]:
+            await p.evaluate(f"(()=>{{const m=mode==='calc'?'vat':'calc';switchMode(m);const t=performance.now();while(performance.now()-t<{busy});}})()")
+            await p.wait_for_timeout(700)
+            st = await p.evaluate(st_js)
+            if not st[1]: wrong.append(['busy', busy, st])
+        for at in [30, 120]:
+            await p.evaluate(f"(()=>{{const m=mode==='calc'?'vat':'calc';switchMode(m);setTimeout(()=>{{const e=document.querySelector('#modeTabs .tabs-pill');e.style.transform='translateX(0px)';e.style.width='30px'}},{at})}})()")
+            await p.wait_for_timeout(900)
+            st = await p.evaluate(st_js)
+            if not st[1]: wrong.append(['moved', at, st])
+        check(T + 'a late first frame or a pill left elsewhere: it still ends on its whole tab', not wrong, wrong)
         await p.evaluate("switchMode('calc')")
         await p.wait_for_timeout(450)
 
@@ -1931,7 +1945,7 @@ async def tab_bar(browser, url):
         p = await new_page(browser, url, lang, 'dark' if lang == 'en' else 'light', phone=phone, size=size)
         press = p.tap if phone else p.click
         probe = """(()=>{const z=window.__uiZoom||1,nav=document.querySelector('#modeTabs').getBoundingClientRect(),t=document.querySelector('#modeTabs .mode-tabs-track'),
-          a=t.querySelector('.mode-tab.active'),r=a.getBoundingClientRect(),cs=getComputedStyle(t,'::before'),x=new DOMMatrixReadOnly(cs.transform).m41;
+          a=t.querySelector('.mode-tab.active'),r=a.getBoundingClientRect(),cs=getComputedStyle(t.querySelector('.tabs-pill')),x=new DOMMatrixReadOnly(cs.transform).m41;
           return [mode,a.dataset.mode,r.left>=nav.left-1&&r.right<=nav.right+1,
             [...t.querySelectorAll('.mode-tab-label')].filter(n=>n.offsetParent&&n.scrollWidth>n.clientWidth+1).length,
             [...document.querySelectorAll('.mode-tab,#historyButton')].filter(b=>b.offsetParent).every(b=>{const q=b.getBoundingClientRect();return q.width/z>=30&&q.height/z>=30}),
@@ -1939,7 +1953,7 @@ async def tab_bar(browser, url):
         st = await p.evaluate(probe)
         check(T + 'the Calculator is on, in view, nothing cut, tabs big enough, the pill on its tab', st == ['calc', 'calc', True, 0, True, True], st)
         look = await p.evaluate("""(()=>{const n=getComputedStyle(modeTabs),t=document.querySelector('.mode-tabs-track'),a=getComputedStyle(t.querySelector('.mode-tab.active')),
-          o=getComputedStyle(t.querySelector('.mode-tab:not(.active)')),pill=getComputedStyle(t,'::before'),c=k=>{const e=document.createElement('i');e.style.color='var('+k+')';document.body.append(e);const v=getComputedStyle(e).color;e.remove();return v};
+          o=getComputedStyle(t.querySelector('.mode-tab:not(.active)')),pill=getComputedStyle(t.querySelector('.tabs-pill')),c=k=>{const e=document.createElement('i');e.style.color='var('+k+')';document.body.append(e);const v=getComputedStyle(e).color;e.remove();return v};
           return [n.backgroundColor===c('--key'),pill.backgroundColor===c('--accent'),a.color===c('--on-accent'),a.backgroundColor==='rgba(0, 0, 0, 0)'&&o.backgroundColor==='rgba(0, 0, 0, 0)',o.borderTopWidth,
             t.scrollWidth<=t.clientWidth+1&&Math.abs(t.lastElementChild.getBoundingClientRect().right-t.getBoundingClientRect().right)<=1.5]})()""")
         check(T + 'one bar in the key colour, the pill in the accent, the tabs themselves plain, and they fill the bar', look == [True, True, True, True, '0px', True], look)
@@ -1979,7 +1993,7 @@ async def tab_bar(browser, url):
     await p.wait_for_timeout(350)
     await p.evaluate("switchMode('stats')")
     await p.wait_for_timeout(600)
-    st = await p.evaluate("""(()=>{const t=document.querySelector('#modeTabs .mode-tabs-track'),a=t.querySelector('.mode-tab.active'),r=a.getBoundingClientRect(),q=t.getBoundingClientRect(),cs=getComputedStyle(t,'::before');
+    st = await p.evaluate("""(()=>{const t=document.querySelector('#modeTabs .mode-tabs-track'),a=t.querySelector('.mode-tab.active'),r=a.getBoundingClientRect(),q=t.getBoundingClientRect(),cs=getComputedStyle(t.querySelector('.tabs-pill'));
       return [t.querySelectorAll('.mode-tab').length,t.scrollWidth>t.clientWidth,r.left>=q.left-1&&r.right<=q.right+1,Math.abs(new DOMMatrixReadOnly(cs.transform).m41-a.offsetLeft)<=1&&Math.abs(parseFloat(cs.width)-a.offsetWidth)<=1]})()""")
     check(L + 'every mode pinned: the bar scrolls, the tab on screen is in view and the pill is on it', st == [16, True, True, True], st)
     await p.context.close()

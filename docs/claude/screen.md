@@ -97,8 +97,11 @@ Part of the notes in CLAUDE.md (read that first). Covers layout.js, side.js, mod
 - **Modes are tabs:** a strip of tabs at the top of the card (`MODE_LABELS`, `renderModeTabs`, `switchMode`), one tap
   each, scrolling sideways when they don't fit. They sit in one bar in the key colour (`.mode-tabs`) and share its width
   (`flex:1 0 auto`); the tabs themselves have no box, and one accent pill marks the tab on screen and slides to it: it is
-  the track's `::before`, placed by `--pill-x`/`--pill-w` (`syncTabPill`, called by `syncModeTabs`; at once on a resize,
-  `.pill-now`; a `ResizeObserver` on the tab moves it when the tab changes size later, e.g. the font arriving; not while `tabsSlide` runs, `tabsSlideEnd`). When only the tab on screen shows its name
+  a real element, `.tabs-pill`, the track's first child (`renderModeTabs`), placed by its own inline transform and width
+  (`syncTabPill`/`setPill`, called by `syncModeTabs`; at once on a resize, `.pill-now`; a `ResizeObserver` on the tab moves
+  it when the tab changes size later, e.g. the font arriving, not while anything in the bar is animating, `tabsMoving`).
+  It was a `::before` placed by custom properties, which iPhone didn't always redraw. Code that walks the tabs uses
+  `querySelectorAll('.mode-tab')`, never `track.children`. When only the tab on screen shows its name
   (`.icons`), a press folds the old name away and unfolds the new one as the pill slides (`tabsBefore`/`tabsSlide` in
   ui.js, Web Animations on the name's max-width and margin and the tab's padding; the name is centred on its room and may
   stand out of it while it moves, so the whole word fades and grows in, or shrinks and fades out early, never uncovered
@@ -116,8 +119,10 @@ Part of the notes in CLAUDE.md (read that first). Covers layout.js, side.js, mod
   That tab has `touch-action:none` and touchmoves are cancelled while held; the strip's own touch pull and mouse grab
   (`setupTabsBar`) skip it, so a swipe that starts on any other tab still scrolls the strip. **The pill on its tab:** an
   instant `syncModeTabs` (a resize; iOS sends them while its bars move) first finishes any running name slide so it
-  measures where the tabs end up, and after every slide `pillOnTab` checks the pill against the tab on screen (a tab that
-  only moves isn't seen by the ResizeObserver). Alt+1…9 on a keyboard (Energy, Subnet, Programmer, Numbers, Equations and Statistics, the last six, have none). When they don't all fit, a slim bar under them
+  measures where the tabs end up, and after every `syncTabPill` `pillCheck`/`pillVerify` waits for every animation in the
+  bar to finish (`tabsMoving`, the names' and the pill's own), then compares the pill's drawn rect with the tab's: off by
+  more than 1.5px, it slides there, then snaps at once if still off (at most twice per change, `pillChecks`). This covers
+  a slide whose first frame a slow phone drew late, and a tab that only moves (unseen by the ResizeObserver). Alt+1…9 on a keyboard (Energy, Subnet, Programmer, Numbers, Equations and Statistics, the last six, have none). When they don't all fit, a slim bar under them
   (`.tabs-scrollbar`, `syncTabEdges`, `flashTabsBar`) shows while they move and briefly on start; it can be dragged
   or pressed (`setupTabsBar`), spans the whole strip; with a mouse it shows while the mouse is over the tabs or its strip and
   fades out shortly after (the tabs can be mouse-dragged too). Phones keep their overscroll bounce; past an end (negative/over-max `scrollLeft`, or `tabsPull` measured from

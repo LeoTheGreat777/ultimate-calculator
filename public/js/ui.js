@@ -78,7 +78,7 @@ const MODE_LABELS=['calc','units','currency','graph','vat','pct','loan','dates',
 function renderModeTabs(){
  const track=$('#modeTabs .mode-tabs-track');if(!track)return;
  const pins=typeof pinnedModes!=='undefined'?pinnedModes:MODE_LABELS;
- track.innerHTML=stripModes().map(m=>'<button class="mode-tab" role="tab" type="button" data-mode="'+m+'" aria-label="'+esc(modeText(m))+'" title="'+esc(modeText(m))+'"><span class="mode-tab-icon" aria-hidden="true">'+modeIcon(m)+'</span><span class="mode-tab-label">'+esc(modeText(m))+'</span></button>').join('');
+ track.innerHTML='<span class="tabs-pill" aria-hidden="true"></span>'+stripModes().map(m=>'<button class="mode-tab" role="tab" type="button" data-mode="'+m+'" aria-label="'+esc(modeText(m))+'" title="'+esc(modeText(m))+'"><span class="mode-tab-icon" aria-hidden="true">'+modeIcon(m)+'</span><span class="mode-tab-label">'+esc(modeText(m))+'</span></button>').join('');
  track.querySelectorAll('.mode-tab').forEach(b=>b.classList.toggle('unpinned',!pins.includes(b.dataset.mode)));
  tabsDrawn=true;syncModeTabs(true);tabsDrawn=false;
 }
@@ -87,8 +87,8 @@ function syncModeTabs(instant){
  const track=$('#modeTabs .mode-tabs-track');if(!track)return;
  // the mode on screen joins the strip while it isn't pinned (and leaves it after)
  // (not while the pill is held: the tabs stay put under the finger, and the strip changes once it lets go)
- const tabsNow=[...track.children].map(b=>b.dataset.mode);
- if(!track.children.length||tabsNow.join()!==stripModes().join()&&!(pillHeld&&tabsNow.includes(currentTab()))){renderModeTabs();return}
+ const tabsNow=[...track.querySelectorAll('.mode-tab')].map(b=>b.dataset.mode);
+ if(!tabsNow.length||tabsNow.join()!==stripModes().join()&&!(pillHeld&&tabsNow.includes(currentTab()))){renderModeTabs();return}
  // a resize in the middle of a slide (iOS sends them while its bars move) measures the tabs where they end up
  if(instant)track.querySelectorAll('.mode-tab,.mode-tab-label').forEach(e=>e.getAnimations().forEach(a=>a.finish()));
  const before=instant?null:tabsBefore(track);
@@ -101,13 +101,13 @@ function syncModeTabs(instant){
   for(let px=12.5;lab&&px>=11&&track.scrollWidth>track.clientWidth+1;px-=.5)lab.style.fontSize=px+'px';
  }
  let active=null;
- [...track.children].forEach(b=>{const on=b.dataset.mode===currentTab();b.classList.toggle('active',on);b.setAttribute('aria-selected',String(on));b.tabIndex=on?0:-1;if(on)active=b});
+ track.querySelectorAll('.mode-tab').forEach(b=>{const on=b.dataset.mode===currentTab();b.classList.toggle('active',on);b.setAttribute('aria-selected',String(on));b.tabIndex=on?0:-1;if(on)active=b});
  if(active){
   const pad=24,left=Math.min(Math.max(track.scrollLeft,active.offsetLeft+active.offsetWidth-track.clientWidth+pad),active.offsetLeft-pad);
   track.scrollTo({left:Math.max(0,left),behavior:instant||reducedMotion()?'auto':'smooth'});
  }
  syncTabEdges();
- syncTabPill(active,instant&&!tabsDrawn);
+ pillChecks=0;syncTabPill(active,instant&&!tabsDrawn);
  tabsSlide(before);
 }
 // When only the tab on screen shows its name (a phone), a press moves that name: the old one folds away and the new one
@@ -139,24 +139,41 @@ function tabsSlide(list){
   }else tabLabelPlain(l);
   if(o.pad!==bs.paddingLeft)moved=!!b.animate([{paddingLeft:o.pad,paddingRight:o.pad},{paddingLeft:bs.paddingLeft,paddingRight:bs.paddingRight}],TAB_SLIDE);
  }
- if(moved){tabsSlideEnd=performance.now()+TAB_SLIDE.duration+50;clearTimeout(tabsSlideCheck);tabsSlideCheck=setTimeout(pillOnTab,TAB_SLIDE.duration+60)}
+ if(moved)pillCheck();
 }
-// the pill on the tab on screen, wherever that tab ended up (after a slide, or anything that moved it); slides if it isn't
-let tabsSlideCheck=0;
-function pillOnTab(){const a=$('#modeTabs .mode-tab.active');if(a&&!pillHeld&&a.offsetLeft+'|'+a.offsetWidth!==tabPill)syncTabPill(a)}
-// One pill marks the tab on screen and slides to it (.mode-tabs-track::before, placed by --pill-x and --pill-w). It slides
-// too when the tabs were drawn again (another language, a mode that joins the bar); a resize moves it at once.
-let tabsDrawn=false,tabPill=null,tabPillWatch=null,tabPillTab=null,tabsSlideEnd=0,pillHeld=false;// tabsSlideEnd: while tabsSlide runs, the pill is already on its way to where its tab ends up
+// One pill marks the tab on screen and slides to it (.tabs-pill, the track's first child, placed by its own transform and
+// width: a real element, as iPhone didn't always redraw a ::before placed by custom properties). It slides too when the
+// tabs were drawn again (another language, a mode that joins the bar); a resize moves it at once.
+let tabsDrawn=false,tabPill=null,tabPillWatch=null,tabPillTab=null,pillHeld=false,pillChecks=0;
+function tabPillEl(track){return track?.querySelector('.tabs-pill')}
+function setPill(p,x,w){p.style.transform='translateX('+x+'px)';p.style.width=w+'px'}
 function syncTabPill(active,instant){
- const track=$('#modeTabs .mode-tabs-track');if(!track||!active||pillHeld)return;// a held pill is under the finger (setupPillDrag)
+ const track=$('#modeTabs .mode-tabs-track'),p=tabPillEl(track);if(!p||!active||pillHeld)return;// a held pill is under the finger (setupPillDrag)
  const now=instant||tabPill===null||reducedMotion();
  if(now)track.classList.add('pill-now');
- track.style.setProperty('--pill-x',active.offsetLeft+'px');track.style.setProperty('--pill-w',active.offsetWidth+'px');
- if(now){void track.offsetWidth;track.classList.remove('pill-now')}
+ setPill(p,active.offsetLeft,active.offsetWidth);
+ if(now){void getComputedStyle(p).transform;track.classList.remove('pill-now')}
  tabPill=active.offsetLeft+'|'+active.offsetWidth;
- // a tab that changes size later (the font arrives, its name gets smaller) takes the pill along
+ pillCheck();
+ // a tab that changes size later (the font arrives, its name gets smaller) takes the pill along; not while the names
+ // slide (the pill is already on its way to where its tab ends up, and pillCheck looks once they stop)
  if(window.ResizeObserver&&tabPillTab!==active){tabPillWatch?.disconnect();tabPillTab=active;
-  tabPillWatch=new ResizeObserver(()=>{if(performance.now()<tabsSlideEnd||pillHeld)return;const a=$('#modeTabs .mode-tab.active');if(a&&a.offsetLeft+'|'+a.offsetWidth!==tabPill)syncTabPill(a,true)});tabPillWatch.observe(active)}
+  tabPillWatch=new ResizeObserver(()=>{if(pillHeld||tabsMoving().length)return;const a=$('#modeTabs .mode-tab.active');if(a&&a.offsetLeft+'|'+a.offsetWidth!==tabPill)syncTabPill(a,true)});tabPillWatch.observe(active)}
+}
+// the slides running in the bar: the names folding and unfolding, and the pill's own
+function tabsMoving(){return [...document.querySelectorAll('#modeTabs .mode-tab,#modeTabs .mode-tab-label,#modeTabs .tabs-pill')].flatMap(e=>e.getAnimations())}
+// Once everything in the bar has stopped moving, the pill is checked where it is drawn: not covering the tab on screen
+// (a slow phone drew the slide's first frame late, a resize came in the middle), it goes there, sliding the first time
+// and at once if it is still off after that.
+let pillCheckT=0;
+function pillCheck(){clearTimeout(pillCheckT);pillCheckT=setTimeout(pillVerify,0)}
+function pillVerify(){
+ const track=$('#modeTabs .mode-tabs-track'),p=tabPillEl(track),a=track?.querySelector('.mode-tab.active');if(!p||!a||pillHeld)return;
+ const run=tabsMoving();
+ if(run.length){Promise.all(run.map(x=>x.finished.catch(()=>{}))).then(pillCheck);return}
+ const r=p.getBoundingClientRect(),q=a.getBoundingClientRect(),z=window.__uiZoom||1;
+ if(Math.abs(r.left-q.left)<=1.5*z&&Math.abs(r.width-q.width)<=1.5*z||pillChecks>=2)return;
+ syncTabPill(a,pillChecks++>0);
 }
 // soft edges show that there are more tabs to scroll to
 function syncTabEdges(){
@@ -194,7 +211,7 @@ function setupPillDrag(){
   const lo=track.scrollLeft+d.w/3,hi=track.scrollLeft+track.clientWidth-d.w/3;c=Math.min(Math.max(c,lo),hi);// kept in view
   let i=0;while(i<tabs.length-2&&mid(tabs[i+1])<c)i++;
   const a=tabs[i],b=tabs[i+1]||a,k=b===a?0:Math.min(1,Math.max(0,(c-mid(a))/(mid(b)-mid(a)))),w=a.offsetWidth+(b.offsetWidth-a.offsetWidth)*k;
-  track.style.setProperty('--pill-x',c-w/2+'px');track.style.setProperty('--pill-w',w+'px');
+  setPill(tabPillEl(track),c-w/2,w);
   const near=c<=first?tabs[0]:c>=last?tabs[tabs.length-1]:k<.5?a:b;
   if(d.on&&near.dataset.mode!==currentTab())switchMode(near.dataset.mode);
  };
@@ -202,7 +219,7 @@ function setupPillDrag(){
  track.addEventListener('pointerdown',e=>{
   if(e.button>0||d)return;const t=e.target.closest?.('.mode-tab.active');if(!t)return;
   // the pill's middle starts where it is now (a slide may still be on its way)
-  const cs=getComputedStyle(track,'::before'),px=new DOMMatrixReadOnly(cs.transform).m41,pw=parseFloat(cs.width)||t.offsetWidth;
+  const cs=getComputedStyle(tabPillEl(track)),px=new DOMMatrixReadOnly(cs.transform).m41,pw=parseFloat(cs.width)||t.offsetWidth;
   d={id:e.pointerId,x:e.clientX,y:e.clientY,cx:e.clientX,mid:px+pw/2,w:t.offsetWidth,sl:track.scrollLeft,on:false};
   try{track.setPointerCapture(e.pointerId)}catch{}
   pillHeld=true;track.classList.remove('pill-snap');track.classList.add('pill-now');nav.classList.add('pill-drag');frame();

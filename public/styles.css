@@ -614,8 +614,8 @@ html.theme-fade *,html.theme-fade *::before,html.theme-fade *::after{transition:
 .mode-tabs-track{position:relative;display:flex;align-items:center;gap:2px;height:100%;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;overscroll-behavior-x:contain;touch-action:pan-x;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 18px,#000 calc(100% - 18px),transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 18px,#000 calc(100% - 18px),transparent 100%)}
 .mode-tabs-track::-webkit-scrollbar{display:none}
 /* the pill under the tab on screen: syncTabPill (ui.js) gives it that tab's place and width, and it slides there */
-.mode-tabs-track::before{content:'';position:absolute;left:0;top:0;bottom:0;width:var(--pill-w,0);border-radius:10px;background:var(--accent);transform:translateX(var(--pill-x,0));transition:transform .24s cubic-bezier(.32,.72,0,1),width .24s cubic-bezier(.32,.72,0,1);pointer-events:none}
-.mode-tabs-track.pill-now::before{transition:none}
+.tabs-pill{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:10px;background:var(--accent);transition:transform .24s cubic-bezier(.32,.72,0,1),width .24s cubic-bezier(.32,.72,0,1);pointer-events:none}
+.mode-tabs-track.pill-now .tabs-pill{transition:none}
 .mode-tabs-track.at-start{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 18px),transparent 100%);mask-image:linear-gradient(90deg,#000 calc(100% - 18px),transparent 100%)}
 .mode-tabs-track.at-end{-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 18px);mask-image:linear-gradient(90deg,transparent 0,#000 18px)}
 .mode-tabs-track.at-start.at-end{-webkit-mask-image:none;mask-image:none}
@@ -629,9 +629,9 @@ html.theme-fade *,html.theme-fade *::before,html.theme-fade *::after{transition:
 .mode-tab.active{touch-action:none;cursor:grab}/* the pill can be dragged from it (setupPillDrag, ui.js) */
 .mode-tabs.pill-drag .mode-tabs-track,.mode-tabs.pill-drag .mode-tab{cursor:grabbing}
 /* let go of a dragged pill: it settles on its tab with a small spring, in the same time as a tap's slide */
-.mode-tabs-track.pill-snap::before{transition:transform .24s cubic-bezier(.3,1.35,.55,1),width .24s cubic-bezier(.3,1.35,.55,1)}
+.mode-tabs-track.pill-snap .tabs-pill{transition:transform .24s cubic-bezier(.3,1.35,.55,1),width .24s cubic-bezier(.3,1.35,.55,1)}
 @media (prefers-reduced-motion:reduce){
-  .mode-tab,.mode-tabs-track::before{transition:none}
+  .mode-tab,.tabs-pill{transition:none}
 }
 /* ---------- Logo next to the title: drawn with the theme's colours, so every theme recolours it ---------- */
 .topbar h1.brand{display:flex;align-items:center;gap:9px;min-width:0;white-space:nowrap}
