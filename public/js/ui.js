@@ -193,8 +193,8 @@ function syncTabEdges(){
 // With a mouse the tabs themselves can be dragged sideways too. On a phone the tabs bounce past their ends (the
 // phone's own overscroll) and the thumb shrinks against that end while they do.
 // Dragging the pill: press the tab on screen and slide sideways, with a finger or a mouse. The pill follows the pointer
-// one to one from the first pixel (between two tabs it takes a width between theirs; past the first or last tab it moves
-// a third as far, like a rubber band), and as soon as its middle is nearer another tab, that tab's mode opens
+// one to one from the first pixel (between two tabs it takes a width between theirs; pushed past the first or last tab or the
+// edge of the view it stays put, whole and round, and only gets a little smaller, like a rubber band), and as soon as its middle is nearer another tab, that tab's mode opens
 // (switchMode): the old name folds to its icon and the new one unfolds while the finger moves on. It is redrawn every
 // frame while held (pillHeld; the tabs move as names fold), and the strip keeps its tabs until it lets go. Letting go, it
 // settles with a small spring (.pill-snap) on the tab on screen. Under 6px it is a tap; more up or down than sideways
@@ -207,11 +207,16 @@ function setupPillDrag(){
  const place=()=>{
   const tabs=[...track.querySelectorAll('.mode-tab')];if(!tabs.length)return;const first=mid(tabs[0]),last=mid(tabs[tabs.length-1]);
   let c=d.mid+(d.cx-d.x)/Z()+track.scrollLeft-d.sl;// under the finger, also when the strip scrolls to a new tab
-  if(c<first)c=first-(first-c)/3;else if(c>last)c=last+(c-last)/3;// past the ends: a rubber band
-  const lo=track.scrollLeft+d.w/3,hi=track.scrollLeft+track.clientWidth-d.w/3;c=Math.min(Math.max(c,lo),hi);// kept in view
   let i=0;while(i<tabs.length-2&&mid(tabs[i+1])<c)i++;
   const a=tabs[i],b=tabs[i+1]||a,k=b===a?0:Math.min(1,Math.max(0,(c-mid(a))/(mid(b)-mid(a)))),w=a.offsetWidth+(b.offsetWidth-a.offsetWidth)*k;
-  setPill(tabPillEl(track),c-w/2,w);
+  // pushed against an end (the first or last tab, or the edge of the view, inside its fade), the pill stays whole and
+  // round and only gets smaller, from both sides, less and less the further it is pushed: a rubber band
+  const lt=tabs[tabs.length-1],fade=18,
+   wl=Math.max(tabs[0].offsetLeft,track.scrollLeft+(track.classList.contains('at-start')?0:fade)),
+   wr=Math.min(lt.offsetLeft+lt.offsetWidth,track.scrollLeft+track.clientWidth-(track.classList.contains('at-end')?0:fade)),
+   over=Math.max(wl-(c-w/2),(c+w/2)-wr,0),most=Math.min(18,w*.3),s=most*(1-Math.exp(-over*.6/most));
+  const x=over<=0?c-w/2:wl-(c-w/2)>0?wl:wr-w;
+  setPill(tabPillEl(track),x+s/2,w-s);
   const near=c<=first?tabs[0]:c>=last?tabs[tabs.length-1]:k<.5?a:b;
   if(d.on&&near.dataset.mode!==currentTab())switchMode(near.dataset.mode);
  };

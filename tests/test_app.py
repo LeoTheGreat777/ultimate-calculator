@@ -1894,6 +1894,22 @@ async def pill_drag(browser, url):
         await p.wait_for_timeout(450)
         st = await p.evaluate(st_js)
         check(T + 'let go nearer its own tab: it goes back and the mode stays', st == [tabs[0], True, True, False], st)
+        # pushed past the first tab: the pill stays on it, whole and round, only a little smaller (the name still on it)
+        edge = """(()=>{const t=document.querySelector('#modeTabs .mode-tabs-track'),e=t.querySelector('.tabs-pill'),r=e.getBoundingClientRect(),
+          q=t.querySelector('.mode-tab.active').getBoundingClientRect(),l=t.querySelector('.mode-tab.active .mode-tab-label').getBoundingClientRect(),v=t.getBoundingClientRect();
+          return [r.left>=q.left-.5&&r.right<=q.right+.5&&r.left>=v.left-.5, r.width<q.width-1&&r.width>=q.width*.68, r.left<=l.left+.5&&r.right>=l.right-.5]})()"""
+        for far in [12, 80, 400]:
+            await down(x0, y)
+            for k in range(1, 4):
+                await move(x0 - far * k / 3, y)
+                await p.wait_for_timeout(16)
+            await p.wait_for_timeout(40)
+            got = await p.evaluate(edge)
+            check(T + f'pushed {far}px past the first tab: the pill stays on it, a little smaller, its name still on it', got == [True, True, True], got)
+            await up()
+            await p.wait_for_timeout(450)
+        st = await p.evaluate(st_js)
+        check(T + 'let go after pushing past the end: back on its whole tab', st == [tabs[0], True, True, False], st)
         await down(x0, y)
         for k in range(1, 6):
             await move(x0 + (x1 - x0) * .7 * k / 5, y)

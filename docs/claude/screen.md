@@ -109,7 +109,9 @@ Part of the notes in CLAUDE.md (read that first). Covers layout.js, side.js, mod
   curve (240 ms, `cubic-bezier(.32,.72,0,1)`, also the tab colours), so the tabs glide instead of jumping. **Dragging the pill** (`setupPillDrag`, ui.js): a press on the
   tab on screen holds the pill (`pillHeld`, `.pill-drag` on the bar, `.pill-now` on the track): it follows the pointer one
   to one from the first pixel, redrawn every frame while held (the tabs move as names fold), its width between the two
-  tabs it is over, a third as far past the first or last tab (a rubber band), kept in view. Once past 6px sideways, as
+  tabs it is over. Pushed past the first or last tab, or the edge of the view (inside its 18px fade), it stays put, whole
+  and round, and only gets smaller from both sides, less the further it is pushed (at most 18px or 30% of its width, so
+  the name stays on it): a rubber band. Once past 6px sideways, as
   soon as its middle is nearer another tab that mode opens (`switchMode`): the old name folds to its icon and the new one
   unfolds while the finger moves on. While held, `syncTabPill` leaves the pill alone and `syncModeTabs` keeps the strip's
   tabs (an unpinned mode left on the way stays until it lets go). Letting go, it springs onto the tab on screen

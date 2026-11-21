@@ -6,6 +6,12 @@ Versions are `MAJOR.MINOR.PATCH`: a new feature raises the middle number (0.5.0 
 tweak the last one (0.5.0 → 0.5.1). The first number stays 0 until the app is ready for everyone (1.0.0).
 Each version lists what was **Added**, **Changed** and **Fixed**, written for the people using the app.
 
+## 0.45.5 – 2026-11-21
+
+### Fixed
+- Dragging the mode highlight past the first or last tab no longer cuts off its round corners or slides it off the bar.
+  It stays on the tab and just gets a little smaller, then springs back when you let go.
+
 ## 0.45.4 – 2026-11-21
 
 ### Fixed
